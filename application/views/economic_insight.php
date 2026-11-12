@@ -112,6 +112,25 @@
         </div>
     </section>
 
+    <!-- GRAFIK PEMETAAN REKOMENDASI KEBIJAKAN (Sesuai Isi Temuan & Urgensi Halaman) -->
+    <article class="card large" style="margin-bottom:20px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">DISTRIBUSI STRATEGIS REKOMENDASI</span>
+                <h3>Grafik Pemetaan Rekomendasi Kebijakan per Kategori & Tingkat Urgensi</h3>
+                <p>Distribusi temuan intelijen ekonomi berdasarkan klaster kategori tematik dan skala prioritas urgensi.</p>
+            </div>
+            <div class="legend" style="font-size:8px;">
+                <i style="background:var(--red)"></i> Urgensi Tinggi
+                <i style="background:var(--yellow)"></i> Urgensi Sedang
+                <i style="background:var(--green)"></i> Urgensi Rendah
+            </div>
+        </div>
+        <div id="insight-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:160px; padding:6px 0;">
+            <!-- Rendered by JS -->
+        </div>
+    </article>
+
     <!-- INSIGHT CARDS GRID -->
     <div class="insight-grid">
         <?php if (!empty($insights)): ?>

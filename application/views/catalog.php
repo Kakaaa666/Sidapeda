@@ -98,6 +98,20 @@
         </div>
     </div>
 
+    <!-- GRAFIK DISTRIBUSI KLASTER INDIKATOR (Sesuai Data Katalog) -->
+    <article class="card large" style="margin-bottom:20px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">DISTRIBUSI KLASTER PEMBANGUNAN</span>
+                <h3>Grafik Komposisi Indikator per Klaster Data</h3>
+                <p>Proporsi sebaran indikator strategis daerah menurut kelompok klaster tema pembangunan.</p>
+            </div>
+        </div>
+        <div id="catalog-cluster-chart" class="chart-wrap dynamic-chart" style="height:auto; min-height:140px; padding:6px 0;">
+            <!-- Rendered dynamically by JS -->
+        </div>
+    </article>
+
     <article class="card data-card">
         <div class="card-head">
             <div>

@@ -135,9 +135,14 @@
         <article class="card">
             <div class="card-head">
                 <div>
-                    <span class="eyebrow">RISK MATRIX</span>
-                    <h3>Ringkasan Deviasi Ambang</h3>
+                    <span class="eyebrow">RISK MATRIX & KOMPARASI</span>
+                    <h3>Grafik Komparasi Deviasi Ambang</h3>
+                    <p>Perbandingan nilai aktual terhadap batas ambang risiko (threshold).</p>
                 </div>
+            </div>
+
+            <div id="ews-comparison-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:160px; margin-bottom:14px;">
+                <!-- Rendered dynamically by JS -->
             </div>
 
             <div class="risk-distribution" id="ews-distribution-bars">

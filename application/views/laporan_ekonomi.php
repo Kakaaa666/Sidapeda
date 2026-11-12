@@ -209,12 +209,18 @@
                             <small>Pengangguran Terbuka</small>
                         </span>
                     </div>
+                    <div id="rep-macro-chart-container" class="chart-wrap dynamic-chart" style="height:190px; margin: 14px 0 8px;">
+                        <!-- Macro Historical Trend Chart for report -->
+                    </div>
                 </section>
 
                 <!-- SECTION 3: ANALISIS SEKTORAL -->
                 <section id="rep-sec-sectoral">
                     <h3>3. Analisis Sektoral & Lapangan Usaha</h3>
                     <p>Pertumbuhan per lapangan usaha utama Kabupaten Banyuwangi:</p>
+                    <div id="rep-sectoral-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:130px; margin: 10px 0 12px;">
+                        <!-- Sectoral Horizontal Bar Chart for report -->
+                    </div>
                     <div id="rep-sectoral-table-wrap">
                         <!-- Populated by JS -->
                     </div>

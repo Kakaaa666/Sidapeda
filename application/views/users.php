@@ -129,6 +129,20 @@
         </div>
     </div>
 
+    <!-- GRAFIK KOMPOSISI LEVEL PENGGUNA (Sesuai Data Akun Pengguna) -->
+    <article class="card large" style="margin-bottom:20px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">KOMPOSISI HAK AKSES PENGGUNA</span>
+                <h3>Grafik Distribusi Akun Berdasarkan Level Otorisasi</h3>
+                <p>Visualisasi sebaran akun aktif pada setiap tingkatan level hak akses sistem.</p>
+            </div>
+        </div>
+        <div id="users-level-chart" class="chart-wrap dynamic-chart" style="height:auto; min-height:130px; padding:6px 0;">
+            <!-- Rendered dynamically by JS -->
+        </div>
+    </article>
+
     <article class="card">
         <div class="card-head">
             <div>

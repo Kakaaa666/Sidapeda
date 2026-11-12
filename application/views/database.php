@@ -72,6 +72,48 @@
             </div>
         </div>
 
+        <?php if ($status !== 'Terhapus' && !empty($records)): ?>
+            <?php
+            $valCount = 0; $reviewCount = 0; $clusterCounts = [];
+            foreach ($records as $rec) {
+                $st = $rec['status'] ?? 'Tervalidasi';
+                if ($st === 'Tervalidasi') $valCount++;
+                else $reviewCount++;
+                $cl = $rec['klaster'] ?? 'Lainnya';
+                $clusterCounts[$cl] = ($clusterCounts[$cl] ?? 0) + 1;
+            }
+            $totRec = count($records) ?: 1;
+            $maxCl = !empty($clusterCounts) ? max($clusterCounts) : 1;
+            ?>
+            <div style="display:grid; grid-template-columns: 1fr 1.3fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Status Validasi Data</strong>
+                    <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; background:#e2e8f0; margin-bottom:6px;">
+                        <div style="width:<?= round(($valCount/$totRec)*100) ?>%; background:var(--green);" title="Tervalidasi: <?= $valCount ?>"></div>
+                        <div style="width:<?= round(($reviewCount/$totRec)*100) ?>%; background:var(--yellow);" title="Perlu Review: <?= $reviewCount ?>"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--muted);">
+                        <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:3px;"></i>Tervalidasi: <strong><?= $valCount ?></strong> (<?= round(($valCount/$totRec)*100) ?>%)</span>
+                        <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--yellow); margin-right:3px;"></i>Perlu Review: <strong><?= $reviewCount ?></strong></span>
+                    </div>
+                </div>
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Rekaman per Klaster</strong>
+                    <div style="display:grid; gap:5px;">
+                        <?php foreach (array_slice($clusterCounts, 0, 4) as $cName => $cCnt): ?>
+                            <div style="display:grid; grid-template-columns: 120px 1fr 35px; align-items:center; gap:6px; font-size:8px;">
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?= htmlspecialchars($cName) ?></span>
+                                <div style="height:6px; border-radius:3px; background:#e2e8f0; overflow:hidden;">
+                                    <div style="width:<?= round(($cCnt/$maxCl)*100) ?>%; height:100%; background:var(--blue);"></div>
+                                </div>
+                                <strong style="text-align:right; font-size:8px;"><?= $cCnt ?></strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="data-table">
             <div class="data-tr data-th">
                 <span>Kode</span>

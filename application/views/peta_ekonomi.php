@@ -352,6 +352,29 @@
         <span>DATABASE CI 3</span>
     </div>
 
+    <!-- GRAFIK KOMPARASI KECAMATAN (Disesuaikan dengan Konten Peta & Data Kecamatan) -->
+    <article class="card large" style="margin-top:24px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">VISUALISASI INDIKATOR SPASIAL</span>
+                <h3 id="map-chart-title">Grafik Komparasi Indikator Antar-Kecamatan</h3>
+                <p id="map-chart-desc">Perbandingan peringkat capaian seluruh kecamatan berdasarkan indikator spasial terpilih.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="map-chart-metric-select" style="height:32px; border:1px solid var(--line); border-radius:6px; font-size:11px; padding:0 8px; background:var(--surface); cursor:pointer;">
+                    <option value="growth">Pertumbuhan Ekonomi (%)</option>
+                    <option value="poverty">Tingkat Kemiskinan (%)</option>
+                    <option value="pdrbShare">Porsi PDRB Daerah (%)</option>
+                    <option value="investment">Indeks Investasi (Poin)</option>
+                    <option value="density">Kepadatan Penduduk (Jiwa/km²)</option>
+                </select>
+            </div>
+        </div>
+        <div id="map-comparison-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:180px; padding:6px 0;">
+            <!-- Rendered by JS -->
+        </div>
+    </article>
+
     <!-- TABEL DATASET SPASIAL KECAMATAN (CRUD & SOFT DELETE) -->
     <article class="card large" style="margin-top:24px;">
         <div class="card-head">

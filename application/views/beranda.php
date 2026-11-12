@@ -220,8 +220,17 @@
                 $ptsStr = implode(' ', $points);
                 $trend = $item['arah_tren'] ?? 'up';
                 $tone = (in_array(strtolower($item['status']), array('meningkat','membaik','stabil','terkendali')) || $trend === 'up') ? 'success' : 'warning';
+                
+                $nameLower = strtolower($item['nama_indikator']);
+                $indKey = 'growth';
+                if (strpos($nameLower, 'inflasi') !== false) $indKey = 'inflation';
+                elseif (strpos($nameLower, 'kapita') !== false) $indKey = 'perCapita';
+                elseif (strpos($nameLower, 'pengangguran') !== false || strpos($nameLower, 'tpt') !== false) $indKey = 'tpt';
+                elseif (strpos($nameLower, 'kemiskinan') !== false) $indKey = 'poverty';
+                elseif (strpos($nameLower, 'ipm') !== false) $indKey = 'ipm';
+                elseif (strpos($nameLower, 'investasi') !== false) $indKey = 'investmentGrowth';
             ?>
-                <div class="kpi-card" style="position:relative;">
+                <div class="kpi-card" data-indicator-key="<?= $indKey ?>" style="position:relative; cursor:pointer;" title="Klik untuk menampilkan grafik tren indikator ini">
                     <div class="kpi-top">
                         <span><?= htmlspecialchars($item['nama_indikator']) ?></span>
                         <span class="badge <?= $tone ?>"><?= htmlspecialchars($item['status']) ?></span>
@@ -244,10 +253,10 @@
                     <div class="kpi-period" style="display:flex; justify-content:space-between; align-items:center;">
                         <span><?= $item['tahun'] ?? $selected_year ?> • Banyuwangi</span>
                         <span style="display:flex; gap:4px;">
-                            <button type="button" class="btn-edit-beranda" data-id="<?= $item['id'] ?>" title="Edit Indikator" style="background:transparent; border:none; cursor:pointer; color:var(--text-muted); padding:2px;">
+                            <button type="button" class="btn-edit-beranda" data-id="<?= $item['id'] ?>" title="Edit Indikator" style="background:transparent; border:none; cursor:pointer; color:var(--text-muted); padding:2px;" onclick="event.stopPropagation();">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
-                            <button type="button" class="btn-delete-beranda" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['nama_indikator']) ?>" title="Hapus (Soft Delete)" style="background:transparent; border:none; cursor:pointer; color:var(--red); padding:2px;">
+                            <button type="button" class="btn-delete-beranda" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['nama_indikator']) ?>" title="Hapus (Soft Delete)" style="background:transparent; border:none; cursor:pointer; color:var(--red); padding:2px;" onclick="event.stopPropagation();">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
                         </span>
@@ -264,13 +273,26 @@
             <div class="card-head">
                 <div>
                     <span class="eyebrow" id="trend-eyebrow">HISTORIS HINGGA <?= $selected_year ?></span>
-                    <h3>Tren Pertumbuhan Ekonomi</h3>
-                    <p>Persentase pertumbuhan PDRB ADHK • perbandingan wilayah</p>
+                    <h3 id="overview-chart-title">Tren Pertumbuhan Ekonomi</h3>
+                    <p id="overview-chart-desc">Persentase pertumbuhan PDRB ADHK • perbandingan wilayah</p>
                 </div>
-                <div class="legend" id="trend-legend">
-                    <i style="background:var(--blue)"></i> Banyuwangi
-                    <i style="background:var(--teal)"></i> Jawa Timur
-                    <i style="background:#d29a28"></i> Nasional
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <select id="overview-indicator-select" style="height:32px; border:1px solid var(--line); border-radius:6px; font-size:11px; padding:0 8px; background:var(--surface); cursor:pointer;">
+                            <option value="growth">Pertumbuhan Ekonomi (%)</option>
+                            <option value="perCapita">PDRB Per Kapita (Juta Rp)</option>
+                            <option value="inflation">Inflasi Tahunan (%)</option>
+                            <option value="tpt">Tingkat Pengangguran (TPT %)</option>
+                            <option value="poverty">Tingkat Kemiskinan (%)</option>
+                            <option value="investmentGrowth">Pertumbuhan Investasi (%)</option>
+                            <option value="ipm">Indeks Pembangunan Manusia (IPM)</option>
+                        </select>
+                    </div>
+                    <div class="legend" id="trend-legend">
+                        <i style="background:var(--blue)"></i> <span id="legend-label-0">Banyuwangi</span>
+                        <i style="background:var(--teal)"></i> <span id="legend-label-1">Jawa Timur</span>
+                        <i style="background:#d29a28"></i> <span id="legend-label-2">Nasional</span>
+                    </div>
                 </div>
             </div>
             

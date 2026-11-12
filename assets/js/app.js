@@ -139,6 +139,49 @@
     }
 
     // Chart SVG Renderers
+    function createHorizontalBarChartSVG(items, opts = {}) {
+        if (!items || !items.length) {
+            return `<div class="table-empty" style="padding:16px; text-align:center; color:var(--muted); font-size:11px;">Belum ada data untuk grafik.</div>`;
+        }
+        const unit = opts.unit || '%';
+        const showRank = opts.showRank !== false;
+        const vals = items.map(d => Number(d.value)).filter(Number.isFinite);
+        const maxVal = opts.maxVal !== undefined ? opts.maxVal : (Math.max(0, ...vals) || 1);
+        const minVal = Math.min(0, ...vals);
+        const range = maxVal - minVal || 1;
+        const zeroPct = minVal < 0 ? ((0 - minVal) / range) * 100 : 0;
+
+        let rowsHtml = '';
+        items.forEach((item, idx) => {
+            const v = Number(item.value);
+            const isPos = v >= 0;
+            const w = Math.min(100, Math.max(1, (Math.abs(v) / range) * 100));
+            const leftPct = minVal < 0 ? (isPos ? zeroPct : zeroPct - w) : 0;
+            const isHighlight = item.isHighlight;
+            const bgGradient = item.color || (isHighlight ? 'linear-gradient(90deg, #0284c7, #06b6d4)' : (isPos ? 'linear-gradient(90deg, #2463a6, #38bdf8)' : 'linear-gradient(90deg, #ef4444, #f87171)'));
+            const borderStyle = isHighlight ? 'background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;' : 'background: #ffffff; border: 1px solid #f1f5f9; border-radius: 8px;';
+
+            rowsHtml += `
+                <div class="h-bar-row ${isHighlight ? 'highlighted' : ''}" data-index="${idx}" data-label="${item.label}" style="display:grid; grid-template-columns: ${showRank ? '28px ' : ''}160px 1fr 105px; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; font-size:11px; ${borderStyle} cursor:pointer; transition: all 0.2s ease;">
+                    ${showRank ? `<span class="badge ${isHighlight ? 'primary' : 'neutral'}" style="font-size:9px; padding:2px 4px; text-align:center; font-weight:700;">#${idx + 1}</span>` : ''}
+                    <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.label}">
+                        <strong style="color:var(--navy); font-size:11px;">${item.label}</strong>
+                        ${item.subLabel ? `<br><small style="color:var(--muted); font-size:9px;">${item.subLabel}</small>` : ''}
+                    </div>
+                    <div style="position:relative; height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden;">
+                        ${minVal < 0 ? `<div style="position:absolute; left:${zeroPct}%; top:0; bottom:0; width:1px; background:#64748b; z-index:2;"></div>` : ''}
+                        <div style="position:absolute; left:${leftPct}%; width:${w}%; top:0; bottom:0; background:${bgGradient}; border-radius:6px; transition:width 0.4s ease;"></div>
+                    </div>
+                    <div style="text-align:right;">
+                        <strong style="color:${isHighlight ? 'var(--blue)' : 'var(--navy)'}; font-size:11px;">${formatNum(v, opts.decimals ?? 2)}${unit}</strong>
+                        ${item.badge ? `<br><span class="badge ${item.badgeClass || 'info'}" style="font-size:8px; padding:1px 5px; font-weight:600;">${item.badge}</span>` : ''}
+                    </div>
+                </div>`;
+        });
+
+        return `<div class="horizontal-bar-chart" style="width:100%; display:flex; flex-direction:column; gap:3px;">${rowsHtml}</div>`;
+    }
+
     function createLineChartSVG(years, series, height = 230, unit = '%') {
         const allVals = series.flatMap(s => s.values).filter(Number.isFinite);
         if (!allVals.length || !years.length) {
@@ -768,30 +811,130 @@
         const filterYear = document.getElementById('filter-year');
         const filterRegion = document.getElementById('filter-region');
         const btnApply = document.getElementById('btn-apply-filters');
+        const indSelect = document.getElementById('overview-indicator-select');
+        const chartTitle = document.getElementById('overview-chart-title');
+        const chartDesc = document.getElementById('overview-chart-desc');
+        const legend0 = document.getElementById('legend-label-0');
+        const legend1 = document.getElementById('legend-label-1');
+        const legend2 = document.getElementById('legend-label-2');
 
-        function updateOverviewChart() {
-            const yr = parseInt(filterYear ? filterYear.value : 2024);
-            const region = filterRegion ? filterRegion.value : 'Kabupaten Banyuwangi';
-            const endIdx = Math.max(0, AppState.years.indexOf(yr));
-            const subYears = AppState.years.slice(0, endIdx + 1);
-
-            let chosenSeries = [];
-            if (region === 'Jawa Timur') {
-                chosenSeries = [{ name: 'Jawa Timur', values: AppState.series.eastJavaGrowth.slice(0, endIdx + 1), className: 'series-1' }];
-            } else if (region === 'Nasional') {
-                chosenSeries = [{ name: 'Nasional', values: AppState.series.nationalGrowth.slice(0, endIdx + 1), className: 'series-2' }];
-            } else {
-                chosenSeries = [
+        const indicatorConfigs = {
+            'growth': {
+                title: 'Tren Pertumbuhan Ekonomi',
+                desc: 'Persentase pertumbuhan PDRB ADHK • perbandingan wilayah',
+                unit: '%',
+                hasPeers: true,
+                getSeries: (endIdx) => [
                     { name: 'Banyuwangi', values: AppState.series.growth.slice(0, endIdx + 1), className: 'series-0' },
                     { name: 'Jawa Timur', values: AppState.series.eastJavaGrowth.slice(0, endIdx + 1), className: 'series-1' },
                     { name: 'Nasional', values: AppState.series.nationalGrowth.slice(0, endIdx + 1), className: 'series-2' }
-                ];
+                ]
+            },
+            'perCapita': {
+                title: 'Tren PDRB Per Kapita',
+                desc: 'Tingkat pendapatan per kapita Kabupaten Banyuwangi (Juta Rupiah)',
+                unit: ' Jt',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'PDRB Per Kapita', values: AppState.series.perCapita.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            },
+            'inflation': {
+                title: 'Tren Inflasi Tahunan',
+                desc: 'Perkembangan laju inflasi tahunan (yoy) Kabupaten Banyuwangi',
+                unit: '%',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'Inflasi Banyuwangi', values: AppState.series.inflation.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            },
+            'tpt': {
+                title: 'Tren Tingkat Pengangguran Terbuka (TPT)',
+                desc: 'Proporsi angkatan kerja terbuka Kabupaten Banyuwangi (%)',
+                unit: '%',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'TPT Banyuwangi', values: AppState.series.tpt.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            },
+            'poverty': {
+                title: 'Tren Tingkat Kemiskinan',
+                desc: 'Persentase penduduk miskin Kabupaten Banyuwangi (%)',
+                unit: '%',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'Kemiskinan Banyuwangi', values: AppState.series.poverty.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            },
+            'investmentGrowth': {
+                title: 'Tren Pertumbuhan Realisasi Investasi',
+                desc: 'Laju pertumbuhan penanaman modal daerah tahunan (%)',
+                unit: '%',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'Investasi Banyuwangi', values: AppState.series.investmentGrowth.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            },
+            'ipm': {
+                title: 'Tren Indeks Pembangunan Manusia (IPM)',
+                desc: 'Capaian IPM komposit pendidikan, kesehatan, dan standar hidup (poin)',
+                unit: ' pt',
+                hasPeers: false,
+                getSeries: (endIdx) => [
+                    { name: 'IPM Banyuwangi', values: AppState.series.ipm.slice(0, endIdx + 1), className: 'series-0' }
+                ]
+            }
+        };
+
+        let currentIndicatorKey = 'growth';
+
+        function updateOverviewChart() {
+            const yr = parseInt(filterYear ? filterYear.value : 2024);
+            const endIdx = Math.max(0, AppState.years.indexOf(yr));
+            const subYears = AppState.years.slice(0, endIdx + 1);
+
+            const cfg = indicatorConfigs[currentIndicatorKey] || indicatorConfigs['growth'];
+            if (chartTitle) chartTitle.textContent = cfg.title;
+            if (chartDesc) chartDesc.textContent = cfg.desc;
+
+            const chosenSeries = cfg.getSeries(endIdx);
+
+            if (legend0) legend0.textContent = chosenSeries[0]?.name || 'Banyuwangi';
+            if (legend1) {
+                if (chosenSeries[1]) {
+                    legend1.parentElement.style.display = 'flex';
+                    legend1.textContent = chosenSeries[1].name;
+                } else {
+                    legend1.parentElement.style.display = 'none';
+                }
             }
 
             if (chartContainer) {
-                chartContainer.innerHTML = createLineChartSVG(subYears, chosenSeries, 230, '%');
+                chartContainer.innerHTML = createLineChartSVG(subYears, chosenSeries, 230, cfg.unit);
             }
         }
+
+        if (indSelect) {
+            indSelect.addEventListener('change', function () {
+                currentIndicatorKey = this.value;
+                updateOverviewChart();
+            });
+        }
+
+        // Klik kartu KPI untuk langsung menyesuaikan grafik
+        document.querySelectorAll('.kpi-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const key = this.getAttribute('data-indicator-key');
+                if (key && indicatorConfigs[key]) {
+                    currentIndicatorKey = key;
+                    if (indSelect) indSelect.value = key;
+                    updateOverviewChart();
+                    if (chartContainer) {
+                        chartContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            });
+        });
 
         updateOverviewChart();
 
@@ -1120,7 +1263,26 @@
                 tabTitle.textContent = 'Peringkat Rata-rata Pertumbuhan Ekonomi';
                 tabDesc.textContent = 'Peringkat dihitung dari rata-rata tahunan selama periode terpilih.';
 
+                const rankingBarData = rows.map((r, idx) => ({
+                    label: r.name,
+                    value: r.avg,
+                    subLabel: `Perubahan: ${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp | Gap ke rerata: ${r.avg >= peerAvg ? '+' : ''}${formatNum(r.avg - peerAvg)} pp`,
+                    badge: r.name === 'Kab. Banyuwangi' ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
+                    badgeClass: r.name === 'Kab. Banyuwangi' ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
+                    isHighlight: r.name === 'Kab. Banyuwangi'
+                }));
+
                 let listHtml = `
+                    <div style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span class="eyebrow">VISUALISASI PERINGKAT KOMPARASI</span>
+                            <span class="badge info">Periode ${period === '5' ? '5 Tahun' : '10 Tahun'}</span>
+                        </div>
+                        <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
+                            ${createHorizontalBarChartSVG(rankingBarData, { unit: '%', decimals: 2 })}
+                        </div>
+                    </div>
+
                     <div class="comparison-table-head" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
                         <span>Peringkat</span>
                         <span>Wilayah</span>
@@ -1162,25 +1324,42 @@
 
             } else if (activeTab === 'Benchmarking') {
                 tabEyebrow.textContent = 'BENCHMARKING';
-                tabTitle.textContent = 'Perbandingan Tren dengan Jawa Timur & Nasional';
-                tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi Banyuwangi relatif terhadap provinsi dan nasional.';
+                tabTitle.textContent = 'Perbandingan Tren Antar-Wilayah Terpilih';
+                tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi Banyuwangi dan wilayah pembanding yang dicentang.';
 
                 const bwiSeries = AppState.series.growth.slice(sliceStart);
                 const jatimSeries = AppState.series.eastJavaGrowth.slice(sliceStart);
-                const nasSeries = AppState.series.nationalGrowth.slice(sliceStart);
+                
+                // Bangun deret grafik yang sesuai dengan wilayah yang dicentang pengguna
+                const benchmarkSeries = [
+                    { name: 'Banyuwangi', values: bwiSeries, className: 'series-0' },
+                    { name: 'Jawa Timur', values: jatimSeries, className: 'series-1' }
+                ];
+
+                const colorClasses = ['series-2', 'series-3', 'series-4', 'series-5'];
+                let cIdx = 0;
+                selectedRegions.forEach(regName => {
+                    if (regName !== 'Kab. Banyuwangi') {
+                        const regItem = AppState.regional.find(r => r.name === regName);
+                        if (regItem && regItem.series && regItem.series.length > 0) {
+                            benchmarkSeries.push({
+                                name: regItem.name.replace('Kab. ', '').replace('Kota ', ''),
+                                values: regItem.series.slice(sliceStart),
+                                className: colorClasses[cIdx % colorClasses.length]
+                            });
+                            cIdx++;
+                        }
+                    }
+                });
 
                 tabContent.innerHTML = `
                     <div class="comparison-kpis" style="margin-bottom:15px;">
                         <div class="comparison-kpi"><span>Rerata Banyuwangi</span><strong>${formatPct(mean(bwiSeries))}</strong><small>Periode terpilih</small></div>
-                        <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Periode terpilih</small></div>
-                        <div class="comparison-kpi"><span>Rerata Nasional</span><strong>${formatPct(mean(nasSeries))}</strong><small>Periode terpilih</small></div>
+                        <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
+                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${selectedRegions.length}</strong><small>Daerah pembanding</small></div>
                     </div>
-                    <div class="chart-wrap dynamic-chart" style="height:280px;">
-                        ${createLineChartSVG(years, [
-                            { name: 'Banyuwangi', values: bwiSeries, className: 'series-0' },
-                            { name: 'Jawa Timur', values: jatimSeries, className: 'series-1' },
-                            { name: 'Nasional', values: nasSeries, className: 'series-2' }
-                        ], 280, '%')}
+                    <div class="chart-wrap dynamic-chart" style="height:290px;">
+                        ${createLineChartSVG(years, benchmarkSeries, 290, '%')}
                     </div>`;
 
             } else if (activeTab === 'Gap Analysis') {
@@ -1190,6 +1369,18 @@
 
                 const jatimAvg = mean(AppState.series.eastJavaGrowth.slice(sliceStart));
                 const gapJatim = bwi.avg - jatimAvg;
+
+                const gapBarData = rows.map(r => {
+                    const diff = r.avg - bwi.avg;
+                    return {
+                        label: r.name,
+                        value: diff,
+                        subLabel: `Rata-rata: ${formatPct(r.avg)} (Banyuwangi: ${formatPct(bwi.avg)})`,
+                        badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan' : `${formatNum(diff)} pp`),
+                        badgeClass: diff > 0 ? 'success' : (diff === 0 ? 'primary' : 'warning'),
+                        isHighlight: r.name === 'Kab. Banyuwangi'
+                    };
+                });
 
                 tabContent.innerHTML = `
                     <div class="gap-overview">
@@ -1202,6 +1393,17 @@
                             <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
                         </div>
                     </div>
+
+                    <div style="margin: 18px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
+                            <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi</small>
+                        </div>
+                        <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
+                            ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
+                        </div>
+                    </div>
+
                     <div class="result-table-wrap">
                         <table class="result-table">
                             <thead><tr><th>Benchmark</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap</th><th>Status</th></tr></thead>
@@ -1215,6 +1417,16 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Rerata Daerah Terpilih</strong></td>
+                                    <td>${formatPct(bwi.avg)}</td>
+                                    <td>${formatPct(peerAvg)}</td>
+                                    <td><strong>${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
+                                    <td><span class="badge ${gap >= 0 ? 'success' : 'warning'}">${gap >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>`;
+
+            } else if (activeTab === 'Regional Profiling') {
                                     <td>${formatPct(bwi.avg)}</td>
                                     <td>${formatPct(peerAvg)}</td>
                                     <td><strong>${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
@@ -1935,6 +2147,62 @@
 
         updateIndicators();
 
+        const metricSelect = document.getElementById('map-chart-metric-select');
+        const mapChartTitle = document.getElementById('map-chart-title');
+        const mapChartDesc = document.getElementById('map-chart-desc');
+        const mapChartContainer = document.getElementById('map-comparison-chart-container');
+
+        function renderMapComparisonChart() {
+            if (!mapChartContainer) return;
+            const metric = metricSelect ? metricSelect.value : 'growth';
+
+            const metricConfigs = {
+                'growth': { label: 'Pertumbuhan Ekonomi', unit: '%', key: 'growth', decimals: 2 },
+                'poverty': { label: 'Tingkat Kemiskinan', unit: '%', key: 'poverty', decimals: 2 },
+                'pdrbShare': { label: 'Porsi PDRB Daerah', unit: '%', key: 'pdrbShare', decimals: 2 },
+                'investment': { label: 'Indeks Investasi', unit: ' poin', key: 'investment', decimals: 2 },
+                'density': { label: 'Kepadatan Penduduk', unit: ' jiwa/km²', key: 'density', decimals: 0 }
+            };
+
+            const cfg = metricConfigs[metric] || metricConfigs['growth'];
+            if (mapChartTitle) mapChartTitle.textContent = `Grafik Komparasi ${cfg.label} Antar-Kecamatan`;
+            if (mapChartDesc) mapChartDesc.textContent = `Peringkat capaian ${cfg.label.toLowerCase()} seluruh kecamatan di Kabupaten Banyuwangi.`;
+
+            const sortedDistricts = [...AppState.districts].sort((a, b) => {
+                const valA = parseFloat(a[cfg.key] || 0);
+                const valB = parseFloat(b[cfg.key] || 0);
+                return valB - valA;
+            });
+
+            const barData = sortedDistricts.map(d => ({
+                label: d.name,
+                value: parseFloat(d[cfg.key] || 0),
+                subLabel: `Kategori: ${d.category || 'Kembang'} • Potensi: ${d.potential || 'Unggulan'}`,
+                badge: d.name === selectedDistrict ? 'Kecamatan Terpilih' : (d.risk || ''),
+                badgeClass: d.name === selectedDistrict ? 'primary' : (d.risk === 'Kritis' ? 'danger' : (d.risk === 'Waspada' ? 'warning' : 'success')),
+                isHighlight: d.name === selectedDistrict
+            }));
+
+            mapChartContainer.innerHTML = createHorizontalBarChartSVG(barData, { unit: cfg.unit, decimals: cfg.decimals });
+
+            // Klik bar pada grafik untuk langsung memilih dan menyorot kecamatan pada peta
+            mapChartContainer.querySelectorAll('.h-bar-row').forEach(row => {
+                row.addEventListener('click', function () {
+                    const label = this.getAttribute('data-label');
+                    if (label) {
+                        selectedDistrict = label;
+                        renderMap();
+                    }
+                });
+            });
+        }
+
+        if (metricSelect) {
+            metricSelect.addEventListener('change', renderMapComparisonChart);
+        }
+
+        renderMapComparisonChart();
+
         // Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
         setupModuleCrud({
             controller: 'peta_ekonomi',
@@ -2105,6 +2373,17 @@
                 heroImpact.textContent = (impact >= 0 ? '+' : '') + formatNum(impact, 2) + ' pp';
                 heroImpact.className = impact >= 0 ? 'positive' : 'negative';
             }
+
+            const scenChart = document.getElementById('scenario-comparison-chart');
+            if (scenChart) {
+                const sYears = [2024, 2025, 2026, 2027];
+                const baseVals = [5.18, 5.25, 5.32, 5.40];
+                const scenVals = [5.18, Number(finalGrowth.toFixed(2)), Number((finalGrowth + 0.12).toFixed(2)), Number((finalGrowth + 0.25).toFixed(2))];
+                scenChart.innerHTML = createLineChartSVG(sYears, [
+                    { name: 'Baseline Proyeksi', values: baseVals, className: 'series-0' },
+                    { name: 'Simulasi Skenario', values: scenVals, className: 'series-1' }
+                ], 180, '%');
+            }
         }
 
         if (sliderInv) sliderInv.addEventListener('input', updateScenario);
@@ -2254,6 +2533,24 @@
                         <span class="badge ${item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success')}">${item.status}</span>
                     </div>
                 `).join('');
+            }
+
+            const ewsChartContainer = document.getElementById('ews-comparison-chart-container');
+            if (ewsChartContainer && AppState.ews.length > 0) {
+                const ewsBars = AppState.ews.map(item => {
+                    const val = Number(item.value);
+                    const th = Number(item.threshold);
+                    const diffPct = th !== 0 ? ((val - th) / Math.abs(th)) * 100 : 0;
+                    return {
+                        label: item.name,
+                        value: val,
+                        subLabel: `Ambang: ${formatNum(th, 2)} ${item.unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}% (${item.direction === 'above' ? 'Peringatan saat > Ambang' : 'Peringatan saat < Ambang'})`,
+                        badge: item.status,
+                        badgeClass: item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success'),
+                        color: item.status === 'Kritis' ? 'linear-gradient(90deg, #ef4444, #f87171)' : (item.status === 'Waspada' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
+                    };
+                });
+                ewsChartContainer.innerHTML = createHorizontalBarChartSVG(ewsBars, { unit: '', decimals: 2 });
             }
 
             const pBar = document.getElementById('ews-progress-bar');
@@ -2428,6 +2725,39 @@
             });
         }
 
+        // Render Grafik Distribusi Rekomendasi per Kategori & Tingkat Urgensi
+        const insightChart = document.getElementById('insight-chart-container');
+        if (insightChart) {
+            const cards = document.querySelectorAll('.insight-card');
+            const categoryCounts = {};
+            cards.forEach(card => {
+                const categoryEl = card.querySelector('p strong');
+                const urgencyEl = card.querySelector('.badge');
+                let cat = categoryEl ? categoryEl.textContent.replace(':', '').trim() : 'Umum';
+                let urg = urgencyEl ? urgencyEl.textContent.trim() : 'Sedang';
+                if (!categoryCounts[cat]) categoryCounts[cat] = { total: 0, tinggi: 0, sedang: 0, rendah: 0 };
+                categoryCounts[cat].total++;
+                if (urg === 'Tinggi') categoryCounts[cat].tinggi++;
+                else if (urg === 'Sedang') categoryCounts[cat].sedang++;
+                else categoryCounts[cat].rendah++;
+            });
+
+            const catList = Object.keys(categoryCounts).map(cat => ({
+                label: cat,
+                value: categoryCounts[cat].total,
+                subLabel: `Tinggi: ${categoryCounts[cat].tinggi} • Sedang: ${categoryCounts[cat].sedang} • Rendah: ${categoryCounts[cat].rendah}`,
+                badge: `${categoryCounts[cat].tinggi > 0 ? categoryCounts[cat].tinggi + ' Prioritas Tinggi' : 'Terkendali'}`,
+                badgeClass: categoryCounts[cat].tinggi > 0 ? 'danger' : 'success',
+                color: categoryCounts[cat].tinggi > 0 ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #0284c7, #38bdf8)'
+            })).sort((a, b) => b.value - a.value);
+
+            if (catList.length > 0) {
+                insightChart.innerHTML = createHorizontalBarChartSVG(catList, { unit: ' Rekomendasi', decimals: 0, showRank: true });
+            } else {
+                insightChart.innerHTML = '<div class="table-empty" style="padding:16px; text-align:center; color:var(--muted); font-size:11px;">Belum ada temuan rekomendasi kebijakan aktif.</div>';
+            }
+        }
+
         // Setup CRUD & Soft Delete for Economic Insight
         setupModuleCrud({
             controller: 'economic_insight',
@@ -2502,13 +2832,50 @@
                                 ${sorted.map(s => `
                                     <tr>
                                         <td><strong>${s.name}</strong></td>
-                                        <td>${formatPct(s.growthSeries[yIdx] ?? s.growthLocal)}</td>
-                                        <td>${formatPct(s.growthProvinceSeries[yIdx] ?? s.growthProvince)}</td>
+                                        <td>${formatPct(s.growthSeries ? (s.growthSeries[yIdx] ?? s.growthLocal) : s.growthLocal)}</td>
+                                        <td>${formatPct(s.growthProvinceSeries ? (s.growthProvinceSeries[yIdx] ?? s.growthProvince) : s.growthProvince)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
                         </table>
                     </div>`;
+            }
+
+            // Render Macro Historical Trend Chart for report
+            const repMacroChart = document.getElementById('rep-macro-chart-container');
+            if (repMacroChart) {
+                const subYears = AppState.years.slice(0, yIdx + 1);
+                const gVals = AppState.series.growth.slice(0, yIdx + 1);
+                const infVals = AppState.series.inflation.slice(0, yIdx + 1);
+                const tptVals = AppState.series.tpt.slice(0, yIdx + 1);
+                repMacroChart.innerHTML = createLineChartSVG(subYears, [
+                    { name: 'Pertumbuhan (%)', values: gVals, className: 'series-0' },
+                    { name: 'Inflasi (%)', values: infVals, className: 'series-1' },
+                    { name: 'TPT (%)', values: tptVals, className: 'series-2' }
+                ], 180, '%');
+            }
+
+            // Render Sectoral Horizontal Bar Chart for report
+            const repSecChart = document.getElementById('rep-sectoral-chart-container');
+            if (repSecChart && AppState.sectors && AppState.sectors.length > 0) {
+                const topSectors = [...AppState.sectors]
+                    .sort((a, b) => {
+                        const gA = a.growthSeries ? (a.growthSeries[yIdx] ?? a.growthLocal) : a.growthLocal;
+                        const gB = b.growthSeries ? (b.growthSeries[yIdx] ?? b.growthLocal) : b.growthLocal;
+                        return gB - gA;
+                    })
+                    .slice(0, 5)
+                    .map(s => {
+                        const curG = s.growthSeries ? (s.growthSeries[yIdx] ?? s.growthLocal) : s.growthLocal;
+                        return {
+                            label: s.short || s.name,
+                            value: curG,
+                            subLabel: `Pangsa: ${formatNum(s.shareLocal, 1)}% PDRB`,
+                            badge: `${formatNum(curG, 2)}%`,
+                            badgeClass: curG >= 5 ? 'success' : 'info'
+                        };
+                    });
+                repSecChart.innerHTML = createHorizontalBarChartSVG(topSectors, { unit: '%', decimals: 2 });
             }
         }
 
@@ -3082,6 +3449,23 @@
             });
         });
 
+        // Render Grafik Distribusi Level Akun Pengguna
+        const userChart = document.getElementById('users-level-chart');
+        if (userChart) {
+            const levelMap = { '1': 0, '2': 0, '3': 0, '4': 0 };
+            document.querySelectorAll('.user-role-select').forEach(sel => {
+                const val = String(sel.value).trim();
+                if (levelMap[val] !== undefined) levelMap[val]++;
+            });
+            const levelData = [
+                { label: 'Level 1 - Administrator', value: levelMap['1'], subLabel: 'Otoritas tertinggi & konfigurasi penuh sistem', badge: `${levelMap['1']} Akun`, badgeClass: 'primary', color: 'linear-gradient(90deg, #0284c7, #38bdf8)' },
+                { label: 'Level 2 - Analis Data', value: levelMap['2'], subLabel: 'Kajian ekonomi, validasi data & generator laporan', badge: `${levelMap['2']} Akun`, badgeClass: 'info', color: 'linear-gradient(90deg, #06b6d4, #67e8f9)' },
+                { label: 'Level 3 - Operator OPD', value: levelMap['3'], subLabel: 'Entri indikator sektoral & master dataset', badge: `${levelMap['3']} Akun`, badgeClass: 'success', color: 'linear-gradient(90deg, #10b981, #6ee7b7)' },
+                { label: 'Level 4 - Reviewer / Eksekutif', value: levelMap['4'], subLabel: 'Monitoring dashboard publik & evaluasi capaian', badge: `${levelMap['4']} Akun`, badgeClass: 'warning', color: 'linear-gradient(90deg, #f59e0b, #fcd34d)' }
+            ];
+            userChart.innerHTML = createHorizontalBarChartSVG(levelData, { unit: ' Akun', decimals: 0, showRank: false });
+        }
+
         // Setup CRUD & Soft Delete for Akun Pengguna
         setupModuleCrud({
             controller: 'users',
@@ -3113,6 +3497,30 @@
             btnExportCsv.addEventListener('click', function () {
                 window.location.href = SITE_URL + '/catalog';
             });
+        }
+
+        // Render Grafik Distribusi Klaster Indikator
+        const catChart = document.getElementById('catalog-cluster-chart');
+        if (catChart) {
+            const clusterMap = {};
+            document.querySelectorAll('.data-card table tbody tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 3) {
+                    const cl = tds[2].textContent.trim();
+                    if (cl && cl !== 'Tidak ada indikator katalog ditemukan.') clusterMap[cl] = (clusterMap[cl] || 0) + 1;
+                }
+            });
+            const clusterItems = Object.keys(clusterMap).map(k => ({
+                label: k,
+                value: clusterMap[k],
+                subLabel: 'Klaster Tematik Data',
+                badge: `${clusterMap[k]} Indikator`,
+                badgeClass: 'info'
+            })).sort((a, b) => b.value - a.value);
+
+            if (clusterItems.length > 0) {
+                catChart.innerHTML = createHorizontalBarChartSVG(clusterItems, { unit: ' Indikator', decimals: 0, showRank: true });
+            }
         }
 
         // Setup CRUD & Soft Delete for Katalog Indikator

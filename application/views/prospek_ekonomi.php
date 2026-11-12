@@ -331,6 +331,20 @@
                     </div>
                 </div>
 
+                <!-- SCENARIO COMPARISON TRAJECTORY CHART -->
+                <div style="margin-top:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="eyebrow">LINTASAN PROYEKSI PERTUMBUHAN (2024–2027)</span>
+                        <div class="legend" style="font-size:8px;">
+                            <i style="background:var(--blue)"></i> Baseline
+                            <i style="background:var(--teal)"></i> Skenario
+                        </div>
+                    </div>
+                    <div id="scenario-comparison-chart" class="chart-wrap dynamic-chart" style="height:185px;">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
                 <div class="scenario-implications">
                     <strong>Implikasi Strategis Kebijakan:</strong>
                     <div>
