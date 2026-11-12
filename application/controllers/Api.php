@@ -178,5 +178,77 @@ class Api extends CI_Controller {
 
         $this->json_response(array('status' => 'success', 'message' => 'Level dan status akun berhasil diperbarui.'));
     }
+
+    public function get_record($id = null) {
+        $id = (int)($id ?: $this->input->get('id'));
+        $record = $this->M_economy->get_indicator_record_by_id($id);
+        if ($record) {
+            $this->json_response(array('status' => 'success', 'data' => $record));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Data tidak ditemukan.'), 404);
+        }
+    }
+
+    public function update_record($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        if (!$id) {
+            $this->json_response(array('status' => 'error', 'message' => 'ID data wajib diisi.'), 400);
+            return;
+        }
+
+        $data = $this->input->post(null, true);
+        $ok = $this->M_economy->update_indicator_record($id, $data);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data berhasil diperbarui.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal memperbarui data.'), 500);
+        }
+    }
+
+    public function delete_record($id = null) {
+        // Soft delete endpoint
+        $id = (int)($id ?: $this->input->post('id'));
+        if (!$id) {
+            $this->json_response(array('status' => 'error', 'message' => 'ID data wajib diisi.'), 400);
+            return;
+        }
+
+        $ok = $this->M_economy->soft_delete_indicator_record($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data berhasil dipindahkan ke tempat sampah (Soft Delete).'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal menghapus data.'), 500);
+        }
+    }
+
+    public function restore_record($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        if (!$id) {
+            $this->json_response(array('status' => 'error', 'message' => 'ID data wajib diisi.'), 400);
+            return;
+        }
+
+        $ok = $this->M_economy->restore_indicator_record($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data berhasil dipulihkan kembali.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal memulihkan data.'), 500);
+        }
+    }
+
+    public function hard_delete_record($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        if (!$id) {
+            $this->json_response(array('status' => 'error', 'message' => 'ID data wajib diisi.'), 400);
+            return;
+        }
+
+        $ok = $this->M_economy->hard_delete_indicator_record($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data berhasil dihapus permanen.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal menghapus data permanen.'), 500);
+        }
+    }
 }
 

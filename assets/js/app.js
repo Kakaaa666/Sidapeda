@@ -1929,11 +1929,18 @@
         const formAdd = document.getElementById('form-manual-add');
         const btnExportCsv = document.getElementById('btn-export-database-csv');
 
+        // Edit Modal Elements
+        const editModal = document.getElementById('edit-data-modal');
+        const btnCloseEdit = document.getElementById('modal-btn-close-edit');
+        const btnCancelEdit = document.getElementById('modal-btn-cancel-edit');
+        const formEdit = document.getElementById('form-manual-edit');
+        const editErrBox = document.getElementById('edit-modal-error');
+
         function reloadFiltered() {
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
             const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'year';
-            window.location.href = `${SITE_URL}/admin/database?q=${q}&status=${st}&sort=${srt}`;
+            window.location.href = `${SITE_URL}/database?q=${q}&status=${st}&sort=${srt}`;
         }
 
         if (searchInput) {
@@ -1963,7 +1970,7 @@
             });
         });
 
-        // Add modal
+        // Add modal (Create)
         if (btnOpenModal && addModal) {
             btnOpenModal.addEventListener('click', () => { addModal.style.display = 'grid'; });
         }
@@ -1982,7 +1989,11 @@
                 const fd = new FormData(this);
                 const errBox = document.getElementById('add-modal-error');
 
-                fetch(BASE_URL + 'api/add_record', { method: 'POST', body: fd })
+                fetch(`${SITE_URL}/database/create`, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
                     .then(res => res.json())
                     .then(data => {
                         if (data.status === 'success') {
@@ -1995,13 +2006,181 @@
                         }
                     })
                     .catch(() => {
-                        if (errBox) {
-                            errBox.style.display = 'block';
-                            errBox.textContent = 'Terjadi kesalahan jaringan.';
+                        // Fallback to normal form submit
+                        formAdd.submit();
+                    });
+            });
+        }
+
+        // Edit modal (Update)
+        const closeEditModal = () => { if (editModal) editModal.style.display = 'none'; };
+        if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
+        if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+        if (editModal) {
+            editModal.addEventListener('click', e => {
+                if (e.target === editModal) closeEditModal();
+            });
+        }
+
+        document.querySelectorAll('.btn-edit-record').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                if (!id) return;
+
+                if (editErrBox) {
+                    editErrBox.style.display = 'none';
+                    editErrBox.textContent = '';
+                }
+
+                fetch(`${SITE_URL}/database/get_record/${id}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Data record tidak ditemukan.');
+                        return res.json();
+                    })
+                    .then(res => {
+                        if (res.status === 'success' && res.data) {
+                            const d = res.data;
+                            document.getElementById('edit-id').value = d.id;
+                            document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
+                            document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
+                            document.getElementById('edit-cluster').value = d.cluster || d.klaster || 'Output & Pertumbuhan';
+                            document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
+                            document.getElementById('edit-period').value = d.period || d.periode || 'Tahunan';
+                            document.getElementById('edit-year').value = d.year || d.tahun || 2024;
+                            document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
+                            document.getElementById('edit-unit').value = d.unit || d.satuan || '%';
+                            document.getElementById('edit-source').value = d.source || d.sumber_data || '';
+                            document.getElementById('edit-status').value = d.status || d.status_validasi || 'Perlu review';
+                            document.getElementById('edit-notes').value = d.notes || d.catatan || '';
+
+                            if (editModal) editModal.style.display = 'grid';
+                        } else {
+                            alert(res.message || 'Gagal memuat rekaman data.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Gagal mengambil data indikator untuk diedit.');
+                    });
+            });
+        });
+
+        if (formEdit) {
+            formEdit.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-id').value;
+                if (!id) return;
+
+                const fd = new FormData(this);
+                if (editErrBox) editErrBox.style.display = 'none';
+
+                fetch(`${SITE_URL}/database/update/${id}`, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            if (editErrBox) {
+                                editErrBox.style.display = 'block';
+                                editErrBox.textContent = data.message || 'Gagal memperbarui data.';
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        if (editErrBox) {
+                            editErrBox.style.display = 'block';
+                            editErrBox.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
                         }
                     });
             });
         }
+
+        // Soft Delete
+        document.querySelectorAll('.btn-delete-record').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                const indicator = this.getAttribute('data-indicator') || 'data ini';
+                if (!id) return;
+
+                if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
+                    fetch(`${SITE_URL}/database/soft_delete/${id}`, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert(data.message || 'Gagal memproses soft delete.');
+                            }
+                        })
+                        .catch(() => {
+                            window.location.href = `${SITE_URL}/database/soft_delete/${id}`;
+                        });
+                }
+            });
+        });
+
+        // Restore from Soft Delete
+        document.querySelectorAll('.btn-restore-record').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                const indicator = this.getAttribute('data-indicator') || 'data ini';
+                if (!id) return;
+
+                if (confirm(`Pulihkan indikator "${indicator}" kembali ke daftar aktif?`)) {
+                    fetch(`${SITE_URL}/database/restore/${id}`, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert(data.message || 'Gagal memulihkan data.');
+                            }
+                        })
+                        .catch(() => {
+                            window.location.href = `${SITE_URL}/database/restore/${id}`;
+                        });
+                }
+            });
+        });
+
+        // Hard Delete (Permanent Delete)
+        document.querySelectorAll('.btn-hard-delete-record').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                const indicator = this.getAttribute('data-indicator') || 'data ini';
+                if (!id) return;
+
+                if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${indicator}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
+                    fetch(`${SITE_URL}/database/hard_delete/${id}`, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert(data.message || 'Gagal menghapus data secara permanen.');
+                            }
+                        })
+                        .catch(() => {
+                            window.location.href = `${SITE_URL}/database/hard_delete/${id}`;
+                        });
+                }
+            });
+        });
 
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {

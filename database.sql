@@ -271,6 +271,8 @@ CREATE TABLE `database_ekonomi` (
   `status_validasi` enum('Tervalidasi','Perlu review','Ditolak') NOT NULL DEFAULT 'Perlu review',
   `diverifikasi_oleh` varchar(100) DEFAULT NULL,
   `catatan` text,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   `dibuat_pada` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

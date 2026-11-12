@@ -180,9 +180,15 @@ class M_economy extends CI_Model {
     }
 
     public function get_indicator_records($status = null, $query = null, $sort = 'tahun') {
-        if ($status && $status !== 'Semua status') {
-            $this->db->where('status_validasi', $status);
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+            if ($status && $status !== 'Semua status') {
+                $this->db->where('status_validasi', $status);
+            }
         }
+
         if ($query) {
             $this->db->group_start();
             $this->db->like('kode_indikator', $query);
@@ -230,11 +236,48 @@ class M_economy extends CI_Model {
                 'diverifikasi_oleh' => $row['diverifikasi_oleh'],
                 'notes' => $row['catatan'],
                 'catatan' => $row['catatan'],
+                'is_deleted' => (int)($row['is_deleted'] ?? 0),
+                'deleted_at' => $row['deleted_at'] ?? null,
                 'created_at' => $row['dibuat_pada'],
                 'dibuat_pada' => $row['dibuat_pada']
             );
         }
         return $list;
+    }
+
+    public function get_indicator_record_by_id($id) {
+        $row = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
+        if (!$row) return null;
+        return array(
+            'id' => (int)$row['id'],
+            'code' => $row['kode_indikator'],
+            'kode_indikator' => $row['kode_indikator'],
+            'indicator' => $row['nama_indikator'],
+            'nama_indikator' => $row['nama_indikator'],
+            'cluster' => $row['klaster'],
+            'klaster' => $row['klaster'],
+            'region' => $row['wilayah'],
+            'wilayah' => $row['wilayah'],
+            'period' => $row['periode'],
+            'periode' => $row['periode'],
+            'year' => (int)$row['tahun'],
+            'tahun' => (int)$row['tahun'],
+            'value' => (float)$row['nilai'],
+            'nilai' => (float)$row['nilai'],
+            'unit' => $row['satuan'],
+            'satuan' => $row['satuan'],
+            'source' => $row['sumber_data'],
+            'sumber_data' => $row['sumber_data'],
+            'status' => $row['status_validasi'],
+            'status_validasi' => $row['status_validasi'],
+            'verified_by' => $row['diverifikasi_oleh'],
+            'diverifikasi_oleh' => $row['diverifikasi_oleh'],
+            'notes' => $row['catatan'],
+            'catatan' => $row['catatan'],
+            'is_deleted' => (int)($row['is_deleted'] ?? 0),
+            'deleted_at' => $row['deleted_at'] ?? null,
+            'created_at' => $row['dibuat_pada']
+        );
     }
 
     public function add_indicator_record($data) {
@@ -251,11 +294,14 @@ class M_economy extends CI_Model {
             'status_validasi'   => $data['status'] ?? $data['status_validasi'] ?? 'Perlu review',
             'diverifikasi_oleh' => $data['verified_by'] ?? $data['diverifikasi_oleh'] ?? null,
             'catatan'           => $data['notes'] ?? $data['catatan'] ?? null,
+            'is_deleted'        => 0,
+            'deleted_at'        => null,
             'dibuat_pada'       => date('Y-m-d H:i:s')
         );
 
         $exists = $this->db->where('kode_indikator', $record['kode_indikator'])
             ->where('tahun', $record['tahun'])
+            ->where('is_deleted', 0)
             ->get('database_ekonomi')
             ->num_rows();
 
@@ -263,6 +309,73 @@ class M_economy extends CI_Model {
             return false;
         }
         return $this->db->insert('database_ekonomi', $record);
+    }
+
+    public function update_indicator_record($id, $data) {
+        $record = array();
+        if (isset($data['code']) || isset($data['kode_indikator'])) {
+            $record['kode_indikator'] = $data['code'] ?? $data['kode_indikator'];
+        }
+        if (isset($data['indicator']) || isset($data['nama_indikator'])) {
+            $record['nama_indikator'] = $data['indicator'] ?? $data['nama_indikator'];
+        }
+        if (isset($data['cluster']) || isset($data['klaster'])) {
+            $record['klaster'] = $data['cluster'] ?? $data['klaster'];
+        }
+        if (isset($data['region']) || isset($data['wilayah'])) {
+            $record['wilayah'] = $data['region'] ?? $data['wilayah'];
+        }
+        if (isset($data['period']) || isset($data['periode'])) {
+            $record['periode'] = $data['period'] ?? $data['periode'];
+        }
+        if (isset($data['year']) || isset($data['tahun'])) {
+            $record['tahun'] = (int)($data['year'] ?? $data['tahun']);
+        }
+        if (isset($data['value']) || isset($data['nilai'])) {
+            $record['nilai'] = (float)($data['value'] ?? $data['nilai']);
+        }
+        if (isset($data['unit']) || isset($data['satuan'])) {
+            $record['satuan'] = $data['unit'] ?? $data['satuan'];
+        }
+        if (isset($data['source']) || isset($data['sumber_data'])) {
+            $record['sumber_data'] = $data['source'] ?? $data['sumber_data'];
+        }
+        if (isset($data['status']) || isset($data['status_validasi'])) {
+            $record['status_validasi'] = $data['status'] ?? $data['status_validasi'];
+        }
+        if (isset($data['notes']) || isset($data['catatan'])) {
+            $record['catatan'] = $data['notes'] ?? $data['catatan'];
+        }
+
+        if (empty($record)) return false;
+
+        $this->db->where('id', (int)$id);
+        return $this->db->update('database_ekonomi', $record);
+    }
+
+    public function soft_delete_indicator_record($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->update('database_ekonomi', array(
+            'is_deleted' => 1,
+            'deleted_at' => date('Y-m-d H:i:s')
+        ));
+    }
+
+    public function restore_indicator_record($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->update('database_ekonomi', array(
+            'is_deleted' => 0,
+            'deleted_at' => null
+        ));
+    }
+
+    public function hard_delete_indicator_record($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->delete('database_ekonomi');
+    }
+
+    public function count_trash_records() {
+        return $this->db->where('is_deleted', 1)->count_all_results('database_ekonomi');
     }
 
     public function update_record_status($code, $year, $status) {
