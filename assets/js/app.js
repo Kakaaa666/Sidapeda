@@ -576,8 +576,253 @@
         const btnReset = document.getElementById('btn-reset-regions');
         const btnExport = document.getElementById('btn-export-comparison');
 
+        // Modal Elements
+        const addRegionalModal = document.getElementById('add-regional-modal');
+        const editRegionalModal = document.getElementById('edit-regional-modal');
+        const manageRegionalModal = document.getElementById('manage-regional-modal');
+        const btnOpenAdd = document.getElementById('btn-open-add-regional-modal');
+        const btnOpenManage = document.getElementById('btn-open-manage-regional-modal');
+        const btnQuickAddFromManage = document.getElementById('btn-quick-add-from-manage');
+        const btnCloseAdd = document.getElementById('modal-btn-close-add-regional');
+        const btnCancelAdd = document.getElementById('modal-btn-cancel-add-regional');
+        const btnCloseEdit = document.getElementById('modal-btn-close-edit-regional');
+        const btnCancelEdit = document.getElementById('modal-btn-cancel-edit-regional');
+        const btnCloseManage = document.getElementById('modal-btn-close-manage-regional');
+        const btnDoneManage = document.getElementById('modal-btn-done-manage-regional');
+        const formAdd = document.getElementById('form-add-regional');
+        const formEdit = document.getElementById('form-edit-regional');
+        const addRegionalErr = document.getElementById('add-regional-error');
+        const editRegionalErr = document.getElementById('edit-regional-error');
+
         let activeTab = 'Regional Ranking';
         let selectedRegions = AppState.regional.map(r => r.name);
+
+        function bindRegionalActionButtons() {
+            // Edit button handler
+            document.querySelectorAll('.btn-edit-regional').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    if (!id) return;
+
+                    if (editRegionalErr) {
+                        editRegionalErr.style.display = 'none';
+                        editRegionalErr.textContent = '';
+                    }
+
+                    fetch(`${SITE_URL}/perbandingan_daerah/get_data/${id}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.status === 'success' && res.data) {
+                                const d = res.data;
+                                document.getElementById('edit-regional-id').value = d.id;
+                                document.getElementById('edit-regional-name').value = d.name || d.nama_wilayah || '';
+                                document.getElementById('edit-regional-value').value = d.value !== undefined ? d.value : d.nilai_pertumbuhan;
+                                document.getElementById('edit-regional-change').value = d.change !== undefined ? d.change : d.perubahan;
+                                const seriesArr = Array.isArray(d.series) ? d.series : [];
+                                document.getElementById('edit-regional-series').value = seriesArr.join(', ');
+
+                                if (manageRegionalModal) manageRegionalModal.style.display = 'none';
+                                if (editRegionalModal) editRegionalModal.style.display = 'grid';
+                            } else {
+                                alert(res.message || 'Gagal memuat data wilayah.');
+                            }
+                        })
+                        .catch(() => alert('Gagal mengambil data wilayah dari server.'));
+                });
+            });
+
+            // Soft delete handler
+            document.querySelectorAll('.btn-delete-regional').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name') || 'wilayah ini';
+                    if (!id) return;
+
+                    if (confirm(`Pindahkan wilayah "${name}" ke tempat sampah (Soft Delete)?\n\nWilayah tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
+                        fetch(`${SITE_URL}/perbandingan_daerah/soft_delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memproses soft delete wilayah.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${SITE_URL}/perbandingan_daerah/soft_delete/${id}`;
+                            });
+                    }
+                });
+            });
+
+            // Restore from soft delete handler
+            document.querySelectorAll('.btn-restore-regional').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name') || 'wilayah ini';
+                    if (!id) return;
+
+                    if (confirm(`Pulihkan wilayah "${name}" kembali ke daftar aktif?`)) {
+                        fetch(`${SITE_URL}/perbandingan_daerah/restore/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memulihkan wilayah.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${SITE_URL}/perbandingan_daerah/restore/${id}`;
+                            });
+                    }
+                });
+            });
+
+            // Hard delete handler
+            document.querySelectorAll('.btn-hard-delete-regional').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name') || 'wilayah ini';
+                    if (!id) return;
+
+                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${name}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
+                        fetch(`${SITE_URL}/perbandingan_daerah/hard_delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal menghapus wilayah secara permanen.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${SITE_URL}/perbandingan_daerah/hard_delete/${id}`;
+                            });
+                    }
+                });
+            });
+        }
+
+        // Modal Open / Close Handlers
+        if (btnOpenAdd && addRegionalModal) {
+            btnOpenAdd.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
+        }
+        if (btnOpenManage && manageRegionalModal) {
+            btnOpenManage.addEventListener('click', () => { manageRegionalModal.style.display = 'grid'; });
+        }
+        if (btnQuickAddFromManage && addRegionalModal) {
+            btnQuickAddFromManage.addEventListener('click', () => {
+                if (manageRegionalModal) manageRegionalModal.style.display = 'none';
+                addRegionalModal.style.display = 'grid';
+            });
+        }
+
+        const closeAddModal = () => { if (addRegionalModal) addRegionalModal.style.display = 'none'; };
+        if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
+        if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAddModal);
+        if (addRegionalModal) {
+            addRegionalModal.addEventListener('click', e => {
+                if (e.target === addRegionalModal) closeAddModal();
+            });
+        }
+
+        const closeEditModal = () => { if (editRegionalModal) editRegionalModal.style.display = 'none'; };
+        if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
+        if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+        if (editRegionalModal) {
+            editRegionalModal.addEventListener('click', e => {
+                if (e.target === editRegionalModal) closeEditModal();
+            });
+        }
+
+        const closeManageModal = () => { if (manageRegionalModal) manageRegionalModal.style.display = 'none'; };
+        if (btnCloseManage) btnCloseManage.addEventListener('click', closeManageModal);
+        if (btnDoneManage) btnDoneManage.addEventListener('click', closeManageModal);
+        if (manageRegionalModal) {
+            manageRegionalModal.addEventListener('click', e => {
+                if (e.target === manageRegionalModal) closeManageModal();
+            });
+        }
+
+        // Form Submit: Tambah Wilayah
+        if (formAdd) {
+            formAdd.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const fd = new FormData(this);
+                if (addRegionalErr) addRegionalErr.style.display = 'none';
+
+                fetch(`${SITE_URL}/perbandingan_daerah/create`, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            if (addRegionalErr) {
+                                addRegionalErr.style.display = 'block';
+                                addRegionalErr.textContent = data.message || 'Gagal menyimpan wilayah.';
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        formAdd.submit();
+                    });
+            });
+        }
+
+        // Form Submit: Edit Wilayah
+        if (formEdit) {
+            formEdit.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-regional-id').value;
+                if (!id) return;
+
+                const fd = new FormData(this);
+                if (editRegionalErr) editRegionalErr.style.display = 'none';
+
+                fetch(`${SITE_URL}/perbandingan_daerah/update/${id}`, {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            if (editRegionalErr) {
+                                editRegionalErr.style.display = 'block';
+                                editRegionalErr.textContent = data.message || 'Gagal memperbarui wilayah.';
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        if (editRegionalErr) {
+                            editRegionalErr.style.display = 'block';
+                            editRegionalErr.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
+                        }
+                    });
+            });
+        }
 
         function renderComparison() {
             const period = periodSelect ? periodSelect.value : '10';
@@ -632,20 +877,22 @@
                 tabDesc.textContent = 'Peringkat dihitung dari rata-rata tahunan selama periode terpilih.';
 
                 let listHtml = `
-                    <div class="comparison-table-head">
+                    <div class="comparison-table-head" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
                         <span>Peringkat</span>
                         <span>Wilayah</span>
                         <span>Rata-rata Pertumbuhan</span>
                         <span>Perubahan Tahunan</span>
                         <span>Gap Terhadap Rerata</span>
+                        <span>Aksi</span>
                     </div>
                     <div class="comparison-ranking">`;
 
                 rows.forEach((r, idx) => {
                     const isBwi = r.name === 'Kab. Banyuwangi';
                     const diff = r.avg - peerAvg;
+                    const regionId = r.id || AppState.regional.find(item => item.name === r.name)?.id;
                     listHtml += `
-                        <div class="comparison-table-row ${isBwi ? 'selected' : ''}">
+                        <div class="comparison-table-row ${isBwi ? 'selected' : ''}" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
                             <b>${idx + 1}</b>
                             <span>
                                 <i class="region-avatar">${r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}</i>
@@ -654,10 +901,20 @@
                             <strong>${formatPct(r.avg)}</strong>
                             <small class="${r.chg >= 0 ? 'positive' : 'negative'}">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</small>
                             <span class="badge ${diff >= 0 ? 'success' : 'warning'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-edit-regional" data-id="${regionId}" title="Edit Data Wilayah">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                ${!isBwi ? `
+                                <button type="button" class="btn-delete-regional danger" data-id="${regionId}" data-name="${r.name}" title="Hapus Wilayah (Soft Delete)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>` : ''}
+                            </span>
                         </div>`;
                 });
-                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data PDRB ADHK Kabupaten/Kota di Jawa Timur.</div>`;
+                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data PDRB ADHK Kabupaten/Kota di Jawa Timur. Anda dapat menambahkan, mengedit, atau menghapus wilayah dengan fitur Soft Delete.</div>`;
                 tabContent.innerHTML = listHtml;
+                bindRegionalActionButtons();
 
             } else if (activeTab === 'Benchmarking') {
                 tabEyebrow.textContent = 'BENCHMARKING';
@@ -839,6 +1096,7 @@
         }
 
         renderComparison();
+        bindRegionalActionButtons();
     }
 
     // 3. ANALYSIS PAGE

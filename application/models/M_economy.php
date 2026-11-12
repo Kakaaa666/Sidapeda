@@ -117,34 +117,170 @@ class M_economy extends CI_Model {
         );
     }
 
-    public function get_regional_growth() {
-        $query = $this->db->get('perbandingan_daerah');
+    public function get_regional_growth($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
+        $query = $this->db->order_by('nilai_pertumbuhan', 'DESC')->get('perbandingan_daerah');
         if ($query->num_rows() > 0) {
             $list = array();
             foreach ($query->result() as $row) {
                 $list[] = array(
+                    'id' => (int)$row->id,
                     'name' => $row->nama_wilayah,
                     'nama_wilayah' => $row->nama_wilayah,
                     'value' => (float)$row->nilai_pertumbuhan,
                     'nilai_pertumbuhan' => (float)$row->nilai_pertumbuhan,
                     'change' => (float)$row->perubahan,
                     'perubahan' => (float)$row->perubahan,
-                    'series' => json_decode($row->deret_historis, true) ?: array()
+                    'series' => json_decode($row->deret_historis, true) ?: array(),
+                    'deret_historis' => $row->deret_historis,
+                    'is_deleted' => (int)($row->is_deleted ?? 0),
+                    'deleted_at' => $row->deleted_at ?? null
                 );
             }
             return $list;
         }
 
         return array(
-            array('name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
-            array('name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
-            array('name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
-            array('name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
-            array('name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
-            array('name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
-            array('name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
-            array('name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
+            array('id' => 1, 'name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
+            array('id' => 2, 'name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
+            array('id' => 3, 'name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
+            array('id' => 4, 'name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
+            array('id' => 5, 'name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
+            array('id' => 6, 'name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
+            array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
+            array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
         );
+    }
+
+    public function get_regional_by_id($id) {
+        $row = $this->db->where('id', (int)$id)->get('perbandingan_daerah')->row_array();
+        if (!$row) return null;
+        return array(
+            'id' => (int)$row['id'],
+            'name' => $row['nama_wilayah'],
+            'nama_wilayah' => $row['nama_wilayah'],
+            'value' => (float)$row['nilai_pertumbuhan'],
+            'nilai_pertumbuhan' => (float)$row['nilai_pertumbuhan'],
+            'change' => (float)$row['perubahan'],
+            'perubahan' => (float)$row['perubahan'],
+            'series' => json_decode($row['deret_historis'], true) ?: array(),
+            'deret_historis' => $row['deret_historis'],
+            'is_deleted' => (int)($row['is_deleted'] ?? 0),
+            'deleted_at' => $row['deleted_at'] ?? null
+        );
+    }
+
+    public function add_regional($data) {
+        $nama = trim($data['nama_wilayah'] ?? $data['name'] ?? '');
+        $nilai = (float)($data['nilai_pertumbuhan'] ?? $data['value'] ?? 5.0);
+        $perubahan = (float)($data['perubahan'] ?? $data['change'] ?? 0.2);
+
+        if (empty($nama)) return false;
+
+        $series = null;
+        if (!empty($data['deret_historis'])) {
+            if (is_array($data['deret_historis'])) {
+                $series = $data['deret_historis'];
+            } else {
+                $decoded = json_decode($data['deret_historis'], true);
+                if (is_array($decoded)) {
+                    $series = $decoded;
+                } else {
+                    $parts = array_map('trim', explode(',', $data['deret_historis']));
+                    $series = array_map('floatval', $parts);
+                }
+            }
+        }
+        if (empty($series) || !is_array($series)) {
+            $series = array(
+                round($nilai - 0.35, 2),
+                round($nilai - 0.20, 2),
+                round($nilai - 0.10, 2),
+                round($nilai + 0.20, 2),
+                round($nilai + 0.15, 2),
+                round(-3.50, 2),
+                round($nilai - 1.10, 2),
+                round($nilai - 0.40, 2),
+                round($nilai - $perubahan, 2),
+                round($nilai, 2)
+            );
+        }
+
+        $record = array(
+            'nama_wilayah' => $nama,
+            'nilai_pertumbuhan' => $nilai,
+            'perubahan' => $perubahan,
+            'deret_historis' => json_encode(array_values($series)),
+            'is_deleted' => 0,
+            'deleted_at' => null
+        );
+
+        $exists = $this->db->where('nama_wilayah', $nama)->where('is_deleted', 0)->get('perbandingan_daerah')->num_rows();
+        if ($exists > 0) {
+            return false;
+        }
+
+        return $this->db->insert('perbandingan_daerah', $record);
+    }
+
+    public function update_regional($id, $data) {
+        $record = array();
+        if (isset($data['nama_wilayah']) || isset($data['name'])) {
+            $record['nama_wilayah'] = trim($data['nama_wilayah'] ?? $data['name']);
+        }
+        if (isset($data['nilai_pertumbuhan']) || isset($data['value'])) {
+            $record['nilai_pertumbuhan'] = (float)($data['nilai_pertumbuhan'] ?? $data['value']);
+        }
+        if (isset($data['perubahan']) || isset($data['change'])) {
+            $record['perubahan'] = (float)($data['perubahan'] ?? $data['change']);
+        }
+        if (!empty($data['deret_historis'])) {
+            if (is_array($data['deret_historis'])) {
+                $record['deret_historis'] = json_encode(array_values($data['deret_historis']));
+            } else {
+                $decoded = json_decode($data['deret_historis'], true);
+                if (is_array($decoded)) {
+                    $record['deret_historis'] = json_encode(array_values($decoded));
+                } else {
+                    $parts = array_map('trim', explode(',', $data['deret_historis']));
+                    $record['deret_historis'] = json_encode(array_values(array_map('floatval', $parts)));
+                }
+            }
+        }
+
+        if (empty($record)) return false;
+
+        $this->db->where('id', (int)$id);
+        return $this->db->update('perbandingan_daerah', $record);
+    }
+
+    public function soft_delete_regional($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->update('perbandingan_daerah', array(
+            'is_deleted' => 1,
+            'deleted_at' => date('Y-m-d H:i:s')
+        ));
+    }
+
+    public function restore_regional($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->update('perbandingan_daerah', array(
+            'is_deleted' => 0,
+            'deleted_at' => null
+        ));
+    }
+
+    public function hard_delete_regional($id) {
+        $this->db->where('id', (int)$id);
+        return $this->db->delete('perbandingan_daerah');
+    }
+
+    public function count_trash_regional() {
+        return $this->db->where('is_deleted', 1)->count_all_results('perbandingan_daerah');
     }
 
     public function get_districts() {

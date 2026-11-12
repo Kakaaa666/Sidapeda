@@ -27,9 +27,13 @@ $route['login']               = 'Akun';
 $route['login/quick/(:any)']  = 'Akun/quick/$1';
 
 // Public Menu Routes (Sesuai nama menu di sidebar)
-$route['beranda']             = 'Beranda';
-$route['perbandingan_daerah'] = 'Perbandingan_daerah';
-$route['perbandingan-daerah'] = 'Perbandingan_daerah';
+$route['beranda']                            = 'Beranda';
+$route['perbandingan_daerah']                = 'Perbandingan_daerah';
+$route['perbandingan_daerah/(:any)']        = 'Perbandingan_daerah/$1';
+$route['perbandingan_daerah/(:any)/(:any)'] = 'Perbandingan_daerah/$1/$2';
+$route['perbandingan-daerah']                = 'Perbandingan_daerah';
+$route['perbandingan-daerah/(:any)']        = 'Perbandingan_daerah/$1';
+$route['perbandingan-daerah/(:any)/(:any)'] = 'Perbandingan_daerah/$1/$2';
 $route['analisis_ekonomi']    = 'Analisis_ekonomi';
 $route['analisis-ekonomi']    = 'Analisis_ekonomi';
 $route['peta_ekonomi']        = 'Peta_ekonomi';

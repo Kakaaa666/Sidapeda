@@ -87,18 +87,20 @@ CREATE TABLE `perbandingan_daerah` (
   `nilai_pertumbuhan` decimal(6,2) NOT NULL,
   `perubahan` decimal(6,2) NOT NULL,
   `deret_historis` text NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `perbandingan_daerah` (`nama_wilayah`, `nilai_pertumbuhan`, `perubahan`, `deret_historis`) VALUES
-('Kota Surabaya', 5.76, 0.34, '[5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76]'),
-('Kab. Gresik', 5.42, 0.31, '[5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42]'),
-('Kab. Banyuwangi', 5.18, 0.26, '[5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18]'),
-('Kota Malang', 5.06, 0.18, '[5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06]'),
-('Kab. Sidoarjo', 4.98, 0.12, '[5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98]'),
-('Kota Kediri', 4.88, 0.15, '[5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88]'),
-('Kab. Jember', 4.62, 0.08, '[4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62]'),
-('Kab. Pasuruan', 4.55, 0.05, '[4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55]');
+INSERT INTO `perbandingan_daerah` (`nama_wilayah`, `nilai_pertumbuhan`, `perubahan`, `deret_historis`, `is_deleted`) VALUES
+('Kota Surabaya', 5.76, 0.34, '[5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76]', 0),
+('Kab. Gresik', 5.42, 0.31, '[5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42]', 0),
+('Kab. Banyuwangi', 5.18, 0.26, '[5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18]', 0),
+('Kota Malang', 5.06, 0.18, '[5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06]', 0),
+('Kab. Sidoarjo', 4.98, 0.12, '[5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98]', 0),
+('Kota Kediri', 4.88, 0.15, '[5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88]', 0),
+('Kab. Jember', 4.62, 0.08, '[4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62]', 0),
+('Kab. Pasuruan', 4.55, 0.05, '[4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55]', 0);
 
 -- --------------------------------------------------------------
 -- 3. TABEL: analisis_ekonomi (Sesuai Menu "Analisis Ekonomi")

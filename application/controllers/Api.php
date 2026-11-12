@@ -250,5 +250,68 @@ class Api extends CI_Controller {
             $this->json_response(array('status' => 'error', 'message' => 'Gagal menghapus data permanen.'), 500);
         }
     }
+
+    // REGIONAL DATA (Perbandingan Daerah) CRUD
+    public function get_regional($id = null) {
+        $id = (int)($id ?: $this->input->get('id'));
+        $record = $this->M_economy->get_regional_by_id($id);
+        if ($record) {
+            $this->json_response(array('status' => 'success', 'data' => $record));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Data wilayah tidak ditemukan.'), 404);
+        }
+    }
+
+    public function add_regional() {
+        $data = $this->input->post(null, true);
+        $ok = $this->M_economy->add_regional($data);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data wilayah berhasil ditambahkan.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal menambahkan wilayah: nama wilayah sudah terdaftar atau kosong.'), 400);
+        }
+    }
+
+    public function update_regional($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        $data = $this->input->post(null, true);
+        $ok = $this->M_economy->update_regional($id, $data);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data wilayah berhasil diperbarui.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal memperbarui data wilayah.'), 500);
+        }
+    }
+
+    public function delete_regional($id = null) {
+        // Soft delete regional
+        $id = (int)($id ?: $this->input->post('id'));
+        $ok = $this->M_economy->soft_delete_regional($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data wilayah berhasil dipindahkan ke tempat sampah (Soft Delete).'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal memproses soft delete wilayah.'), 500);
+        }
+    }
+
+    public function restore_regional($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        $ok = $this->M_economy->restore_regional($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data wilayah berhasil dipulihkan.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal memulihkan wilayah.'), 500);
+        }
+    }
+
+    public function hard_delete_regional($id = null) {
+        $id = (int)($id ?: $this->input->post('id'));
+        $ok = $this->M_economy->hard_delete_regional($id);
+        if ($ok) {
+            $this->json_response(array('status' => 'success', 'message' => 'Data wilayah berhasil dihapus permanen.'));
+        } else {
+            $this->json_response(array('status' => 'error', 'message' => 'Gagal menghapus wilayah permanen.'), 500);
+        }
+    }
 }
 
