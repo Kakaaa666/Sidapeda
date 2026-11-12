@@ -106,9 +106,9 @@
             <p>Pertumbuhan ekonomi, stabilitas harga, dinamika pasar tenaga kerja, dan akselerasi investasi dianalisis terintegrasi sebagai landasan perencanaan pembangunan daerah.</p>
         </div>
         <div class="brief-score">
-            <span>Laju Pertumbuhan 2024</span>
-            <strong>+5,18<small>%</small></strong>
-            <span class="badge success">Posisi Kuat</span>
+            <span>Total Temuan Kebijakan</span>
+            <strong><?= count($insights) ?><small> Isu</small></strong>
+            <span class="badge success">Aktif Dipantau</span>
         </div>
     </section>
 
@@ -130,6 +130,87 @@
             <!-- Rendered by JS -->
         </div>
     </article>
+
+    <!-- ANALISIS GRAFIK INSIGHT -->
+    <section class="two-col" style="margin-bottom:20px;">
+        <!-- GRAFIK KATEGORI -->
+        <article class="card">
+            <div class="card-head">
+                <div>
+                    <span class="eyebrow">SEBARAN TEMUAN</span>
+                    <h3>Komposisi Isu Kebijakan per Kategori</h3>
+                    <p>Proporsi fokus perhatian pembangunan berdasarkan kategori isu ekonomi.</p>
+                </div>
+            </div>
+            <div class="bar-chart" id="insight-category-chart" style="margin:14px 0;">
+                <?php
+                $catCounts = [];
+                foreach ($insights as $ins) {
+                    $c = $ins['kategori'] ?: 'Lainnya';
+                    $catCounts[$c] = ($catCounts[$c] ?? 0) + 1;
+                }
+                $maxCat = !empty($catCounts) ? max($catCounts) : 1;
+                $totalIns = count($insights) ?: 1;
+                ?>
+                <?php foreach ($catCounts as $catName => $cnt): ?>
+                    <?php $pctWidth = round(($cnt / $maxCat) * 100); ?>
+                    <div class="bar-row" style="grid-template-columns: 140px 1fr 65px; margin: 8px 0;">
+                        <span style="font-size:9px; font-weight:600; color:var(--ink);"><?= htmlspecialchars($catName) ?></span>
+                        <div class="bar-track" style="height:9px;">
+                            <i style="width:<?= $pctWidth ?>%; background:var(--blue);"></i>
+                        </div>
+                        <strong style="font-size:9px;"><?= $cnt ?> isu <small style="color:var(--muted); font-size:7px;">(<?= round(($cnt / $totalIns) * 100) ?>%)</small></strong>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </article>
+
+        <!-- GRAFIK URGENSI -->
+        <article class="card">
+            <div class="card-head">
+                <div>
+                    <span class="eyebrow">PRIORITAS INTERVENSI</span>
+                    <h3>Tingkat Urgensi Kebijakan Daerah</h3>
+                    <p>Klasifikasi kecepatan respon tindak lanjut yang diperlukan OPD terkait.</p>
+                </div>
+            </div>
+            <div class="bar-chart" id="insight-urgency-chart" style="margin:14px 0;">
+                <?php
+                $urgCounts = ['Tinggi' => 0, 'Sedang' => 0, 'Rendah' => 0];
+                foreach ($insights as $ins) {
+                    $u = $ins['tingkat_urgensi'] ?: 'Sedang';
+                    if (isset($urgCounts[$u])) $urgCounts[$u]++;
+                    else $urgCounts[$u] = 1;
+                }
+                $maxUrg = max(array_values($urgCounts)) ?: 1;
+                ?>
+                <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
+                    <span style="font-size:9px; font-weight:600; color:var(--red);">Urgensi Tinggi</span>
+                    <div class="bar-track" style="height:9px;">
+                        <i style="width:<?= round(($urgCounts['Tinggi'] / $maxUrg) * 100) ?>%; background:var(--red);"></i>
+                    </div>
+                    <strong style="color:var(--red); font-size:9px;"><?= $urgCounts['Tinggi'] ?> isu</strong>
+                </div>
+                <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
+                    <span style="font-size:9px; font-weight:600; color:var(--yellow);">Urgensi Sedang</span>
+                    <div class="bar-track" style="height:9px;">
+                        <i style="width:<?= round(($urgCounts['Sedang'] / $maxUrg) * 100) ?>%; background:var(--yellow);"></i>
+                    </div>
+                    <strong style="color:var(--yellow); font-size:9px;"><?= $urgCounts['Sedang'] ?> isu</strong>
+                </div>
+                <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
+                    <span style="font-size:9px; font-weight:600; color:var(--green);">Urgensi Rendah</span>
+                    <div class="bar-track" style="height:9px;">
+                        <i style="width:<?= round(($urgCounts['Rendah'] / $maxUrg) * 100) ?>%; background:var(--green);"></i>
+                    </div>
+                    <strong style="color:var(--green); font-size:9px;"><?= $urgCounts['Rendah'] ?> isu</strong>
+                </div>
+            </div>
+            <div style="margin-top:12px; font-size:8px; color:var(--muted); border-top:1px solid var(--line); padding-top:8px;">
+                Total <strong><?= count($insights) ?></strong> rekomendasi kebijakan aktif tercatat di database intelijen.
+            </div>
+        </article>
+    </section>
 
     <!-- INSIGHT CARDS GRID -->
     <div class="insight-grid">

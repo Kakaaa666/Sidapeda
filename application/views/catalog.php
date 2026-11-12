@@ -121,6 +121,47 @@
             </div>
         </div>
 
+        <?php if ($status !== 'Terhapus' && !empty($catalog)): ?>
+            <?php
+            $clCounts = [];
+            $freqCounts = [];
+            foreach ($catalog as $c) {
+                $cl = $c['klaster'] ?: 'Umum';
+                $clCounts[$cl] = ($clCounts[$cl] ?? 0) + 1;
+                $fq = $c['frekuensi'] ?: 'Tahunan';
+                $freqCounts[$fq] = ($freqCounts[$fq] ?? 0) + 1;
+            }
+            $maxCl = !empty($clCounts) ? max($clCounts) : 1;
+            $totCat = count($catalog) ?: 1;
+            ?>
+            <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Indikator per Klaster Pembangunan</strong>
+                    <div style="display:grid; gap:5px;">
+                        <?php foreach ($clCounts as $cName => $cCnt): ?>
+                            <div style="display:grid; grid-template-columns: 140px 1fr 45px; align-items:center; gap:6px; font-size:8px;">
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?= htmlspecialchars($cName) ?></span>
+                                <div style="height:6px; border-radius:3px; background:#e2e8f0; overflow:hidden;">
+                                    <div style="width:<?= round(($cCnt/$maxCl)*100) ?>%; height:100%; background:var(--teal);"></div>
+                                </div>
+                                <strong style="text-align:right; font-size:8px;"><?= $cCnt ?> <small style="color:var(--muted); font-size:7px;">(<?= round(($cCnt/$totCat)*100) ?>%)</small></strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Frekuensi Pembaruan Data</strong>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:8px;">
+                        <?php foreach ($freqCounts as $fName => $fCnt): ?>
+                            <span class="badge info" style="font-size:8px; padding:4px 8px;">
+                                <strong><?= htmlspecialchars($fName) ?></strong>: <?= $fCnt ?> indikator
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="result-table-wrap">
             <table class="result-table">
                 <thead>

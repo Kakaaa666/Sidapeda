@@ -152,6 +152,55 @@
             </div>
         </div>
 
+        <?php if ($status !== 'Terhapus' && !empty($users)): ?>
+            <?php
+            $lvlCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+            $activeCnt = 0; $inactiveCnt = 0;
+            foreach ($users as $u) {
+                $lvl = (int)($u['level'] ?? 1);
+                if (isset($lvlCounts[$lvl])) $lvlCounts[$lvl]++;
+                else $lvlCounts[$lvl] = 1;
+                if (($u['status'] ?? 'Aktif') === 'Aktif') $activeCnt++;
+                else $inactiveCnt++;
+            }
+            $totUsr = count($users) ?: 1;
+            $maxLvl = max(array_values($lvlCounts)) ?: 1;
+            $lvlLabels = [
+                1 => ['Administrator', 'var(--blue)'],
+                2 => ['Analis Data', 'var(--teal)'],
+                3 => ['Operator OPD', '#6366f1'],
+                4 => ['Reviewer Eksekutif', 'var(--yellow)']
+            ];
+            ?>
+            <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:8px;">Komposisi Pengguna per Level Hak Akses</strong>
+                    <div style="display:grid; gap:6px;">
+                        <?php foreach ($lvlLabels as $lNum => $lInfo): ?>
+                            <div style="display:grid; grid-template-columns: 130px 1fr 50px; align-items:center; gap:8px; font-size:8px;">
+                                <span><strong>Level <?= $lNum ?>:</strong> <?= $lInfo[0] ?></span>
+                                <div style="height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden;">
+                                    <div style="width:<?= round(($lvlCounts[$lNum]/$maxLvl)*100) ?>%; height:100%; background:<?= $lInfo[1] ?>;"></div>
+                                </div>
+                                <strong style="text-align:right; font-size:8px;"><?= $lvlCounts[$lNum] ?> akun</strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:8px;">Status Keaktifan Akun</strong>
+                    <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; background:#e2e8f0; margin-bottom:8px;">
+                        <div style="width:<?= round(($activeCnt/$totUsr)*100) ?>%; background:var(--green);" title="Aktif: <?= $activeCnt ?>"></div>
+                        <div style="width:<?= round(($inactiveCnt/$totUsr)*100) ?>%; background:var(--red);" title="Nonaktif: <?= $inactiveCnt ?>"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--muted);">
+                        <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:3px;"></i>Aktif: <strong><?= $activeCnt ?></strong></span>
+                        <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--red); margin-right:3px;"></i>Nonaktif: <strong><?= $inactiveCnt ?></strong></span>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="result-table-wrap">
             <table class="result-table">
                 <thead>

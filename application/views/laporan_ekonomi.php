@@ -33,6 +33,7 @@
                     <span>Kembali ke Laporan Aktif</span>
                 </a>
             </div>
+
             <div class="data-table">
                 <div class="data-tr data-th" style="grid-template-columns: 1.2fr 2fr 1.2fr 1.2fr 120px;">
                     <span>Nomor</span>
@@ -212,6 +213,9 @@
                     <div id="rep-macro-chart-container" class="chart-wrap dynamic-chart" style="height:190px; margin: 14px 0 8px;">
                         <!-- Macro Historical Trend Chart for report -->
                     </div>
+                    <div id="rep-macro-chart-wrap" class="chart-wrap dynamic-chart" style="height:190px; margin:16px 0;">
+                        <!-- Injected dynamically by JS -->
+                    </div>
                 </section>
 
                 <!-- SECTION 3: ANALISIS SEKTORAL -->
@@ -270,6 +274,42 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 <span>Tambah Laporan</span>
             </button>
+        </div>
+
+        <!-- GRAFIK REKAP DOKUMEN LAPORAN -->
+        <?php
+        $pubCount = 0; $draftCount = 0;
+        $typeCounts = [];
+        foreach ($reports as $r) {
+            if ($r['status'] === 'Terpublikasi') $pubCount++;
+            else $draftCount++;
+            $jt = $r['jenis_laporan'] ?: 'Eksekutif';
+            $typeCounts[$jt] = ($typeCounts[$jt] ?? 0) + 1;
+        }
+        $totR = count($reports) ?: 1;
+        ?>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px; background:#f8fafc; border-bottom:1px solid var(--line); margin-bottom:12px;">
+            <div>
+                <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Status Publikasi Dokumen</strong>
+                <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; background:#e2e8f0; margin-bottom:6px;">
+                    <div style="width:<?= round(($pubCount/$totR)*100) ?>%; background:var(--green);" title="Terpublikasi: <?= $pubCount ?>"></div>
+                    <div style="width:<?= round(($draftCount/$totR)*100) ?>%; background:var(--muted);" title="Draf: <?= $draftCount ?>"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--muted);">
+                    <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:3px;"></i>Terpublikasi (<?= $pubCount ?>)</span>
+                    <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--muted); margin-right:3px;"></i>Draf (<?= $draftCount ?>)</span>
+                </div>
+            </div>
+            <div>
+                <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Jenis Dokumen</strong>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:8px;">
+                    <?php foreach ($typeCounts as $tName => $tCnt): ?>
+                        <span class="badge neutral" style="font-size:8px; padding:3px 7px;">
+                            <strong><?= htmlspecialchars($tName) ?></strong>: <?= $tCnt ?> dokumen
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         </div>
 
         <div class="data-table">
