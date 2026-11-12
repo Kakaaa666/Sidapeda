@@ -2487,46 +2487,81 @@
         let activeFilter = 'Semua';
         let selectedAlertCode = null;
 
+        // Seed AppState.ews from server-rendered global state if needed
+        if ((!AppState.ews || AppState.ews.length === 0) && window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) {
+            AppState.ews = window.__EWS_DATA__;
+        }
+
         function renderEWS() {
             let normalC = 0, warnC = 0, critC = 0, followedC = 0;
             AppState.ews.forEach(item => {
-                if (item.status === 'Normal') normalC++;
-                else if (item.status === 'Waspada') warnC++;
-                else if (item.status === 'Kritis') critC++;
+                const st = item.status || item.status_risiko || 'Normal';
+                if (st === 'Normal') normalC++;
+                else if (st === 'Waspada') warnC++;
+                else if (st === 'Kritis') critC++;
 
-                if (item.is_followed_up) followedC++;
+                if (item.is_followed_up || item.sudah_ditindaklanjuti) followedC++;
             });
 
             if (statsContainer) {
                 statsContainer.innerHTML = `
-                    <div class="risk-stat success"><span class="status-dot"></span><strong>${normalC}</strong><small>Normal</small></div>
-                    <div class="risk-stat warning"><span class="status-dot"></span><strong>${warnC}</strong><small>Waspada</small></div>
-                    <div class="risk-stat danger"><span class="status-dot"></span><strong>${critC}</strong><small>Kritis</small></div>
-                    <div class="risk-stat info"><span class="status-dot"></span><strong>${AppState.ews.length}</strong><small>Dipantau</small></div>
-                    <div class="risk-stat neutral"><span class="status-dot"></span><strong>${followedC}</strong><small>Ditindaklanjuti</small></div>`;
+                    <div class="risk-stat danger"><span>Status Kritis</span><strong>${critC}</strong><small>Melampaui ambang batas</small></div>
+                    <div class="risk-stat warning"><span>Status Waspada</span><strong>${warnC}</strong><small>Mendekati ambang batas</small></div>
+                    <div class="risk-stat success"><span>Status Normal</span><strong>${normalC}</strong><small>Dalam batas aman</small></div>
+                    <div class="risk-stat neutral"><span>Total Indikator</span><strong>${AppState.ews.length}</strong><small>Dipantau sistem (${followedC} ditindaklanjuti)</small></div>`;
             }
 
-            const filtered = AppState.ews.filter(item => activeFilter === 'Semua' || item.status === activeFilter);
+            const filtered = AppState.ews.filter(item => {
+                const st = item.status || item.status_risiko || 'Normal';
+                return activeFilter === 'Semua' || st === activeFilter;
+            });
 
             if (tableRows) {
                 tableRows.innerHTML = `
-                    <div class="tr th">
-                        <span>Indikator</span>
-                        <span>Nilai Terkini</span>
-                        <span>Ambang Batas</span>
-                        <span>Status</span>
+                    <div class="risk-table-header">
+                        <span>Indikator Pemantauan</span>
+                        <span>Nilai Riil</span>
+                        <span>Batas Ambang</span>
+                        <span>Status Risiko</span>
+                        <span style="text-align:right;">Aksi</span>
                     </div>
-                    ${filtered.map(item => `
-                        <button class="tr btn-alert-row" data-code="${item.code}" style="cursor:pointer; width:100%;">
-                            <span>
-                                <strong>${item.name}</strong>
-                                <small>${item.source} • ${item.direction === 'above' ? 'Peringatan jika > ambang' : 'Peringatan jika < ambang'}</small>
-                            </span>
-                            <span>${formatNum(item.value)} ${item.unit}</span>
-                            <span>${formatNum(item.threshold)} ${item.unit}</span>
-                            <span><span class="badge ${item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success')}">${item.status}</span></span>
-                        </button>
-                    `).join('')}`;
+                    ${filtered.map(item => {
+                        const st = item.status || item.status_risiko || 'Normal';
+                        const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
+                        const rowStateCls = (st === 'Kritis') ? 'alerted' : ((st === 'Waspada') ? 'warning-row' : 'normal-row');
+                        const dir = item.direction || item.arah_risiko || 'above';
+                        const dirText = (dir === 'above') ? 'Peringatan jika > Ambang' : 'Peringatan jika < Ambang';
+                        const unit = item.unit || item.satuan || '%';
+                        const code = item.code || item.kode_indikator || '';
+                        const name = item.name || item.nama_indikator || '';
+                        const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                        const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                        return `
+                        <div class="risk-row btn-alert-row ${rowStateCls}" data-code="${code}" role="button" tabindex="0" style="cursor:pointer;">
+                            <div class="risk-indicator">
+                                <strong>${name}</strong>
+                                <small>
+                                    <code>${code}</code>
+                                    <span>• ${dirText}</span>
+                                </small>
+                            </div>
+                            <div class="risk-value">
+                                <span>Nilai Riil</span>
+                                <strong>${formatNum(val, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
+                            </div>
+                            <div class="risk-threshold">
+                                <span>Batas Ambang</span>
+                                <strong>${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
+                            </div>
+                            <div class="risk-status">
+                                <span class="badge ${badgeCls}">${st}</span>
+                            </div>
+                            <div class="risk-action">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}`;
 
                 tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
                     row.addEventListener('click', function () {
@@ -2536,28 +2571,37 @@
             }
 
             if (distBars) {
-                distBars.innerHTML = AppState.ews.map(item => `
+                distBars.innerHTML = AppState.ews.map(item => {
+                    const st = item.status || item.status_risiko || 'Normal';
+                    const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
+                    const dist = Math.min(100, Math.max(5, item.distance || 20));
+                    return `
                     <div>
-                        <span>${item.name}</span>
-                        <div><i class="${item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success')}" style="width: ${Math.min(100, Math.max(5, item.distance))}%"></i></div>
-                        <span class="badge ${item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success')}">${item.status}</span>
+                        <span>${item.name || item.nama_indikator}</span>
+                        <div><i class="${badgeCls}" style="width: ${dist}%"></i></div>
+                        <span class="badge ${badgeCls}">${st}</span>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
 
             const ewsChartContainer = document.getElementById('ews-comparison-chart-container');
             if (ewsChartContainer && AppState.ews.length > 0) {
                 const ewsBars = AppState.ews.map(item => {
-                    const val = Number(item.value);
-                    const th = Number(item.threshold);
+                    const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                    const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                    const unit = item.unit || item.satuan || '%';
+                    const dir = item.direction || item.arah_risiko || 'above';
                     const diffPct = th !== 0 ? ((val - th) / Math.abs(th)) * 100 : 0;
+                    const st = item.status || item.status_risiko || 'Normal';
+                    const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
                     return {
-                        label: item.name,
+                        label: item.name || item.nama_indikator,
                         value: val,
-                        subLabel: `Ambang: ${formatNum(th, 2)} ${item.unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}% (${item.direction === 'above' ? 'Peringatan saat > Ambang' : 'Peringatan saat < Ambang'})`,
-                        badge: item.status,
-                        badgeClass: item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success'),
-                        color: item.status === 'Kritis' ? 'linear-gradient(90deg, #ef4444, #f87171)' : (item.status === 'Waspada' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
+                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}% (${dir === 'above' ? 'Peringatan saat > Ambang' : 'Peringatan saat < Ambang'})`,
+                        badge: st,
+                        badgeClass: badgeCls,
+                        color: (st === 'Kritis') ? 'linear-gradient(90deg, #ef4444, #f87171)' : ((st === 'Waspada') ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
                     };
                 });
                 ewsChartContainer.innerHTML = createHorizontalBarChartSVG(ewsBars, { unit: '', decimals: 2 });
@@ -2574,31 +2618,45 @@
 
         function openAlertModal(code) {
             selectedAlertCode = code;
-            const item = AppState.ews.find(i => i.code === code);
+            let item = AppState.ews.find(i => (i.code === code || i.kode_indikator === code));
+            if (!item && window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) {
+                item = window.__EWS_DATA__.find(i => (i.code === code || i.kode_indikator === code));
+            }
             if (!item || !modalBackdrop) return;
 
-            document.getElementById('modal-alert-name').textContent = item.name;
-            document.getElementById('modal-alert-meta').textContent = `${item.source} • ${item.code}`;
+            const name = item.name || item.nama_indikator || '';
+            const src = item.source || item.sumber_data || 'Sistem EWS Bappeda';
+            const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+            const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+            const unit = item.unit || item.satuan || '%';
+            const st = item.status || item.status_risiko || 'Normal';
+            const dir = item.direction || item.arah_risiko || 'above';
+            const distance = item.distance !== undefined ? Number(item.distance) : (th !== 0 ? Math.abs((val - th) / th * 100) : 0);
+            const isBreached = item.breached !== undefined ? Boolean(item.breached) : ((dir === 'above') ? (val > th) : (val < th));
+
+            document.getElementById('modal-alert-name').textContent = name;
+            document.getElementById('modal-alert-meta').textContent = `${src} • ${code}`;
             const badge = document.getElementById('modal-alert-badge');
-            badge.textContent = item.status.toUpperCase();
-            badge.className = 'badge ' + (item.status === 'Kritis' ? 'danger' : (item.status === 'Waspada' ? 'warning' : 'success'));
+            badge.textContent = st.toUpperCase();
+            badge.className = 'badge ' + (st === 'Kritis' ? 'danger' : (st === 'Waspada' ? 'warning' : 'success'));
 
-            document.getElementById('modal-metric-val').textContent = `${formatNum(item.value)} ${item.unit}`;
-            document.getElementById('modal-metric-th').textContent = `${formatNum(item.threshold)} ${item.unit}`;
+            document.getElementById('modal-metric-val').textContent = `${formatNum(val, 2)} ${unit}`;
+            document.getElementById('modal-metric-th').textContent = `${formatNum(th, 2)} ${unit}`;
             const devEl = document.getElementById('modal-metric-dev');
-            devEl.textContent = `${item.breached ? '+' : ''}${formatNum(item.distance, 1)}%`;
-            devEl.className = item.breached ? 'negative' : 'positive';
+            devEl.textContent = `${isBreached ? '+' : ''}${formatNum(distance, 1)}%`;
+            devEl.className = isBreached ? 'negative' : 'positive';
 
-            document.getElementById('modal-editor-label').textContent = `${formatNum(item.threshold)} ${item.unit}`;
-            document.getElementById('modal-input-threshold').value = item.threshold;
+            document.getElementById('modal-editor-label').textContent = `${formatNum(th, 2)} ${unit}`;
+            document.getElementById('modal-input-threshold').value = th;
 
-            document.getElementById('modal-alert-interpretation').textContent = item.breached
-                ? `Nilai telah ${item.direction === 'above' ? 'melampaui' : 'berada di bawah'} ambang toleransi sebesar ${formatNum(item.distance, 1)}%. Segera lakukan evaluasi terpadu.`
-                : `Nilai saat ini (${formatNum(item.value)} ${item.unit}) masih berada dalam zona aman di bawah batas toleransi.`;
+            document.getElementById('modal-alert-interpretation').textContent = isBreached
+                ? `Nilai telah ${dir === 'above' ? 'melampaui' : 'berada di bawah'} ambang toleransi sebesar ${formatNum(distance, 1)}%. Segera lakukan evaluasi terpadu.`
+                : `Nilai saat ini (${formatNum(val, 2)} ${unit}) masih berada dalam zona aman di bawah batas toleransi.`;
 
             const btnFollow = document.getElementById('modal-btn-toggle-followup');
             if (btnFollow) {
-                btnFollow.textContent = item.is_followed_up ? 'Batalkan Tindak Lanjut' : 'Tandai Ditindaklanjuti';
+                const isFollowed = Boolean(item.is_followed_up || item.sudah_ditindaklanjuti);
+                btnFollow.textContent = isFollowed ? 'Batalkan Tindak Lanjut' : 'Tandai Ditindaklanjuti';
             }
 
             modalBackdrop.style.display = 'grid';
@@ -2627,12 +2685,16 @@
                     fetch(BASE_URL + 'api/update_threshold', { method: 'POST', body: fd })
                         .then(res => res.json())
                         .then(() => {
-                            const target = AppState.ews.find(i => i.code === selectedAlertCode);
+                            const target = AppState.ews.find(i => (i.code === selectedAlertCode || i.kode_indikator === selectedAlertCode));
                             if (target) {
+                                const v = Number(target.value !== undefined ? target.value : (target.nilai_terkini || 0));
+                                const d = target.direction || target.arah_risiko || 'above';
                                 target.threshold = val;
-                                target.breached = (target.direction === 'above') ? (target.value > val) : (target.value < val);
-                                target.distance = (val === 0) ? (target.breached ? 100 : 0) : (Math.abs(target.value - val) / Math.abs(val) * 100);
+                                target.ambang_batas = val;
+                                target.breached = (d === 'above') ? (v > val) : (v < val);
+                                target.distance = (val === 0) ? (target.breached ? 100 : 0) : (Math.abs(v - val) / Math.abs(val) * 100);
                                 target.status = !target.breached ? 'Normal' : (target.distance >= 10 ? 'Kritis' : 'Waspada');
+                                target.status_risiko = target.status;
                             }
                             renderEWS();
                             closeModal();
@@ -2649,8 +2711,11 @@
                     fetch(BASE_URL + 'api/toggle_followup', { method: 'POST', body: fd })
                         .then(res => res.json())
                         .then(data => {
-                            const target = AppState.ews.find(i => i.code === selectedAlertCode);
-                            if (target) target.is_followed_up = data.is_followed_up;
+                            const target = AppState.ews.find(i => (i.code === selectedAlertCode || i.kode_indikator === selectedAlertCode));
+                            if (target) {
+                                target.is_followed_up = data.is_followed_up;
+                                target.sudah_ditindaklanjuti = data.is_followed_up;
+                            }
                             renderEWS();
                             closeModal();
                         });
@@ -2673,8 +2738,17 @@
             btnExport.addEventListener('click', () => {
                 downloadCSV('monitoring-ews-banyuwangi.csv', [
                     ['Kode', 'Indikator', 'Nilai Terkini', 'Threshold', 'Kondisi Risiko', 'Status'],
-                    ...AppState.ews.map(i => [i.code, i.name, i.value, i.threshold, i.direction, i.status])
+                    ...AppState.ews.map(i => [i.code || i.kode_indikator, i.name || i.nama_indikator, i.value || i.nilai_terkini, i.threshold || i.ambang_batas, i.direction || i.arah_risiko, i.status || i.status_risiko])
                 ]);
+            });
+        }
+
+        // Bind initial click handler for server-rendered rows immediately
+        if (tableRows) {
+            tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
+                row.addEventListener('click', function () {
+                    openAlertModal(this.getAttribute('data-code'));
+                });
             });
         }
 
@@ -2683,6 +2757,10 @@
         // Setup CRUD & Soft Delete for Early Warning
         setupModuleCrud({
             controller: 'early_warning',
+            editBtnClass: 'btn-edit-ews',
+            deleteBtnClass: 'btn-delete-ews',
+            restoreBtnClass: 'btn-restore-ews',
+            hardDeleteBtnClass: 'btn-hard-delete-ews',
             addModalId: 'add-ews-modal',
             editModalId: 'edit-ews-modal',
             openAddBtnIds: ['btn-open-add-ews', 'btn-open-add-ews-2'],
@@ -2694,13 +2772,13 @@
             editErrorId: 'edit-ews-error',
             populateForm: function (item) {
                 document.getElementById('edit-ews-id').value = item.id;
-                document.getElementById('edit-ews-code').value = item.kode_indikator || '';
-                document.getElementById('edit-ews-unit').value = item.satuan || '';
-                document.getElementById('edit-ews-name').value = item.nama_indikator || '';
-                document.getElementById('edit-ews-current').value = item.nilai_terkini || '';
-                document.getElementById('edit-ews-threshold').value = item.ambang_batas || '';
-                document.getElementById('edit-ews-direction').value = item.arah_risiko || 'Naik';
-                document.getElementById('edit-ews-status').value = item.status_risiko || 'Normal';
+                document.getElementById('edit-ews-code').value = item.kode_indikator || item.code || '';
+                document.getElementById('edit-ews-unit').value = item.satuan || item.unit || '';
+                document.getElementById('edit-ews-name').value = item.nama_indikator || item.name || '';
+                document.getElementById('edit-ews-current').value = item.nilai_terkini !== undefined ? item.nilai_terkini : (item.value || '');
+                document.getElementById('edit-ews-threshold').value = item.ambang_batas !== undefined ? item.ambang_batas : (item.threshold || '');
+                document.getElementById('edit-ews-direction').value = item.arah_risiko || item.direction || 'above';
+                document.getElementById('edit-ews-status').value = item.status_risiko || item.status || 'Normal';
             }
         });
     }

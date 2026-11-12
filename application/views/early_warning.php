@@ -142,7 +142,7 @@
                 <div>
                     <span class="eyebrow">RISK MONITORING</span>
                     <h3>Indikator dalam Pemantauan Dini</h3>
-                    <p>Status dihitung otomatis dari nilai riil dan threshold konfigurasi.</p>
+                    <p>Status dihitung otomatis dari nilai riil dan threshold konfigurasi. Klik baris indikator untuk detail analisis dan penyesuaian threshold.</p>
                 </div>
             </div>
 
@@ -154,32 +154,54 @@
             </div>
 
             <div class="risk-table" id="ews-table-rows">
+                <div class="risk-table-header">
+                    <span>Indikator Pemantauan</span>
+                    <span>Nilai Riil</span>
+                    <span>Batas Ambang</span>
+                    <span>Status Risiko</span>
+                    <span style="text-align:right;">Aksi</span>
+                </div>
                 <?php foreach ($ews as $item):
                     $st = $item['status'] ?? $item['status_risiko'] ?? 'Normal';
                     $badgeCls = ($st === 'Kritis') ? 'danger' : (($st === 'Waspada') ? 'warning' : 'success');
-                    $isBreached = !empty($item['breached']);
+                    $rowStateCls = ($st === 'Kritis') ? 'alerted' : (($st === 'Waspada') ? 'warning-row' : 'normal-row');
+                    $code = $item['code'] ?? $item['kode_indikator'] ?? '';
+                    $name = $item['name'] ?? $item['nama_indikator'] ?? '';
+                    $val = (float)($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0);
+                    $th = (float)($item['threshold'] ?? $item['ambang_batas'] ?? 0);
+                    $unit = $item['unit'] ?? $item['satuan'] ?? '%';
+                    $dir = $item['direction'] ?? $item['arah_risiko'] ?? 'above';
+                    $dirText = ($dir === 'above') ? 'Peringatan jika > Ambang' : 'Peringatan jika < Ambang';
                 ?>
-                    <div class="risk-row <?= $isBreached ? 'alerted' : '' ?>">
+                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0">
                         <div class="risk-indicator">
-                            <strong><?= htmlspecialchars($item['name'] ?? $item['nama_indikator'] ?? '') ?></strong>
-                            <small>Kode: <?= htmlspecialchars($item['code'] ?? $item['kode_indikator'] ?? '') ?></small>
+                            <strong><?= htmlspecialchars($name) ?></strong>
+                            <small>
+                                <code><?= htmlspecialchars($code) ?></code>
+                                <span>• <?= $dirText ?></span>
+                            </small>
                         </div>
                         <div class="risk-value">
                             <span>Nilai Riil</span>
-                            <strong><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></strong>
+                            <strong><?= number_format($val, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-threshold">
-                            <span>Ambang</span>
-                            <strong><?= number_format($item['threshold'] ?? $item['ambang_batas'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></strong>
+                            <span>Batas Ambang</span>
+                            <strong><?= number_format($th, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-status">
                             <span class="badge <?= $badgeCls ?>"><?= htmlspecialchars($st) ?></span>
+                        </div>
+                        <div class="risk-action">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
 
-            <div class="source">Kriteria Sistem: Deviasi &lt; 0% = Normal; 0–9.9% = Waspada; ≥ 10% = Kritis.</div>
+            <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line);">
+                <strong>Kriteria Sistem:</strong> Deviasi &lt; 0% = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>; 0–9.9% = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>; &ge; 10% = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.
+            </div>
         </article>
 
         <!-- RISK MATRIX & PROGRESS -->
@@ -434,4 +456,8 @@
         </div>
     </div>
 </div>
+
+<script>
+    window.__EWS_DATA__ = <?= json_encode($ews, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+</script>
 
