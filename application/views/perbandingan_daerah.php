@@ -10,10 +10,6 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                 <span>Tambah Wilayah</span>
             </button>
-            <button class="button secondary" id="btn-open-manage-regional-modal" title="Buka Modal Kelola Data Wilayah (CRUD)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1v.1h-4v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1-.4h-.1v-4H3A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1v-.1h4V3a1.7 1.7 0 0 0 1.1 1.6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.4.3.7.6 1 .3.2.6.4 1 .4h.1v4H21a1.7 1.7 0 0 0-1.6.6Z"/></svg>
-                <span>Kelola Data (CRUD)</span>
-            </button>
             <?php if (!empty($trash_count) && $trash_count > 0): ?>
                 <a href="<?= site_url('perbandingan_daerah?status=Terhapus') ?>" class="badge danger" style="text-decoration:none; padding:7px 11px; font-size:8px; font-weight:700;" title="Klik untuk melihat data di tempat sampah">
                     🗑️ <?= $trash_count ?> Terhapus
@@ -48,6 +44,49 @@
             </div>
             <a href="<?= site_url('perbandingan_daerah') ?>" class="button secondary small" style="height:28px; padding:0 10px; font-size:8px;">Kembali ke Wilayah Aktif</a>
         </div>
+
+        <!-- TABEL TEMPAT SAMPAH UNTUK RESTORE WILAYAH -->
+        <article class="card data-card" style="margin-bottom:20px;">
+            <div class="card-head">
+                <div>
+                    <span class="eyebrow">TEMPAT SAMPAH (SOFT DELETE)</span>
+                    <h3>Daftar Wilayah Terhapus (<?= count($regional) ?>)</h3>
+                    <p>Klik tombol Pulihkan untuk mengembalikan wilayah ke tabel ranking dan benchmark.</p>
+                </div>
+            </div>
+            <div class="data-table">
+                <div class="data-tr data-th" style="grid-template-columns: 1.5fr 1fr 1fr 1.2fr 110px;">
+                    <span>Wilayah</span>
+                    <span>Pertumbuhan</span>
+                    <span>Perubahan</span>
+                    <span>Dihapus Pada</span>
+                    <span>Aksi</span>
+                </div>
+                <?php if (empty($regional)): ?>
+                    <div style="padding:24px; text-align:center; color:var(--muted); font-size:9px;">
+                        Tempat sampah kosong. Tidak ada wilayah yang terhapus.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($regional as $item): ?>
+                        <div class="data-tr" style="grid-template-columns: 1.5fr 1fr 1fr 1.2fr 110px;">
+                            <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
+                            <span><?= number_format($item['value'], 2, ',', '.') ?>%</span>
+                            <span><?= ($item['change'] >= 0 ? '+' : '') . number_format($item['change'], 2, ',', '.') ?> pp</span>
+                            <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-restore-regional" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Pulihkan Wilayah">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    <span>Pulihkan</span>
+                                </button>
+                                <button type="button" class="btn-hard-delete-regional danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus Permanen">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </article>
     <?php endif; ?>
 
     <!-- COMPARISON BUILDER -->
@@ -225,95 +264,6 @@
                     <button type="submit" class="button primary" id="modal-btn-submit-edit-regional">Simpan Perubahan</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- MODAL KELOLA DATA WILAYAH (CRUD MANAGER MODAL) -->
-    <div class="modal-backdrop" id="manage-regional-modal" style="display:none;">
-        <div class="modal admin-data-modal" style="max-width:720px; width:95%;">
-            <div class="modal-head">
-                <div>
-                    <span class="badge primary">MODAL CRUD WILAYAH</span>
-                    <h2>Kelola Data Perbandingan Daerah</h2>
-                    <p>Kelola data kabupaten/kota, ubah nilai, atau hapus wilayah dengan fitur Soft Delete.</p>
-                </div>
-                <button class="icon-button" id="modal-btn-close-manage-regional">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
-                </button>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin:14px 0 10px;">
-                <div style="display:flex; gap:6px;">
-                    <a href="<?= site_url('perbandingan_daerah') ?>" class="button small <?= empty($status) ? 'primary' : 'secondary' ?>" style="font-size:8px; height:28px;">
-                        Wilayah Aktif (<?= count($all_active_regional) ?>)
-                    </a>
-                    <a href="<?= site_url('perbandingan_daerah?status=Terhapus') ?>" class="button small <?= ($status === 'Terhapus') ? 'primary' : 'secondary' ?>" style="font-size:8px; height:28px;">
-                        🗑️ Tempat Sampah (<?= (int)$trash_count ?>)
-                    </a>
-                </div>
-                <button type="button" class="button primary small" id="btn-quick-add-from-manage" style="font-size:8px; height:28px;">
-                    + Tambah Wilayah Baru
-                </button>
-            </div>
-
-            <div class="data-table" style="max-height:360px; overflow-y:auto; border:1px solid var(--line); border-radius:9px;">
-                <div class="data-tr data-th" style="grid-template-columns: 1.4fr 1fr 1fr 1fr 100px;">
-                    <span>Wilayah</span>
-                    <span>Pertumbuhan</span>
-                    <span>Perubahan</span>
-                    <span>Status</span>
-                    <span>Aksi</span>
-                </div>
-                <?php if (empty($regional)): ?>
-                    <div style="padding:28px; text-align:center; color:var(--muted); font-size:9px;">
-                        <?= ($status === 'Terhapus') ? 'Tempat sampah kosong. Tidak ada wilayah yang terhapus.' : 'Tidak ada rekaman wilayah.' ?>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($regional as $item): ?>
-                        <div class="data-tr" style="grid-template-columns: 1.4fr 1fr 1fr 1fr 100px;">
-                            <span>
-                                <strong><?= htmlspecialchars($item['name']) ?></strong>
-                            </span>
-                            <span><strong><?= number_format($item['value'], 2, ',', '.') ?>%</strong></span>
-                            <span><?= ($item['change'] >= 0 ? '+' : '') . number_format($item['change'], 2, ',', '.') ?> pp</span>
-                            <span>
-                                <?php if (!empty($item['is_deleted'])): ?>
-                                    <span class="badge danger" title="Dihapus pada: <?= htmlspecialchars($item['deleted_at'] ?? '-') ?>">Terhapus</span>
-                                <?php else: ?>
-                                    <span class="badge success">Aktif</span>
-                                <?php endif; ?>
-                            </span>
-                            <span class="row-actions">
-                                <?php if (!empty($item['is_deleted'])): ?>
-                                    <!-- RESTORE BUTTON -->
-                                    <button type="button" class="btn-restore-regional" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Pulihkan Wilayah">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                                        <span>Pulihkan</span>
-                                    </button>
-                                    <button type="button" class="btn-hard-delete-regional danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus Permanen">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
-                                <?php else: ?>
-                                    <!-- EDIT BUTTON -->
-                                    <button type="button" class="btn-edit-regional" data-id="<?= $item['id'] ?>" title="Edit Data Wilayah">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
-                                    <!-- SOFT DELETE BUTTON -->
-                                    <?php if ($item['name'] !== 'Kab. Banyuwangi'): ?>
-                                        <button type="button" class="btn-delete-regional danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus Wilayah (Soft Delete)">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                        </button>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-            <div class="modal-actions" style="margin-top:16px;">
-                <button type="button" class="button secondary" id="modal-btn-done-manage-regional">Tutup</button>
-            </div>
         </div>
     </div>
 </div>

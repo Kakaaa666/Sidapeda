@@ -579,16 +579,11 @@
         // Modal Elements
         const addRegionalModal = document.getElementById('add-regional-modal');
         const editRegionalModal = document.getElementById('edit-regional-modal');
-        const manageRegionalModal = document.getElementById('manage-regional-modal');
         const btnOpenAdd = document.getElementById('btn-open-add-regional-modal');
-        const btnOpenManage = document.getElementById('btn-open-manage-regional-modal');
-        const btnQuickAddFromManage = document.getElementById('btn-quick-add-from-manage');
         const btnCloseAdd = document.getElementById('modal-btn-close-add-regional');
         const btnCancelAdd = document.getElementById('modal-btn-cancel-add-regional');
         const btnCloseEdit = document.getElementById('modal-btn-close-edit-regional');
         const btnCancelEdit = document.getElementById('modal-btn-cancel-edit-regional');
-        const btnCloseManage = document.getElementById('modal-btn-close-manage-regional');
-        const btnDoneManage = document.getElementById('modal-btn-done-manage-regional');
         const formAdd = document.getElementById('form-add-regional');
         const formEdit = document.getElementById('form-edit-regional');
         const addRegionalErr = document.getElementById('add-regional-error');
@@ -624,7 +619,6 @@
                                 const seriesArr = Array.isArray(d.series) ? d.series : [];
                                 document.getElementById('edit-regional-series').value = seriesArr.join(', ');
 
-                                if (manageRegionalModal) manageRegionalModal.style.display = 'none';
                                 if (editRegionalModal) editRegionalModal.style.display = 'grid';
                             } else {
                                 alert(res.message || 'Gagal memuat data wilayah.');
@@ -723,15 +717,6 @@
         if (btnOpenAdd && addRegionalModal) {
             btnOpenAdd.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
         }
-        if (btnOpenManage && manageRegionalModal) {
-            btnOpenManage.addEventListener('click', () => { manageRegionalModal.style.display = 'grid'; });
-        }
-        if (btnQuickAddFromManage && addRegionalModal) {
-            btnQuickAddFromManage.addEventListener('click', () => {
-                if (manageRegionalModal) manageRegionalModal.style.display = 'none';
-                addRegionalModal.style.display = 'grid';
-            });
-        }
 
         const closeAddModal = () => { if (addRegionalModal) addRegionalModal.style.display = 'none'; };
         if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
@@ -748,15 +733,6 @@
         if (editRegionalModal) {
             editRegionalModal.addEventListener('click', e => {
                 if (e.target === editRegionalModal) closeEditModal();
-            });
-        }
-
-        const closeManageModal = () => { if (manageRegionalModal) manageRegionalModal.style.display = 'none'; };
-        if (btnCloseManage) btnCloseManage.addEventListener('click', closeManageModal);
-        if (btnDoneManage) btnDoneManage.addEventListener('click', closeManageModal);
-        if (manageRegionalModal) {
-            manageRegionalModal.addEventListener('click', e => {
-                if (e.target === manageRegionalModal) closeManageModal();
             });
         }
 
