@@ -41,6 +41,11 @@ class Database extends MY_Controller {
         }
     }
 
+    // Alias get_data untuk konsistensi seluruh modul
+    public function get_data($id = null) {
+        $this->get_record($id ?: $this->input->get('id'));
+    }
+
     // Simpan Data Baru (Create)
     public function create() {
         $data = $this->input->post(null, true);

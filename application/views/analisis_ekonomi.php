@@ -154,7 +154,78 @@
 
             <!-- DYNAMIC METHOD CONTENT -->
             <div id="analysis-content-container">
-                <!-- Injected by JavaScript -->
+                <?php
+                $localTot = 0;
+                $provTot = 0;
+                foreach ($sectors as $s) {
+                    $localTot += (int)($s['tenaga_kerja_kini'] ?? $s['employmentCurrent'] ?? 1);
+                    $provTot += (int)($s['tenaga_kerja_provinsi_kini'] ?? $s['provinceEmploymentCurrent'] ?? 1);
+                }
+                $localTot = $localTot ?: 1;
+                $provTot = $provTot ?: 1;
+                $basisCount = 0;
+                $lqList = [];
+                foreach ($sectors as $s) {
+                    $lCur = (int)($s['tenaga_kerja_kini'] ?? $s['employmentCurrent'] ?? 1);
+                    $pCur = (int)($s['tenaga_kerja_provinsi_kini'] ?? $s['provinceEmploymentCurrent'] ?? 1);
+                    $lShare = ($lCur / $localTot) * 100;
+                    $pShare = ($pCur / $provTot) * 100;
+                    $lq = $pShare > 0 ? ($lShare / $pShare) : 0;
+                    $isBasis = ($lq > 1.0);
+                    if ($isBasis) $basisCount++;
+                    $lqList[] = [
+                        'name' => $s['nama_sektor'] ?? $s['name'] ?? '',
+                        'short' => $s['nama_pendek'] ?? $s['short'] ?? '',
+                        'lShare' => $lShare,
+                        'pShare' => $pShare,
+                        'lq' => $lq,
+                        'isBasis' => $isBasis
+                    ];
+                }
+                $maxLq = !empty($lqList) ? max(array_column($lqList, 'lq')) : 1.5;
+                $nonBasis = count($sectors) - $basisCount;
+                ?>
+                <div class="method-summary-grid">
+                    <div class="method-metric"><span>Sektor Basis</span><strong><?= $basisCount ?></strong><small>Nilai LQ > 1.0</small></div>
+                    <div class="method-metric"><span>Sektor Nonbasis</span><strong><?= $nonBasis ?></strong><small>Nilai LQ ≤ 1.0</small></div>
+                    <div class="method-metric"><span>LQ Tertinggi</span><strong><?= number_format($maxLq, 2, ',', '.') ?></strong><small>Sektor Unggulan</small></div>
+                </div>
+                <article class="card method-card">
+                    <div class="card-head">
+                        <div><span class="eyebrow">BARS HASIL PERHITUNGAN</span><h3>Location Quotient per Lapangan Usaha</h3></div>
+                    </div>
+                    <div class="lq-bars" style="margin: 16px 0;">
+                        <?php foreach ($lqList as $r):
+                            $w = min(100, round(($r['lq'] / max(2.0, $maxLq)) * 100));
+                            $benchmarkX = round((1.0 / max(2.0, $maxLq)) * 100);
+                        ?>
+                            <div class="lq-bar-row">
+                                <span title="<?= htmlspecialchars($r['name']) ?>"><?= htmlspecialchars($r['short']) ?></span>
+                                <div class="lq-track">
+                                    <i class="<?= $r['isBasis'] ? 'basis' : '' ?>" style="width: <?= $w ?>%"></i>
+                                    <b style="left: <?= $benchmarkX ?>%"></b>
+                                </div>
+                                <strong><?= number_format($r['lq'], 2, ',', '.') ?></strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="result-table-wrap">
+                        <table class="result-table">
+                            <thead><tr><th>Lapangan Usaha</th><th>Share Lokal</th><th>Share Provinsi</th><th>Nilai LQ</th><th>Klasifikasi</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($lqList as $r): ?>
+                                    <tr>
+                                        <td><strong><?= htmlspecialchars($r['name']) ?></strong></td>
+                                        <td><?= number_format($r['lShare'], 2, ',', '.') ?>%</td>
+                                        <td><?= number_format($r['pShare'], 2, ',', '.') ?>%</td>
+                                        <td><strong><?= number_format($r['lq'], 3, ',', '.') ?></strong></td>
+                                        <td><span class="badge <?= $r['isBasis'] ? 'success' : 'neutral' ?>"><?= $r['isBasis'] ? 'Basis' : 'Nonbasis' ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
             </div>
         </main>
     </div>

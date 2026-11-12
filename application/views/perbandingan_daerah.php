@@ -140,9 +140,45 @@
         <span class="badge simulation">DATABASE CI 3</span>
     </div>
 
+    <?php
+    $regCount = count($all_active_regional) ?: 1;
+    $sumVal = array_sum(array_column($all_active_regional, 'value'));
+    $peerAvg = round($sumVal / $regCount, 2);
+    $bwiItem = null;
+    $bwiRank = 1;
+    foreach ($all_active_regional as $idx => $item) {
+        if ($item['name'] === 'Kab. Banyuwangi') {
+            $bwiItem = $item;
+            $bwiRank = $idx + 1;
+            break;
+        }
+    }
+    $bwiVal = $bwiItem ? $bwiItem['value'] : 5.18;
+    $bwiGap = round($bwiVal - $peerAvg, 2);
+    ?>
+
     <!-- KPIS -->
     <div class="comparison-kpis" id="comp-kpi-container">
-        <!-- Rendered dynamically -->
+        <div class="comparison-kpi">
+            <div><span>Peringkat Banyuwangi</span><span class="badge success">Posisi #<?= $bwiRank ?></span></div>
+            <strong>#<?= $bwiRank ?></strong>
+            <small>dari <?= $regCount ?> wilayah aktif</small>
+        </div>
+        <div class="comparison-kpi">
+            <div><span>Rata-rata Banyuwangi</span><span class="badge info">Periode 2024</span></div>
+            <strong><?= number_format($bwiVal, 2, ',', '.') ?>%</strong>
+            <small>pertumbuhan ekonomi</small>
+        </div>
+        <div class="comparison-kpi">
+            <div><span>Rerata Wilayah Pembanding</span><span class="badge neutral">Benchmark</span></div>
+            <strong><?= number_format($peerAvg, 2, ',', '.') ?>%</strong>
+            <small><?= $regCount ?> kabupaten/kota</small>
+        </div>
+        <div class="comparison-kpi">
+            <div><span>Gap terhadap Rerata</span><span class="badge <?= $bwiGap >= 0 ? 'success' : 'warning' ?>">Selisih</span></div>
+            <strong class="<?= $bwiGap >= 0 ? 'positive' : 'negative' ?>"><?= ($bwiGap >= 0 ? '+' : '') . number_format($bwiGap, 2, ',', '.') ?> pp</strong>
+            <small><?= $bwiGap >= 0 ? 'Lebih tinggi' : 'Lebih rendah' ?> dari rerata</small>
+        </div>
     </div>
 
     <!-- WORKSPACE TABS -->
@@ -170,12 +206,120 @@
 
             <!-- TAB CONTENT CONTAINER -->
             <div id="comp-tab-content">
-                <!-- Dynamically populated by app.js -->
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="eyebrow">VISUALISASI PERINGKAT KOMPARASI</span>
+                        <span class="badge info">5 Wilayah Terpilih</span>
+                    </div>
+                    <div style="display:grid; gap:8px; padding:12px; background:#f8fafc; border-radius:8px; border:1px solid var(--line);">
+                        <?php
+                        $maxVal = max(array_column($all_active_regional, 'value')) ?: 6.0;
+                        foreach ($all_active_regional as $idx => $r):
+                            $isBwi = ($r['name'] === 'Kab. Banyuwangi');
+                            $pct = round(($r['value'] / $maxVal) * 100);
+                        ?>
+                            <div style="display:grid; grid-template-columns: 140px 1fr 60px; align-items:center; gap:10px; font-size:9px;">
+                                <span style="font-weight:<?= $isBwi ? '700' : '500' ?>; color:<?= $isBwi ? 'var(--blue)' : 'inherit' ?>;">
+                                    #<?= $idx + 1 ?> <?= htmlspecialchars($r['name']) ?>
+                                </span>
+                                <div style="height:10px; border-radius:5px; background:#e2e8f0; overflow:hidden;">
+                                    <div style="width:<?= $pct ?>%; height:100%; background:<?= $isBwi ? 'var(--blue)' : 'var(--teal)' ?>;"></div>
+                                </div>
+                                <strong style="text-align:right;"><?= number_format($r['value'], 2, ',', '.') ?>%</strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="comparison-table-head" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
+                    <span>Peringkat</span>
+                    <span>Wilayah</span>
+                    <span>Pertumbuhan</span>
+                    <span>Perubahan Tahunan</span>
+                    <span>Gap ke Rerata</span>
+                    <span>Aksi</span>
+                </div>
+                <div class="comparison-ranking">
+                    <?php foreach ($all_active_regional as $idx => $r):
+                        $isBwi = ($r['name'] === 'Kab. Banyuwangi');
+                        $diff = round($r['value'] - $peerAvg, 2);
+                    ?>
+                        <div class="comparison-table-row <?= $isBwi ? 'selected' : '' ?>" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
+                            <b><?= $idx + 1 ?></b>
+                            <span>
+                                <i class="region-avatar"><?= strtoupper(substr(str_replace(['Kab. ', 'Kota '], '', $r['name']), 0, 2)) ?></i>
+                                <strong><?= htmlspecialchars($r['name']) ?></strong>
+                            </span>
+                            <strong><?= number_format($r['value'], 2, ',', '.') ?>%</strong>
+                            <small class="<?= $r['change'] >= 0 ? 'positive' : 'negative' ?>"><?= ($r['change'] >= 0 ? '+' : '') . number_format($r['change'], 2, ',', '.') ?> pp</small>
+                            <span class="badge <?= $diff >= 0 ? 'success' : 'warning' ?>"><?= ($diff >= 0 ? '+' : '') . number_format($diff, 2, ',', '.') ?> pp</span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-edit-regional" data-id="<?= $r['id'] ?>" title="Edit Data Wilayah">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <?php if (!$isBwi): ?>
+                                    <button type="button" class="btn-delete-regional danger" data-id="<?= $r['id'] ?>" data-name="<?= htmlspecialchars($r['name']) ?>" title="Hapus Wilayah (Soft Delete)">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
 
             <div class="source">Sumber nilai: BPS Provinsi Jawa Timur & Dataset Internal SI-DAPEDA</div>
         </article>
     </section>
+
+    <!-- TABEL DATASET WILAYAH PEMBANDING (CRUD & SOFT DELETE) -->
+    <article class="card large" style="margin-top:24px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">MANAJEMEN DATASET WILAYAH</span>
+                <h3>Daftar Wilayah Pembanding (<?= count($all_active_regional) ?>)</h3>
+                <p>Kelola data pertumbuhan ekonomi daerah, perbarui angka, atau hapus wilayah (Soft Delete).</p>
+            </div>
+            <button class="button primary" id="btn-open-add-regional-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Wilayah</span>
+            </button>
+        </div>
+
+        <div class="data-table">
+            <div class="data-tr data-th" style="grid-template-columns: 50px 1.5fr 1fr 1fr 1fr 110px;">
+                <span>No</span>
+                <span>Wilayah</span>
+                <span>Pertumbuhan</span>
+                <span>Perubahan</span>
+                <span>Status</span>
+                <span>Aksi</span>
+            </div>
+            <?php foreach ($all_active_regional as $idx => $r): ?>
+                <div class="data-tr" style="grid-template-columns: 50px 1.5fr 1fr 1fr 1fr 110px;">
+                    <span><strong><?= $idx + 1 ?></strong></span>
+                    <span>
+                        <i class="region-avatar" style="display:inline-flex; width:22px; height:22px; border-radius:50%; background:#e0f2fe; color:#0369a1; font-size:9px; align-items:center; justify-content:center; font-weight:700; margin-right:6px;"><?= strtoupper(substr(str_replace(['Kab. ', 'Kota '], '', $r['name']), 0, 2)) ?></i>
+                        <strong><?= htmlspecialchars($r['name']) ?></strong>
+                    </span>
+                    <span><strong><?= number_format($r['value'], 2, ',', '.') ?>%</strong></span>
+                    <span><small class="<?= $r['change'] >= 0 ? 'positive' : 'negative' ?>"><?= ($r['change'] >= 0 ? '+' : '') . number_format($r['change'], 2, ',', '.') ?> pp</small></span>
+                    <span><span class="badge success">Aktif</span></span>
+                    <span class="row-actions">
+                        <button type="button" class="btn-edit-regional" data-id="<?= $r['id'] ?>" title="Edit Data Wilayah">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <span>Edit</span>
+                        </button>
+                        <?php if ($r['name'] !== 'Kab. Banyuwangi'): ?>
+                            <button type="button" class="btn-delete-regional danger" data-id="<?= $r['id'] ?>" data-name="<?= htmlspecialchars($r['name']) ?>" title="Hapus Wilayah (Soft Delete)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        <?php endif; ?>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </article>
 
     <!-- MODAL TAMBAH WILAYAH (CREATE MODAL) -->
     <div class="modal-backdrop" id="add-regional-modal" style="display:none;">
@@ -236,7 +380,7 @@
                 </button>
             </div>
 
-            <form id="form-edit-regional" method="POST">
+            <form id="form-edit-regional" method="POST" action="<?= site_url('perbandingan_daerah/update') ?>">
                 <input type="hidden" name="id" id="edit-regional-id">
                 <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
                     <label style="grid-column: 1 / 3;">

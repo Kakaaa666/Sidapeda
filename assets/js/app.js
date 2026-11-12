@@ -456,11 +456,17 @@
             </div>`;
     }
 
-    // Initialize UI on DOM Ready
-    document.addEventListener('DOMContentLoaded', function () {
+    // Initialize UI on DOM Ready (robust check against already-loaded state)
+    function runInit() {
         initNavigation();
         initDataLoad();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInit);
+    } else {
+        runInit();
+    }
 
     // Navigation & Global Events
     function initNavigation() {
@@ -1125,8 +1131,12 @@
         }
 
         // Modal Open / Close Handlers
+        const btnOpenAdd2 = document.getElementById('btn-open-add-regional-2');
         if (btnOpenAdd && addRegionalModal) {
             btnOpenAdd.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
+        }
+        if (btnOpenAdd2 && addRegionalModal) {
+            btnOpenAdd2.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
         }
 
         const closeAddModal = () => { if (addRegionalModal) addRegionalModal.style.display = 'none'; };

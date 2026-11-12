@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($title) ? htmlspecialchars($title) . ' — ' : '' ?>SI-DAPEDA Kabupaten Banyuwangi</title>
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
     <script>
         const BASE_URL = '<?= base_url() ?>';
         const SITE_URL = '<?= site_url() ?>';

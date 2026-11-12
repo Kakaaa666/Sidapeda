@@ -102,7 +102,36 @@
 
     <!-- STATS OVERVIEW -->
     <div class="risk-overview" id="ews-stats-container">
-        <!-- Rendered by JS / PHP -->
+        <?php
+        $kritisCnt = 0; $waspadaCnt = 0; $normalCnt = 0;
+        foreach ($ews as $item) {
+            $st = $item['status'] ?? $item['status_risiko'] ?? 'Normal';
+            if ($st === 'Kritis') $kritisCnt++;
+            elseif ($st === 'Waspada') $waspadaCnt++;
+            else $normalCnt++;
+        }
+        $totEws = count($ews);
+        ?>
+        <div class="risk-stat danger">
+            <span>Status Kritis</span>
+            <strong><?= $kritisCnt ?></strong>
+            <small>Memerlukan intervensi segera</small>
+        </div>
+        <div class="risk-stat warning">
+            <span>Status Waspada</span>
+            <strong><?= $waspadaCnt ?></strong>
+            <small>Mendekati ambang batas</small>
+        </div>
+        <div class="risk-stat success">
+            <span>Status Normal</span>
+            <strong><?= $normalCnt ?></strong>
+            <small>Dalam batas aman</small>
+        </div>
+        <div class="risk-stat neutral">
+            <span>Total Indikator</span>
+            <strong><?= $totEws ?></strong>
+            <small>Dipantau sistem</small>
+        </div>
     </div>
 
     <!-- CONTENT GRID -->
@@ -125,7 +154,29 @@
             </div>
 
             <div class="risk-table" id="ews-table-rows">
-                <!-- Injected by JS -->
+                <?php foreach ($ews as $item):
+                    $st = $item['status'] ?? $item['status_risiko'] ?? 'Normal';
+                    $badgeCls = ($st === 'Kritis') ? 'danger' : (($st === 'Waspada') ? 'warning' : 'success');
+                    $isBreached = !empty($item['breached']);
+                ?>
+                    <div class="risk-row <?= $isBreached ? 'alerted' : '' ?>">
+                        <div class="risk-indicator">
+                            <strong><?= htmlspecialchars($item['name'] ?? $item['nama_indikator'] ?? '') ?></strong>
+                            <small>Kode: <?= htmlspecialchars($item['code'] ?? $item['kode_indikator'] ?? '') ?></small>
+                        </div>
+                        <div class="risk-value">
+                            <span>Nilai Riil</span>
+                            <strong><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></strong>
+                        </div>
+                        <div class="risk-threshold">
+                            <span>Ambang</span>
+                            <strong><?= number_format($item['threshold'] ?? $item['ambang_batas'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></strong>
+                        </div>
+                        <div class="risk-status">
+                            <span class="badge <?= $badgeCls ?>"><?= htmlspecialchars($st) ?></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
 
             <div class="source">Kriteria Sistem: Deviasi &lt; 0% = Normal; 0–9.9% = Waspada; ≥ 10% = Kritis.</div>

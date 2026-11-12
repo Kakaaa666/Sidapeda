@@ -7,7 +7,7 @@
     </div>
 </div>
 
-<script src="<?= base_url('assets/js/app.js') ?>"></script>
+<script src="<?= base_url('assets/js/app.js?v=' . (file_exists(FCPATH . 'assets/js/app.js') ? filemtime(FCPATH . 'assets/js/app.js') : time())) ?>"></script>
 </body>
 </html>
 
