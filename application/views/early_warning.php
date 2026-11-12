@@ -51,7 +51,7 @@
                         <div class="data-tr" style="grid-template-columns: 1fr 2fr 1fr 1fr 1.2fr 120px;">
                             <span><code><?= htmlspecialchars($item['code']) ?></code></span>
                             <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
-                            <span><?= number_format($item['currentValue'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?></span>
+                            <span><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
                             <span><?= number_format($item['threshold'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?></span>
                             <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
                             <span class="row-actions">
@@ -289,10 +289,10 @@
                 <div class="data-tr" style="grid-template-columns: 120px 2fr 1fr 1fr 1fr 1fr 110px;">
                     <span><code><?= htmlspecialchars($item['code']) ?></code></span>
                     <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
-                    <span><?= number_format($item['currentValue'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?></span>
-                    <span><?= number_format($item['threshold'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?></span>
-                    <span><small><?= $item['direction'] === 'above' ? 'Di atas batas' : 'Di bawah batas' ?></small></span>
-                    <span><span class="badge <?= $item['status'] === 'Kritis' ? 'danger' : ($item['status'] === 'Waspada' ? 'warning' : 'success') ?>"><?= $item['status'] ?></span></span>
+                    <span><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
+                    <span><?= number_format($item['threshold'] ?? $item['ambang_batas'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
+                    <span><small><?= ($item['direction'] ?? $item['arah_risiko'] ?? 'above') === 'above' ? 'Di atas batas' : 'Di bawah batas' ?></small></span>
+                    <span><span class="badge <?= ($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Kritis' ? 'danger' : ((($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Waspada') ? 'warning' : 'success') ?>"><?= htmlspecialchars($item['status'] ?? $item['status_risiko'] ?? 'Normal') ?></span></span>
                     <span class="row-actions">
                         <button type="button" class="btn-edit-ews" data-id="<?= $item['id'] ?>" title="Edit Indikator">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

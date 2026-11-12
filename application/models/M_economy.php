@@ -595,6 +595,7 @@ class M_economy extends CI_Model {
                 'nama_indikator' => $row['nama_indikator'],
                 'value' => $val,
                 'nilai_terkini' => $val,
+                'currentValue' => $val,
                 'unit' => $row['satuan'],
                 'satuan' => $row['satuan'],
                 'threshold' => $th,
@@ -1171,7 +1172,17 @@ class M_economy extends CI_Model {
     // CRUD & SOFT DELETE: EARLY WARNING SYSTEM (EWS)
     // ==========================================
     public function get_ews_by_id($id) {
-        return $this->db->where('id', (int)$id)->get('early_warning')->row_array();
+        $row = $this->db->where('id', (int)$id)->get('early_warning')->row_array();
+        if (!$row) return null;
+        $row['code'] = $row['kode_indikator'];
+        $row['name'] = $row['nama_indikator'];
+        $row['value'] = (float)$row['nilai_terkini'];
+        $row['currentValue'] = (float)$row['nilai_terkini'];
+        $row['unit'] = $row['satuan'];
+        $row['threshold'] = (float)$row['ambang_batas'];
+        $row['direction'] = $row['arah_risiko'];
+        $row['status'] = $row['status_risiko'];
+        return $row;
     }
 
     public function add_ews($data) {

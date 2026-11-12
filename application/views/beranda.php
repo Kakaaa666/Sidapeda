@@ -160,32 +160,33 @@
             // Use beranda_cards from database if available
             $display_cards = !empty($beranda_cards) ? $beranda_cards : array();
             
+            // Calculate macro values for summary highlights
+            $idx = $year_idx;
+            $prev = $prev_idx;
+            $gNow = $series['growth'][$idx] ?? 5.18;
+            $gPrev = $series['growth'][$prev] ?? 5.03;
+            $gDelta = round($gNow - $gPrev, 2);
+            $pcapNow = $series['perCapita'][$idx] ?? 62.4;
+            $pcapPrev = $series['perCapita'][$prev] ?? 58.4;
+            $pcapDelta = round($pcapNow - $pcapPrev, 2);
+            $infNow = $series['inflation'][$idx] ?? 2.41;
+            $infPrev = $series['inflation'][$prev] ?? 2.81;
+            $infDelta = round($infNow - $infPrev, 2);
+            $tptNow = $series['tpt'][$idx] ?? 4.03;
+            $tptPrev = $series['tpt'][$prev] ?? 4.10;
+            $tptDelta = round($tptNow - $tptPrev, 2);
+            $povNow = $series['poverty'][$idx] ?? 7.34;
+            $povPrev = $series['poverty'][$prev] ?? 7.34;
+            $povDelta = round($povNow - $povPrev, 2);
+            $ipmNow = $series['ipm'][$idx] ?? 73.79;
+            $ipmPrev = $series['ipm'][$prev] ?? 73.08;
+            $ipmDelta = round($ipmNow - $ipmPrev, 2);
+            $invNow = $series['investmentGrowth'][$idx] ?? 12.42;
+            $invPrev = $series['investmentGrowth'][$prev] ?? 14.20;
+            $invDelta = round($invNow - $invPrev, 2);
+
             // Fallback to calculated series if DB table empty
             if (empty($display_cards)) {
-                $idx = $year_idx;
-                $prev = $prev_idx;
-                $gNow = $series['growth'][$idx] ?? 0;
-                $gPrev = $series['growth'][$prev] ?? 0;
-                $gDelta = round($gNow - $gPrev, 2);
-                $pcapNow = $series['perCapita'][$idx] ?? 0;
-                $pcapPrev = $series['perCapita'][$prev] ?? 0;
-                $pcapDelta = round($pcapNow - $pcapPrev, 2);
-                $infNow = $series['inflation'][$idx] ?? 0;
-                $infPrev = $series['inflation'][$prev] ?? 0;
-                $infDelta = round($infNow - $infPrev, 2);
-                $tptNow = $series['tpt'][$idx] ?? 0;
-                $tptPrev = $series['tpt'][$prev] ?? 0;
-                $tptDelta = round($tptNow - $tptPrev, 2);
-                $povNow = $series['poverty'][$idx] ?? 0;
-                $povPrev = $series['poverty'][$prev] ?? 0;
-                $povDelta = round($povNow - $povPrev, 2);
-                $ipmNow = $series['ipm'][$idx] ?? 0;
-                $ipmPrev = $series['ipm'][$prev] ?? 0;
-                $ipmDelta = round($ipmNow - $ipmPrev, 2);
-                $invNow = $series['investmentGrowth'][$idx] ?? 0;
-                $invPrev = $series['investmentGrowth'][$prev] ?? 0;
-                $invDelta = round($invNow - $invPrev, 2);
-
                 $display_cards = array(
                     array('id' => 1, 'nama_indikator' => 'Pertumbuhan Ekonomi', 'nilai' => number_format($gNow, 2, ',', '.'), 'satuan' => '%', 'perubahan' => ($gDelta >= 0 ? '+' : '') . number_format($gDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($gDelta >= 0 ? 'up' : 'down'), 'status' => ($gDelta >= 0 ? 'Meningkat' : 'Perlu perhatian'), 'deret_mini' => '[18, 25, 20, 31, 28, 39, 44]', 'tahun' => $selected_year),
                     array('id' => 2, 'nama_indikator' => 'PDRB per Kapita', 'nilai' => 'Rp ' . number_format($pcapNow, 1, ',', '.'), 'satuan' => 'Juta', 'perubahan' => ($pcapDelta >= 0 ? '+' : '') . number_format($pcapDelta, 1, ',', '.') . ' juta', 'arah_tren' => ($pcapDelta >= 0 ? 'up' : 'down'), 'status' => ($pcapDelta >= 0 ? 'Meningkat' : 'Menurun'), 'deret_mini' => '[16, 20, 24, 28, 31, 37, 42]', 'tahun' => $selected_year),
