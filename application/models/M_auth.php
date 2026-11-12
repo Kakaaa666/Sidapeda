@@ -109,11 +109,20 @@ class M_auth extends CI_Model {
             'status'        => $row['status'],
             'avatar'        => $row['foto_profil'] ?? null,
             'last_login'    => $row['terakhir_masuk'] ?? null,
-            'dibuat_pada'   => $row['dibuat_pada'] ?? null
+            'dibuat_pada'   => $row['dibuat_pada'] ?? null,
+            'is_deleted'    => (int)($row['is_deleted'] ?? 0),
+            'deleted_at'    => $row['deleted_at'] ?? null
         );
     }
 
-    public function get_users() {
+    public function get_users($status = null) {
+        if ($this->db->field_exists('is_deleted', $this->table)) {
+            if ($status === 'Terhapus' || $status === '1' || $status === 1) {
+                $this->db->where('is_deleted', 1);
+            } else {
+                $this->db->where('is_deleted', 0);
+            }
+        }
         $rows = $this->db->order_by('id', 'ASC')->get($this->table)->result_array();
         $list = array();
         foreach ($rows as $r) {
@@ -323,5 +332,99 @@ class M_auth extends CI_Model {
             return $user;
         }
         return false;
+    }
+
+    public function add_user($data) {
+        $username = trim($data['nama_pengguna'] ?? $data['username'] ?? '');
+        if (empty($username)) return array('status' => false, 'message' => 'Username wajib diisi.');
+        
+        $exists = $this->db->where('nama_pengguna', $username)->where('is_deleted', 0)->get($this->table)->num_rows();
+        if ($exists > 0) return array('status' => false, 'message' => 'Username sudah digunakan.');
+        
+        $password = trim($data['kata_sandi'] ?? $data['password'] ?? '123456');
+        $levelNum = (int)($data['level'] ?? 3);
+        if ($levelNum < 1 || $levelNum > 4) $levelNum = 3;
+        $roleName = $this->get_level_name($levelNum);
+
+        $record = array(
+            'nama_pengguna' => $username,
+            'kata_sandi'    => password_hash($password, PASSWORD_BCRYPT),
+            'nama_lengkap'  => trim($data['nama_lengkap'] ?? $data['name'] ?? ''),
+            'email'         => trim($data['email'] ?? ''),
+            'peran'         => $roleName,
+            'level'         => $levelNum,
+            'status'        => in_array($data['status'] ?? '', array('Aktif', 'Nonaktif')) ? $data['status'] : 'Aktif',
+            'dibuat_pada'   => date('Y-m-d H:i:s'),
+            'is_deleted'    => 0,
+            'deleted_at'    => null
+        );
+
+        $inserted = $this->db->insert($this->table, $record);
+        if ($inserted) {
+            $record['id'] = $this->db->insert_id();
+            return array('status' => true, 'id' => $record['id'], 'user' => $this->map_user($record));
+        }
+        return array('status' => false, 'message' => 'Gagal menyimpan data akun.');
+    }
+
+    public function update_user_full($id, $data) {
+        $record = array();
+        if (isset($data['nama_lengkap'])) $record['nama_lengkap'] = trim($data['nama_lengkap']);
+        if (isset($data['email'])) $record['email'] = trim($data['email']);
+        if (isset($data['level'])) {
+            $levelNum = (int)$data['level'];
+            if ($levelNum >= 1 && $levelNum <= 4) {
+                $record['level'] = $levelNum;
+                $record['peran'] = $this->get_level_name($levelNum);
+            }
+        }
+        if (isset($data['status']) && in_array($data['status'], array('Aktif', 'Nonaktif'))) {
+            $record['status'] = $data['status'];
+        }
+        if (!empty($data['kata_sandi'])) {
+            $record['kata_sandi'] = password_hash($data['kata_sandi'], PASSWORD_BCRYPT);
+        }
+        $record['diperbarui_pada'] = date('Y-m-d H:i:s');
+
+        return $this->db->where('id', (int)$id)->update($this->table, $record);
+    }
+
+    public function soft_delete_user($id) {
+        $id = (int)$id;
+        $user = $this->get_user_by_id($id);
+        if (!$user) return false;
+        // Lindungi akun admin utama (id=1 atau username admin)
+        if ($id === 1 || $user['nama_pengguna'] === 'admin') {
+            return false;
+        }
+        // Lindungi akun sendiri yang sedang login
+        $current = $this->current_user();
+        if ($current && (int)$current['id'] === $id) {
+            return false;
+        }
+        return $this->db->where('id', $id)->update($this->table, array(
+            'is_deleted' => 1,
+            'deleted_at' => date('Y-m-d H:i:s')
+        ));
+    }
+
+    public function restore_user($id) {
+        return $this->db->where('id', (int)$id)->update($this->table, array(
+            'is_deleted' => 0,
+            'deleted_at' => null
+        ));
+    }
+
+    public function hard_delete_user($id) {
+        $id = (int)$id;
+        if ($id === 1) return false;
+        return $this->db->where('id', $id)->delete($this->table);
+    }
+
+    public function count_trash_users() {
+        if ($this->db->field_exists('is_deleted', $this->table)) {
+            return $this->db->where('is_deleted', 1)->count_all_results($this->table);
+        }
+        return 0;
     }
 }

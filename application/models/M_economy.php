@@ -71,7 +71,12 @@ class M_economy extends CI_Model {
         );
     }
 
-    public function get_sectors() {
+    public function get_sectors($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
         $query = $this->db->get('analisis_ekonomi');
         if ($query->num_rows() > 0) {
             $sectors = array();
@@ -100,7 +105,10 @@ class M_economy extends CI_Model {
                     'provinceEmploymentCurrent' => (int)$row->tenaga_kerja_provinsi_kini,
                     'tenaga_kerja_provinsi_kini' => (int)$row->tenaga_kerja_provinsi_kini,
                     'growthSeries' => json_decode($row->deret_pertumbuhan, true) ?: array(),
-                    'growthProvinceSeries' => json_decode($row->deret_pertumbuhan_provinsi, true) ?: array()
+                    'growthProvinceSeries' => json_decode($row->deret_pertumbuhan_provinsi, true) ?: array(),
+                    'id' => (int)$row->id,
+                    'is_deleted' => (int)($row->is_deleted ?? 0),
+                    'deleted_at' => $row->deleted_at ?? null
                 );
             }
             return $sectors;
@@ -283,7 +291,12 @@ class M_economy extends CI_Model {
         return $this->db->where('is_deleted', 1)->count_all_results('perbandingan_daerah');
     }
 
-    public function get_districts() {
+    public function get_districts($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
         $query = $this->db->get('peta_ekonomi');
         if ($query->num_rows() > 0) {
             $list = array();
@@ -302,7 +315,10 @@ class M_economy extends CI_Model {
                     'category' => $row->kategori,
                     'kategori' => $row->kategori,
                     'lat' => (float)$row->garis_lintang,
-                    'lng' => (float)$row->garis_bujur
+                    'lng' => (float)$row->garis_bujur,
+                    'id' => (int)$row->id,
+                    'is_deleted' => (int)($row->is_deleted ?? 0),
+                    'deleted_at' => $row->deleted_at ?? null
                 );
             }
             return $list;
@@ -519,7 +535,12 @@ class M_economy extends CI_Model {
         return $this->db->update('database_ekonomi', array('status_validasi' => $status));
     }
 
-    public function get_indicator_catalog() {
+    public function get_indicator_catalog($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
         $res = $this->db->order_by('kode_indikator', 'ASC')->get('katalog_indikator');
         $list = array();
         foreach ($res->result_array() as $row) {
@@ -544,7 +565,12 @@ class M_economy extends CI_Model {
         return $list;
     }
 
-    public function get_ews_indicators() {
+    public function get_ews_indicators($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
         $res = $this->db->get('early_warning');
         $results = array();
         foreach ($res->result_array() as $row) {
@@ -601,23 +627,43 @@ class M_economy extends CI_Model {
         return false;
     }
 
-    public function get_beranda_cards($year = 2024) {
-        $this->db->where('tahun', (int)$year);
+    public function get_beranda_cards($year = null, $status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+            if ($year) {
+                $this->db->where('tahun', (int)$year);
+            }
+        }
         $res = $this->db->get('beranda');
         if ($res->num_rows() > 0) {
             return $res->result_array();
         }
-        return $this->db->get('beranda')->result_array();
+        if ($status !== 'Terhapus') {
+            return $this->db->where('is_deleted', 0)->get('beranda')->result_array();
+        }
+        return array();
     }
 
-    public function get_economic_insights($year = null) {
-        if ($year) {
-            $this->db->where('tahun', (int)$year);
+    public function get_economic_insights($year = null, $status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+            if ($year) {
+                $this->db->where('tahun', (int)$year);
+            }
         }
         return $this->db->order_by('id', 'ASC')->get('economic_insight')->result_array();
     }
 
-    public function get_laporan_ekonomi() {
+    public function get_laporan_ekonomi($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
         return $this->db->order_by('id', 'DESC')->get('laporan_ekonomi')->result_array();
     }
 
@@ -868,5 +914,489 @@ class M_economy extends CI_Model {
             'method' => $method,
             'error' => round($rmse, 3)
         );
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: BERANDA (KPI METRICS)
+    // ==========================================
+    public function get_beranda_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('beranda')->row_array();
+    }
+
+    public function add_beranda($data) {
+        $record = array(
+            'nama_indikator' => trim($data['nama_indikator'] ?? $data['indicator'] ?? ''),
+            'nilai'          => trim($data['nilai'] ?? $data['value'] ?? ''),
+            'satuan'         => trim($data['satuan'] ?? $data['unit'] ?? ''),
+            'perubahan'      => trim($data['perubahan'] ?? $data['change'] ?? '+0,0%'),
+            'arah_tren'      => in_array($data['arah_tren'] ?? '', array('up','down')) ? $data['arah_tren'] : 'up',
+            'status'         => trim($data['status'] ?? 'Stabil'),
+            'deret_mini'     => !empty($data['deret_mini']) ? (is_array($data['deret_mini']) ? json_encode($data['deret_mini']) : $data['deret_mini']) : '[20, 25, 24, 28, 32, 36, 40]',
+            'tahun'          => (int)($data['tahun'] ?? $data['year'] ?? 2024),
+            'is_deleted'     => 0,
+            'deleted_at'     => null
+        );
+        if (empty($record['nama_indikator'])) return false;
+        return $this->db->insert('beranda', $record);
+    }
+
+    public function update_beranda($id, $data) {
+        $record = array();
+        if (isset($data['nama_indikator']) || isset($data['indicator'])) $record['nama_indikator'] = trim($data['nama_indikator'] ?? $data['indicator']);
+        if (isset($data['nilai']) || isset($data['value'])) $record['nilai'] = trim($data['nilai'] ?? $data['value']);
+        if (isset($data['satuan']) || isset($data['unit'])) $record['satuan'] = trim($data['satuan'] ?? $data['unit']);
+        if (isset($data['perubahan']) || isset($data['change'])) $record['perubahan'] = trim($data['perubahan'] ?? $data['change']);
+        if (isset($data['arah_tren'])) $record['arah_tren'] = in_array($data['arah_tren'], array('up','down')) ? $data['arah_tren'] : 'up';
+        if (isset($data['status'])) $record['status'] = trim($data['status']);
+        if (isset($data['tahun']) || isset($data['year'])) $record['tahun'] = (int)($data['tahun'] ?? $data['year']);
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('beranda', $record);
+    }
+
+    public function soft_delete_beranda($id) {
+        return $this->db->where('id', (int)$id)->update('beranda', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_beranda($id) {
+        return $this->db->where('id', (int)$id)->update('beranda', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_beranda($id) {
+        return $this->db->where('id', (int)$id)->delete('beranda');
+    }
+
+    public function count_trash_beranda() {
+        return $this->db->where('is_deleted', 1)->count_all_results('beranda');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: ANALISIS EKONOMI (SEKTOR)
+    // ==========================================
+    public function get_sector_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('analisis_ekonomi')->row_array();
+    }
+
+    public function add_sector($data) {
+        $kode = trim($data['kode_sektor'] ?? $data['code'] ?? ('SEK-' . rand(100, 999)));
+        $nama = trim($data['nama_sektor'] ?? $data['name'] ?? '');
+        $short = trim($data['nama_pendek'] ?? $data['short'] ?? $nama);
+        if (empty($nama)) return false;
+
+        $record = array(
+            'kode_sektor'                 => $kode,
+            'nama_sektor'                 => $nama,
+            'nama_pendek'                 => $short,
+            'porsi_daerah'                => (float)($data['porsi_daerah'] ?? 5.0),
+            'porsi_provinsi'              => (float)($data['porsi_provinsi'] ?? 5.0),
+            'pertumbuhan_daerah'          => (float)($data['pertumbuhan_daerah'] ?? 4.5),
+            'pertumbuhan_provinsi'        => (float)($data['pertumbuhan_provinsi'] ?? 4.5),
+            'tenaga_kerja_awal'           => (int)($data['tenaga_kerja_awal'] ?? 3000),
+            'tenaga_kerja_kini'           => (int)($data['tenaga_kerja_kini'] ?? 3500),
+            'tenaga_kerja_provinsi_awal'  => (int)($data['tenaga_kerja_provinsi_awal'] ?? 200000),
+            'tenaga_kerja_provinsi_kini'  => (int)($data['tenaga_kerja_provinsi_kini'] ?? 240000),
+            'deret_pertumbuhan'           => !empty($data['deret_pertumbuhan']) ? (is_array($data['deret_pertumbuhan']) ? json_encode($data['deret_pertumbuhan']) : $data['deret_pertumbuhan']) : '[4.0, 4.2, 4.5, 4.8, 5.0, -2.5, 3.5, 4.2, 4.5, 4.8]',
+            'deret_pertumbuhan_provinsi'  => !empty($data['deret_pertumbuhan_provinsi']) ? (is_array($data['deret_pertumbuhan_provinsi']) ? json_encode($data['deret_pertumbuhan_provinsi']) : $data['deret_pertumbuhan_provinsi']) : '[4.2, 4.5, 4.6, 4.7, 4.9, -2.8, 3.2, 4.0, 4.4, 4.6]',
+            'is_deleted'                  => 0,
+            'deleted_at'                  => null
+        );
+
+        $exists = $this->db->where('kode_sektor', $kode)->where('is_deleted', 0)->get('analisis_ekonomi')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('analisis_ekonomi', $record);
+    }
+
+    public function update_sector($id, $data) {
+        $record = array();
+        if (isset($data['kode_sektor'])) $record['kode_sektor'] = trim($data['kode_sektor']);
+        if (isset($data['nama_sektor'])) $record['nama_sektor'] = trim($data['nama_sektor']);
+        if (isset($data['nama_pendek'])) $record['nama_pendek'] = trim($data['nama_pendek']);
+        if (isset($data['porsi_daerah'])) $record['porsi_daerah'] = (float)$data['porsi_daerah'];
+        if (isset($data['porsi_provinsi'])) $record['porsi_provinsi'] = (float)$data['porsi_provinsi'];
+        if (isset($data['pertumbuhan_daerah'])) $record['pertumbuhan_daerah'] = (float)$data['pertumbuhan_daerah'];
+        if (isset($data['pertumbuhan_provinsi'])) $record['pertumbuhan_provinsi'] = (float)$data['pertumbuhan_provinsi'];
+        if (isset($data['tenaga_kerja_awal'])) $record['tenaga_kerja_awal'] = (int)$data['tenaga_kerja_awal'];
+        if (isset($data['tenaga_kerja_kini'])) $record['tenaga_kerja_kini'] = (int)$data['tenaga_kerja_kini'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('analisis_ekonomi', $record);
+    }
+
+    public function soft_delete_sector($id) {
+        return $this->db->where('id', (int)$id)->update('analisis_ekonomi', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_sector($id) {
+        return $this->db->where('id', (int)$id)->update('analisis_ekonomi', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_sector($id) {
+        return $this->db->where('id', (int)$id)->delete('analisis_ekonomi');
+    }
+
+    public function count_trash_sectors() {
+        return $this->db->where('is_deleted', 1)->count_all_results('analisis_ekonomi');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: PETA EKONOMI (KECAMATAN)
+    // ==========================================
+    public function get_district_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('peta_ekonomi')->row_array();
+    }
+
+    public function add_district($data) {
+        $nama = trim($data['nama_kecamatan'] ?? $data['name'] ?? '');
+        if (empty($nama)) return false;
+
+        $record = array(
+            'nama_kecamatan' => $nama,
+            'porsi_pdrb'     => (float)($data['porsi_pdrb'] ?? $data['share'] ?? 5.0),
+            'pertumbuhan'    => (float)($data['pertumbuhan'] ?? $data['growth'] ?? 5.0),
+            'kemiskinan'     => (float)($data['kemiskinan'] ?? $data['poverty'] ?? 6.0),
+            'kepadatan'      => (int)($data['kepadatan'] ?? $data['density'] ?? 1000),
+            'kategori'       => trim($data['kategori'] ?? $data['category'] ?? 'Perdagangan & Jasa'),
+            'garis_lintang'  => (float)($data['garis_lintang'] ?? $data['lat'] ?? -8.2192),
+            'garis_bujur'    => (float)($data['garis_bujur'] ?? $data['lng'] ?? 114.3692),
+            'is_deleted'     => 0,
+            'deleted_at'     => null
+        );
+
+        $exists = $this->db->where('nama_kecamatan', $nama)->where('is_deleted', 0)->get('peta_ekonomi')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('peta_ekonomi', $record);
+    }
+
+    public function update_district($id, $data) {
+        $record = array();
+        if (isset($data['nama_kecamatan'])) $record['nama_kecamatan'] = trim($data['nama_kecamatan']);
+        if (isset($data['porsi_pdrb'])) $record['porsi_pdrb'] = (float)$data['porsi_pdrb'];
+        if (isset($data['pertumbuhan'])) $record['pertumbuhan'] = (float)$data['pertumbuhan'];
+        if (isset($data['kemiskinan'])) $record['kemiskinan'] = (float)$data['kemiskinan'];
+        if (isset($data['kepadatan'])) $record['kepadatan'] = (int)$data['kepadatan'];
+        if (isset($data['kategori'])) $record['kategori'] = trim($data['kategori']);
+        if (isset($data['garis_lintang'])) $record['garis_lintang'] = (float)$data['garis_lintang'];
+        if (isset($data['garis_bujur'])) $record['garis_bujur'] = (float)$data['garis_bujur'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('peta_ekonomi', $record);
+    }
+
+    public function soft_delete_district($id) {
+        return $this->db->where('id', (int)$id)->update('peta_ekonomi', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_district($id) {
+        return $this->db->where('id', (int)$id)->update('peta_ekonomi', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_district($id) {
+        return $this->db->where('id', (int)$id)->delete('peta_ekonomi');
+    }
+
+    public function count_trash_districts() {
+        return $this->db->where('is_deleted', 1)->count_all_results('peta_ekonomi');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: PROSPEK EKONOMI (PROYEKSI)
+    // ==========================================
+    public function get_prospek_records($status = null) {
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('is_deleted', 1);
+        } else {
+            $this->db->where('is_deleted', 0);
+        }
+        return $this->db->order_by('tahun', 'ASC')->get('prospek_ekonomi')->result_array();
+    }
+
+    public function get_prospek_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('prospek_ekonomi')->row_array();
+    }
+
+    public function add_prospek($data) {
+        $tahun = (int)($data['tahun'] ?? $data['year'] ?? 0);
+        if (!$tahun) return false;
+
+        $record = array(
+            'tahun'                 => $tahun,
+            'pertumbuhan_ekonomi'   => (float)($data['pertumbuhan_ekonomi'] ?? 5.2),
+            'pertumbuhan_jatim'     => (float)($data['pertumbuhan_jatim'] ?? 5.0),
+            'pertumbuhan_nasional'  => (float)($data['pertumbuhan_nasional'] ?? 5.1),
+            'tingkat_pengangguran'  => (float)($data['tingkat_pengangguran'] ?? 4.0),
+            'pertumbuhan_investasi' => (float)($data['pertumbuhan_investasi'] ?? 10.0),
+            'tingkat_kemiskinan'    => (float)($data['tingkat_kemiskinan'] ?? 7.0),
+            'inflasi'               => (float)($data['inflasi'] ?? 2.5),
+            'ipm'                   => (float)($data['ipm'] ?? 74.0),
+            'pdrb_per_kapita'       => (float)($data['pdrb_per_kapita'] ?? 65.0),
+            'is_deleted'            => 0,
+            'deleted_at'            => null
+        );
+
+        $exists = $this->db->where('tahun', $tahun)->where('is_deleted', 0)->get('prospek_ekonomi')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('prospek_ekonomi', $record);
+    }
+
+    public function update_prospek($id, $data) {
+        $record = array();
+        if (isset($data['tahun'])) $record['tahun'] = (int)$data['tahun'];
+        if (isset($data['pertumbuhan_ekonomi'])) $record['pertumbuhan_ekonomi'] = (float)$data['pertumbuhan_ekonomi'];
+        if (isset($data['pertumbuhan_jatim'])) $record['pertumbuhan_jatim'] = (float)$data['pertumbuhan_jatim'];
+        if (isset($data['pertumbuhan_nasional'])) $record['pertumbuhan_nasional'] = (float)$data['pertumbuhan_nasional'];
+        if (isset($data['tingkat_pengangguran'])) $record['tingkat_pengangguran'] = (float)$data['tingkat_pengangguran'];
+        if (isset($data['pertumbuhan_investasi'])) $record['pertumbuhan_investasi'] = (float)$data['pertumbuhan_investasi'];
+        if (isset($data['tingkat_kemiskinan'])) $record['tingkat_kemiskinan'] = (float)$data['tingkat_kemiskinan'];
+        if (isset($data['inflasi'])) $record['inflasi'] = (float)$data['inflasi'];
+        if (isset($data['ipm'])) $record['ipm'] = (float)$data['ipm'];
+        if (isset($data['pdrb_per_kapita'])) $record['pdrb_per_kapita'] = (float)$data['pdrb_per_kapita'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('prospek_ekonomi', $record);
+    }
+
+    public function soft_delete_prospek($id) {
+        return $this->db->where('id', (int)$id)->update('prospek_ekonomi', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_prospek($id) {
+        return $this->db->where('id', (int)$id)->update('prospek_ekonomi', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_prospek($id) {
+        return $this->db->where('id', (int)$id)->delete('prospek_ekonomi');
+    }
+
+    public function count_trash_prospek() {
+        return $this->db->where('is_deleted', 1)->count_all_results('prospek_ekonomi');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: EARLY WARNING SYSTEM (EWS)
+    // ==========================================
+    public function get_ews_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('early_warning')->row_array();
+    }
+
+    public function add_ews($data) {
+        $kode = trim($data['kode_indikator'] ?? $data['code'] ?? '');
+        $nama = trim($data['nama_indikator'] ?? $data['name'] ?? '');
+        if (empty($kode) || empty($nama)) return false;
+
+        $record = array(
+            'kode_indikator'        => $kode,
+            'nama_indikator'        => $nama,
+            'nilai_terkini'         => (float)($data['nilai_terkini'] ?? $data['value'] ?? 0),
+            'satuan'                => trim($data['satuan'] ?? $data['unit'] ?? '%'),
+            'ambang_batas'          => (float)($data['ambang_batas'] ?? $data['threshold'] ?? 5),
+            'arah_risiko'           => in_array($data['arah_risiko'] ?? '', array('above','below')) ? $data['arah_risiko'] : 'above',
+            'status_risiko'         => in_array($data['status_risiko'] ?? '', array('Normal','Waspada','Kritis')) ? $data['status_risiko'] : 'Normal',
+            'sudah_ditindaklanjuti' => (int)($data['sudah_ditindaklanjuti'] ?? 0),
+            'is_deleted'            => 0,
+            'deleted_at'            => null
+        );
+
+        $exists = $this->db->where('kode_indikator', $kode)->where('is_deleted', 0)->get('early_warning')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('early_warning', $record);
+    }
+
+    public function update_ews($id, $data) {
+        $record = array();
+        if (isset($data['kode_indikator'])) $record['kode_indikator'] = trim($data['kode_indikator']);
+        if (isset($data['nama_indikator'])) $record['nama_indikator'] = trim($data['nama_indikator']);
+        if (isset($data['nilai_terkini'])) $record['nilai_terkini'] = (float)$data['nilai_terkini'];
+        if (isset($data['satuan'])) $record['satuan'] = trim($data['satuan']);
+        if (isset($data['ambang_batas'])) $record['ambang_batas'] = (float)$data['ambang_batas'];
+        if (isset($data['arah_risiko'])) $record['arah_risiko'] = $data['arah_risiko'];
+        if (isset($data['status_risiko'])) $record['status_risiko'] = $data['status_risiko'];
+        if (isset($data['sudah_ditindaklanjuti'])) $record['sudah_ditindaklanjuti'] = (int)$data['sudah_ditindaklanjuti'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('early_warning', $record);
+    }
+
+    public function soft_delete_ews($id) {
+        return $this->db->where('id', (int)$id)->update('early_warning', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_ews($id) {
+        return $this->db->where('id', (int)$id)->update('early_warning', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_ews($id) {
+        return $this->db->where('id', (int)$id)->delete('early_warning');
+    }
+
+    public function count_trash_ews() {
+        return $this->db->where('is_deleted', 1)->count_all_results('early_warning');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: ECONOMIC INSIGHT
+    // ==========================================
+    public function get_insight_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('economic_insight')->row_array();
+    }
+
+    public function add_insight($data) {
+        $judul = trim($data['judul'] ?? $data['title'] ?? '');
+        if (empty($judul)) return false;
+
+        $record = array(
+            'judul'                 => $judul,
+            'ringkasan'             => trim($data['ringkasan'] ?? $data['summary'] ?? ''),
+            'kategori'              => trim($data['kategori'] ?? $data['category'] ?? 'Kebijakan Ekonomi'),
+            'tingkat_urgensi'       => in_array($data['tingkat_urgensi'] ?? '', array('Tinggi','Sedang','Stabil')) ? $data['tingkat_urgensi'] : 'Sedang',
+            'rekomendasi_kebijakan' => trim($data['rekomendasi_kebijakan'] ?? $data['recommendation'] ?? ''),
+            'dampak_anggaran'       => trim($data['dampak_anggaran'] ?? $data['budget_impact'] ?? 'Efisiensi Belanja'),
+            'opd_penanggung_jawab'  => trim($data['opd_penanggung_jawab'] ?? $data['opd'] ?? 'Bappeda Banyuwangi'),
+            'tahun'                 => (int)($data['tahun'] ?? $data['year'] ?? 2024),
+            'is_deleted'            => 0,
+            'deleted_at'            => null
+        );
+
+        return $this->db->insert('economic_insight', $record);
+    }
+
+    public function update_insight($id, $data) {
+        $record = array();
+        if (isset($data['judul'])) $record['judul'] = trim($data['judul']);
+        if (isset($data['ringkasan'])) $record['ringkasan'] = trim($data['ringkasan']);
+        if (isset($data['kategori'])) $record['kategori'] = trim($data['kategori']);
+        if (isset($data['tingkat_urgensi'])) $record['tingkat_urgensi'] = $data['tingkat_urgensi'];
+        if (isset($data['rekomendasi_kebijakan'])) $record['rekomendasi_kebijakan'] = trim($data['rekomendasi_kebijakan']);
+        if (isset($data['dampak_anggaran'])) $record['dampak_anggaran'] = trim($data['dampak_anggaran']);
+        if (isset($data['opd_penanggung_jawab'])) $record['opd_penanggung_jawab'] = trim($data['opd_penanggung_jawab']);
+        if (isset($data['tahun'])) $record['tahun'] = (int)$data['tahun'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('economic_insight', $record);
+    }
+
+    public function soft_delete_insight($id) {
+        return $this->db->where('id', (int)$id)->update('economic_insight', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_insight($id) {
+        return $this->db->where('id', (int)$id)->update('economic_insight', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_insight($id) {
+        return $this->db->where('id', (int)$id)->delete('economic_insight');
+    }
+
+    public function count_trash_insights() {
+        return $this->db->where('is_deleted', 1)->count_all_results('economic_insight');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: LAPORAN EKONOMI
+    // ==========================================
+    public function get_laporan_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('laporan_ekonomi')->row_array();
+    }
+
+    public function add_laporan($data) {
+        $nomor = trim($data['nomor_laporan'] ?? $data['number'] ?? ('LAP-' . date('Y') . '-' . rand(10, 99)));
+        $judul = trim($data['judul_laporan'] ?? $data['title'] ?? '');
+        if (empty($judul)) return false;
+
+        $record = array(
+            'nomor_laporan' => $nomor,
+            'judul_laporan' => $judul,
+            'jenis_laporan' => trim($data['jenis_laporan'] ?? $data['type'] ?? 'Laporan Eksekutif'),
+            'periode_tahun' => (int)($data['periode_tahun'] ?? $data['year'] ?? 2024),
+            'penyusun'      => trim($data['penyusun'] ?? 'Tim Analis BAPPEDA'),
+            'status'        => in_array($data['status'] ?? '', array('Terpublikasi','Draf')) ? $data['status'] : 'Terpublikasi',
+            'tanggal_terbit'=> !empty($data['tanggal_terbit']) ? $data['tanggal_terbit'] : date('Y-m-d'),
+            'is_deleted'    => 0,
+            'deleted_at'    => null
+        );
+
+        $exists = $this->db->where('nomor_laporan', $nomor)->where('is_deleted', 0)->get('laporan_ekonomi')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('laporan_ekonomi', $record);
+    }
+
+    public function update_laporan($id, $data) {
+        $record = array();
+        if (isset($data['nomor_laporan'])) $record['nomor_laporan'] = trim($data['nomor_laporan']);
+        if (isset($data['judul_laporan'])) $record['judul_laporan'] = trim($data['judul_laporan']);
+        if (isset($data['jenis_laporan'])) $record['jenis_laporan'] = trim($data['jenis_laporan']);
+        if (isset($data['periode_tahun'])) $record['periode_tahun'] = (int)$data['periode_tahun'];
+        if (isset($data['penyusun'])) $record['penyusun'] = trim($data['penyusun']);
+        if (isset($data['status'])) $record['status'] = $data['status'];
+        if (isset($data['tanggal_terbit'])) $record['tanggal_terbit'] = $data['tanggal_terbit'];
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('laporan_ekonomi', $record);
+    }
+
+    public function soft_delete_laporan($id) {
+        return $this->db->where('id', (int)$id)->update('laporan_ekonomi', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_laporan($id) {
+        return $this->db->where('id', (int)$id)->update('laporan_ekonomi', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_laporan($id) {
+        return $this->db->where('id', (int)$id)->delete('laporan_ekonomi');
+    }
+
+    public function count_trash_laporan() {
+        return $this->db->where('is_deleted', 1)->count_all_results('laporan_ekonomi');
+    }
+
+    // ==========================================
+    // CRUD & SOFT DELETE: KATALOG INDIKATOR
+    // ==========================================
+    public function get_catalog_by_id($id) {
+        return $this->db->where('id', (int)$id)->get('katalog_indikator')->row_array();
+    }
+
+    public function add_catalog($data) {
+        $kode = trim($data['kode_indikator'] ?? $data['code'] ?? '');
+        $nama = trim($data['nama_indikator'] ?? $data['name'] ?? '');
+        if (empty($kode) || empty($nama)) return false;
+
+        $record = array(
+            'kode_indikator'       => $kode,
+            'nama_indikator'       => $nama,
+            'klaster'              => trim($data['klaster'] ?? $data['cluster'] ?? 'Output & Pertumbuhan'),
+            'satuan'               => trim($data['satuan'] ?? $data['unit'] ?? '%'),
+            'frekuensi'            => trim($data['frekuensi'] ?? $data['frequency'] ?? 'Tahunan'),
+            'sumber_data'          => trim($data['sumber_data'] ?? $data['source'] ?? 'BPS Banyuwangi'),
+            'definisi_operasional' => trim($data['definisi_operasional'] ?? $data['definition'] ?? ''),
+            'is_deleted'           => 0,
+            'deleted_at'           => null
+        );
+
+        $exists = $this->db->where('kode_indikator', $kode)->where('is_deleted', 0)->get('katalog_indikator')->num_rows();
+        if ($exists > 0) return false;
+        return $this->db->insert('katalog_indikator', $record);
+    }
+
+    public function update_catalog($id, $data) {
+        $record = array();
+        if (isset($data['kode_indikator'])) $record['kode_indikator'] = trim($data['kode_indikator']);
+        if (isset($data['nama_indikator'])) $record['nama_indikator'] = trim($data['nama_indikator']);
+        if (isset($data['klaster'])) $record['klaster'] = trim($data['klaster']);
+        if (isset($data['satuan'])) $record['satuan'] = trim($data['satuan']);
+        if (isset($data['frekuensi'])) $record['frekuensi'] = trim($data['frekuensi']);
+        if (isset($data['sumber_data'])) $record['sumber_data'] = trim($data['sumber_data']);
+        if (isset($data['definisi_operasional'])) $record['definisi_operasional'] = trim($data['definisi_operasional']);
+        if (empty($record)) return false;
+        return $this->db->where('id', (int)$id)->update('katalog_indikator', $record);
+    }
+
+    public function soft_delete_catalog($id) {
+        return $this->db->where('id', (int)$id)->update('katalog_indikator', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+    }
+
+    public function restore_catalog($id) {
+        return $this->db->where('id', (int)$id)->update('katalog_indikator', array('is_deleted' => 0, 'deleted_at' => null));
+    }
+
+    public function hard_delete_catalog($id) {
+        return $this->db->where('id', (int)$id)->delete('katalog_indikator');
+    }
+
+    public function count_trash_catalog() {
+        return $this->db->where('is_deleted', 1)->count_all_results('katalog_indikator');
     }
 }

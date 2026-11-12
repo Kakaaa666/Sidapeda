@@ -52,6 +52,77 @@
         <button class="button primary" id="btn-apply-filters">Terapkan Filter</button>
     </div>
 
+    <?php if ($this->session->flashdata('success')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--teal); background:rgba(13,148,136,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div>
+                <strong>Berhasil</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('success')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($this->session->flashdata('error')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--red); background:rgba(225,29,72,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div>
+                <strong>Perhatian</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('error')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($status) && ($status === 'Terhapus' || $status === 'Sampah')): ?>
+        <!-- TEMPAT SAMPAH INDIKATOR BERANDA -->
+        <article class="card large" style="margin-bottom:24px; border:1px dashed #f43f5e; background:rgba(244,63,94,0.03);">
+            <div class="card-head">
+                <div>
+                    <span class="badge danger">TEMPAT SAMPAH (SOFT DELETE)</span>
+                    <h3>Daftar Indikator KPI Beranda Terhapus (<?= count($beranda_cards) ?>)</h3>
+                    <p>Klik tombol Pulihkan untuk mengembalikan indikator KPI ke dashboard utama.</p>
+                </div>
+                <a href="<?= site_url('beranda') ?>" class="button ghost">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali ke Indikator Aktif</span>
+                </a>
+            </div>
+            <div class="data-table">
+                <div class="data-tr data-th" style="grid-template-columns: 2fr 1.2fr 1fr 1fr 1.2fr 120px;">
+                    <span>Indikator</span>
+                    <span>Nilai</span>
+                    <span>Satuan</span>
+                    <span>Perubahan</span>
+                    <span>Dihapus Pada</span>
+                    <span>Aksi</span>
+                </div>
+                <?php if (empty($beranda_cards)): ?>
+                    <div style="padding:24px; text-align:center; color:var(--muted); font-size:11px;">
+                        Tempat sampah kosong. Tidak ada indikator beranda yang terhapus.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($beranda_cards as $item): ?>
+                        <div class="data-tr" style="grid-template-columns: 2fr 1.2fr 1fr 1fr 1.2fr 120px;">
+                            <span><strong><?= htmlspecialchars($item['nama_indikator']) ?></strong></span>
+                            <span><?= htmlspecialchars($item['nilai']) ?></span>
+                            <span><?= htmlspecialchars($item['satuan']) ?></span>
+                            <span><?= htmlspecialchars($item['perubahan']) ?></span>
+                            <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-restore-beranda" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['nama_indikator']) ?>" title="Pulihkan Indikator">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    <span>Pulihkan</span>
+                                </button>
+                                <button type="button" class="btn-hard-delete-beranda danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['nama_indikator']) ?>" title="Hapus Permanen">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </article>
+    <?php endif; ?>
+
     <!-- KPI GRID -->
     <section class="section">
         <div class="section-heading">
@@ -60,60 +131,82 @@
                 <h2>Indikator Utama Ekonomi</h2>
                 <p>Perkembangan indikator strategis daerah pada periode berjalan.</p>
             </div>
-            <a href="<?= site_url('analisis_ekonomi') ?>" class="button ghost">
-                <span>Lihat seluruh indikator</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </a>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <?php if ($trash_count > 0): ?>
+                    <?php if ($status === 'Terhapus'): ?>
+                        <a href="<?= site_url('beranda') ?>" class="button ghost">
+                            <span>Kembali ke Aktif</span>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= site_url('beranda?status=Terhapus') ?>" class="button ghost danger">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <span>Sampah (<?= $trash_count ?>)</span>
+                        </a>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <button type="button" class="button primary" id="btn-open-add-beranda">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Tambah Indikator KPI</span>
+                </button>
+                <a href="<?= site_url('analisis_ekonomi') ?>" class="button ghost">
+                    <span>Lihat analisis</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </a>
+            </div>
         </div>
 
         <div class="kpi-grid" id="kpi-container">
             <?php
-            // Calculate dynamic values for current year
-            $idx = $year_idx;
-            $prev = $prev_idx;
+            // Use beranda_cards from database if available
+            $display_cards = !empty($beranda_cards) ? $beranda_cards : array();
             
-            $gNow = $series['growth'][$idx] ?? 0;
-            $gPrev = $series['growth'][$prev] ?? 0;
-            $gDelta = round($gNow - $gPrev, 2);
+            // Fallback to calculated series if DB table empty
+            if (empty($display_cards)) {
+                $idx = $year_idx;
+                $prev = $prev_idx;
+                $gNow = $series['growth'][$idx] ?? 0;
+                $gPrev = $series['growth'][$prev] ?? 0;
+                $gDelta = round($gNow - $gPrev, 2);
+                $pcapNow = $series['perCapita'][$idx] ?? 0;
+                $pcapPrev = $series['perCapita'][$prev] ?? 0;
+                $pcapDelta = round($pcapNow - $pcapPrev, 2);
+                $infNow = $series['inflation'][$idx] ?? 0;
+                $infPrev = $series['inflation'][$prev] ?? 0;
+                $infDelta = round($infNow - $infPrev, 2);
+                $tptNow = $series['tpt'][$idx] ?? 0;
+                $tptPrev = $series['tpt'][$prev] ?? 0;
+                $tptDelta = round($tptNow - $tptPrev, 2);
+                $povNow = $series['poverty'][$idx] ?? 0;
+                $povPrev = $series['poverty'][$prev] ?? 0;
+                $povDelta = round($povNow - $povPrev, 2);
+                $ipmNow = $series['ipm'][$idx] ?? 0;
+                $ipmPrev = $series['ipm'][$prev] ?? 0;
+                $ipmDelta = round($ipmNow - $ipmPrev, 2);
+                $invNow = $series['investmentGrowth'][$idx] ?? 0;
+                $invPrev = $series['investmentGrowth'][$prev] ?? 0;
+                $invDelta = round($invNow - $invPrev, 2);
 
-            $pcapNow = $series['perCapita'][$idx] ?? 0;
-            $pcapPrev = $series['perCapita'][$prev] ?? 0;
-            $pcapDelta = round($pcapNow - $pcapPrev, 2);
+                $display_cards = array(
+                    array('id' => 1, 'nama_indikator' => 'Pertumbuhan Ekonomi', 'nilai' => number_format($gNow, 2, ',', '.'), 'satuan' => '%', 'perubahan' => ($gDelta >= 0 ? '+' : '') . number_format($gDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($gDelta >= 0 ? 'up' : 'down'), 'status' => ($gDelta >= 0 ? 'Meningkat' : 'Perlu perhatian'), 'deret_mini' => '[18, 25, 20, 31, 28, 39, 44]', 'tahun' => $selected_year),
+                    array('id' => 2, 'nama_indikator' => 'PDRB per Kapita', 'nilai' => 'Rp ' . number_format($pcapNow, 1, ',', '.'), 'satuan' => 'Juta', 'perubahan' => ($pcapDelta >= 0 ? '+' : '') . number_format($pcapDelta, 1, ',', '.') . ' juta', 'arah_tren' => ($pcapDelta >= 0 ? 'up' : 'down'), 'status' => ($pcapDelta >= 0 ? 'Meningkat' : 'Menurun'), 'deret_mini' => '[16, 20, 24, 28, 31, 37, 42]', 'tahun' => $selected_year),
+                    array('id' => 3, 'nama_indikator' => 'Tingkat Inflasi', 'nilai' => number_format($infNow, 2, ',', '.'), 'satuan' => '% yoy', 'perubahan' => ($infDelta <= 0 ? '' : '+') . number_format($infDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($infDelta <= 0 ? 'up' : 'down'), 'status' => ($infNow <= 4 ? 'Terkendali' : 'Perlu perhatian'), 'deret_mini' => '[28, 35, 30, 38, 26, 24, 22]', 'tahun' => $selected_year),
+                    array('id' => 4, 'nama_indikator' => 'Pengangguran Terbuka', 'nilai' => number_format($tptNow, 2, ',', '.'), 'satuan' => '%', 'perubahan' => ($tptDelta <= 0 ? '' : '+') . number_format($tptDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($tptDelta <= 0 ? 'up' : 'down'), 'status' => ($tptDelta <= 0 ? 'Membaik' : 'Meningkat'), 'deret_mini' => '[40, 38, 35, 37, 30, 27, 25]', 'tahun' => $selected_year),
+                    array('id' => 5, 'nama_indikator' => 'Tingkat Kemiskinan', 'nilai' => number_format($povNow, 2, ',', '.'), 'satuan' => '%', 'perubahan' => ($povDelta <= 0 ? '' : '+') . number_format($povDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($povDelta <= 0 ? 'up' : 'down'), 'status' => ($povDelta <= 0 ? 'Membaik' : 'Perhatian'), 'deret_mini' => '[43, 39, 37, 35, 32, 28, 26]', 'tahun' => $selected_year),
+                    array('id' => 6, 'nama_indikator' => 'IPM', 'nilai' => number_format($ipmNow, 2, ',', '.'), 'satuan' => 'Poin', 'perubahan' => ($ipmDelta >= 0 ? '+' : '') . number_format($ipmDelta, 2, ',', '.') . ' poin', 'arah_tren' => ($ipmDelta >= 0 ? 'up' : 'down'), 'status' => ($ipmDelta >= 0 ? 'Meningkat' : 'Menurun'), 'deret_mini' => '[20, 23, 25, 28, 32, 36, 40]', 'tahun' => $selected_year),
+                    array('id' => 7, 'nama_indikator' => 'Realisasi Investasi', 'nilai' => ($selected_year == 2024 ? 'Rp 3,82' : 'Rp ' . number_format(3.82 * pow(1.08, $idx - 9), 2, ',', '.')), 'satuan' => 'Triliun', 'perubahan' => '+12,4%', 'arah_tren' => 'up', 'status' => 'Meningkat', 'deret_mini' => '[15, 19, 28, 24, 31, 37, 43]', 'tahun' => $selected_year),
+                    array('id' => 8, 'nama_indikator' => 'Pertumbuhan Investasi', 'nilai' => number_format($invNow, 2, ',', '.'), 'satuan' => '%', 'perubahan' => ($invDelta >= 0 ? '+' : '') . number_format($invDelta, 2, ',', '.') . ' pp', 'arah_tren' => ($invDelta >= 0 ? 'up' : 'down'), 'status' => ($invDelta >= 0 ? 'Meningkat' : 'Perlu perhatian'), 'deret_mini' => '[39, 36, 42, 35, 31, 28, 25]', 'tahun' => $selected_year)
+                );
+            }
 
-            $infNow = $series['inflation'][$idx] ?? 0;
-            $infPrev = $series['inflation'][$prev] ?? 0;
-            $infDelta = round($infNow - $infPrev, 2);
-
-            $tptNow = $series['tpt'][$idx] ?? 0;
-            $tptPrev = $series['tpt'][$prev] ?? 0;
-            $tptDelta = round($tptNow - $tptPrev, 2);
-
-            $povNow = $series['poverty'][$idx] ?? 0;
-            $povPrev = $series['poverty'][$prev] ?? 0;
-            $povDelta = round($povNow - $povPrev, 2);
-
-            $ipmNow = $series['ipm'][$idx] ?? 0;
-            $ipmPrev = $series['ipm'][$prev] ?? 0;
-            $ipmDelta = round($ipmNow - $ipmPrev, 2);
-
-            $invNow = $series['investmentGrowth'][$idx] ?? 0;
-            $invPrev = $series['investmentGrowth'][$prev] ?? 0;
-            $invDelta = round($invNow - $invPrev, 2);
-
-            $kpi_items = array(
-                array('name' => 'Pertumbuhan Ekonomi', 'value' => number_format($gNow, 2, ',', '.'), 'unit' => '%', 'delta' => ($gDelta >= 0 ? '+' : '') . number_format($gDelta, 2, ',', '.') . ' pp', 'trend' => ($gDelta >= 0 ? 'up' : 'down'), 'status' => ($gDelta >= 0 ? 'Meningkat' : 'Perlu perhatian'), 'tone' => ($gDelta >= 0 ? 'success' : 'warning'), 'series' => array_slice($series['growth'], 0, $idx + 1)),
-                array('name' => 'PDRB per Kapita', 'value' => 'Rp ' . number_format($pcapNow, 1, ',', '.'), 'unit' => 'Juta', 'delta' => ($pcapDelta >= 0 ? '+' : '') . number_format($pcapDelta, 1, ',', '.') . ' juta', 'trend' => ($pcapDelta >= 0 ? 'up' : 'down'), 'status' => ($pcapDelta >= 0 ? 'Meningkat' : 'Menurun'), 'tone' => ($pcapDelta >= 0 ? 'success' : 'warning'), 'series' => array_slice($series['perCapita'], 0, $idx + 1)),
-                array('name' => 'Tingkat Inflasi', 'value' => number_format($infNow, 2, ',', '.'), 'unit' => '% yoy', 'delta' => ($infDelta <= 0 ? '' : '+') . number_format($infDelta, 2, ',', '.') . ' pp', 'trend' => ($infDelta <= 0 ? 'up' : 'down'), 'status' => ($infNow <= 4 ? 'Terkendali' : 'Perlu perhatian'), 'tone' => ($infNow <= 4 ? 'success' : 'warning'), 'series' => array_slice($series['inflation'], 0, $idx + 1)),
-                array('name' => 'Pengangguran Terbuka', 'value' => number_format($tptNow, 2, ',', '.'), 'unit' => '%', 'delta' => ($tptDelta <= 0 ? '' : '+') . number_format($tptDelta, 2, ',', '.') . ' pp', 'trend' => ($tptDelta <= 0 ? 'up' : 'down'), 'status' => ($tptDelta <= 0 ? 'Membaik' : 'Meningkat'), 'tone' => ($tptDelta <= 0 ? 'success' : 'warning'), 'series' => array_slice($series['tpt'], 0, $idx + 1)),
-                array('name' => 'Tingkat Kemiskinan', 'value' => number_format($povNow, 2, ',', '.'), 'unit' => '%', 'delta' => ($povDelta <= 0 ? '' : '+') . number_format($povDelta, 2, ',', '.') . ' pp', 'trend' => ($povDelta <= 0 ? 'up' : 'down'), 'status' => ($povDelta <= 0 ? 'Membaik' : 'Perhatian'), 'tone' => ($povDelta <= 0 ? 'success' : 'warning'), 'series' => array_slice($series['poverty'], 0, $idx + 1)),
-                array('name' => 'IPM', 'value' => number_format($ipmNow, 2, ',', '.'), 'unit' => 'Poin', 'delta' => ($ipmDelta >= 0 ? '+' : '') . number_format($ipmDelta, 2, ',', '.') . ' poin', 'trend' => ($ipmDelta >= 0 ? 'up' : 'down'), 'status' => ($ipmDelta >= 0 ? 'Meningkat' : 'Menurun'), 'tone' => ($ipmDelta >= 0 ? 'success' : 'warning'), 'series' => array_slice($series['ipm'], 0, $idx + 1)),
-                array('name' => 'Realisasi Investasi', 'value' => ($selected_year == 2024 ? 'Rp 3,82' : 'Rp ' . number_format(3.82 * pow(1.08, $idx - 9), 2, ',', '.')), 'unit' => 'Triliun', 'delta' => '+12,4%', 'trend' => 'up', 'status' => 'Meningkat', 'tone' => 'success', 'series' => array_slice($series['investmentGrowth'], 0, $idx + 1)),
-                array('name' => 'Pertumbuhan Investasi', 'value' => number_format($invNow, 2, ',', '.'), 'unit' => '%', 'delta' => ($invDelta >= 0 ? '+' : '') . number_format($invDelta, 2, ',', '.') . ' pp', 'trend' => ($invDelta >= 0 ? 'up' : 'down'), 'status' => ($invDelta >= 0 ? 'Meningkat' : 'Perlu perhatian'), 'tone' => ($invDelta >= 0 ? 'success' : 'warning'), 'series' => array_slice($series['investmentGrowth'], 0, $idx + 1))
-            );
-
-            foreach ($kpi_items as $item):
-                // Create points for sparkline
-                $sVals = array_slice($item['series'], -7);
+            foreach ($display_cards as $item):
+                // Decode or use series for sparkline
+                $sVals = array(20, 25, 24, 28, 32, 36, 40);
+                if (!empty($item['deret_mini'])) {
+                    $decoded = is_array($item['deret_mini']) ? $item['deret_mini'] : json_decode($item['deret_mini'], true);
+                    if (is_array($decoded) && count($decoded) > 0) {
+                        $sVals = $decoded;
+                    }
+                }
                 $minS = min($sVals);
                 $maxS = max($sVals);
                 $rangeS = $maxS - $minS ?: 1;
@@ -125,29 +218,41 @@
                     $points[] = round($xS, 1) . ',' . round($yS, 1);
                 }
                 $ptsStr = implode(' ', $points);
+                $trend = $item['arah_tren'] ?? 'up';
+                $tone = (in_array(strtolower($item['status']), array('meningkat','membaik','stabil','terkendali')) || $trend === 'up') ? 'success' : 'warning';
             ?>
-                <a href="<?= site_url('analisis_ekonomi') ?>" class="kpi-card">
+                <div class="kpi-card" style="position:relative;">
                     <div class="kpi-top">
-                        <span><?= $item['name'] ?></span>
-                        <span class="badge <?= $item['tone'] ?>"><?= $item['status'] ?></span>
+                        <span><?= htmlspecialchars($item['nama_indikator']) ?></span>
+                        <span class="badge <?= $tone ?>"><?= htmlspecialchars($item['status']) ?></span>
                     </div>
                     <div class="kpi-value">
-                        <strong><?= $item['value'] ?></strong>
-                        <span><?= $item['unit'] ?></span>
+                        <strong><?= htmlspecialchars($item['nilai']) ?></strong>
+                        <span><?= htmlspecialchars($item['satuan']) ?></span>
                     </div>
                     <div class="kpi-bottom">
                         <div>
-                            <span class="<?= $item['trend'] === 'up' ? 'positive' : 'negative' ?>">
-                                <?= $item['trend'] === 'up' ? '↗' : '↘' ?> <?= $item['delta'] ?>
+                            <span class="<?= $trend === 'up' ? 'positive' : 'negative' ?>">
+                                <?= $trend === 'up' ? '↗' : '↘' ?> <?= htmlspecialchars($item['perubahan']) ?>
                             </span>
                             <small>dari periode lalu</small>
                         </div>
                         <svg class="spark" viewBox="0 0 84 48" preserveAspectRatio="none">
-                            <polyline points="<?= $ptsStr ?>" class="<?= $item['trend'] === 'down' ? 'spark-negative' : '' ?>"></polyline>
+                            <polyline points="<?= $ptsStr ?>" class="<?= $trend === 'down' ? 'spark-negative' : '' ?>"></polyline>
                         </svg>
                     </div>
-                    <div class="kpi-period"><?= $selected_year ?> • Banyuwangi • DATA RESMI / SIMULASI</div>
-                </a>
+                    <div class="kpi-period" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span><?= $item['tahun'] ?? $selected_year ?> • Banyuwangi</span>
+                        <span style="display:flex; gap:4px;">
+                            <button type="button" class="btn-edit-beranda" data-id="<?= $item['id'] ?>" title="Edit Indikator" style="background:transparent; border:none; cursor:pointer; color:var(--text-muted); padding:2px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button type="button" class="btn-delete-beranda" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['nama_indikator']) ?>" title="Hapus (Soft Delete)" style="background:transparent; border:none; cursor:pointer; color:var(--red); padding:2px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </span>
+                    </div>
+                </div>
             <?php endforeach; ?>
         </div>
     </section>
@@ -376,5 +481,128 @@
             </div>
         </article>
     </section>
+
+    <!-- MODAL TAMBAH INDIKATOR BERANDA -->
+    <div class="modal-backdrop" id="add-beranda-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:520px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge info">TAMBAH INDIKATOR KPI</span>
+                    <h2>Tambah Indikator Baru</h2>
+                    <p>Simpan metrik kinerja ekonomi baru ke tabel database <code>beranda</code>.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-add-beranda">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-add-beranda" method="POST" action="<?= site_url('beranda/create') ?>">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Nama Indikator KPI
+                        <input type="text" name="nama_indikator" id="add-beranda-name" placeholder="Contoh: Realisasi Ekspor Non-Migas" required>
+                    </label>
+                    <label>
+                        Nilai Capaian
+                        <input type="text" name="nilai" id="add-beranda-value" placeholder="Contoh: 1.450,20" required>
+                    </label>
+                    <label>
+                        Satuan Ukuran
+                        <input type="text" name="satuan" id="add-beranda-unit" placeholder="Contoh: Miliar Rp / % / Poin" required>
+                    </label>
+                    <label>
+                        Perubahan (Delta)
+                        <input type="text" name="perubahan" id="add-beranda-change" placeholder="Contoh: +5,4%" required>
+                    </label>
+                    <label>
+                        Arah Tren
+                        <select name="arah_tren" id="add-beranda-trend">
+                            <option value="up">Naik (↗ Positive)</option>
+                            <option value="down">Turun (↘ Negative)</option>
+                        </select>
+                    </label>
+                    <label>
+                        Status Capaian
+                        <input type="text" name="status" id="add-beranda-status" placeholder="Contoh: Meningkat / Stabil / Perlu perhatian" required>
+                    </label>
+                    <label>
+                        Tahun Referensi
+                        <input type="number" name="tahun" id="add-beranda-year" value="<?= $selected_year ?>" required>
+                    </label>
+                    <label style="grid-column: 1 / 3;">
+                        Deret Mini Sparkline (Opsional, 7 nilai)
+                        <input type="text" name="deret_mini" id="add-beranda-series" placeholder="Contoh: [18, 25, 20, 31, 28, 39, 44]">
+                    </label>
+                </div>
+
+                <div id="add-beranda-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-add-beranda">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-add-beranda">Simpan Indikator</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT INDIKATOR BERANDA -->
+    <div class="modal-backdrop" id="edit-beranda-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:520px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge warning">PERBARUI INDIKATOR KPI</span>
+                    <h2>Edit Indikator Beranda</h2>
+                    <p>Perbarui nilai, satuan, tren, atau status indikator yang tersimpan.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-edit-beranda">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-edit-beranda" method="POST">
+                <input type="hidden" name="id" id="edit-beranda-id">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Nama Indikator KPI
+                        <input type="text" name="nama_indikator" id="edit-beranda-name" required>
+                    </label>
+                    <label>
+                        Nilai Capaian
+                        <input type="text" name="nilai" id="edit-beranda-value" required>
+                    </label>
+                    <label>
+                        Satuan Ukuran
+                        <input type="text" name="satuan" id="edit-beranda-unit" required>
+                    </label>
+                    <label>
+                        Perubahan (Delta)
+                        <input type="text" name="perubahan" id="edit-beranda-change" required>
+                    </label>
+                    <label>
+                        Arah Tren
+                        <select name="arah_tren" id="edit-beranda-trend">
+                            <option value="up">Naik (↗ Positive)</option>
+                            <option value="down">Turun (↘ Negative)</option>
+                        </select>
+                    </label>
+                    <label>
+                        Status Capaian
+                        <input type="text" name="status" id="edit-beranda-status" required>
+                    </label>
+                    <label>
+                        Tahun Referensi
+                        <input type="number" name="tahun" id="edit-beranda-year" required>
+                    </label>
+                </div>
+
+                <div id="edit-beranda-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-edit-beranda">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-edit-beranda">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 

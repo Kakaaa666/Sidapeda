@@ -65,6 +65,8 @@ CREATE TABLE `beranda` (
   `status` varchar(50) NOT NULL,
   `deret_mini` text NOT NULL,
   `tahun` int(11) NOT NULL DEFAULT 2024,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -120,6 +122,8 @@ CREATE TABLE `analisis_ekonomi` (
   `tenaga_kerja_provinsi_kini` int(11) NOT NULL,
   `deret_pertumbuhan` text NOT NULL,
   `deret_pertumbuhan_provinsi` text NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -145,6 +149,8 @@ CREATE TABLE `peta_ekonomi` (
   `kategori` varchar(50) NOT NULL,
   `garis_lintang` decimal(9,6) NOT NULL,
   `garis_bujur` decimal(9,6) NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -177,6 +183,8 @@ CREATE TABLE `prospek_ekonomi` (
   `inflasi` decimal(6,2) NOT NULL,
   `ipm` decimal(6,2) NOT NULL,
   `pdrb_per_kapita` decimal(6,2) NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -205,6 +213,8 @@ CREATE TABLE `early_warning` (
   `arah_risiko` enum('above','below') NOT NULL DEFAULT 'above',
   `status_risiko` enum('Normal','Waspada','Kritis') NOT NULL DEFAULT 'Normal',
   `sudah_ditindaklanjuti` tinyint(1) NOT NULL DEFAULT 0,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -228,6 +238,8 @@ CREATE TABLE `economic_insight` (
   `dampak_anggaran` varchar(100) DEFAULT NULL,
   `opd_penanggung_jawab` varchar(100) NOT NULL,
   `tahun` int(11) NOT NULL DEFAULT 2024,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -248,6 +260,8 @@ CREATE TABLE `laporan_ekonomi` (
   `penyusun` varchar(100) NOT NULL,
   `status` enum('Terpublikasi','Draf') NOT NULL DEFAULT 'Terpublikasi',
   `tanggal_terbit` date NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -301,6 +315,8 @@ CREATE TABLE `katalog_indikator` (
   `frekuensi` varchar(50) NOT NULL,
   `sumber_data` varchar(100) NOT NULL,
   `definisi_operasional` text NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -330,6 +346,8 @@ CREATE TABLE `akun` (
   `terakhir_masuk` datetime DEFAULT NULL,
   `dibuat_pada` datetime DEFAULT CURRENT_TIMESTAMP,
   `diperbarui_pada` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

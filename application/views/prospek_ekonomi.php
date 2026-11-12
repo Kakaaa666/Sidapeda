@@ -1,4 +1,75 @@
 <div class="page outlook-page">
+    <?php if ($this->session->flashdata('success')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--teal); background:rgba(13,148,136,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div>
+                <strong>Berhasil</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('success')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($this->session->flashdata('error')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--red); background:rgba(225,29,72,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div>
+                <strong>Perhatian</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('error')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($status) && ($status === 'Terhapus' || $status === 'Sampah')): ?>
+        <!-- TEMPAT SAMPAH PROSPEK EKONOMI -->
+        <article class="card large" style="margin-bottom:24px; border:1px dashed #f43f5e; background:rgba(244,63,94,0.03);">
+            <div class="card-head">
+                <div>
+                    <span class="badge danger">TEMPAT SAMPAH (SOFT DELETE)</span>
+                    <h3>Daftar Prospek Tahunan Terhapus (<?= count($prospek_records) ?>)</h3>
+                    <p>Klik tombol Pulihkan untuk mengembalikan data historis/prospek tahunan ke model kalkulasi.</p>
+                </div>
+                <a href="<?= site_url('prospek_ekonomi') ?>" class="button ghost">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali ke Prospek Aktif</span>
+                </a>
+            </div>
+            <div class="data-table">
+                <div class="data-tr data-th" style="grid-template-columns: 1fr 1.2fr 1.2fr 1.2fr 1.2fr 120px;">
+                    <span>Tahun</span>
+                    <span>Pertumbuhan Banyuwangi</span>
+                    <span>Inflasi</span>
+                    <span>Pengangguran (TPT)</span>
+                    <span>Dihapus Pada</span>
+                    <span>Aksi</span>
+                </div>
+                <?php if (empty($prospek_records)): ?>
+                    <div style="padding:24px; text-align:center; color:var(--muted); font-size:11px;">
+                        Tempat sampah kosong. Tidak ada data prospek tahunan yang terhapus.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($prospek_records as $item): ?>
+                        <div class="data-tr" style="grid-template-columns: 1fr 1.2fr 1.2fr 1.2fr 1.2fr 120px;">
+                            <span><strong><?= $item['tahun'] ?></strong></span>
+                            <span><?= number_format($item['pertumbuhan_ekonomi'], 2, ',', '.') ?>%</span>
+                            <span><?= number_format($item['inflasi'], 2, ',', '.') ?>%</span>
+                            <span><?= number_format($item['tingkat_pengangguran'], 2, ',', '.') ?>%</span>
+                            <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-restore-prospek" data-id="<?= $item['id'] ?>" data-name="Tahun <?= $item['tahun'] ?>" title="Pulihkan Data">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    <span>Pulihkan</span>
+                                </button>
+                                <button type="button" class="btn-hard-delete-prospek danger" data-id="<?= $item['id'] ?>" data-name="Tahun <?= $item['tahun'] ?>" title="Hapus Permanen">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </article>
+    <?php endif; ?>
+
     <div class="module-intro">
         <div>
             <span class="eyebrow"><?= $eyebrow ?></span>
@@ -6,7 +77,22 @@
             <p><?= $subtitle ?></p>
         </div>
         <div class="intro-actions">
-            <span class="badge simulation">DATABASE CI 3</span>
+            <?php if ($trash_count > 0): ?>
+                <?php if ($status === 'Terhapus'): ?>
+                    <a href="<?= site_url('prospek_ekonomi') ?>" class="button ghost">
+                        <span>Kembali ke Aktif</span>
+                    </a>
+                <?php else: ?>
+                    <a href="<?= site_url('prospek_ekonomi?status=Terhapus') ?>" class="button ghost danger">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <span>Sampah (<?= $trash_count ?>)</span>
+                    </a>
+                <?php endif; ?>
+            <?php endif; ?>
+            <button class="button primary" id="btn-open-add-prospek">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Tahun Prospek</span>
+            </button>
             <button class="button secondary" id="btn-export-outlook">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
                 <span>Ekspor Proyeksi</span>
@@ -311,5 +397,192 @@
             <?php endforeach; ?>
         </div>
     </section>
+
+    <!-- TABEL DATASET HISTORIS & PROSPEK TAHUNAN (CRUD & SOFT DELETE) -->
+    <article class="card large" style="margin-top:24px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">SERIES INDIKATOR MAKRO</span>
+                <h3>Daftar Data Historis & Prospek Tahunan (<?= count($prospek_records) ?>)</h3>
+                <p>Kelola data pertumbuhan ekonomi, inflasi, kemiskinan, pengangguran, dan IPM per tahun.</p>
+            </div>
+            <button class="button primary" id="btn-open-add-prospek-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Tahun Prospek</span>
+            </button>
+        </div>
+
+        <div class="data-table">
+            <div class="data-tr data-th" style="grid-template-columns: 80px 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr 110px;">
+                <span>Tahun</span>
+                <span>PDRB Banyuwangi</span>
+                <span>PDRB Jatim</span>
+                <span>PDRB RI</span>
+                <span>TPT</span>
+                <span>Kemiskinan</span>
+                <span>Inflasi</span>
+                <span>IPM</span>
+                <span>Aksi</span>
+            </div>
+            <?php foreach ($prospek_records as $p): ?>
+                <div class="data-tr" style="grid-template-columns: 80px 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr 110px;">
+                    <span><strong><?= $p['tahun'] ?></strong></span>
+                    <span><?= number_format($p['pertumbuhan_ekonomi'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['pertumbuhan_jatim'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['pertumbuhan_nasional'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['tingkat_pengangguran'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['tingkat_kemiskinan'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['inflasi'], 2, ',', '.') ?>%</span>
+                    <span><?= number_format($p['ipm'], 2, ',', '.') ?></span>
+                    <span class="row-actions">
+                        <button type="button" class="btn-edit-prospek" data-id="<?= $p['id'] ?>" title="Edit Data Prospek">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <span>Edit</span>
+                        </button>
+                        <button type="button" class="btn-delete-prospek danger" data-id="<?= $p['id'] ?>" data-name="Tahun <?= $p['tahun'] ?>" title="Hapus (Soft Delete)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </article>
+
+    <!-- MODAL TAMBAH PROSPEK -->
+    <div class="modal-backdrop" id="add-prospek-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:540px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge info">TAMBAH PROSPEK</span>
+                    <h2>Tambah Data Tahun Prospek</h2>
+                    <p>Simpan data historis/proyeksi makro ekonomi ke tabel database <code>prospek_ekonomi</code>.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-add-prospek">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-add-prospek" method="POST" action="<?= site_url('prospek_ekonomi/create') ?>">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Tahun Periode
+                        <input type="number" name="tahun" id="add-prospek-year" placeholder="Contoh: 2025" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Banyuwangi (%)
+                        <input type="number" step="0.01" name="pertumbuhan_ekonomi" id="add-prospek-growth" placeholder="Contoh: 5.25" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Jatim (%)
+                        <input type="number" step="0.01" name="pertumbuhan_jatim" id="add-prospek-growth-jatim" placeholder="Contoh: 5.00" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Nasional (%)
+                        <input type="number" step="0.01" name="pertumbuhan_nasional" id="add-prospek-growth-nasional" placeholder="Contoh: 5.10" required>
+                    </label>
+                    <label>
+                        Tingkat Pengangguran (TPT %)
+                        <input type="number" step="0.01" name="tingkat_pengangguran" id="add-prospek-tpt" placeholder="Contoh: 3.95" required>
+                    </label>
+                    <label>
+                        Tingkat Kemiskinan (%)
+                        <input type="number" step="0.01" name="tingkat_kemiskinan" id="add-prospek-poverty" placeholder="Contoh: 7.15" required>
+                    </label>
+                    <label>
+                        Tingkat Inflasi (%)
+                        <input type="number" step="0.01" name="inflasi" id="add-prospek-inflation" placeholder="Contoh: 2.35" required>
+                    </label>
+                    <label>
+                        Indeks Pembangunan Manusia (IPM)
+                        <input type="number" step="0.01" name="ipm" id="add-prospek-ipm" placeholder="Contoh: 74.20" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Investasi (%)
+                        <input type="number" step="0.01" name="pertumbuhan_investasi" id="add-prospek-investment" placeholder="Contoh: 12.50">
+                    </label>
+                    <label style="grid-column: 1 / 3;">
+                        PDRB per Kapita (Juta Rp)
+                        <input type="number" step="0.01" name="pdrb_per_kapita" id="add-prospek-per-capita" placeholder="Contoh: 65.50">
+                    </label>
+                </div>
+
+                <div id="add-prospek-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-add-prospek">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-add-prospek">Simpan Prospek</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT PROSPEK -->
+    <div class="modal-backdrop" id="edit-prospek-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:540px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge warning">PERBARUI PROSPEK</span>
+                    <h2>Edit Data Prospek Tahunan</h2>
+                    <p>Perbarui nilai indikator makro ekonomi tahunan yang tersimpan.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-edit-prospek">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-edit-prospek" method="POST">
+                <input type="hidden" name="id" id="edit-prospek-id">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Tahun Periode
+                        <input type="number" name="tahun" id="edit-prospek-year" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Banyuwangi (%)
+                        <input type="number" step="0.01" name="pertumbuhan_ekonomi" id="edit-prospek-growth" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Jatim (%)
+                        <input type="number" step="0.01" name="pertumbuhan_jatim" id="edit-prospek-growth-jatim" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Nasional (%)
+                        <input type="number" step="0.01" name="pertumbuhan_nasional" id="edit-prospek-growth-nasional" required>
+                    </label>
+                    <label>
+                        Tingkat Pengangguran (TPT %)
+                        <input type="number" step="0.01" name="tingkat_pengangguran" id="edit-prospek-tpt" required>
+                    </label>
+                    <label>
+                        Tingkat Kemiskinan (%)
+                        <input type="number" step="0.01" name="tingkat_kemiskinan" id="edit-prospek-poverty" required>
+                    </label>
+                    <label>
+                        Tingkat Inflasi (%)
+                        <input type="number" step="0.01" name="inflasi" id="edit-prospek-inflation" required>
+                    </label>
+                    <label>
+                        Indeks Pembangunan Manusia (IPM)
+                        <input type="number" step="0.01" name="ipm" id="edit-prospek-ipm" required>
+                    </label>
+                    <label>
+                        Pertumbuhan Investasi (%)
+                        <input type="number" step="0.01" name="pertumbuhan_investasi" id="edit-prospek-investment">
+                    </label>
+                    <label style="grid-column: 1 / 3;">
+                        PDRB per Kapita (Juta Rp)
+                        <input type="number" step="0.01" name="pdrb_per_kapita" id="edit-prospek-per-capita">
+                    </label>
+                </div>
+
+                <div id="edit-prospek-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-edit-prospek">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-edit-prospek">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 

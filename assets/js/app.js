@@ -493,21 +493,21 @@
     function dispatchPageLogic() {
         const path = window.location.pathname.toLowerCase();
 
-        if (document.getElementById('overview-line-chart-container')) {
+        if (document.getElementById('overview-line-chart-container') || document.getElementById('btn-open-add-beranda')) {
             initOverviewPage();
-        } else if (document.getElementById('comp-feature-tabs')) {
+        } else if (document.getElementById('comp-feature-tabs') || document.getElementById('form-add-regional')) {
             initComparisonPage();
-        } else if (document.getElementById('analysis-menu-links')) {
+        } else if (document.getElementById('analysis-menu-links') || document.getElementById('form-add-sector')) {
             initAnalysisPage();
-        } else if (document.getElementById('map-canvas-container')) {
+        } else if (document.getElementById('map-canvas-container') || document.getElementById('form-add-district')) {
             initMapPage();
-        } else if (document.getElementById('btn-mode-forecast')) {
+        } else if (document.getElementById('btn-mode-forecast') || document.getElementById('form-add-prospek')) {
             initOutlookPage();
-        } else if (document.getElementById('ews-stats-container')) {
+        } else if (document.getElementById('ews-stats-container') || document.getElementById('form-add-ews')) {
             initEwsPage();
-        } else if (document.getElementById('insight-modal-backdrop')) {
+        } else if (document.getElementById('insight-modal-backdrop') || document.getElementById('form-add-insight')) {
             initInsightPage();
-        } else if (document.getElementById('printable-report')) {
+        } else if (document.getElementById('printable-report') || document.getElementById('form-add-report')) {
             initReportPage();
         } else if (document.getElementById('admin-table-body')) {
             initAdminDatabasePage();
@@ -517,9 +517,249 @@
             initAdminValidationPage();
         } else if (document.getElementById('threshold-admin-rows')) {
             initAdminEwsPage();
-        } else if (document.querySelector('.user-role-select')) {
+        } else if (document.getElementById('form-add-catalog') || document.getElementById('btn-export-catalog-csv')) {
+            initAdminCatalogPage();
+        } else if (document.querySelector('.user-role-select') || document.getElementById('form-add-user')) {
             initAdminUsersPage();
         }
+    }
+
+    // ==========================================
+    // GENERIC MODULE CRUD & SOFT DELETE HANDLER
+    // ==========================================
+    function setupModuleCrud(cfg) {
+        const addModal = document.getElementById(cfg.addModalId);
+        const editModal = document.getElementById(cfg.editModalId);
+        const formAdd = document.getElementById(cfg.formAddId);
+        const formEdit = document.getElementById(cfg.formEditId);
+        const addErr = cfg.addErrorId ? document.getElementById(cfg.addErrorId) : null;
+        const editErr = cfg.editErrorId ? document.getElementById(cfg.editErrorId) : null;
+
+        // Open Add Modal
+        (cfg.openAddBtnIds || []).forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn && addModal) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
+                    addModal.style.display = 'grid';
+                });
+            }
+        });
+
+        // Close Add Modal
+        (cfg.closeAddBtnIds || []).forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn && addModal) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    addModal.style.display = 'none';
+                });
+            }
+        });
+        if (addModal) {
+            addModal.addEventListener('click', e => {
+                if (e.target === addModal) addModal.style.display = 'none';
+            });
+        }
+
+        // Close Edit Modal
+        (cfg.closeEditBtnIds || []).forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn && editModal) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    editModal.style.display = 'none';
+                });
+            }
+        });
+        if (editModal) {
+            editModal.addEventListener('click', e => {
+                if (e.target === editModal) editModal.style.display = 'none';
+            });
+        }
+
+        // Submit Add Form
+        if (formAdd) {
+            formAdd.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
+                const fd = new FormData(formAdd);
+                fetch(`${SITE_URL}/${cfg.controller}/create`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            if (addErr) {
+                                addErr.style.display = 'block';
+                                addErr.textContent = data.message || 'Gagal menyimpan data.';
+                            } else {
+                                alert(data.message || 'Gagal menyimpan data.');
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        formAdd.submit();
+                    });
+            });
+        }
+
+        // Submit Edit Form
+        if (formEdit) {
+            formEdit.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (editErr) { editErr.style.display = 'none'; editErr.textContent = ''; }
+                const fd = new FormData(formEdit);
+                const id = fd.get('id') || (formEdit.querySelector('input[name="id"]') ? formEdit.querySelector('input[name="id"]').value : '');
+                fetch(`${SITE_URL}/${cfg.controller}/update/${id}`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            if (editErr) {
+                                editErr.style.display = 'block';
+                                editErr.textContent = data.message || 'Gagal memperbarui data.';
+                            } else {
+                                alert(data.message || 'Gagal memperbarui data.');
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        formEdit.submit();
+                    });
+            });
+        }
+
+        // Bind Row Buttons
+        function bindButtons() {
+            // Edit
+            if (cfg.editBtnClass) {
+                document.querySelectorAll('.' + cfg.editBtnClass).forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const id = this.getAttribute('data-id');
+                        if (!id) return;
+                        if (editErr) { editErr.style.display = 'none'; editErr.textContent = ''; }
+                        fetch(`${SITE_URL}/${cfg.controller}/get_data/${id}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(r => r.json())
+                            .then(res => {
+                                if (res.status === 'success' && res.data) {
+                                    const preFillFn = cfg.onEditPreFill || cfg.populateForm;
+                                    if (typeof preFillFn === 'function') {
+                                        preFillFn(res.data);
+                                    }
+                                    if (editModal) editModal.style.display = 'grid';
+                                } else {
+                                    alert(res.message || 'Gagal memuat data.');
+                                }
+                            })
+                            .catch(() => alert('Gagal mengambil data dari server.'));
+                    });
+                });
+            }
+
+            // Soft delete
+            if (cfg.deleteBtnClass) {
+                document.querySelectorAll('.' + cfg.deleteBtnClass).forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const id = this.getAttribute('data-id');
+                        const name = this.getAttribute('data-name') || 'item ini';
+                        if (!id) return;
+                        if (confirm(`Pindahkan "${name}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
+                            fetch(`${SITE_URL}/${cfg.controller}/soft_delete/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        alert(data.message || 'Gagal memproses soft delete.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${SITE_URL}/${cfg.controller}/soft_delete/${id}`;
+                                });
+                        }
+                    });
+                });
+            }
+
+            // Restore
+            if (cfg.restoreBtnClass) {
+                document.querySelectorAll('.' + cfg.restoreBtnClass).forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const id = this.getAttribute('data-id');
+                        const name = this.getAttribute('data-name') || 'item ini';
+                        if (!id) return;
+                        if (confirm(`Pulihkan "${name}" kembali ke daftar aktif?`)) {
+                            fetch(`${SITE_URL}/${cfg.controller}/restore/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        alert(data.message || 'Gagal memulihkan data.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${SITE_URL}/${cfg.controller}/restore/${id}`;
+                                });
+                        }
+                    });
+                });
+            }
+
+            // Hard delete
+            if (cfg.hardDeleteBtnClass) {
+                document.querySelectorAll('.' + cfg.hardDeleteBtnClass).forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const id = this.getAttribute('data-id');
+                        const name = this.getAttribute('data-name') || 'item ini';
+                        if (!id) return;
+                        if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${name}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
+                            fetch(`${SITE_URL}/${cfg.controller}/hard_delete/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        alert(data.message || 'Gagal menghapus permanen.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${SITE_URL}/${cfg.controller}/hard_delete/${id}`;
+                                });
+                        }
+                    });
+                });
+            }
+        }
+
+        bindButtons();
+        return { bindButtons };
     }
 
     // 1. OVERVIEW PAGE
@@ -561,6 +801,34 @@
                 window.location.href = SITE_URL + '?year=' + yr;
             });
         }
+
+        // Setup CRUD & Soft Delete for Beranda KPI
+        setupModuleCrud({
+            controller: 'beranda',
+            addModalId: 'add-beranda-modal',
+            editModalId: 'edit-beranda-modal',
+            openAddBtnIds: ['btn-open-add-beranda'],
+            closeAddBtnIds: ['modal-btn-close-add-beranda', 'modal-btn-cancel-add-beranda'],
+            closeEditBtnIds: ['modal-btn-close-edit-beranda', 'modal-btn-cancel-edit-beranda'],
+            formAddId: 'form-add-beranda',
+            formEditId: 'form-edit-beranda',
+            addErrorId: 'add-beranda-error',
+            editErrorId: 'edit-beranda-error',
+            editBtnClass: 'btn-edit-beranda',
+            deleteBtnClass: 'btn-delete-beranda',
+            restoreBtnClass: 'btn-restore-beranda',
+            hardDeleteBtnClass: 'btn-hard-delete-beranda',
+            onEditPreFill: (d) => {
+                document.getElementById('edit-beranda-id').value = d.id;
+                document.getElementById('edit-beranda-name').value = d.nama_indikator || '';
+                document.getElementById('edit-beranda-value').value = d.nilai || '';
+                document.getElementById('edit-beranda-unit').value = d.satuan || '';
+                document.getElementById('edit-beranda-change').value = d.perubahan || '';
+                document.getElementById('edit-beranda-trend').value = d.arah_tren || 'up';
+                document.getElementById('edit-beranda-status').value = d.status || '';
+                document.getElementById('edit-beranda-year').value = d.tahun || 2024;
+            }
+        });
     }
 
     // 2. COMPARISON PAGE
@@ -1405,6 +1673,36 @@
         }
 
         renderAnalysis();
+
+        // Setup CRUD & Soft Delete for Sektor Ekonomi
+        setupModuleCrud({
+            controller: 'analisis_ekonomi',
+            addModalId: 'add-sector-modal',
+            editModalId: 'edit-sector-modal',
+            openAddBtnIds: ['btn-open-add-sector', 'btn-open-add-sector-2'],
+            closeAddBtnIds: ['modal-btn-close-add-sector', 'modal-btn-cancel-add-sector'],
+            closeEditBtnIds: ['modal-btn-close-edit-sector', 'modal-btn-cancel-edit-sector'],
+            formAddId: 'form-add-sector',
+            formEditId: 'form-edit-sector',
+            addErrorId: 'add-sector-error',
+            editErrorId: 'edit-sector-error',
+            editBtnClass: 'btn-edit-sector',
+            deleteBtnClass: 'btn-delete-sector',
+            restoreBtnClass: 'btn-restore-sector',
+            hardDeleteBtnClass: 'btn-hard-delete-sector',
+            onEditPreFill: (d) => {
+                document.getElementById('edit-sector-id').value = d.id;
+                document.getElementById('edit-sector-code').value = d.kode_sektor || '';
+                document.getElementById('edit-sector-short').value = d.nama_pendek || '';
+                document.getElementById('edit-sector-name').value = d.nama_sektor || '';
+                document.getElementById('edit-sector-share-local').value = d.porsi_daerah || 0;
+                document.getElementById('edit-sector-share-prov').value = d.porsi_provinsi || 0;
+                document.getElementById('edit-sector-growth-local').value = d.pertumbuhan_daerah || 0;
+                document.getElementById('edit-sector-growth-prov').value = d.pertumbuhan_provinsi || 0;
+                document.getElementById('edit-sector-workers').value = d.tenaga_kerja_kini || 0;
+                document.getElementById('edit-sector-workers-prov').value = d.tenaga_kerja_provinsi_kini || 0;
+            }
+        });
     }
 
     // 4. MAP PAGE
@@ -1636,6 +1934,35 @@
         }
 
         updateIndicators();
+
+        // Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
+        setupModuleCrud({
+            controller: 'peta_ekonomi',
+            addModalId: 'add-district-modal',
+            editModalId: 'edit-district-modal',
+            openAddBtnIds: ['btn-open-add-district', 'btn-open-add-district-2'],
+            closeAddBtnIds: ['modal-btn-close-add-district', 'modal-btn-cancel-add-district'],
+            closeEditBtnIds: ['modal-btn-close-edit-district', 'modal-btn-cancel-edit-district'],
+            formAddId: 'form-add-district',
+            formEditId: 'form-edit-district',
+            addErrorId: 'add-district-error',
+            editErrorId: 'edit-district-error',
+            editBtnClass: 'btn-edit-district',
+            deleteBtnClass: 'btn-delete-district',
+            restoreBtnClass: 'btn-restore-district',
+            hardDeleteBtnClass: 'btn-hard-delete-district',
+            onEditPreFill: (d) => {
+                document.getElementById('edit-district-id').value = d.id;
+                document.getElementById('edit-district-name').value = d.name || d.nama_kecamatan || '';
+                document.getElementById('edit-district-share').value = d.pdrbShare !== undefined ? d.pdrbShare : (d.porsi_pdrb || 0);
+                document.getElementById('edit-district-growth').value = d.growth !== undefined ? d.growth : (d.pertumbuhan || 0);
+                document.getElementById('edit-district-poverty').value = d.poverty !== undefined ? d.poverty : (d.kemiskinan || 0);
+                document.getElementById('edit-district-density').value = d.density !== undefined ? d.density : (d.kepadatan || 0);
+                document.getElementById('edit-district-category').value = d.category || d.kategori || 'Berkembang';
+                document.getElementById('edit-district-lat').value = d.lat !== undefined ? d.lat : (d.garis_lintang || '');
+                document.getElementById('edit-district-lng').value = d.lng !== undefined ? d.lng : (d.garis_bujur || '');
+            }
+        });
     }
 
     // 5. OUTLOOK PAGE
@@ -1822,6 +2149,37 @@
 
         runForecast();
         updateScenario();
+
+        // Setup CRUD & Soft Delete for Prospek Ekonomi
+        setupModuleCrud({
+            controller: 'prospek_ekonomi',
+            addModalId: 'add-prospek-modal',
+            editModalId: 'edit-prospek-modal',
+            openAddBtnIds: ['btn-open-add-prospek', 'btn-open-add-prospek-2'],
+            closeAddBtnIds: ['modal-btn-close-add-prospek', 'modal-btn-cancel-add-prospek'],
+            closeEditBtnIds: ['modal-btn-close-edit-prospek', 'modal-btn-cancel-edit-prospek'],
+            formAddId: 'form-add-prospek',
+            formEditId: 'form-edit-prospek',
+            addErrorId: 'add-prospek-error',
+            editErrorId: 'edit-prospek-error',
+            editBtnClass: 'btn-edit-prospek',
+            deleteBtnClass: 'btn-delete-prospek',
+            restoreBtnClass: 'btn-restore-prospek',
+            hardDeleteBtnClass: 'btn-hard-delete-prospek',
+            onEditPreFill: (d) => {
+                document.getElementById('edit-prospek-id').value = d.id;
+                document.getElementById('edit-prospek-year').value = d.tahun || '';
+                document.getElementById('edit-prospek-growth').value = d.pertumbuhan_ekonomi || 0;
+                document.getElementById('edit-prospek-growth-jatim').value = d.pertumbuhan_jatim || 0;
+                document.getElementById('edit-prospek-growth-nasional').value = d.pertumbuhan_nasional || 0;
+                document.getElementById('edit-prospek-tpt').value = d.tingkat_pengangguran || 0;
+                document.getElementById('edit-prospek-poverty').value = d.tingkat_kemiskinan || 0;
+                document.getElementById('edit-prospek-inflation').value = d.inflasi || 0;
+                document.getElementById('edit-prospek-ipm').value = d.ipm || 0;
+                document.getElementById('edit-prospek-investment').value = d.pertumbuhan_investasi || 0;
+                document.getElementById('edit-prospek-per-capita').value = d.pdrb_per_kapita || 0;
+            }
+        });
     }
 
     // 6. EWS PAGE
@@ -2014,6 +2372,30 @@
         }
 
         renderEWS();
+
+        // Setup CRUD & Soft Delete for Early Warning
+        setupModuleCrud({
+            controller: 'early_warning',
+            addModalId: 'add-ews-modal',
+            editModalId: 'edit-ews-modal',
+            openAddBtnIds: ['btn-open-add-ews', 'btn-open-add-ews-2'],
+            closeAddBtnIds: ['modal-btn-close-add-ews', 'modal-btn-cancel-add-ews'],
+            closeEditBtnIds: ['modal-btn-close-edit-ews', 'modal-btn-cancel-edit-ews'],
+            formAddId: 'form-add-ews',
+            formEditId: 'form-edit-ews',
+            addErrorId: 'add-ews-error',
+            editErrorId: 'edit-ews-error',
+            populateForm: function (item) {
+                document.getElementById('edit-ews-id').value = item.id;
+                document.getElementById('edit-ews-code').value = item.kode_indikator || '';
+                document.getElementById('edit-ews-unit').value = item.satuan || '';
+                document.getElementById('edit-ews-name').value = item.nama_indikator || '';
+                document.getElementById('edit-ews-current').value = item.nilai_terkini || '';
+                document.getElementById('edit-ews-threshold').value = item.ambang_batas || '';
+                document.getElementById('edit-ews-direction').value = item.arah_risiko || 'Naik';
+                document.getElementById('edit-ews-status').value = item.status_risiko || 'Normal';
+            }
+        });
     }
 
     // 7. INSIGHT PAGE
@@ -2045,6 +2427,31 @@
                 if (e.target === modal) closeInsight();
             });
         }
+
+        // Setup CRUD & Soft Delete for Economic Insight
+        setupModuleCrud({
+            controller: 'economic_insight',
+            addModalId: 'add-insight-modal',
+            editModalId: 'edit-insight-modal',
+            openAddBtnIds: ['btn-open-add-insight'],
+            closeAddBtnIds: ['modal-btn-close-add-insight', 'modal-btn-cancel-add-insight'],
+            closeEditBtnIds: ['modal-btn-close-edit-insight', 'modal-btn-cancel-edit-insight'],
+            formAddId: 'form-add-insight',
+            formEditId: 'form-edit-insight',
+            addErrorId: 'add-insight-error',
+            editErrorId: 'edit-insight-error',
+            populateForm: function (item) {
+                document.getElementById('edit-insight-id').value = item.id;
+                document.getElementById('edit-insight-title').value = item.judul || '';
+                document.getElementById('edit-insight-summary').value = item.ringkasan || '';
+                document.getElementById('edit-insight-category').value = item.kategori || '';
+                document.getElementById('edit-insight-urgency').value = item.tingkat_urgensi || 'Sedang';
+                document.getElementById('edit-insight-rec').value = item.rekomendasi_kebijakan || '';
+                document.getElementById('edit-insight-impact').value = item.dampak_anggaran || '';
+                document.getElementById('edit-insight-opd').value = item.opd_penanggung_jawab || '';
+                document.getElementById('edit-insight-year').value = item.tahun || '';
+            }
+        });
     }
 
     // 8. REPORT PAGE
@@ -2149,6 +2556,30 @@
         if (btnExportPrev) btnExportPrev.addEventListener('click', exportHandler);
 
         updateReport();
+
+        // Setup CRUD & Soft Delete for Laporan Ekonomi
+        setupModuleCrud({
+            controller: 'laporan_ekonomi',
+            addModalId: 'add-report-modal',
+            editModalId: 'edit-report-modal',
+            openAddBtnIds: ['btn-open-add-report', 'btn-open-add-report-2'],
+            closeAddBtnIds: ['modal-btn-close-add-report', 'modal-btn-cancel-add-report'],
+            closeEditBtnIds: ['modal-btn-close-edit-report', 'modal-btn-cancel-edit-report'],
+            formAddId: 'form-add-report',
+            formEditId: 'form-edit-report',
+            addErrorId: 'add-report-error',
+            editErrorId: 'edit-report-error',
+            populateForm: function (item) {
+                document.getElementById('edit-report-id').value = item.id;
+                document.getElementById('edit-report-number').value = item.nomor_laporan || '';
+                document.getElementById('edit-report-year').value = item.periode_tahun || '';
+                document.getElementById('edit-report-title').value = item.judul_laporan || '';
+                document.getElementById('edit-report-type').value = item.jenis_laporan || 'Eksekutif';
+                document.getElementById('edit-report-status').value = item.status || 'Draft';
+                document.getElementById('edit-report-author').value = item.penyusun || '';
+                document.getElementById('edit-report-date').value = item.tanggal_terbit || '';
+            }
+        });
     }
 
     // 9. ADMIN DATABASE PAGE
@@ -2649,6 +3080,63 @@
                     .then(res => res.json())
                     .then(() => location.reload());
             });
+        });
+
+        // Setup CRUD & Soft Delete for Akun Pengguna
+        setupModuleCrud({
+            controller: 'users',
+            addModalId: 'add-user-modal',
+            editModalId: 'edit-user-modal',
+            openAddBtnIds: ['btn-open-add-user'],
+            closeAddBtnIds: ['modal-btn-close-add-user', 'modal-btn-cancel-add-user'],
+            closeEditBtnIds: ['modal-btn-close-edit-user', 'modal-btn-cancel-edit-user'],
+            formAddId: 'form-add-user',
+            formEditId: 'form-edit-user',
+            addErrorId: 'add-user-error',
+            editErrorId: 'edit-user-error',
+            populateForm: function (item) {
+                document.getElementById('edit-user-id').value = item.id;
+                document.getElementById('edit-user-username').value = item.nama_pengguna || '';
+                document.getElementById('edit-user-fullname').value = item.nama_lengkap || '';
+                document.getElementById('edit-user-email').value = item.email || '';
+                document.getElementById('edit-user-level').value = item.level || '1';
+                document.getElementById('edit-user-status').value = item.status || 'Aktif';
+                document.getElementById('edit-user-password').value = '';
+            }
+        });
+    }
+
+    // ADMIN CATALOG PAGE
+    function initAdminCatalogPage() {
+        const btnExportCsv = document.getElementById('btn-export-catalog-csv');
+        if (btnExportCsv) {
+            btnExportCsv.addEventListener('click', function () {
+                window.location.href = SITE_URL + '/catalog';
+            });
+        }
+
+        // Setup CRUD & Soft Delete for Katalog Indikator
+        setupModuleCrud({
+            controller: 'catalog',
+            addModalId: 'add-catalog-modal',
+            editModalId: 'edit-catalog-modal',
+            openAddBtnIds: ['btn-open-add-catalog'],
+            closeAddBtnIds: ['modal-btn-close-add-catalog', 'modal-btn-cancel-add-catalog'],
+            closeEditBtnIds: ['modal-btn-close-edit-catalog', 'modal-btn-cancel-edit-catalog'],
+            formAddId: 'form-add-catalog',
+            formEditId: 'form-edit-catalog',
+            addErrorId: 'add-catalog-error',
+            editErrorId: 'edit-catalog-error',
+            populateForm: function (item) {
+                document.getElementById('edit-catalog-id').value = item.id;
+                document.getElementById('edit-catalog-code').value = item.kode_indikator || '';
+                document.getElementById('edit-catalog-unit').value = item.satuan || '';
+                document.getElementById('edit-catalog-name').value = item.nama_indikator || '';
+                document.getElementById('edit-catalog-cluster').value = item.klaster || '';
+                document.getElementById('edit-catalog-freq').value = item.frekuensi || 'Tahunan';
+                document.getElementById('edit-catalog-source').value = item.sumber_data || '';
+                document.getElementById('edit-catalog-def').value = item.definisi_operasional || '';
+            }
         });
     }
 

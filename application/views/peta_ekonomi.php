@@ -1,4 +1,75 @@
 <div class="map-page economic-map-page">
+    <?php if ($this->session->flashdata('success')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--teal); background:rgba(13,148,136,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div>
+                <strong>Berhasil</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('success')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($this->session->flashdata('error')): ?>
+        <div class="method-notice forecast" style="margin-bottom:18px; border-left:4px solid var(--red); background:rgba(225,29,72,0.12);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div>
+                <strong>Perhatian</strong>
+                <p><?= htmlspecialchars($this->session->flashdata('error')) ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($status) && ($status === 'Terhapus' || $status === 'Sampah')): ?>
+        <!-- TEMPAT SAMPAH KECAMATAN -->
+        <article class="card large" style="margin-bottom:24px; border:1px dashed #f43f5e; background:rgba(244,63,94,0.03);">
+            <div class="card-head">
+                <div>
+                    <span class="badge danger">TEMPAT SAMPAH (SOFT DELETE)</span>
+                    <h3>Daftar Kecamatan Terhapus (<?= count($districts) ?>)</h3>
+                    <p>Klik tombol Pulihkan untuk mengembalikan kecamatan ke peta spasial dan dataset aktif.</p>
+                </div>
+                <a href="<?= site_url('peta_ekonomi') ?>" class="button ghost">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali ke Peta Aktif</span>
+                </a>
+            </div>
+            <div class="data-table">
+                <div class="data-tr data-th" style="grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr 120px;">
+                    <span>Kecamatan</span>
+                    <span>Porsi PDRB</span>
+                    <span>Pertumbuhan</span>
+                    <span>Kemiskinan</span>
+                    <span>Dihapus Pada</span>
+                    <span>Aksi</span>
+                </div>
+                <?php if (empty($districts)): ?>
+                    <div style="padding:24px; text-align:center; color:var(--muted); font-size:11px;">
+                        Tempat sampah kosong. Tidak ada kecamatan yang terhapus.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($districts as $item): ?>
+                        <div class="data-tr" style="grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr 120px;">
+                            <span><strong><?= htmlspecialchars($item['name'] ?? $item['nama_kecamatan'] ?? '') ?></strong></span>
+                            <span><?= number_format($item['pdrbShare'] ?? $item['porsi_pdrb'] ?? 0, 2, ',', '.') ?>%</span>
+                            <span><?= number_format($item['growth'] ?? $item['pertumbuhan'] ?? 0, 2, ',', '.') ?>%</span>
+                            <span><?= number_format($item['poverty'] ?? $item['kemiskinan'] ?? 0, 2, ',', '.') ?>%</span>
+                            <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
+                            <span class="row-actions">
+                                <button type="button" class="btn-restore-district" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name'] ?? $item['nama_kecamatan'] ?? '') ?>" title="Pulihkan Kecamatan">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    <span>Pulihkan</span>
+                                </button>
+                                <button type="button" class="btn-hard-delete-district danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name'] ?? $item['nama_kecamatan'] ?? '') ?>" title="Hapus Permanen">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </article>
+    <?php endif; ?>
+
     <div class="map-heading">
         <div>
             <span class="eyebrow"><?= $eyebrow ?></span>
@@ -6,7 +77,22 @@
             <p><?= $subtitle ?></p>
         </div>
         <div class="intro-actions">
-            <span class="badge simulation">DATABASE CI 3</span>
+            <?php if ($trash_count > 0): ?>
+                <?php if ($status === 'Terhapus'): ?>
+                    <a href="<?= site_url('peta_ekonomi') ?>" class="button ghost">
+                        <span>Kembali ke Aktif</span>
+                    </a>
+                <?php else: ?>
+                    <a href="<?= site_url('peta_ekonomi?status=Terhapus') ?>" class="button ghost danger">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <span>Sampah (<?= $trash_count ?>)</span>
+                    </a>
+                <?php endif; ?>
+            <?php endif; ?>
+            <button class="button primary" id="btn-open-add-district">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Kecamatan</span>
+            </button>
             <button class="button secondary" id="btn-export-map">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
                 <span>Ekspor Data Peta</span>
@@ -264,6 +350,183 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8v5M12 17h.01"/></svg>
         <p><strong>Catatan Interpretasi:</strong> Sebanyak 12 kecamatan contoh mencerminkan sebaran spasial wilayah utara, tengah, selatan, dan pesisir. Skema peta digunakan untuk analisis tren spasial tematik daerah.</p>
         <span>DATABASE CI 3</span>
+    </div>
+
+    <!-- TABEL DATASET SPASIAL KECAMATAN (CRUD & SOFT DELETE) -->
+    <article class="card large" style="margin-top:24px;">
+        <div class="card-head">
+            <div>
+                <span class="eyebrow">DATASET SPASIAL DAERAH</span>
+                <h3>Daftar Kecamatan Spasial (<?= count($districts) ?>)</h3>
+                <p>Kelola indikator ekonomi, porsi PDRB, kemiskinan, dan kepadatan per kecamatan.</p>
+            </div>
+            <button class="button primary" id="btn-open-add-district-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Kecamatan</span>
+            </button>
+        </div>
+
+        <div class="data-table">
+            <div class="data-tr data-th" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.2fr 110px;">
+                <span>Kecamatan</span>
+                <span>Porsi PDRB</span>
+                <span>Pertumbuhan</span>
+                <span>Kemiskinan</span>
+                <span>Kepadatan</span>
+                <span>Kategori</span>
+                <span>Aksi</span>
+            </div>
+            <?php foreach ($districts as $d): ?>
+                <div class="data-tr" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.2fr 110px;">
+                    <span><strong><?= htmlspecialchars($d['name'] ?? $d['nama_kecamatan'] ?? '') ?></strong></span>
+                    <span><?= number_format($d['pdrbShare'] ?? $d['porsi_pdrb'] ?? 0, 2, ',', '.') ?>%</span>
+                    <span><?= number_format($d['growth'] ?? $d['pertumbuhan'] ?? 0, 2, ',', '.') ?>%</span>
+                    <span><?= number_format($d['poverty'] ?? $d['kemiskinan'] ?? 0, 2, ',', '.') ?>%</span>
+                    <span><?= number_format($d['density'] ?? $d['kepadatan'] ?? 0, 0, ',', '.') ?> jiwa/km²</span>
+                    <span><span class="badge info"><?= htmlspecialchars($d['category'] ?? $d['kategori'] ?? 'Kembang') ?></span></span>
+                    <span class="row-actions">
+                        <button type="button" class="btn-edit-district" data-id="<?= $d['id'] ?>" title="Edit Kecamatan">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <span>Edit</span>
+                        </button>
+                        <button type="button" class="btn-delete-district danger" data-id="<?= $d['id'] ?>" data-name="<?= htmlspecialchars($d['name'] ?? $d['nama_kecamatan'] ?? '') ?>" title="Hapus (Soft Delete)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </article>
+
+    <!-- MODAL TAMBAH KECAMATAN -->
+    <div class="modal-backdrop" id="add-district-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:540px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge info">TAMBAH KECAMATAN</span>
+                    <h2>Tambah Kecamatan Baru</h2>
+                    <p>Simpan dataset spasial wilayah baru ke tabel database <code>peta_ekonomi</code>.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-add-district">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-add-district" method="POST" action="<?= site_url('peta_ekonomi/create') ?>">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Nama Kecamatan
+                        <input type="text" name="nama_kecamatan" id="add-district-name" placeholder="Contoh: Srono" required>
+                    </label>
+                    <label>
+                        Porsi PDRB (%)
+                        <input type="number" step="0.01" name="porsi_pdrb" id="add-district-share" placeholder="Contoh: 5.80" required>
+                    </label>
+                    <label>
+                        Pertumbuhan (%)
+                        <input type="number" step="0.01" name="pertumbuhan" id="add-district-growth" placeholder="Contoh: 5.15" required>
+                    </label>
+                    <label>
+                        Tingkat Kemiskinan (%)
+                        <input type="number" step="0.01" name="kemiskinan" id="add-district-poverty" placeholder="Contoh: 6.90" required>
+                    </label>
+                    <label>
+                        Kepadatan (jiwa/km²)
+                        <input type="number" name="kepadatan" id="add-district-density" placeholder="Contoh: 840" required>
+                    </label>
+                    <label>
+                        Kategori Tipologi
+                        <select name="kategori" id="add-district-category">
+                            <option value="Maju">Maju</option>
+                            <option value="Potensial">Potensial</option>
+                            <option value="Berkembang" selected>Berkembang</option>
+                            <option value="Tertinggal">Tertinggal</option>
+                        </select>
+                    </label>
+                    <label>
+                        Garis Lintang (Latitude)
+                        <input type="number" step="any" name="garis_lintang" id="add-district-lat" placeholder="Contoh: -8.3850" value="-8.3850">
+                    </label>
+                    <label>
+                        Garis Bujur (Longitude)
+                        <input type="number" step="any" name="garis_bujur" id="add-district-lng" placeholder="Contoh: 114.2850" value="114.2850">
+                    </label>
+                </div>
+
+                <div id="add-district-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-add-district">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-add-district">Simpan Kecamatan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT KECAMATAN -->
+    <div class="modal-backdrop" id="edit-district-modal" style="display:none;">
+        <div class="modal admin-data-modal" style="max-width:540px;">
+            <div class="modal-head">
+                <div>
+                    <span class="badge warning">PERBARUI KECAMATAN</span>
+                    <h2>Edit Data Spasial Kecamatan</h2>
+                    <p>Perbarui nilai indikator makro dan koordinat spasial wilayah kecamatan.</p>
+                </div>
+                <button class="icon-button" id="modal-btn-close-edit-district">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+
+            <form id="form-edit-district" method="POST">
+                <input type="hidden" name="id" id="edit-district-id">
+                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                    <label style="grid-column: 1 / 3;">
+                        Nama Kecamatan
+                        <input type="text" name="nama_kecamatan" id="edit-district-name" required>
+                    </label>
+                    <label>
+                        Porsi PDRB (%)
+                        <input type="number" step="0.01" name="porsi_pdrb" id="edit-district-share" required>
+                    </label>
+                    <label>
+                        Pertumbuhan (%)
+                        <input type="number" step="0.01" name="pertumbuhan" id="edit-district-growth" required>
+                    </label>
+                    <label>
+                        Tingkat Kemiskinan (%)
+                        <input type="number" step="0.01" name="kemiskinan" id="edit-district-poverty" required>
+                    </label>
+                    <label>
+                        Kepadatan (jiwa/km²)
+                        <input type="number" name="kepadatan" id="edit-district-density" required>
+                    </label>
+                    <label>
+                        Kategori Tipologi
+                        <select name="kategori" id="edit-district-category">
+                            <option value="Maju">Maju</option>
+                            <option value="Potensial">Potensial</option>
+                            <option value="Berkembang">Berkembang</option>
+                            <option value="Tertinggal">Tertinggal</option>
+                        </select>
+                    </label>
+                    <label>
+                        Garis Lintang (Latitude)
+                        <input type="number" step="any" name="garis_lintang" id="edit-district-lat">
+                    </label>
+                    <label>
+                        Garis Bujur (Longitude)
+                        <input type="number" step="any" name="garis_bujur" id="edit-district-lng">
+                    </label>
+                </div>
+
+                <div id="edit-district-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="button ghost" id="modal-btn-cancel-edit-district">Batal</button>
+                    <button type="submit" class="button primary" id="modal-btn-submit-edit-district">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
