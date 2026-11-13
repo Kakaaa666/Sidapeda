@@ -318,74 +318,6 @@
             transform: translateY(0);
         }
 
-        /* Demo 1-Click Access Section */
-        .demo-section {
-            margin-top: 26px;
-            padding-top: 20px;
-            border-top: 1px dashed #e2e8f0;
-        }
-
-        .demo-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .demo-badge {
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 2px 7px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .demo-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 10px 8px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #334155;
-            transition: all 0.15s ease;
-        }
-
-        .demo-btn:hover {
-            background: #ffffff;
-            border-color: #0284c7;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
-        }
-
-        .demo-btn strong {
-            font-size: 12px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 2px;
-        }
-
-        .demo-btn small {
-            font-size: 10px;
-            color: #64748b;
-            font-family: monospace;
-        }
-
         .login-footer {
             margin-top: 24px;
             text-align: center;
@@ -450,7 +382,7 @@
                         <span class="input-icon">
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </span>
-                        <input type="text" id="username" name="username" class="form-input" placeholder="Masukkan nama akun atau email..." value="admin" required autofocus>
+                        <input type="text" id="username" name="username" class="form-input" placeholder="Masukkan nama akun atau email..." value="" required autofocus>
                     </div>
                 </div>
 
@@ -460,7 +392,7 @@
                         <span class="input-icon">
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         </span>
-                        <input type="password" id="password" name="password" class="form-input" placeholder="Masukkan kata sandi..." value="admin123" required>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Masukkan kata sandi..." value="" required>
                         <button type="button" class="toggle-password" id="btnTogglePassword" aria-label="Lihat kata sandi">
                             <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
@@ -540,31 +472,6 @@
                     <span>Daftar Akun Baru</span>
                 </button>
             </form>
-
-            <!-- Akses Cepat 1-Klik Pengujian Akun -->
-            <div class="demo-section">
-                <div class="demo-title">
-                    <span>Akses Cepat Pengujian (1-Klik Berdasarkan Level)</span>
-                    <span class="demo-badge">DATABASE AKTIF</span>
-                </div>
-                <div class="demo-grid">
-                    <a href="<?= site_url('akun/quick/admin') ?>" class="demo-btn" title="Masuk langsung dengan Akun Level 1 (Administrator)">
-                        <span class="badge primary" style="font-size:9px; padding:1px 6px; margin-bottom:4px; font-weight:700;">Level 1</span>
-                        <strong>Administrator</strong>
-                        <small>admin / admin123</small>
-                    </a>
-                    <a href="<?= site_url('akun/quick/analis') ?>" class="demo-btn" title="Masuk langsung dengan Akun Level 2 (Analis)">
-                        <span class="badge info" style="font-size:9px; padding:1px 6px; margin-bottom:4px; font-weight:700;">Level 2</span>
-                        <strong>Analis</strong>
-                        <small>analis / analis123</small>
-                    </a>
-                    <a href="<?= site_url('akun/quick/operator') ?>" class="demo-btn" title="Masuk langsung dengan Akun Level 3 (Operator)">
-                        <span class="badge success" style="font-size:9px; padding:1px 6px; margin-bottom:4px; font-weight:700;">Level 3</span>
-                        <strong>Operator</strong>
-                        <small>operator / 123</small>
-                    </a>
-                </div>
-            </div>
 
         </div>
 

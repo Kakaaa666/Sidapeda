@@ -576,16 +576,15 @@ class M_economy extends CI_Model {
         foreach ($res->result_array() as $row) {
             $val = (float)$row['nilai_terkini'];
             $th = (float)$row['ambang_batas'];
-            $breached = ($row['arah_risiko'] === 'above') ? ($val > $th) : ($val < $th);
-            $distance = ($th == 0) ? ($breached ? 100 : 0) : (abs($val - $th) / abs($th) * 100);
-
-            if (!$breached) {
-                $status = 'Normal';
-            } elseif ($distance >= 10) {
+            if ($val == $th) {
+                $status = 'Waspada';
+            } elseif ($val < $th) {
                 $status = 'Kritis';
             } else {
-                $status = 'Waspada';
+                $status = 'Normal';
             }
+            $distance = ($th == 0) ? (abs($val) * 100) : (abs($val - $th) / abs($th) * 100);
+            $breached = ($val <= $th);
 
             $results[] = array(
                 'id' => (int)$row['id'],
@@ -614,8 +613,18 @@ class M_economy extends CI_Model {
     }
 
     public function update_ews_threshold($code, $threshold) {
+        $th = (float)$threshold;
+        $row = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
+        $val = $row ? (float)$row['nilai_terkini'] : 0;
+        if ($val == $th) {
+            $st = 'Waspada';
+        } elseif ($val < $th) {
+            $st = 'Kritis';
+        } else {
+            $st = 'Normal';
+        }
         $this->db->where('kode_indikator', $code);
-        return $this->db->update('early_warning', array('ambang_batas' => (float)$threshold));
+        return $this->db->update('early_warning', array('ambang_batas' => $th, 'status_risiko' => $st));
     }
 
     public function toggle_ews_followup($code) {
@@ -1190,14 +1199,24 @@ class M_economy extends CI_Model {
         $nama = trim($data['nama_indikator'] ?? $data['name'] ?? '');
         if (empty($kode) || empty($nama)) return false;
 
+        $val = (float)($data['nilai_terkini'] ?? $data['value'] ?? 0);
+        $th = (float)($data['ambang_batas'] ?? $data['threshold'] ?? 0);
+        if ($val == $th) {
+            $status_risiko = 'Waspada';
+        } elseif ($val < $th) {
+            $status_risiko = 'Kritis';
+        } else {
+            $status_risiko = 'Normal';
+        }
+
         $record = array(
             'kode_indikator'        => $kode,
             'nama_indikator'        => $nama,
-            'nilai_terkini'         => (float)($data['nilai_terkini'] ?? $data['value'] ?? 0),
+            'nilai_terkini'         => $val,
             'satuan'                => trim($data['satuan'] ?? $data['unit'] ?? '%'),
-            'ambang_batas'          => (float)($data['ambang_batas'] ?? $data['threshold'] ?? 5),
-            'arah_risiko'           => in_array($data['arah_risiko'] ?? '', array('above','below')) ? $data['arah_risiko'] : 'above',
-            'status_risiko'         => in_array($data['status_risiko'] ?? '', array('Normal','Waspada','Kritis')) ? $data['status_risiko'] : 'Normal',
+            'ambang_batas'          => $th,
+            'arah_risiko'           => 'above',
+            'status_risiko'         => $status_risiko,
             'sudah_ditindaklanjuti' => (int)($data['sudah_ditindaklanjuti'] ?? 0),
             'is_deleted'            => 0,
             'deleted_at'            => null
@@ -1215,9 +1234,23 @@ class M_economy extends CI_Model {
         if (isset($data['nilai_terkini'])) $record['nilai_terkini'] = (float)$data['nilai_terkini'];
         if (isset($data['satuan'])) $record['satuan'] = trim($data['satuan']);
         if (isset($data['ambang_batas'])) $record['ambang_batas'] = (float)$data['ambang_batas'];
-        if (isset($data['arah_risiko'])) $record['arah_risiko'] = $data['arah_risiko'];
-        if (isset($data['status_risiko'])) $record['status_risiko'] = $data['status_risiko'];
         if (isset($data['sudah_ditindaklanjuti'])) $record['sudah_ditindaklanjuti'] = (int)$data['sudah_ditindaklanjuti'];
+
+        if (isset($data['nilai_terkini']) || isset($data['ambang_batas'])) {
+            $curr = $this->get_ews_by_id($id);
+            $val = isset($data['nilai_terkini']) ? (float)$data['nilai_terkini'] : (float)($curr['nilai_terkini'] ?? 0);
+            $th = isset($data['ambang_batas']) ? (float)$data['ambang_batas'] : (float)($curr['ambang_batas'] ?? 0);
+            if ($val == $th) {
+                $record['status_risiko'] = 'Waspada';
+            } elseif ($val < $th) {
+                $record['status_risiko'] = 'Kritis';
+            } else {
+                $record['status_risiko'] = 'Normal';
+            }
+        } elseif (isset($data['status_risiko'])) {
+            $record['status_risiko'] = in_array($data['status_risiko'], array('Normal', 'Waspada', 'Kritis')) ? $data['status_risiko'] : 'Normal';
+        }
+
         if (empty($record)) return false;
         return $this->db->where('id', (int)$id)->update('early_warning', $record);
     }

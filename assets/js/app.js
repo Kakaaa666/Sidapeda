@@ -1,6 +1,6 @@
 /**
  * SI-DAPEDA — Sistem Informasi Data & Analisis Pembangunan Daerah
- * CodeIgniter 3 Frontend & Interactive Intelligence Engine
+ * SI-DAPEDA Frontend & Interactive Intelligence Engine
  */
 
 (function () {
@@ -291,8 +291,8 @@
             </svg>`;
     }
 
-    function createKlassenSVG(rows) {
-        if (!rows.length) return `<div class="table-empty">Belum ada sektor untuk Klassen.</div>`;
+    function createKlassenSVG(rows, opts = {}) {
+        if (!rows.length) return `<div class="table-empty">Belum ada data untuk Klassen.</div>`;
 
         const left = 76, right = 570, top = 28, bottom = 260;
         const xVals = rows.map(r => r.growthGap);
@@ -311,6 +311,10 @@
         const zeroX = xScale(0);
         const zeroY = yScale(0);
 
+        const xLabel = opts.xLabel || 'Gap pertumbuhan sektor terhadap agregat Banyuwangi (pp)';
+        const yLabel = opts.yLabel || 'Gap pangsa sektor terhadap rata-rata lokal (pp)';
+        const note = opts.note || 'Titik di atas garis horizontal = pangsa di atas rata-rata. Titik di kanan garis vertikal = pertumbuhan di atas ambang daerah.';
+
         let pointsSVG = '';
         rows.forEach((item, idx) => {
             const cx = xScale(item.growthGap);
@@ -319,9 +323,9 @@
             pointsSVG += `
                 <g class="klassen-point q-${item.quadrant.toLowerCase()}">
                     <circle cx="${cx}" cy="${cy}" r="5">
-                        <title>${item.name}: Gap Pangsa ${formatNum(item.shareGap)} pp, Gap Pertumbuhan ${formatNum(item.growthGap)} pp</title>
+                        <title>${item.name}: Gap Y ${formatNum(item.shareGap)} pp, Gap X ${formatNum(item.growthGap)} pp</title>
                     </circle>
-                    <text x="${cx + 8}" y="${labelY}">${item.short}</text>
+                    <text x="${cx + 8}" y="${labelY}">${item.short || item.name}</text>
                 </g>`;
         });
 
@@ -342,10 +346,10 @@
 
                 ${pointsSVG}
 
-                <text x="${(left + right) / 2}" y="315" text-anchor="middle" class="klassen-axis-label">Gap pertumbuhan sektor terhadap agregat Banyuwangi (pp)</text>
-                <text x="-145" y="16" text-anchor="middle" transform="rotate(-90)" class="klassen-axis-label">Gap pangsa sektor terhadap rata-rata lokal (pp)</text>
+                <text x="${(left + right) / 2}" y="315" text-anchor="middle" class="klassen-axis-label">${xLabel}</text>
+                <text x="-145" y="16" text-anchor="middle" transform="rotate(-90)" class="klassen-axis-label">${yLabel}</text>
             </svg>
-            <div class="klassen-chart-note">Titik di atas garis horizontal = pangsa di atas rata-rata. Titik di kanan garis vertikal = pertumbuhan di atas ambang daerah.</div>`;
+            <div class="klassen-chart-note">${note}</div>`;
     }
 
     function createShiftWaterfallSVG(comp) {
@@ -481,13 +485,13 @@
                 const id = addBtn.id;
                 let modalId = null;
                 if (id === 'btn-open-add-beranda') modalId = 'add-beranda-modal';
-                else if (id === 'btn-open-add-regional-modal' || id === 'btn-open-add-regional-2') modalId = 'add-regional-modal';
-                else if (id === 'btn-open-add-sector' || id === 'btn-open-add-sector-2') modalId = 'add-sector-modal';
-                else if (id === 'btn-open-add-district' || id === 'btn-open-add-district-2') modalId = 'add-district-modal';
-                else if (id === 'btn-open-add-prospek' || id === 'btn-open-add-prospek-2') modalId = 'add-prospek-modal';
-                else if (id === 'btn-open-add-ews' || id === 'btn-open-add-ews-2') modalId = 'add-ews-modal';
+                else if (id === 'btn-open-add-regional-modal') modalId = 'add-regional-modal';
+                else if (id === 'btn-open-add-sector') modalId = 'add-sector-modal';
+                else if (id === 'btn-open-add-district') modalId = 'add-district-modal';
+                else if (id === 'btn-open-add-prospek') modalId = 'add-prospek-modal';
+                else if (id === 'btn-open-add-ews') modalId = 'add-ews-modal';
                 else if (id === 'btn-open-add-insight') modalId = 'add-insight-modal';
-                else if (id === 'btn-open-add-report' || id === 'btn-open-add-report-2') modalId = 'add-report-modal';
+                else if (id === 'btn-open-add-report') modalId = 'add-report-modal';
                 else if (id === 'btn-open-add-user') modalId = 'add-user-modal';
                 else if (id === 'btn-open-add-catalog') modalId = 'add-catalog-modal';
                 else if (id === 'btn-open-add-modal') modalId = 'add-data-modal';
@@ -564,7 +568,7 @@
         }
     }
 
-    // Load Central Data from CI 3 API
+    // Load Central Data from API
     function initDataLoad() {
         const cleanBase = (typeof BASE_URL !== 'undefined' ? BASE_URL : '').replace(/\/+$/, '');
         fetch(cleanBase + '/api/get_data')
@@ -1076,7 +1080,7 @@
             controller: 'perbandingan_daerah',
             addModalId: 'add-regional-modal',
             editModalId: 'edit-regional-modal',
-            openAddBtnIds: ['btn-open-add-regional-modal', 'btn-open-add-regional-2'],
+            openAddBtnIds: ['btn-open-add-regional-modal'],
             closeAddBtnIds: ['modal-btn-close-add-regional', 'modal-btn-cancel-add-regional'],
             closeEditBtnIds: ['modal-btn-close-edit-regional', 'modal-btn-cancel-edit-regional'],
             formAddId: 'form-add-regional',
@@ -1097,11 +1101,30 @@
             }
         });
 
+        // Inisialisasi data lokal segera bila AppState belum terisi
+        if ((!AppState.regional || AppState.regional.length === 0) && window.__REGIONAL_DATA__ && Array.isArray(window.__REGIONAL_DATA__)) {
+            AppState.regional = window.__REGIONAL_DATA__;
+        }
+        if (window.__SERIES_DATA__ && window.__SERIES_DATA__.growth) {
+            AppState.series = window.__SERIES_DATA__;
+        }
+        if ((!AppState.sectors || AppState.sectors.length === 0) && window.__SECTORS_DATA__ && Array.isArray(window.__SECTORS_DATA__)) {
+            AppState.sectors = window.__SECTORS_DATA__;
+        }
+
+        let activeTab = 'Regional Ranking';
+        let selectedRegions = Array.from(document.querySelectorAll('.region-cb:checked')).map(cb => cb.value);
+        if (selectedRegions.length === 0 && AppState.regional && AppState.regional.length > 0) {
+            selectedRegions = AppState.regional.map(r => r.name);
+        }
+
         function renderComparison() {
             const period = periodSelect ? periodSelect.value : '10';
             const sliceStart = period === '5' ? 5 : 0;
             const years = AppState.years.slice(sliceStart);
-            if (periodLabel) periodLabel.textContent = period === '5' ? '2020–2024' : '2015–2024';
+            const periodBadge = document.getElementById('comp-tab-period-badge');
+            if (periodLabel) periodLabel.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
+            if (periodBadge) periodBadge.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
 
             // Calculate regional rows
             const rows = AppState.regional.map(item => {
@@ -1127,7 +1150,7 @@
                     <div class="comparison-kpi">
                         <div><span>Rata-rata Banyuwangi</span><span class="badge info">Periode</span></div>
                         <strong>${formatPct(bwi.avg)}</strong>
-                        <small>periode ${period === '5' ? '2020–2024' : '2015–2024'}</small>
+                        <small>periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
                     </div>
                     <div class="comparison-kpi">
                         <div><span>Rerata Wilayah Pembanding</span><span class="badge neutral">Benchmark</span></div>
@@ -1162,29 +1185,27 @@
                     <div style="margin-bottom:20px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span class="eyebrow">VISUALISASI PERINGKAT KOMPARASI</span>
-                            <span class="badge info">Periode ${period === '5' ? '5 Tahun' : '10 Tahun'}</span>
+                            <span class="badge info">Periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'} (${rows.length} Wilayah)</span>
                         </div>
                         <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
                             ${createHorizontalBarChartSVG(rankingBarData, { unit: '%', decimals: 2 })}
                         </div>
                     </div>
 
-                    <div class="comparison-table-head" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
+                    <div class="comparison-table-head" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
                         <span>Peringkat</span>
                         <span>Wilayah</span>
                         <span>Rata-rata Pertumbuhan</span>
                         <span>Perubahan Tahunan</span>
                         <span>Gap Terhadap Rerata</span>
-                        <span>Aksi</span>
                     </div>
                     <div class="comparison-ranking">`;
 
                 rows.forEach((r, idx) => {
                     const isBwi = r.name === 'Kab. Banyuwangi';
                     const diff = r.avg - peerAvg;
-                    const regionId = r.id || AppState.regional.find(item => item.name === r.name)?.id;
                     listHtml += `
-                        <div class="comparison-table-row ${isBwi ? 'selected' : ''}" style="grid-template-columns: 50px 1.3fr .7fr .7fr .7fr 80px;">
+                        <div class="comparison-table-row ${isBwi ? 'selected' : ''}" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
                             <b>${idx + 1}</b>
                             <span>
                                 <i class="region-avatar">${r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}</i>
@@ -1193,20 +1214,10 @@
                             <strong>${formatPct(r.avg)}</strong>
                             <small class="${r.chg >= 0 ? 'positive' : 'negative'}">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</small>
                             <span class="badge ${diff >= 0 ? 'success' : 'warning'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</span>
-                            <span class="row-actions">
-                                <button type="button" class="btn-edit-regional" data-id="${regionId}" title="Edit Data Wilayah">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </button>
-                                ${!isBwi ? `
-                                <button type="button" class="btn-delete-regional danger" data-id="${regionId}" data-name="${r.name}" title="Hapus Wilayah (Soft Delete)">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </button>` : ''}
-                            </span>
                         </div>`;
                 });
-                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data PDRB ADHK Kabupaten/Kota di Jawa Timur. Anda dapat menambahkan, mengedit, atau menghapus wilayah dengan fitur Soft Delete.</div>`;
+                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data PDRB ADHK Kabupaten/Kota di Jawa Timur selama periode terpilih. Kelola dataset melalui tabel Manajemen Dataset Wilayah di bawah.</div>`;
                 tabContent.innerHTML = listHtml;
-                bindRegionalActionButtons();
 
             } else if (activeTab === 'Benchmarking') {
                 tabEyebrow.textContent = 'BENCHMARKING';
@@ -1224,34 +1235,33 @@
 
                 const colorClasses = ['series-2', 'series-3', 'series-4', 'series-5'];
                 let cIdx = 0;
-                selectedRegions.forEach(regName => {
-                    if (regName !== 'Kab. Banyuwangi') {
-                        const regItem = AppState.regional.find(r => r.name === regName);
-                        if (regItem && regItem.series && regItem.series.length > 0) {
-                            benchmarkSeries.push({
-                                name: regItem.name.replace('Kab. ', '').replace('Kota ', ''),
-                                values: regItem.series.slice(sliceStart),
-                                className: colorClasses[cIdx % colorClasses.length]
-                            });
-                            cIdx++;
-                        }
+                rows.forEach(r => {
+                    if (r.name !== 'Kab. Banyuwangi' && r.series && r.series.length > 0) {
+                        benchmarkSeries.push({
+                            name: r.name.replace('Kab. ', '').replace('Kota ', ''),
+                            values: r.series.slice(sliceStart),
+                            className: colorClasses[cIdx % colorClasses.length]
+                        });
+                        cIdx++;
                     }
                 });
 
                 tabContent.innerHTML = `
-                    <div class="comparison-kpis" style="margin-bottom:15px;">
+                    <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">
                         <div class="comparison-kpi"><span>Rerata Banyuwangi</span><strong>${formatPct(mean(bwiSeries))}</strong><small>Periode terpilih</small></div>
                         <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
-                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${selectedRegions.length}</strong><small>Daerah pembanding</small></div>
+                        <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
+                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>
                     </div>
                     <div class="chart-wrap dynamic-chart" style="height:290px;">
                         ${createLineChartSVG(years, benchmarkSeries, 290, '%')}
-                    </div>`;
+                    </div>
+                    <div class="method-note">Garis biru menunjukkan Kab. Banyuwangi, garis hijau toska menunjukkan Provinsi Jawa Timur, dan garis berwarna lainnya mewakili kabupaten/kota pembanding yang dipilih.</div>`;
 
             } else if (activeTab === 'Gap Analysis') {
                 tabEyebrow.textContent = 'GAP ANALYSIS';
                 tabTitle.textContent = 'Selisih Kinerja terhadap Benchmark Utama';
-                tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi secara langsung.';
+                tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi Kab. Banyuwangi terhadap provinsi dan wilayah pembanding.';
 
                 const jatimAvg = mean(AppState.series.eastJavaGrowth.slice(sliceStart));
                 const gapJatim = bwi.avg - jatimAvg;
@@ -1261,29 +1271,59 @@
                     return {
                         label: r.name,
                         value: diff,
-                        subLabel: `Rata-rata: ${formatPct(r.avg)} (Banyuwangi: ${formatPct(bwi.avg)})`,
-                        badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan' : `${formatNum(diff)} pp`),
-                        badgeClass: diff > 0 ? 'success' : (diff === 0 ? 'primary' : 'warning'),
+                        subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis Banyuwangi: ${formatPct(bwi.avg)}`,
+                        badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan (0 pp)' : `${formatNum(diff)} pp`),
+                        badgeClass: diff > 0 ? 'warning' : (diff === 0 ? 'primary' : 'success'),
                         isHighlight: r.name === 'Kab. Banyuwangi'
                     };
                 });
 
+                let gapTableRows = `
+                    <tr>
+                        <td><strong>Provinsi Jawa Timur</strong></td>
+                        <td>${formatPct(bwi.avg)}</td>
+                        <td>${formatPct(jatimAvg)}</td>
+                        <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
+                        <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rerata Daerah Terpilih</strong></td>
+                        <td>${formatPct(bwi.avg)}</td>
+                        <td>${formatPct(peerAvg)}</td>
+                        <td><strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
+                        <td><span class="badge ${gap >= 0 ? 'success' : 'warning'}">${gap >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
+                    </tr>`;
+
+                rows.filter(r => r.name !== 'Kab. Banyuwangi').forEach(r => {
+                    const diffVsBwi = bwi.avg - r.avg;
+                    gapTableRows += `
+                        <tr>
+                            <td><span>${r.name}</span></td>
+                            <td>${formatPct(bwi.avg)}</td>
+                            <td>${formatPct(r.avg)}</td>
+                            <td><strong class="${diffVsBwi >= 0 ? 'positive' : 'negative'}">${diffVsBwi >= 0 ? '+' : ''}${formatNum(diffVsBwi)} pp</strong></td>
+                            <td><span class="badge ${diffVsBwi >= 0 ? 'success' : 'warning'}">${diffVsBwi >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
+                        </tr>`;
+                });
+
                 tabContent.innerHTML = `
-                    <div class="gap-overview">
-                        <div>
-                            <span>Gap terhadap Jawa Timur</span>
-                            <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
+                    <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+                        <div class="metric-box" style="padding:12px;">
+                            <span>Gap Banyuwangi terhadap Jawa Timur</span>
+                            <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
+                            <small>${gapJatim >= 0 ? 'Banyuwangi tumbuh lebih cepat dari provinsi' : 'Banyuwangi tumbuh di bawah provinsi'}</small>
                         </div>
-                        <div>
-                            <span>Gap terhadap Rerata ${rows.length} Daerah</span>
-                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
+                        <div class="metric-box" style="padding:12px;">
+                            <span>Gap Banyuwangi terhadap Rerata ${rows.length} Daerah</span>
+                            <strong class="${gap >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
+                            <small>${gap >= 0 ? 'Banyuwangi di atas rata-rata pembanding' : 'Banyuwangi di bawah rata-rata pembanding'}</small>
                         </div>
                     </div>
 
                     <div style="margin: 18px 0;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
-                            <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi</small>
+                            <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi (${formatPct(bwi.avg)})</small>
                         </div>
                         <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
                             ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
@@ -1292,94 +1332,216 @@
 
                     <div class="result-table-wrap">
                         <table class="result-table">
-                            <thead><tr><th>Benchmark</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap</th><th>Status</th></tr></thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Provinsi Jawa Timur</strong></td>
-                                    <td>${formatPct(bwi.avg)}</td>
-                                    <td>${formatPct(jatimAvg)}</td>
-                                    <td><strong>${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
-                                    <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Rerata Daerah Terpilih</strong></td>
-                                    <td>${formatPct(bwi.avg)}</td>
-                                    <td>${formatPct(peerAvg)}</td>
-                                    <td><strong>${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
-                                    <td><span class="badge ${gap >= 0 ? 'success' : 'warning'}">${gap >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th>Benchmark / Wilayah</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap (Banyuwangi - Pembanding)</th><th>Status Relatif</th></tr></thead>
+                            <tbody>${gapTableRows}</tbody>
                         </table>
                     </div>`;
 
             } else if (activeTab === 'Regional Profiling') {
                 tabEyebrow.textContent = 'REGIONAL PROFILING';
-                tabTitle.textContent = 'Struktur Pangsa Sektoral Banyuwangi vs Jawa Timur';
-                tabDesc.textContent = 'Perbandingan kontribusi lapangan usaha terhadap total perekonomian.';
+                tabTitle.textContent = 'Profil Pertumbuhan & Stabilitas Wilayah';
+                tabDesc.textContent = 'Karakteristik kinerja pertumbuhan ekonomi antar-kabupaten/kota selama periode terpilih.';
 
-                let profHtml = `<div class="profile-comparison">`;
-                AppState.sectors.forEach(s => {
-                    profHtml += `
-                        <div class="profile-row">
-                            <span>${s.short}</span>
-                            <div class="profile-bars">
-                                <i class="series-0" style="width: ${s.shareLocal}%"></i>
-                                <i class="series-1" style="width: ${s.shareProvince}%"></i>
+                let profCards = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:22px;">`;
+                rows.forEach((r, idx) => {
+                    const vals = r.series.slice(sliceStart);
+                    const maxV = Math.max(...vals);
+                    const minV = Math.min(...vals);
+                    const isBwi = r.name === 'Kab. Banyuwangi';
+                    const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
+                    profCards += `
+                        <div style="background:${isBwi ? '#f0f9ff' : '#ffffff'}; border:1px solid ${isBwi ? '#93c5fd' : 'var(--line)'}; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:10px; background:${isBwi ? '#0284c7' : '#eff6ff'}; color:${isBwi ? '#fff' : '#0284c7'}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; border:1px solid ${isBwi ? '#0284c7' : '#bfdbfe'};">
+                                        ${avatarLetters}
+                                    </div>
+                                    <div>
+                                        <span style="font-weight:700; color:${isBwi ? 'var(--blue)' : 'var(--navy)'}; font-size:14px; display:block; margin-bottom:2px;">${r.name}</span>
+                                        <small style="color:var(--muted); font-size:11px;">${isBwi ? 'Basis Acuan Analisis' : 'Wilayah Pembanding'}</small>
+                                    </div>
+                                </div>
+                                <span class="badge ${isBwi ? 'primary' : 'neutral'}" style="font-size:10px; font-weight:700; padding:3px 8px;">#${idx + 1}</span>
                             </div>
-                            <strong>${formatNum(s.shareLocal, 1)}%</strong>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
+                                    <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Rata-rata:</span>
+                                    <strong style="font-size:15px; color:var(--navy); display:block;">${formatPct(r.avg)}</strong>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
+                                    <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Perubahan:</span>
+                                    <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="font-size:15px; display:block;">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</strong>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
+                                    <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Tertinggi (Peak):</span>
+                                    <strong style="font-size:15px; color:var(--green); display:block;">${formatPct(maxV)}</strong>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
+                                    <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Terendah (Trough):</span>
+                                    <strong style="font-size:15px; color:var(--red); display:block;">${formatPct(minV)}</strong>
+                                </div>
+                            </div>
                         </div>`;
                 });
-                profHtml += `</div><div class="dynamic-chart-legend"><span><i class="series-0"></i>Pangsa Banyuwangi</span><span><i class="series-1"></i>Pangsa Jawa Timur</span></div>`;
-                tabContent.innerHTML = profHtml;
+                profCards += `</div>`;
+
+                let profTable = `
+                    <div class="result-table-wrap" style="margin-top:16px;">
+                        <table class="result-table">
+                            <thead><tr><th>Peringkat</th><th>Kabupaten / Kota</th><th>Rata-rata Pertumbuhan</th><th>Pertumbuhan Terkini</th><th>Tertinggi (Peak)</th><th>Terendah (Trough)</th><th>Gap vs Banyuwangi</th></tr></thead>
+                            <tbody>`;
+                rows.forEach((r, idx) => {
+                    const vals = r.series.slice(sliceStart);
+                    const maxV = Math.max(...vals);
+                    const minV = Math.min(...vals);
+                    const gapVsBwi = r.avg - bwi.avg;
+                    profTable += `
+                        <tr style="${r.name === 'Kab. Banyuwangi' ? 'background:#eff6ff; font-weight:600;' : ''}">
+                            <td><strong>#${idx + 1}</strong></td>
+                            <td><strong>${r.name}</strong> ${r.name === 'Kab. Banyuwangi' ? '<span class="badge primary" style="font-size:7px; margin-left:4px;">Acuan</span>' : ''}</td>
+                            <td><strong>${formatPct(r.avg)}</strong></td>
+                            <td>${formatPct(vals[vals.length - 1])}</td>
+                            <td style="color:var(--green); font-weight:600;">${formatPct(maxV)}</td>
+                            <td style="color:var(--red); font-weight:600;">${formatPct(minV)}</td>
+                            <td><span class="badge ${gapVsBwi > 0 ? 'warning' : (gapVsBwi === 0 ? 'primary' : 'success')}">${gapVsBwi > 0 ? '+' : ''}${formatNum(gapVsBwi)} pp</span></td>
+                        </tr>`;
+                });
+                profTable += `</tbody></table></div>`;
+
+                tabContent.innerHTML = profCards + profTable;
 
             } else if (activeTab === 'Tipologi Klassen') {
                 tabEyebrow.textContent = 'TIPOLOGI KLASSEN';
-                tabTitle.textContent = 'Matriks Posisi Kuadran Sektoral';
-                tabDesc.textContent = 'Klasifikasi sektor berdasarkan gap pangsa dan gap pertumbuhan.';
+                tabTitle.textContent = 'Tipologi Klassen Pertumbuhan Wilayah';
+                tabDesc.textContent = 'Klasifikasi posisi kuadran wilayah berdasarkan rata-rata laju pertumbuhan dan tren akselerasi tahunan.';
 
-                const avgShare = mean(AppState.sectors.map(s => s.shareLocal));
-                const bwiGrowth = AppState.series.growth[AppState.series.growth.length - 1];
-
-                const klassenRows = AppState.sectors.map(s => {
-                    const shareAbove = s.shareLocal >= avgShare;
-                    const growthAbove = s.growthLocal >= bwiGrowth;
+                const peerAvgChg = mean(rows.map(r => r.chg));
+                const klassenRows = rows.map(r => {
+                    const growthAbove = r.avg >= peerAvg;
+                    const chgAbove = r.chg >= peerAvgChg;
                     let quadrant = 'IV';
-                    let cls = 'Sektor relatif tertinggal';
-                    if (shareAbove && growthAbove) { quadrant = 'I'; cls = 'Maju & tumbuh cepat'; }
-                    else if (shareAbove && !growthAbove) { quadrant = 'II'; cls = 'Maju tapi tertekan'; }
-                    else if (!shareAbove && growthAbove) { quadrant = 'III'; cls = 'Potensial berkembang'; }
+                    let cls = 'Relatif Tertinggal';
+                    if (growthAbove && chgAbove) { quadrant = 'I'; cls = 'Maju & Tumbuh Cepat'; }
+                    else if (growthAbove && !chgAbove) { quadrant = 'II'; cls = 'Maju tapi Melambat'; }
+                    else if (!growthAbove && chgAbove) { quadrant = 'III'; cls = 'Potensial Berkembang'; }
 
                     return {
-                        ...s,
+                        name: r.name,
+                        short: r.name.replace('Kab. ', '').replace('Kota ', ''),
                         quadrant,
                         classification: cls,
-                        shareGap: s.shareLocal - avgShare,
-                        growthGap: s.growthLocal - bwiGrowth
+                        growthGap: r.avg - peerAvg,
+                        shareGap: r.chg - peerAvgChg,
+                        avg: r.avg,
+                        chg: r.chg
                     };
                 });
 
-                tabContent.innerHTML = createKlassenSVG(klassenRows);
+                let klassenTable = `
+                    <div style="margin-top:16px;" class="result-table-wrap">
+                        <table class="result-table">
+                            <thead><tr><th>Wilayah</th><th>Kuadran</th><th>Klasifikasi</th><th>Rata-rata Pertumbuhan</th><th>Gap Pertumbuhan</th><th>Akselerasi Tahunan</th><th>Gap Akselerasi</th></tr></thead>
+                            <tbody>`;
+                klassenRows.forEach(item => {
+                    const isBwi = item.name === 'Kab. Banyuwangi';
+                    const qBadgeClass = item.quadrant === 'I' ? 'success' : (item.quadrant === 'II' ? 'warning' : (item.quadrant === 'III' ? 'info' : 'neutral'));
+                    klassenTable += `
+                        <tr style="${isBwi ? 'background:#edf5fc; font-weight:600;' : ''}">
+                            <td><strong>${item.name}</strong> ${isBwi ? '<span class="badge primary" style="font-size:7px;">Banyuwangi</span>' : ''}</td>
+                            <td><span class="badge ${qBadgeClass}">Kuadran ${item.quadrant}</span></td>
+                            <td><strong>${item.classification}</strong></td>
+                            <td>${formatPct(item.avg)}</td>
+                            <td class="${item.growthGap >= 0 ? 'positive' : 'negative'}">${item.growthGap >= 0 ? '+' : ''}${formatNum(item.growthGap)} pp</td>
+                            <td>${item.chg >= 0 ? '+' : ''}${formatNum(item.chg)} pp</td>
+                            <td class="${item.shareGap >= 0 ? 'positive' : 'negative'}">${item.shareGap >= 0 ? '+' : ''}${formatNum(item.shareGap)} pp</td>
+                        </tr>`;
+                });
+                klassenTable += `</tbody></table></div>`;
+
+                tabContent.innerHTML = createKlassenSVG(klassenRows, {
+                    xLabel: `Gap laju pertumbuhan wilayah terhadap rata-rata (${formatPct(peerAvg)}) (pp)`,
+                    yLabel: `Gap akselerasi tahunan terhadap rata-rata (${formatNum(peerAvgChg)} pp)`,
+                    note: 'Sumbu horizontal: Gap pertumbuhan terhadap rata-rata wilayah. Sumbu vertikal: Gap akselerasi tahunan. Kuadran I: Maju & Cepat, Kuadran II: Maju tapi Melambat, Kuadran III: Potensial, Kuadran IV: Relatif Tertinggal.'
+                }) + klassenTable;
 
             } else if (activeTab === 'Peer Comparison') {
                 tabEyebrow.textContent = 'PEER COMPARISON';
-                tabTitle.textContent = 'Kartu Profil Wilayah Setara';
-                tabDesc.textContent = 'Komparasi profil ringkas masing-masing daerah pembanding.';
+                tabTitle.textContent = 'Kartu Profil Head-to-Head Wilayah Pembanding';
+                tabDesc.textContent = 'Perbandingan langsung indikator kinerja Kab. Banyuwangi dengan masing-masing daerah pembanding.';
 
-                let peerHtml = `<div class="peer-grid">`;
-                rows.filter(r => r.name !== 'Kab. Banyuwangi').forEach((r, idx) => {
-                    peerHtml += `
-                        <article>
-                            <div>
-                                <i class="region-avatar">${r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}</i>
-                                <span class="badge neutral">Peringkat #${idx + 1}</span>
+                const peerList = rows.filter(r => r.name !== 'Kab. Banyuwangi');
+                
+                let peerHtml = `
+                    <div style="background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #1e40af, #0284c7); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; box-shadow:0 2px 6px rgba(30,64,175,0.2);">
+                                BW
                             </div>
-                            <h4>${r.name}</h4>
-                            <p>Pertumbuhan ekonomi rata-rata periode terpilih.</p>
-                            <span>Pertumbuhan: <strong>${formatPct(r.avg)}</strong></span>
-                            <span>Perubahan tahunan: <strong>${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</strong></span>
-                        </article>`;
-                });
-                peerHtml += `</div>`;
+                            <div>
+                                <strong style="font-size:13px; color:var(--navy); display:block;">Basis Acuan: Kab. Banyuwangi</strong>
+                                <small style="color:var(--muted); font-size:10px;">Rata-rata: <b style="color:var(--blue);">${formatPct(bwi.avg)}</b> | Perubahan: <b class="${bwi.chg >= 0 ? 'positive' : 'negative'}">${bwi.chg >= 0 ? '+' : ''}${formatNum(bwi.chg)} pp</b> (${period === '5' ? '2020 - 2024' : '2015 - 2024'})</small>
+                            </div>
+                        </div>
+                        <span class="badge primary" style="font-size:10px; padding:4px 10px;">Wilayah Acuan Utama</span>
+                    </div>`;
+
+                if (peerList.length === 0) {
+                    peerHtml += `<div class="table-empty" style="padding:32px; text-align:center; color:var(--muted); font-size:11px;">Tidak ada wilayah pembanding lain yang dipilih. Centang wilayah tambahan pada filter di atas.</div>`;
+                } else {
+                    peerHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">`;
+                    peerList.forEach((r, idx) => {
+                        const bwiLead = bwi.avg - r.avg;
+                        const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
+                        peerHtml += `
+                            <div style="background:#ffffff; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 2px 10px rgba(15,23,42,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s ease, box-shadow 0.15s ease;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; border:1px solid #bfdbfe;">
+                                                ${avatarLetters}
+                                            </div>
+                                            <div>
+                                                <h4 style="font-size:15px; font-weight:700; color:var(--navy); margin:0 0 3px 0;">${r.name}</h4>
+                                                <small style="color:var(--muted); font-size:11px;">Wilayah Pembanding #${idx + 1}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge neutral" style="font-size:10px; font-weight:700; padding:3px 10px;">Peringkat #${idx + 1}</span>
+                                    </div>
+
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+                                        <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; padding:10px 12px;">
+                                            <span style="display:block; font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; margin-bottom:3px;">Rata-rata</span>
+                                            <strong style="display:block; font-size:16px; font-weight:700; color:var(--navy);">${formatPct(r.avg)}</strong>
+                                            <small style="font-size:11px; color:var(--muted);">${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
+                                        </div>
+                                        <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; padding:10px 12px;">
+                                            <span style="display:block; font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; margin-bottom:3px;">Perubahan</span>
+                                            <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="display:block; font-size:16px; font-weight:700;">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</strong>
+                                            <small style="font-size:11px; color:var(--muted);">${r.chg >= 0 ? 'Menguat' : 'Melemah'}</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="background:${bwiLead >= 0 ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${bwiLead >= 0 ? '#bbf7d0' : '#fecaca'}; border-radius:10px; padding:12px 14px; margin-top:6px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                        <span style="font-size:11px; font-weight:600; color:${bwiLead >= 0 ? '#166534' : '#991b1b'};">Posisi Banyuwangi:</span>
+                                        <span class="badge ${bwiLead >= 0 ? 'success' : 'warning'}" style="font-size:10px; font-weight:700; padding:2px 8px;">
+                                            ${bwiLead >= 0 ? 'Banyuwangi Unggul' : 'Banyuwangi Tertinggal'}
+                                        </span>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                                        <strong style="font-size:14px; color:${bwiLead >= 0 ? '#15803d' : '#b91c1c'}; font-weight:700;">
+                                            ${bwiLead >= 0 ? '+' : ''}${formatNum(bwiLead)} pp
+                                        </strong>
+                                        <small style="font-size:11px; color:${bwiLead >= 0 ? '#166534' : '#991b1b'};">
+                                            ${bwiLead >= 0 ? 'di atas rerata wilayah ini' : 'di bawah rerata wilayah ini'}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    peerHtml += `</div>`;
+                }
                 tabContent.innerHTML = peerHtml;
             }
         }
@@ -1767,7 +1929,7 @@
             controller: 'analisis_ekonomi',
             addModalId: 'add-sector-modal',
             editModalId: 'edit-sector-modal',
-            openAddBtnIds: ['btn-open-add-sector', 'btn-open-add-sector-2'],
+            openAddBtnIds: ['btn-open-add-sector'],
             closeAddBtnIds: ['modal-btn-close-add-sector', 'modal-btn-cancel-add-sector'],
             closeEditBtnIds: ['modal-btn-close-edit-sector', 'modal-btn-cancel-edit-sector'],
             formAddId: 'form-add-sector',
@@ -2084,7 +2246,7 @@
             controller: 'peta_ekonomi',
             addModalId: 'add-district-modal',
             editModalId: 'edit-district-modal',
-            openAddBtnIds: ['btn-open-add-district', 'btn-open-add-district-2'],
+            openAddBtnIds: ['btn-open-add-district'],
             closeAddBtnIds: ['modal-btn-close-add-district', 'modal-btn-cancel-add-district'],
             closeEditBtnIds: ['modal-btn-close-edit-district', 'modal-btn-cancel-edit-district'],
             formAddId: 'form-add-district',
@@ -2310,7 +2472,7 @@
             controller: 'prospek_ekonomi',
             addModalId: 'add-prospek-modal',
             editModalId: 'edit-prospek-modal',
-            openAddBtnIds: ['btn-open-add-prospek', 'btn-open-add-prospek-2'],
+            openAddBtnIds: ['btn-open-add-prospek'],
             closeAddBtnIds: ['modal-btn-close-add-prospek', 'modal-btn-cancel-add-prospek'],
             closeEditBtnIds: ['modal-btn-close-edit-prospek', 'modal-btn-cancel-edit-prospek'],
             formAddId: 'form-add-prospek',
@@ -2353,6 +2515,15 @@
         let activeFilter = 'Semua';
         let selectedAlertCode = null;
 
+        function calcEwsStatus(val, th) {
+            const v = Number(val);
+            const t = Number(th);
+            if (isNaN(v) || isNaN(t)) return 'Normal';
+            if (v === t) return 'Waspada';
+            if (v < t) return 'Kritis';
+            return 'Normal';
+        }
+
         // Seed AppState.ews from server-rendered global state if needed
         if ((!AppState.ews || AppState.ews.length === 0) && window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) {
             AppState.ews = window.__EWS_DATA__;
@@ -2361,7 +2532,12 @@
         function renderEWS() {
             let normalC = 0, warnC = 0, critC = 0, followedC = 0;
             AppState.ews.forEach(item => {
-                const st = item.status || item.status_risiko || 'Normal';
+                const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                const st = calcEwsStatus(val, th);
+                item.status = st;
+                item.status_risiko = st;
+
                 if (st === 'Normal') normalC++;
                 else if (st === 'Waspada') warnC++;
                 else if (st === 'Kritis') critC++;
@@ -2371,9 +2547,9 @@
 
             if (statsContainer) {
                 statsContainer.innerHTML = `
-                    <div class="risk-stat danger"><span>Status Kritis</span><strong>${critC}</strong><small>Melampaui ambang batas</small></div>
-                    <div class="risk-stat warning"><span>Status Waspada</span><strong>${warnC}</strong><small>Mendekati ambang batas</small></div>
-                    <div class="risk-stat success"><span>Status Normal</span><strong>${normalC}</strong><small>Dalam batas aman</small></div>
+                    <div class="risk-stat danger"><span>Status Kritis</span><strong>${critC}</strong><small>Nilai &lt; Batas Ambang</small></div>
+                    <div class="risk-stat warning"><span>Status Waspada</span><strong>${warnC}</strong><small>Nilai = Batas Ambang</small></div>
+                    <div class="risk-stat success"><span>Status Normal</span><strong>${normalC}</strong><small>Nilai &gt; Batas Ambang</small></div>
                     <div class="risk-stat neutral"><span>Total Indikator</span><strong>${AppState.ews.length}</strong><small>Dipantau sistem (${followedC} ditindaklanjuti)</small></div>`;
             }
 
@@ -2392,23 +2568,20 @@
                         <span style="text-align:right;">Aksi</span>
                     </div>
                     ${filtered.map(item => {
-                        const st = item.status || item.status_risiko || 'Normal';
+                        const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                        const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                        const st = calcEwsStatus(val, th);
                         const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
                         const rowStateCls = (st === 'Kritis') ? 'alerted' : ((st === 'Waspada') ? 'warning-row' : 'normal-row');
-                        const dir = item.direction || item.arah_risiko || 'above';
-                        const dirText = (dir === 'above') ? 'Peringatan jika > Ambang' : 'Peringatan jika < Ambang';
                         const unit = item.unit || item.satuan || '%';
                         const code = item.code || item.kode_indikator || '';
                         const name = item.name || item.nama_indikator || '';
-                        const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
-                        const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                         return `
                         <div class="risk-row btn-alert-row ${rowStateCls}" data-code="${code}" role="button" tabindex="0" style="cursor:pointer;">
                             <div class="risk-indicator">
                                 <strong>${name}</strong>
                                 <small>
                                     <code>${code}</code>
-                                    <span>• ${dirText}</span>
                                 </small>
                             </div>
                             <div class="risk-value">
@@ -2438,7 +2611,9 @@
 
             if (distBars) {
                 distBars.innerHTML = AppState.ews.map(item => {
-                    const st = item.status || item.status_risiko || 'Normal';
+                    const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                    const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                    const st = calcEwsStatus(val, th);
                     const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
                     const dist = Math.min(100, Math.max(5, item.distance || 20));
                     return `
@@ -2457,14 +2632,13 @@
                     const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                     const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                     const unit = item.unit || item.satuan || '%';
-                    const dir = item.direction || item.arah_risiko || 'above';
                     const diffPct = th !== 0 ? ((val - th) / Math.abs(th)) * 100 : 0;
-                    const st = item.status || item.status_risiko || 'Normal';
+                    const st = calcEwsStatus(val, th);
                     const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
                     return {
                         label: item.name || item.nama_indikator,
                         value: val,
-                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}% (${dir === 'above' ? 'Peringatan saat > Ambang' : 'Peringatan saat < Ambang'})`,
+                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}%`,
                         badge: st,
                         badgeClass: badgeCls,
                         color: (st === 'Kritis') ? 'linear-gradient(90deg, #ef4444, #f87171)' : ((st === 'Waspada') ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
@@ -2495,10 +2669,8 @@
             const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
             const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
             const unit = item.unit || item.satuan || '%';
-            const st = item.status || item.status_risiko || 'Normal';
-            const dir = item.direction || item.arah_risiko || 'above';
-            const distance = item.distance !== undefined ? Number(item.distance) : (th !== 0 ? Math.abs((val - th) / th * 100) : 0);
-            const isBreached = item.breached !== undefined ? Boolean(item.breached) : ((dir === 'above') ? (val > th) : (val < th));
+            const st = calcEwsStatus(val, th);
+            const distance = (th !== 0) ? Math.abs((val - th) / th * 100) : 0;
 
             document.getElementById('modal-alert-name').textContent = name;
             document.getElementById('modal-alert-meta').textContent = `${src} • ${code}`;
@@ -2509,15 +2681,22 @@
             document.getElementById('modal-metric-val').textContent = `${formatNum(val, 2)} ${unit}`;
             document.getElementById('modal-metric-th').textContent = `${formatNum(th, 2)} ${unit}`;
             const devEl = document.getElementById('modal-metric-dev');
-            devEl.textContent = `${isBreached ? '+' : ''}${formatNum(distance, 1)}%`;
-            devEl.className = isBreached ? 'negative' : 'positive';
+            const sign = (val >= th) ? '+' : '-';
+            devEl.textContent = `${sign}${formatNum(distance, 1)}%`;
+            devEl.className = (st === 'Kritis') ? 'negative' : ((st === 'Waspada') ? 'warning' : 'positive');
 
             document.getElementById('modal-editor-label').textContent = `${formatNum(th, 2)} ${unit}`;
             document.getElementById('modal-input-threshold').value = th;
 
-            document.getElementById('modal-alert-interpretation').textContent = isBreached
-                ? `Nilai telah ${dir === 'above' ? 'melampaui' : 'berada di bawah'} ambang toleransi sebesar ${formatNum(distance, 1)}%. Segera lakukan evaluasi terpadu.`
-                : `Nilai saat ini (${formatNum(val, 2)} ${unit}) masih berada dalam zona aman di bawah batas toleransi.`;
+            let interpretationText = '';
+            if (st === 'Waspada') {
+                interpretationText = `Nilai riil saat ini (${formatNum(val, 2)} ${unit}) sama dengan batas ambang (${formatNum(th, 2)} ${unit}). Status Waspada, pantau tren perkembangan indikator secara intensif.`;
+            } else if (st === 'Kritis') {
+                interpretationText = `Nilai riil saat ini (${formatNum(val, 2)} ${unit}) berada di bawah batas ambang (${formatNum(th, 2)} ${unit}) sebesar ${formatNum(distance, 1)}%. Status Kritis, koordinasikan langkah intervensi segera.`;
+            } else {
+                interpretationText = `Nilai riil saat ini (${formatNum(val, 2)} ${unit}) melampaui batas ambang (${formatNum(th, 2)} ${unit}). Status Normal dan berada dalam batas aman.`;
+            }
+            document.getElementById('modal-alert-interpretation').textContent = interpretationText;
 
             const btnFollow = document.getElementById('modal-btn-toggle-followup');
             if (btnFollow) {
@@ -2554,12 +2733,9 @@
                             const target = AppState.ews.find(i => (i.code === selectedAlertCode || i.kode_indikator === selectedAlertCode));
                             if (target) {
                                 const v = Number(target.value !== undefined ? target.value : (target.nilai_terkini || 0));
-                                const d = target.direction || target.arah_risiko || 'above';
                                 target.threshold = val;
                                 target.ambang_batas = val;
-                                target.breached = (d === 'above') ? (v > val) : (v < val);
-                                target.distance = (val === 0) ? (target.breached ? 100 : 0) : (Math.abs(v - val) / Math.abs(val) * 100);
-                                target.status = !target.breached ? 'Normal' : (target.distance >= 10 ? 'Kritis' : 'Waspada');
+                                target.status = calcEwsStatus(v, val);
                                 target.status_risiko = target.status;
                             }
                             renderEWS();
@@ -2603,8 +2779,12 @@
         if (btnExport) {
             btnExport.addEventListener('click', () => {
                 downloadCSV('monitoring-ews-banyuwangi.csv', [
-                    ['Kode', 'Indikator', 'Nilai Terkini', 'Threshold', 'Kondisi Risiko', 'Status'],
-                    ...AppState.ews.map(i => [i.code || i.kode_indikator, i.name || i.nama_indikator, i.value || i.nilai_terkini, i.threshold || i.ambang_batas, i.direction || i.arah_risiko, i.status || i.status_risiko])
+                    ['Kode', 'Indikator', 'Nilai Terkini', 'Threshold', 'Status'],
+                    ...AppState.ews.map(i => {
+                        const v = Number(i.value !== undefined ? i.value : (i.nilai_terkini || 0));
+                        const t = Number(i.threshold !== undefined ? i.threshold : (i.ambang_batas || 0));
+                        return [i.code || i.kode_indikator, i.name || i.nama_indikator, v, t, calcEwsStatus(v, t)];
+                    })
                 ]);
             });
         }
@@ -2629,7 +2809,7 @@
             hardDeleteBtnClass: 'btn-hard-delete-ews',
             addModalId: 'add-ews-modal',
             editModalId: 'edit-ews-modal',
-            openAddBtnIds: ['btn-open-add-ews', 'btn-open-add-ews-2'],
+            openAddBtnIds: ['btn-open-add-ews'],
             closeAddBtnIds: ['modal-btn-close-add-ews', 'modal-btn-cancel-add-ews'],
             closeEditBtnIds: ['modal-btn-close-edit-ews', 'modal-btn-cancel-edit-ews'],
             formAddId: 'form-add-ews',
@@ -2637,14 +2817,14 @@
             addErrorId: 'add-ews-error',
             editErrorId: 'edit-ews-error',
             populateForm: function (item) {
+                const curVal = item.nilai_terkini !== undefined ? item.nilai_terkini : (item.value || '');
+                const curTh = item.ambang_batas !== undefined ? item.ambang_batas : (item.threshold || '');
                 document.getElementById('edit-ews-id').value = item.id;
                 document.getElementById('edit-ews-code').value = item.kode_indikator || item.code || '';
                 document.getElementById('edit-ews-unit').value = item.satuan || item.unit || '';
                 document.getElementById('edit-ews-name').value = item.nama_indikator || item.name || '';
-                document.getElementById('edit-ews-current').value = item.nilai_terkini !== undefined ? item.nilai_terkini : (item.value || '');
-                document.getElementById('edit-ews-threshold').value = item.ambang_batas !== undefined ? item.ambang_batas : (item.threshold || '');
-                document.getElementById('edit-ews-direction').value = item.arah_risiko || item.direction || 'above';
-                document.getElementById('edit-ews-status').value = item.status_risiko || item.status || 'Normal';
+                document.getElementById('edit-ews-current').value = curVal;
+                document.getElementById('edit-ews-threshold').value = curTh;
             }
         });
     }
@@ -2891,7 +3071,7 @@
             controller: 'laporan_ekonomi',
             addModalId: 'add-report-modal',
             editModalId: 'edit-report-modal',
-            openAddBtnIds: ['btn-open-add-report', 'btn-open-add-report-2'],
+            openAddBtnIds: ['btn-open-add-report'],
             closeAddBtnIds: ['modal-btn-close-add-report', 'modal-btn-cancel-add-report'],
             closeEditBtnIds: ['modal-btn-close-edit-report', 'modal-btn-cancel-edit-report'],
             formAddId: 'form-add-report',
@@ -3379,7 +3559,7 @@
                             count++;
                             if (count === inputs.length && feedback) {
                                 feedback.style.display = 'block';
-                                feedback.textContent = 'Seluruh threshold berhasil disimpan ke database MySQL.';
+                                feedback.textContent = 'Seluruh threshold berhasil disimpan.';
                             }
                         });
                 });

@@ -6,7 +6,6 @@
             <p><?= $subtitle ?></p>
         </div>
         <div class="intro-actions">
-            <span class="badge simulation">DATABASE CI 3</span>
         </div>
     </div>
 

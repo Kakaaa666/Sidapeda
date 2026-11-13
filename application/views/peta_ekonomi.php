@@ -349,7 +349,6 @@
     <div class="map-data-note">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8v5M12 17h.01"/></svg>
         <p><strong>Catatan Interpretasi:</strong> Sebanyak 12 kecamatan contoh mencerminkan sebaran spasial wilayah utara, tengah, selatan, dan pesisir. Skema peta digunakan untuk analisis tren spasial tematik daerah.</p>
-        <span>DATABASE CI 3</span>
     </div>
 
     <!-- GRAFIK KOMPARASI KECAMATAN (Disesuaikan dengan Konten Peta & Data Kecamatan) -->
@@ -383,10 +382,6 @@
                 <h3>Daftar Kecamatan Spasial (<?= count($districts) ?>)</h3>
                 <p>Kelola indikator ekonomi, porsi PDRB, kemiskinan, dan kepadatan per kecamatan.</p>
             </div>
-            <button class="button primary" id="btn-open-add-district-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Tambah Kecamatan</span>
-            </button>
         </div>
 
         <div class="data-table">
@@ -410,7 +405,6 @@
                     <span class="row-actions">
                         <button type="button" class="btn-edit-district" data-id="<?= $d['id'] ?>" title="Edit Kecamatan">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            <span>Edit</span>
                         </button>
                         <button type="button" class="btn-delete-district danger" data-id="<?= $d['id'] ?>" data-name="<?= htmlspecialchars($d['name'] ?? $d['nama_kecamatan'] ?? '') ?>" title="Hapus (Soft Delete)">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>

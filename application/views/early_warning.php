@@ -170,15 +170,12 @@
                     $val = (float)($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0);
                     $th = (float)($item['threshold'] ?? $item['ambang_batas'] ?? 0);
                     $unit = $item['unit'] ?? $item['satuan'] ?? '%';
-                    $dir = $item['direction'] ?? $item['arah_risiko'] ?? 'above';
-                    $dirText = ($dir === 'above') ? 'Peringatan jika > Ambang' : 'Peringatan jika < Ambang';
                 ?>
                     <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0">
                         <div class="risk-indicator">
                             <strong><?= htmlspecialchars($name) ?></strong>
                             <small>
                                 <code><?= htmlspecialchars($code) ?></code>
-                                <span>• <?= $dirText ?></span>
                             </small>
                         </div>
                         <div class="risk-value">
@@ -200,7 +197,7 @@
             </div>
 
             <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line);">
-                <strong>Kriteria Sistem:</strong> Deviasi &lt; 0% = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>; 0–9.9% = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>; &ge; 10% = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.
+                <strong>Kriteria Status Risiko:</strong> Nilai &gt; Threshold = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>; Nilai = Threshold = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>; Nilai &lt; Threshold = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.
             </div>
         </article>
 
@@ -267,7 +264,7 @@
                     Ubah Nilai Threshold: <strong id="modal-editor-label">7,00 % yoy</strong>
                     <input type="number" step="any" id="modal-input-threshold" value="7.0">
                 </label>
-                <small>Perubahan disimpan langsung ke MySQL dan memperbarui status secara realtime.</small>
+                <small>Perubahan disimpan langsung ke sistem dan memperbarui status secara realtime.</small>
             </div>
 
             <div class="modal-section">
@@ -289,36 +286,29 @@
             <div>
                 <span class="eyebrow">PENGATURAN INDIKATOR EWS</span>
                 <h3>Daftar Indikator Pemantauan Risiko (<?= count($ews) ?>)</h3>
-                <p>Kelola data riil, ambang batas threshold, serta arah risiko indikator EWS.</p>
+                <p>Kelola data riil dan ambang batas threshold indikator EWS.</p>
             </div>
-            <button class="button primary" id="btn-open-add-ews-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Tambah Indikator</span>
-            </button>
         </div>
 
         <div class="data-table">
-            <div class="data-tr data-th" style="grid-template-columns: 120px 2fr 1fr 1fr 1fr 1fr 110px;">
+            <div class="data-tr data-th" style="grid-template-columns: 130px 2fr 1.2fr 1.2fr 1fr 100px;">
                 <span>Kode</span>
                 <span>Nama Indikator</span>
                 <span>Nilai Terkini</span>
                 <span>Threshold</span>
-                <span>Arah Risiko</span>
                 <span>Status</span>
-                <span>Aksi</span>
+                <span style="text-align:right;">Aksi</span>
             </div>
             <?php foreach ($ews as $item): ?>
-                <div class="data-tr" style="grid-template-columns: 120px 2fr 1fr 1fr 1fr 1fr 110px;">
+                <div class="data-tr" style="grid-template-columns: 130px 2fr 1.2fr 1.2fr 1fr 100px;">
                     <span><code><?= htmlspecialchars($item['code']) ?></code></span>
                     <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
                     <span><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
                     <span><?= number_format($item['threshold'] ?? $item['ambang_batas'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
-                    <span><small><?= ($item['direction'] ?? $item['arah_risiko'] ?? 'above') === 'above' ? 'Di atas batas' : 'Di bawah batas' ?></small></span>
                     <span><span class="badge <?= ($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Kritis' ? 'danger' : ((($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Waspada') ? 'warning' : 'success') ?>"><?= htmlspecialchars($item['status'] ?? $item['status_risiko'] ?? 'Normal') ?></span></span>
-                    <span class="row-actions">
+                    <span class="row-actions" style="justify-content:flex-end;">
                         <button type="button" class="btn-edit-ews" data-id="<?= $item['id'] ?>" title="Edit Indikator">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            <span>Edit</span>
                         </button>
                         <button type="button" class="btn-delete-ews danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus (Soft Delete)">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -365,21 +355,6 @@
                         Batas Ambang (Threshold)
                         <input type="number" step="0.01" name="ambang_batas" id="add-ews-threshold" placeholder="Contoh: 5.00" required>
                     </label>
-                    <label>
-                        Kondisi Berisiko
-                        <select name="arah_risiko" id="add-ews-direction">
-                            <option value="above">Jika Melampaui Nilai Ambang (&gt; Threshold)</option>
-                            <option value="below">Jika Berada Di Bawah Ambang (&lt; Threshold)</option>
-                        </select>
-                    </label>
-                    <label>
-                        Status Risiko
-                        <select name="status_risiko" id="add-ews-status">
-                            <option value="Normal">Normal</option>
-                            <option value="Waspada">Waspada</option>
-                            <option value="Kritis">Kritis</option>
-                        </select>
-                    </label>
                 </div>
 
                 <div id="add-ews-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
@@ -399,7 +374,7 @@
                 <div>
                     <span class="badge warning">PERBARUI EWS</span>
                     <h2>Edit Indikator Peringatan Dini</h2>
-                    <p>Perbarui nilai aktual, batas ambang, dan arah risiko indikator EWS.</p>
+                    <p>Perbarui nilai aktual dan batas ambang threshold indikator EWS.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-edit-ews">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
@@ -428,21 +403,6 @@
                     <label>
                         Batas Ambang (Threshold)
                         <input type="number" step="0.01" name="ambang_batas" id="edit-ews-threshold" required>
-                    </label>
-                    <label>
-                        Kondisi Berisiko
-                        <select name="arah_risiko" id="edit-ews-direction">
-                            <option value="above">Jika Melampaui Nilai Ambang (&gt; Threshold)</option>
-                            <option value="below">Jika Berada Di Bawah Ambang (&lt; Threshold)</option>
-                        </select>
-                    </label>
-                    <label>
-                        Status Risiko
-                        <select name="status_risiko" id="edit-ews-status">
-                            <option value="Normal">Normal</option>
-                            <option value="Waspada">Waspada</option>
-                            <option value="Kritis">Kritis</option>
-                        </select>
                     </label>
                 </div>
 

@@ -1,7 +1,7 @@
         </main>
 
         <footer>
-            <span>© <?= date('Y') ?> SI-DAPEDA Kabupaten Banyuwangi — CodeIgniter 3 Implementation</span>
+            <span>© <?= date('Y') ?> SI-DAPEDA Kabupaten Banyuwangi</span>
             <span>Platform Intelijen Ekonomi & Data Pembangunan Daerah</span>
         </footer>
     </div>

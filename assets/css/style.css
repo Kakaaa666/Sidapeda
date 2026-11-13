@@ -500,3 +500,467 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
     }
 }
 
+/* ==========================================================================
+   GLOBAL POLISH: SPACING ANTAR TEKS & JARAK TEKS DENGAN TABEL (ALL MENUS)
+   ========================================================================== */
+
+/* Spacing antar teks pada Intro & Header Halaman */
+.module-intro, .admin-intro, .map-heading {
+    margin-bottom: 24px !important;
+    gap: 16px;
+    align-items: flex-end;
+}
+.module-intro h1, .admin-intro h1, .hero h1, .map-heading h1 {
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin: 8px 0 10px 0 !important;
+    letter-spacing: -0.02em;
+    color: var(--navy) !important;
+}
+.hero h1 {
+    color: #ffffff !important;
+}
+.module-intro p, .admin-intro p, .hero p, .map-heading p {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: var(--muted) !important;
+    margin: 0 !important;
+    max-width: 860px;
+}
+.hero p {
+    color: #cbd5e1 !important;
+}
+.eyebrow {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase;
+    display: inline-block !important;
+    margin-bottom: 6px !important;
+}
+
+/* Section Heading & Card Head Spacing */
+.section-heading {
+    margin-bottom: 20px !important;
+    padding-bottom: 6px;
+}
+.section-heading h2 {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin: 6px 0 8px 0 !important;
+    color: var(--navy) !important;
+}
+.section-heading p {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: var(--muted) !important;
+    margin: 0 !important;
+}
+
+.card {
+    padding: 22px 24px !important;
+    border-radius: 14px !important;
+}
+
+.card-head {
+    margin-bottom: 20px !important;
+    gap: 16px;
+    align-items: flex-start;
+}
+.card-head h2, .card-head h3 {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin: 6px 0 6px 0 !important;
+    color: var(--navy) !important;
+}
+.card-head p {
+    font-size: 12.5px !important;
+    line-height: 1.6 !important;
+    color: var(--muted) !important;
+    margin: 4px 0 0 0 !important;
+}
+
+/* Jarak Teks dengan Tabel di semua Menu */
+.data-card > .card-head {
+    padding: 22px 24px 18px 24px !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid var(--line);
+}
+.data-table {
+    margin-top: 0 !important;
+}
+.result-table-wrap {
+    margin-top: 22px !important;
+    margin-bottom: 20px !important;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.03);
+}
+.comparison-table-head {
+    margin-top: 22px !important;
+    margin-bottom: 8px !important;
+    padding: 12px 18px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 8px !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+.comparison-table-row {
+    padding: 14px 18px !important;
+    font-size: 12.5px !important;
+    border-bottom: 1px solid #edf2f7 !important;
+    align-items: center;
+}
+.comparison-table-row strong {
+    font-size: 13px !important;
+    color: var(--navy);
+}
+
+/* Data Table (CRUD / Management Tables across all pages) */
+.data-tr {
+    padding: 14px 20px !important;
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+    align-items: center !important;
+    min-height: 52px;
+}
+.data-th {
+    padding: 13px 20px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    background: #f8fafc !important;
+    color: #475569 !important;
+}
+.data-tr span strong {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 3px !important;
+}
+.data-tr span small {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    color: #64748b !important;
+    margin-top: 3px !important;
+}
+.data-tr code {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 600;
+}
+
+/* Result Table (HTML <table> in Analisis, Prospek, Early Warning, dll) */
+.result-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.result-table th {
+    padding: 13px 18px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+.result-table td {
+    padding: 14px 18px !important;
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--ink);
+}
+.result-table td strong {
+    font-size: 13px !important;
+    color: var(--navy);
+}
+
+/* Risk Table (Early Warning System) */
+.risk-table {
+    margin-top: 22px !important;
+}
+.risk-table .th {
+    padding: 12px 18px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border-radius: 8px !important;
+    margin-bottom: 6px;
+}
+.risk-table .tr {
+    padding: 14px 18px !important;
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+.risk-table .tr span strong {
+    font-size: 13px !important;
+    margin-bottom: 3px !important;
+}
+.risk-table .tr span small {
+    font-size: 11px !important;
+    margin-top: 3px !important;
+    color: var(--muted) !important;
+}
+
+/* Sector Table (Prospek Ekonomi) */
+.sector-table {
+    margin-top: 22px !important;
+    border-radius: 12px !important;
+}
+.sector-th {
+    padding: 12px 18px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #f8fafc !important;
+    color: #475569 !important;
+}
+.sector-tr {
+    padding: 14px 18px !important;
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+    align-items: center;
+}
+.sector-tr strong {
+    font-size: 13px !important;
+}
+
+/* Tab Navigation Bars (.feature-tabs, .map-mode-tabs, .scenario-tabs) */
+.feature-tabs {
+    padding: 6px !important;
+    gap: 6px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04) !important;
+    margin-bottom: 20px !important;
+}
+.feature-tabs button {
+    padding: 10px 18px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    letter-spacing: 0.01em;
+    transition: all 0.15s ease !important;
+}
+.feature-tabs button.active {
+    background: var(--navy) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(20,45,78,0.22) !important;
+}
+
+.map-mode-tabs {
+    padding: 6px !important;
+    gap: 6px !important;
+    border-radius: 12px !important;
+}
+.map-mode-tabs button {
+    padding: 9px 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+}
+
+.scenario-tabs button {
+    padding: 14px 18px !important;
+    border-radius: 12px !important;
+    gap: 12px;
+}
+.scenario-tabs button strong {
+    font-size: 13px !important;
+    margin-bottom: 4px;
+}
+.scenario-tabs button small {
+    font-size: 11px !important;
+    line-height: 1.5;
+}
+
+/* Filterbars & Toolbars */
+.filterbar {
+    padding: 16px 20px !important;
+    gap: 16px !important;
+    margin-top: 18px !important;
+    margin-bottom: 22px !important;
+}
+.filterbar label span, .analysis-panel label span, .report-config label > span, .builder-grid label span {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-bottom: 7px !important;
+    color: #475569 !important;
+}
+.filterbar select, .analysis-panel select, .builder-grid select, .report-config select {
+    height: 38px !important;
+    font-size: 12px !important;
+    padding: 0 12px !important;
+    border-radius: 8px !important;
+}
+.management-toolbar {
+    margin-bottom: 18px !important;
+    gap: 10px !important;
+}
+.management-toolbar .search {
+    height: 40px !important;
+    border-radius: 8px !important;
+}
+.management-toolbar .search input {
+    font-size: 12.5px !important;
+}
+
+/* Peer Cards & Profiling Cards (.peer-grid article) */
+.peer-grid {
+    gap: 16px !important;
+    margin-top: 20px !important;
+}
+.peer-grid article {
+    padding: 18px 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04) !important;
+    border: 1px solid var(--line) !important;
+}
+.peer-grid h4 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin: 14px 0 6px 0 !important;
+    color: var(--navy) !important;
+}
+.peer-grid p {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: var(--muted) !important;
+    margin: 0 0 16px 0 !important;
+    min-height: 36px;
+}
+.peer-grid article > span {
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+    padding: 8px 0 !important;
+    border-top: 1px solid #edf2f7 !important;
+    display: flex;
+    justify-content: space-between;
+}
+.peer-grid article > span strong {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--navy) !important;
+}
+
+/* Comparison KPIs */
+.comparison-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 14px !important;
+    margin-top: 16px !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+}
+.comparison-kpi {
+    padding: 16px 18px !important;
+    border-radius: 12px !important;
+}
+.comparison-kpi strong {
+    font-size: 22px !important;
+    margin: 10px 0 4px !important;
+}
+.comparison-kpi span {
+    font-size: 11px !important;
+}
+.comparison-kpi small {
+    font-size: 11px !important;
+}
+
+/* Risk Overview in Early Warning */
+.risk-overview {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 14px !important;
+    margin-top: 16px !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+}
+
+@media(max-width: 992px) {
+    .comparison-kpis,
+    .risk-overview {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+@media(max-width: 560px) {
+    .comparison-kpis,
+    .risk-overview {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Footnotes & Source lines */
+.source, .method-note {
+    margin-top: 20px !important;
+    padding-top: 14px !important;
+    font-size: 11px !important;
+    line-height: 1.6 !important;
+    color: #64748b !important;
+    border-top: 1px solid #edf2f7;
+}
+
+/* Badges typography and spacing */
+.badge {
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+
+/* Buttons */
+.button {
+    height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    gap: 8px !important;
+}
+
+/* Pagination */
+.pagination {
+    padding: 13px 20px !important;
+    font-size: 11px !important;
+    color: var(--muted) !important;
+}
+.pagination button {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+}
+
+/* Sidebar Logout Styling */
+.nav-item.logout-nav-item {
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+}
+.nav-item.logout-nav-item:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ffffff !important;
+    border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+
+

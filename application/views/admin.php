@@ -10,7 +10,6 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
                 <span>Kelola Data</span>
             </a>
-            <span class="badge simulation">CI 3 + MYSQL</span>
         </div>
     </div>
 
@@ -31,7 +30,7 @@
         <div class="metric-box">
             <strong><?= $totalRecords ?></strong>
             <span>Rekaman Data Indikator</span>
-            <small>Tersimpan di MySQL</small>
+            <small>Tersimpan di Sistem</small>
         </div>
         <div class="metric-box">
             <strong><?= count($catalog) ?></strong>

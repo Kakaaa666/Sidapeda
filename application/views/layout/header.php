@@ -90,24 +90,24 @@
                     </a>
                 <?php endforeach; ?>
             <?php endif; ?>
-        </nav>
 
-        <div style="padding: 10px 14px 0;">
-            <a href="<?= site_url('logout') ?>" class="nav-item" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.25);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>Keluar (Logout)</span>
-            </a>
-        </div>
+            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Keluar (Logout)</span>
+                </a>
+            </div>
+        </nav>
 
         <div class="sidebar-bottom">
             <div class="data-status">
                 <span class="pulse"></span>
                 <div>
-                    <strong>CodeIgniter 3 + MySQL</strong>
-                    <small>Database Terkoneksi</small>
+                    <strong>SI-DAPEDA</strong>
+                    <small>Sistem Informasi Daerah</small>
                 </div>
             </div>
-            <p>SISTEM AKTIF</p>
+            <p>KAB. BANYUWANGI</p>
         </div>
     </aside>
 

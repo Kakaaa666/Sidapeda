@@ -10,7 +10,6 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
                 <span>Tambah Data</span>
             </button>
-            <span class="badge simulation">DATABASE CI 3</span>
         </div>
     </div>
 
@@ -68,7 +67,7 @@
             <div>
                 <span class="eyebrow"><?= ($status === 'Terhapus') ? 'TEMPAT SAMPAH (SOFT DELETED)' : 'DATABASE REPOSITORI' ?></span>
                 <h3><?= ($status === 'Terhapus') ? 'Data Indikator Terhapus' : 'Database Indikator Ekonomi' ?></h3>
-                <p>Menampilkan <?= count($records) ?> rekaman <?= ($status === 'Terhapus') ? 'di tempat sampah' : 'tersimpan di MySQL' ?></p>
+                <p>Menampilkan <?= count($records) ?> rekaman <?= ($status === 'Terhapus') ? 'di tempat sampah' : 'tersimpan dalam repositori' ?></p>
             </div>
         </div>
 
@@ -186,7 +185,7 @@
 
         <div class="pagination">
             <span>Total rekaman: <?= count($records) ?> data</span>
-            <span>Data tersinkronisasi dengan MySQL Database (Soft Delete Ready)</span>
+            <span>Data tersinkronisasi dengan sistem repositori daerah</span>
         </div>
     </article>
 
@@ -197,7 +196,7 @@
                 <div>
                     <span class="badge info">TAMBAH DATA BARU</span>
                     <h2>Tambah Data Indikator Ekonomi</h2>
-                    <p>Data baru akan tersimpan ke database MySQL dengan status Perlu review.</p>
+                    <p>Data baru akan tersimpan ke sistem dengan status Perlu review.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-add">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
@@ -276,7 +275,7 @@
                 <div>
                     <span class="badge warning">PERBARUI DATA</span>
                     <h2>Edit Data Indikator Ekonomi</h2>
-                    <p>Perbarui informasi data indikator ekonomi yang tersimpan di MySQL.</p>
+                    <p>Perbarui informasi data indikator ekonomi yang tersimpan dalam sistem.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-edit">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>

@@ -10,7 +10,6 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
                 <span>Unduh Template CSV</span>
             </button>
-            <span class="badge simulation">DATABASE CI 3</span>
         </div>
     </div>
 
@@ -37,7 +36,7 @@
                 <strong id="csv-preview-count-label">Preview Data CSV</strong>
                 <button class="button primary" id="btn-commit-import">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
-                    <span>Simpan ke Database MySQL</span>
+                    <span>Simpan Data</span>
                 </button>
             </div>
 
