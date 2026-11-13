@@ -7,8 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
     <script>
-        const BASE_URL = '<?= base_url() ?>';
-        const SITE_URL = '<?= site_url() ?>';
+        const BASE_URL = '<?= rtrim(base_url(), '/') ?>';
+        const SITE_URL = '<?= rtrim(site_url(), '/') ?>';
     </script>
 </head>
 <body>

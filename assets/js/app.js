@@ -457,15 +457,66 @@
     }
 
     // Initialize UI on DOM Ready (robust check against already-loaded state)
+    // Initialize UI on DOM Ready (robust check against already-loaded state)
     function runInit() {
         initNavigation();
-        initDataLoad();
+        initGlobalCrudDelegation();
+        dispatchPageLogic(); // Immediately bind all CRUD modals and interactive buttons on page load
+        initDataLoad();      // Then asynchronously fetch central state / time series
     }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', runInit);
     } else {
         runInit();
+    }
+
+    // Universal Fail-safe Event Delegation for all CRUD & Modal buttons across all menus
+    function initGlobalCrudDelegation() {
+        document.addEventListener('click', function (e) {
+            // 1. OPEN ADD MODAL
+            const addBtn = e.target.closest('[id^="btn-open-add-"]');
+            if (addBtn) {
+                e.preventDefault();
+                const id = addBtn.id;
+                let modalId = null;
+                if (id === 'btn-open-add-beranda') modalId = 'add-beranda-modal';
+                else if (id === 'btn-open-add-regional-modal' || id === 'btn-open-add-regional-2') modalId = 'add-regional-modal';
+                else if (id === 'btn-open-add-sector' || id === 'btn-open-add-sector-2') modalId = 'add-sector-modal';
+                else if (id === 'btn-open-add-district' || id === 'btn-open-add-district-2') modalId = 'add-district-modal';
+                else if (id === 'btn-open-add-prospek' || id === 'btn-open-add-prospek-2') modalId = 'add-prospek-modal';
+                else if (id === 'btn-open-add-ews' || id === 'btn-open-add-ews-2') modalId = 'add-ews-modal';
+                else if (id === 'btn-open-add-insight') modalId = 'add-insight-modal';
+                else if (id === 'btn-open-add-report' || id === 'btn-open-add-report-2') modalId = 'add-report-modal';
+                else if (id === 'btn-open-add-user') modalId = 'add-user-modal';
+                else if (id === 'btn-open-add-catalog') modalId = 'add-catalog-modal';
+                else if (id === 'btn-open-add-modal') modalId = 'add-data-modal';
+
+                if (modalId) {
+                    const m = document.getElementById(modalId);
+                    if (m) {
+                        m.style.display = 'grid';
+                        return;
+                    }
+                }
+            }
+
+            // 2. CLOSE MODAL (Close/Cancel buttons or backdrop click)
+            const closeBtn = e.target.closest('[id^="modal-btn-close"], [id^="modal-btn-cancel"], .modal-close, #insight-modal-close, #insight-modal-btn-ok');
+            if (closeBtn) {
+                e.preventDefault();
+                const modal = closeBtn.closest('.modal-backdrop');
+                if (modal) {
+                    modal.style.display = 'none';
+                    return;
+                }
+            }
+
+            if (e.target.classList.contains('modal-backdrop')) {
+                e.target.style.display = 'none';
+                return;
+            }
+        });
     }
 
     // Navigation & Global Events
@@ -506,7 +557,8 @@
                     else if (q.includes('analisis') || q.includes('korelasi') || q.includes('shift') || q.includes('lq') || q.includes('klassen')) target = 'analisis_ekonomi';
                     else if (q.includes('admin') || q.includes('database') || q.includes('validasi')) target = 'database';
 
-                    window.location.href = SITE_URL + '/' + target;
+                    const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+                    window.location.href = cleanSite + '/' + target;
                 }
             });
         }
@@ -514,7 +566,8 @@
 
     // Load Central Data from CI 3 API
     function initDataLoad() {
-        fetch(BASE_URL + 'api/get_data')
+        const cleanBase = (typeof BASE_URL !== 'undefined' ? BASE_URL : '').replace(/\/+$/, '');
+        fetch(cleanBase + '/api/get_data')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
@@ -529,13 +582,12 @@
                     AppState.user = data.user || null;
                     AppState.loaded = true;
 
-                    // Initialize Page-Specific Logic
+                    // Refresh page components that rely on AppState
                     dispatchPageLogic();
                 }
             })
             .catch(err => {
-                console.error('Gagal memuat API state, menggunakan fallback internal:', err);
-                dispatchPageLogic();
+                console.warn('Gagal memuat API state, menggunakan fallback data server-side:', err);
             });
     }
 
@@ -544,19 +596,19 @@
 
         if (document.getElementById('overview-line-chart-container') || document.getElementById('btn-open-add-beranda')) {
             initOverviewPage();
-        } else if (document.getElementById('comp-feature-tabs') || document.getElementById('form-add-regional')) {
+        } else if (document.getElementById('comp-feature-tabs') || document.getElementById('form-add-regional') || document.getElementById('btn-open-add-regional-modal')) {
             initComparisonPage();
-        } else if (document.getElementById('analysis-menu-links') || document.getElementById('form-add-sector')) {
+        } else if (document.getElementById('analysis-menu-links') || document.getElementById('form-add-sector') || document.getElementById('btn-open-add-sector')) {
             initAnalysisPage();
-        } else if (document.getElementById('map-canvas-container') || document.getElementById('form-add-district')) {
+        } else if (document.getElementById('map-canvas-container') || document.getElementById('form-add-district') || document.getElementById('btn-open-add-district')) {
             initMapPage();
-        } else if (document.getElementById('btn-mode-forecast') || document.getElementById('form-add-prospek')) {
+        } else if (document.getElementById('btn-mode-forecast') || document.getElementById('form-add-prospek') || document.getElementById('btn-open-add-prospek')) {
             initOutlookPage();
-        } else if (document.getElementById('ews-stats-container') || document.getElementById('form-add-ews')) {
+        } else if (document.getElementById('ews-stats-container') || document.getElementById('form-add-ews') || document.getElementById('btn-open-add-ews')) {
             initEwsPage();
-        } else if (document.getElementById('insight-modal-backdrop') || document.getElementById('form-add-insight')) {
+        } else if (document.getElementById('insight-modal-backdrop') || document.getElementById('form-add-insight') || document.getElementById('btn-open-add-insight')) {
             initInsightPage();
-        } else if (document.getElementById('printable-report') || document.getElementById('form-add-report')) {
+        } else if (document.getElementById('printable-report') || document.getElementById('form-add-report') || document.getElementById('btn-open-add-report')) {
             initReportPage();
         } else if (document.getElementById('admin-table-body')) {
             initAdminDatabasePage();
@@ -566,9 +618,9 @@
             initAdminValidationPage();
         } else if (document.getElementById('threshold-admin-rows')) {
             initAdminEwsPage();
-        } else if (document.getElementById('form-add-catalog') || document.getElementById('btn-export-catalog-csv')) {
+        } else if (document.getElementById('form-add-catalog') || document.getElementById('btn-export-catalog-csv') || document.getElementById('btn-open-add-catalog')) {
             initAdminCatalogPage();
-        } else if (document.querySelector('.user-role-select') || document.getElementById('form-add-user')) {
+        } else if (document.querySelector('.user-role-select') || document.getElementById('form-add-user') || document.getElementById('btn-open-add-user')) {
             initAdminUsersPage();
         }
     }
@@ -577,6 +629,7 @@
     // GENERIC MODULE CRUD & SOFT DELETE HANDLER
     // ==========================================
     function setupModuleCrud(cfg) {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
         const addModal = document.getElementById(cfg.addModalId);
         const editModal = document.getElementById(cfg.editModalId);
         const formAdd = document.getElementById(cfg.formAddId);
@@ -588,11 +641,11 @@
         (cfg.openAddBtnIds || []).forEach(id => {
             const btn = document.getElementById(id);
             if (btn && addModal) {
-                btn.addEventListener('click', (e) => {
+                btn.onclick = function (e) {
                     e.preventDefault();
                     if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
                     addModal.style.display = 'grid';
-                });
+                };
             }
         });
 
@@ -600,13 +653,14 @@
         (cfg.closeAddBtnIds || []).forEach(id => {
             const btn = document.getElementById(id);
             if (btn && addModal) {
-                btn.addEventListener('click', (e) => {
+                btn.onclick = function (e) {
                     e.preventDefault();
                     addModal.style.display = 'none';
-                });
+                };
             }
         });
-        if (addModal) {
+        if (addModal && !addModal._hasBackdropBound) {
+            addModal._hasBackdropBound = true;
             addModal.addEventListener('click', e => {
                 if (e.target === addModal) addModal.style.display = 'none';
             });
@@ -616,25 +670,27 @@
         (cfg.closeEditBtnIds || []).forEach(id => {
             const btn = document.getElementById(id);
             if (btn && editModal) {
-                btn.addEventListener('click', (e) => {
+                btn.onclick = function (e) {
                     e.preventDefault();
                     editModal.style.display = 'none';
-                });
+                };
             }
         });
-        if (editModal) {
+        if (editModal && !editModal._hasBackdropBound) {
+            editModal._hasBackdropBound = true;
             editModal.addEventListener('click', e => {
                 if (e.target === editModal) editModal.style.display = 'none';
             });
         }
 
         // Submit Add Form
-        if (formAdd) {
+        if (formAdd && !formAdd._hasCrudBound) {
+            formAdd._hasCrudBound = true;
             formAdd.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
                 const fd = new FormData(formAdd);
-                fetch(`${SITE_URL}/${cfg.controller}/create`, {
+                fetch(`${cleanSite}/${cfg.controller}/create`, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: fd
@@ -659,13 +715,14 @@
         }
 
         // Submit Edit Form
-        if (formEdit) {
+        if (formEdit && !formEdit._hasCrudBound) {
+            formEdit._hasCrudBound = true;
             formEdit.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (editErr) { editErr.style.display = 'none'; editErr.textContent = ''; }
                 const fd = new FormData(formEdit);
                 const id = fd.get('id') || (formEdit.querySelector('input[name="id"]') ? formEdit.querySelector('input[name="id"]').value : '');
-                fetch(`${SITE_URL}/${cfg.controller}/update/${id}`, {
+                fetch(`${cleanSite}/${cfg.controller}/update/${id}`, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: fd
@@ -689,17 +746,32 @@
             });
         }
 
-        // Bind Row Buttons
-        function bindButtons() {
-            // Edit
-            if (cfg.editBtnClass) {
-                document.querySelectorAll('.' + cfg.editBtnClass).forEach(btn => {
-                    btn.addEventListener('click', function (e) {
+        function matchClass(elem, classStr) {
+            if (!elem || !classStr) return null;
+            const list = classStr.trim().split(/\s+/);
+            for (let i = 0; i < list.length; i++) {
+                const found = elem.closest('.' + list[i]);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        // Global Delegated Handler for this controller to guarantee click responsiveness
+        window._registeredCrudDelegates = window._registeredCrudDelegates || {};
+        if (!window._registeredCrudDelegates[cfg.controller]) {
+            window._registeredCrudDelegates[cfg.controller] = true;
+
+            document.addEventListener('click', function (e) {
+                // 1. Edit Button
+                if (cfg.editBtnClass) {
+                    const btn = matchClass(e.target, cfg.editBtnClass);
+                    if (btn) {
+                        e.preventDefault();
                         e.stopPropagation();
-                        const id = this.getAttribute('data-id');
+                        const id = btn.getAttribute('data-id');
                         if (!id) return;
                         if (editErr) { editErr.style.display = 'none'; editErr.textContent = ''; }
-                        fetch(`${SITE_URL}/${cfg.controller}/get_data/${id}`, {
+                        fetch(`${cleanSite}/${cfg.controller}/get_data/${id}`, {
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         })
                             .then(r => r.json())
@@ -715,20 +787,21 @@
                                 }
                             })
                             .catch(() => alert('Gagal mengambil data dari server.'));
-                    });
-                });
-            }
+                        return;
+                    }
+                }
 
-            // Soft delete
-            if (cfg.deleteBtnClass) {
-                document.querySelectorAll('.' + cfg.deleteBtnClass).forEach(btn => {
-                    btn.addEventListener('click', function (e) {
+                // 2. Soft Delete Button
+                if (cfg.deleteBtnClass) {
+                    const btn = matchClass(e.target, cfg.deleteBtnClass);
+                    if (btn) {
+                        e.preventDefault();
                         e.stopPropagation();
-                        const id = this.getAttribute('data-id');
-                        const name = this.getAttribute('data-name') || 'item ini';
+                        const id = btn.getAttribute('data-id');
+                        const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
                         if (confirm(`Pindahkan "${name}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
-                            fetch(`${SITE_URL}/${cfg.controller}/soft_delete/${id}`, {
+                            fetch(`${cleanSite}/${cfg.controller}/soft_delete/${id}`, {
                                 method: 'POST',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
@@ -741,23 +814,24 @@
                                     }
                                 })
                                 .catch(() => {
-                                    window.location.href = `${SITE_URL}/${cfg.controller}/soft_delete/${id}`;
+                                    window.location.href = `${cleanSite}/${cfg.controller}/soft_delete/${id}`;
                                 });
                         }
-                    });
-                });
-            }
+                        return;
+                    }
+                }
 
-            // Restore
-            if (cfg.restoreBtnClass) {
-                document.querySelectorAll('.' + cfg.restoreBtnClass).forEach(btn => {
-                    btn.addEventListener('click', function (e) {
+                // 3. Restore Button
+                if (cfg.restoreBtnClass) {
+                    const btn = matchClass(e.target, cfg.restoreBtnClass);
+                    if (btn) {
+                        e.preventDefault();
                         e.stopPropagation();
-                        const id = this.getAttribute('data-id');
-                        const name = this.getAttribute('data-name') || 'item ini';
+                        const id = btn.getAttribute('data-id');
+                        const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
                         if (confirm(`Pulihkan "${name}" kembali ke daftar aktif?`)) {
-                            fetch(`${SITE_URL}/${cfg.controller}/restore/${id}`, {
+                            fetch(`${cleanSite}/${cfg.controller}/restore/${id}`, {
                                 method: 'POST',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
@@ -770,23 +844,24 @@
                                     }
                                 })
                                 .catch(() => {
-                                    window.location.href = `${SITE_URL}/${cfg.controller}/restore/${id}`;
+                                    window.location.href = `${cleanSite}/${cfg.controller}/restore/${id}`;
                                 });
                         }
-                    });
-                });
-            }
+                        return;
+                    }
+                }
 
-            // Hard delete
-            if (cfg.hardDeleteBtnClass) {
-                document.querySelectorAll('.' + cfg.hardDeleteBtnClass).forEach(btn => {
-                    btn.addEventListener('click', function (e) {
+                // 4. Hard Delete Button
+                if (cfg.hardDeleteBtnClass) {
+                    const btn = matchClass(e.target, cfg.hardDeleteBtnClass);
+                    if (btn) {
+                        e.preventDefault();
                         e.stopPropagation();
-                        const id = this.getAttribute('data-id');
-                        const name = this.getAttribute('data-name') || 'item ini';
+                        const id = btn.getAttribute('data-id');
+                        const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
                         if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${name}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                            fetch(`${SITE_URL}/${cfg.controller}/hard_delete/${id}`, {
+                            fetch(`${cleanSite}/${cfg.controller}/hard_delete/${id}`, {
                                 method: 'POST',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
@@ -799,16 +874,16 @@
                                     }
                                 })
                                 .catch(() => {
-                                    window.location.href = `${SITE_URL}/${cfg.controller}/hard_delete/${id}`;
+                                    window.location.href = `${cleanSite}/${cfg.controller}/hard_delete/${id}`;
                                 });
                         }
-                    });
-                });
-            }
+                        return;
+                    }
+                }
+            });
         }
 
-        bindButtons();
-        return { bindButtons };
+        return { bindButtons: function () { } };
     }
 
     // 1. OVERVIEW PAGE
@@ -947,7 +1022,8 @@
         if (btnApply) {
             btnApply.addEventListener('click', () => {
                 const yr = filterYear ? filterYear.value : 2024;
-                window.location.href = SITE_URL + '?year=' + yr;
+                const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+                window.location.href = cleanSite + '/beranda?year=' + yr;
             });
         }
 
@@ -993,233 +1069,33 @@
         const btnReset = document.getElementById('btn-reset-regions');
         const btnExport = document.getElementById('btn-export-comparison');
 
-        // Modal Elements
-        const addRegionalModal = document.getElementById('add-regional-modal');
-        const editRegionalModal = document.getElementById('edit-regional-modal');
-        const btnOpenAdd = document.getElementById('btn-open-add-regional-modal');
-        const btnCloseAdd = document.getElementById('modal-btn-close-add-regional');
-        const btnCancelAdd = document.getElementById('modal-btn-cancel-add-regional');
-        const btnCloseEdit = document.getElementById('modal-btn-close-edit-regional');
-        const btnCancelEdit = document.getElementById('modal-btn-cancel-edit-regional');
-        const formAdd = document.getElementById('form-add-regional');
-        const formEdit = document.getElementById('form-edit-regional');
-        const addRegionalErr = document.getElementById('add-regional-error');
-        const editRegionalErr = document.getElementById('edit-regional-error');
+        function bindRegionalActionButtons() {}
 
-        let activeTab = 'Regional Ranking';
-        let selectedRegions = AppState.regional.map(r => r.name);
-
-        function bindRegionalActionButtons() {
-            // Edit button handler
-            document.querySelectorAll('.btn-edit-regional').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-id');
-                    if (!id) return;
-
-                    if (editRegionalErr) {
-                        editRegionalErr.style.display = 'none';
-                        editRegionalErr.textContent = '';
-                    }
-
-                    fetch(`${SITE_URL}/perbandingan_daerah/get_data/${id}`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                        .then(res => res.json())
-                        .then(res => {
-                            if (res.status === 'success' && res.data) {
-                                const d = res.data;
-                                document.getElementById('edit-regional-id').value = d.id;
-                                document.getElementById('edit-regional-name').value = d.name || d.nama_wilayah || '';
-                                document.getElementById('edit-regional-value').value = d.value !== undefined ? d.value : d.nilai_pertumbuhan;
-                                document.getElementById('edit-regional-change').value = d.change !== undefined ? d.change : d.perubahan;
-                                const seriesArr = Array.isArray(d.series) ? d.series : [];
-                                document.getElementById('edit-regional-series').value = seriesArr.join(', ');
-
-                                if (editRegionalModal) editRegionalModal.style.display = 'grid';
-                            } else {
-                                alert(res.message || 'Gagal memuat data wilayah.');
-                            }
-                        })
-                        .catch(() => alert('Gagal mengambil data wilayah dari server.'));
-                });
-            });
-
-            // Soft delete handler
-            document.querySelectorAll('.btn-delete-regional').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-id');
-                    const name = this.getAttribute('data-name') || 'wilayah ini';
-                    if (!id) return;
-
-                    if (confirm(`Pindahkan wilayah "${name}" ke tempat sampah (Soft Delete)?\n\nWilayah tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
-                        fetch(`${SITE_URL}/perbandingan_daerah/soft_delete/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memproses soft delete wilayah.');
-                                }
-                            })
-                            .catch(() => {
-                                window.location.href = `${SITE_URL}/perbandingan_daerah/soft_delete/${id}`;
-                            });
-                    }
-                });
-            });
-
-            // Restore from soft delete handler
-            document.querySelectorAll('.btn-restore-regional').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-id');
-                    const name = this.getAttribute('data-name') || 'wilayah ini';
-                    if (!id) return;
-
-                    if (confirm(`Pulihkan wilayah "${name}" kembali ke daftar aktif?`)) {
-                        fetch(`${SITE_URL}/perbandingan_daerah/restore/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memulihkan wilayah.');
-                                }
-                            })
-                            .catch(() => {
-                                window.location.href = `${SITE_URL}/perbandingan_daerah/restore/${id}`;
-                            });
-                    }
-                });
-            });
-
-            // Hard delete handler
-            document.querySelectorAll('.btn-hard-delete-regional').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-id');
-                    const name = this.getAttribute('data-name') || 'wilayah ini';
-                    if (!id) return;
-
-                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${name}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                        fetch(`${SITE_URL}/perbandingan_daerah/hard_delete/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal menghapus wilayah secara permanen.');
-                                }
-                            })
-                            .catch(() => {
-                                window.location.href = `${SITE_URL}/perbandingan_daerah/hard_delete/${id}`;
-                            });
-                    }
-                });
-            });
-        }
-
-        // Modal Open / Close Handlers
-        const btnOpenAdd2 = document.getElementById('btn-open-add-regional-2');
-        if (btnOpenAdd && addRegionalModal) {
-            btnOpenAdd.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
-        }
-        if (btnOpenAdd2 && addRegionalModal) {
-            btnOpenAdd2.addEventListener('click', () => { addRegionalModal.style.display = 'grid'; });
-        }
-
-        const closeAddModal = () => { if (addRegionalModal) addRegionalModal.style.display = 'none'; };
-        if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
-        if (btnCancelAdd) btnCancelAdd.addEventListener('click', closeAddModal);
-        if (addRegionalModal) {
-            addRegionalModal.addEventListener('click', e => {
-                if (e.target === addRegionalModal) closeAddModal();
-            });
-        }
-
-        const closeEditModal = () => { if (editRegionalModal) editRegionalModal.style.display = 'none'; };
-        if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeEditModal);
-        if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
-        if (editRegionalModal) {
-            editRegionalModal.addEventListener('click', e => {
-                if (e.target === editRegionalModal) closeEditModal();
-            });
-        }
-
-        // Form Submit: Tambah Wilayah
-        if (formAdd) {
-            formAdd.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const fd = new FormData(this);
-                if (addRegionalErr) addRegionalErr.style.display = 'none';
-
-                fetch(`${SITE_URL}/perbandingan_daerah/create`, {
-                    method: 'POST',
-                    body: fd,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            location.reload();
-                        } else {
-                            if (addRegionalErr) {
-                                addRegionalErr.style.display = 'block';
-                                addRegionalErr.textContent = data.message || 'Gagal menyimpan wilayah.';
-                            }
-                        }
-                    })
-                    .catch(() => {
-                        formAdd.submit();
-                    });
-            });
-        }
-
-        // Form Submit: Edit Wilayah
-        if (formEdit) {
-            formEdit.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const id = document.getElementById('edit-regional-id').value;
-                if (!id) return;
-
-                const fd = new FormData(this);
-                if (editRegionalErr) editRegionalErr.style.display = 'none';
-
-                fetch(`${SITE_URL}/perbandingan_daerah/update/${id}`, {
-                    method: 'POST',
-                    body: fd,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            location.reload();
-                        } else {
-                            if (editRegionalErr) {
-                                editRegionalErr.style.display = 'block';
-                                editRegionalErr.textContent = data.message || 'Gagal memperbarui wilayah.';
-                            }
-                        }
-                    })
-                    .catch(() => {
-                        if (editRegionalErr) {
-                            editRegionalErr.style.display = 'block';
-                            editRegionalErr.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
-                        }
-                    });
-            });
-        }
+        // Setup CRUD & Soft Delete for Perbandingan Daerah
+        setupModuleCrud({
+            controller: 'perbandingan_daerah',
+            addModalId: 'add-regional-modal',
+            editModalId: 'edit-regional-modal',
+            openAddBtnIds: ['btn-open-add-regional-modal', 'btn-open-add-regional-2'],
+            closeAddBtnIds: ['modal-btn-close-add-regional', 'modal-btn-cancel-add-regional'],
+            closeEditBtnIds: ['modal-btn-close-edit-regional', 'modal-btn-cancel-edit-regional'],
+            formAddId: 'form-add-regional',
+            formEditId: 'form-edit-regional',
+            addErrorId: 'add-regional-error',
+            editErrorId: 'edit-regional-error',
+            editBtnClass: 'btn-edit-regional',
+            deleteBtnClass: 'btn-delete-regional',
+            restoreBtnClass: 'btn-restore-regional',
+            hardDeleteBtnClass: 'btn-hard-delete-regional',
+            onEditPreFill: (d) => {
+                document.getElementById('edit-regional-id').value = d.id;
+                document.getElementById('edit-regional-name').value = d.name || d.nama_wilayah || '';
+                document.getElementById('edit-regional-value').value = d.value !== undefined ? d.value : d.nilai_pertumbuhan;
+                document.getElementById('edit-regional-change').value = d.change !== undefined ? d.change : d.perubahan;
+                const seriesArr = Array.isArray(d.series) ? d.series : [];
+                document.getElementById('edit-regional-series').value = seriesArr.join(', ');
+            }
+        });
 
         function renderComparison() {
             const period = periodSelect ? periodSelect.value : '10';
@@ -1427,16 +1303,6 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Rerata Daerah Terpilih</strong></td>
-                                    <td>${formatPct(bwi.avg)}</td>
-                                    <td>${formatPct(peerAvg)}</td>
-                                    <td><strong>${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
-                                    <td><span class="badge ${gap >= 0 ? 'success' : 'warning'}">${gap >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>`;
-
-            } else if (activeTab === 'Regional Profiling') {
                                     <td>${formatPct(bwi.avg)}</td>
                                     <td>${formatPct(peerAvg)}</td>
                                     <td><strong>${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
@@ -2858,6 +2724,14 @@
             formEditId: 'form-edit-insight',
             addErrorId: 'add-insight-error',
             editErrorId: 'edit-insight-error',
+            editBtnClass: 'btn-edit-insight',
+            deleteBtnClass: 'btn-delete-insight',
+            restoreBtnClass: 'btn-restore-insight',
+            hardDeleteBtnClass: 'btn-hard-delete-insight',
+            editBtnClass: 'btn-edit-insight',
+            deleteBtnClass: 'btn-delete-insight',
+            restoreBtnClass: 'btn-restore-insight',
+            hardDeleteBtnClass: 'btn-hard-delete-insight',
             populateForm: function (item) {
                 document.getElementById('edit-insight-id').value = item.id;
                 document.getElementById('edit-insight-title').value = item.judul || '';
@@ -3024,6 +2898,14 @@
             formEditId: 'form-edit-report',
             addErrorId: 'add-report-error',
             editErrorId: 'edit-report-error',
+            editBtnClass: 'btn-edit-report',
+            deleteBtnClass: 'btn-delete-report',
+            restoreBtnClass: 'btn-restore-laporan',
+            hardDeleteBtnClass: 'btn-hard-delete-laporan',
+            editBtnClass: 'btn-edit-report',
+            deleteBtnClass: 'btn-delete-report',
+            restoreBtnClass: 'btn-restore-laporan',
+            hardDeleteBtnClass: 'btn-hard-delete-laporan',
             populateForm: function (item) {
                 document.getElementById('edit-report-id').value = item.id;
                 document.getElementById('edit-report-number').value = item.nomor_laporan || '';
@@ -3039,6 +2921,7 @@
 
     // 9. ADMIN DATABASE PAGE
     function initAdminDatabasePage() {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
         const searchInput = document.getElementById('admin-search-input');
         const filterStatus = document.getElementById('admin-filter-status');
         const sortSelect = document.getElementById('admin-sort');
@@ -3060,7 +2943,7 @@
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
             const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'year';
-            window.location.href = `${SITE_URL}/database?q=${q}&status=${st}&sort=${srt}`;
+            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}`;
         }
 
         if (searchInput) {
@@ -3109,7 +2992,7 @@
                 const fd = new FormData(this);
                 const errBox = document.getElementById('add-modal-error');
 
-                fetch(`${SITE_URL}/database/create`, {
+                fetch(`${cleanSite}/database/create`, {
                     method: 'POST',
                     body: fd,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -3142,52 +3025,8 @@
             });
         }
 
-        document.querySelectorAll('.btn-edit-record').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                if (!id) return;
-
-                if (editErrBox) {
-                    editErrBox.style.display = 'none';
-                    editErrBox.textContent = '';
-                }
-
-                fetch(`${SITE_URL}/database/get_record/${id}`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                    .then(res => {
-                        if (!res.ok) throw new Error('Data record tidak ditemukan.');
-                        return res.json();
-                    })
-                    .then(res => {
-                        if (res.status === 'success' && res.data) {
-                            const d = res.data;
-                            document.getElementById('edit-id').value = d.id;
-                            document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
-                            document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
-                            document.getElementById('edit-cluster').value = d.cluster || d.klaster || 'Output & Pertumbuhan';
-                            document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
-                            document.getElementById('edit-period').value = d.period || d.periode || 'Tahunan';
-                            document.getElementById('edit-year').value = d.year || d.tahun || 2024;
-                            document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
-                            document.getElementById('edit-unit').value = d.unit || d.satuan || '%';
-                            document.getElementById('edit-source').value = d.source || d.sumber_data || '';
-                            document.getElementById('edit-status').value = d.status || d.status_validasi || 'Perlu review';
-                            document.getElementById('edit-notes').value = d.notes || d.catatan || '';
-
-                            if (editModal) editModal.style.display = 'grid';
-                        } else {
-                            alert(res.message || 'Gagal memuat rekaman data.');
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        alert('Gagal mengambil data indikator untuk diedit.');
-                    });
-            });
-        });
-
-        if (formEdit) {
+        if (formEdit && !formEdit._hasCrudBound) {
+            formEdit._hasCrudBound = true;
             formEdit.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('edit-id').value;
@@ -3196,7 +3035,7 @@
                 const fd = new FormData(this);
                 if (editErrBox) editErrBox.style.display = 'none';
 
-                fetch(`${SITE_URL}/database/update/${id}`, {
+                fetch(`${cleanSite}/database/update/${id}`, {
                     method: 'POST',
                     body: fd,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -3221,86 +3060,138 @@
             });
         }
 
-        // Soft Delete
-        document.querySelectorAll('.btn-delete-record').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                const indicator = this.getAttribute('data-indicator') || 'data ini';
-                if (!id) return;
-
-                if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
-                    fetch(`${SITE_URL}/database/soft_delete/${id}`, {
-                        method: 'POST',
+        // Delegated Click Handler for Database Records (Edit, Delete, Restore, Hard Delete)
+        if (!window._registeredDbDelegates) {
+            window._registeredDbDelegates = true;
+            document.addEventListener('click', function (e) {
+                // Edit
+                const editBtn = e.target.closest('.btn-edit-record');
+                if (editBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = editBtn.getAttribute('data-id');
+                    if (!id) return;
+                    if (editErrBox) { editErrBox.style.display = 'none'; editErrBox.textContent = ''; }
+                    fetch(`${cleanSite}/database/get_record/${id}`, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                location.reload();
+                        .then(res => {
+                            if (!res.ok) throw new Error('Data record tidak ditemukan.');
+                            return res.json();
+                        })
+                        .then(res => {
+                            if (res.status === 'success' && res.data) {
+                                const d = res.data;
+                                document.getElementById('edit-id').value = d.id;
+                                document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
+                                document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
+                                document.getElementById('edit-cluster').value = d.cluster || d.klaster || 'Output & Pertumbuhan';
+                                document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
+                                document.getElementById('edit-period').value = d.period || d.periode || 'Tahunan';
+                                document.getElementById('edit-year').value = d.year || d.tahun || 2024;
+                                document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
+                                document.getElementById('edit-unit').value = d.unit || d.satuan || '%';
+                                document.getElementById('edit-source').value = d.source || d.sumber_data || '';
+                                document.getElementById('edit-status').value = d.status || d.status_validasi || 'Perlu review';
+                                document.getElementById('edit-notes').value = d.notes || d.catatan || '';
+
+                                if (editModal) editModal.style.display = 'grid';
                             } else {
-                                alert(data.message || 'Gagal memproses soft delete.');
+                                alert(res.message || 'Gagal memuat rekaman data.');
                             }
                         })
-                        .catch(() => {
-                            window.location.href = `${SITE_URL}/database/soft_delete/${id}`;
+                        .catch(err => {
+                            console.error(err);
+                            alert('Gagal mengambil data indikator untuk diedit.');
                         });
+                    return;
                 }
-            });
-        });
 
-        // Restore from Soft Delete
-        document.querySelectorAll('.btn-restore-record').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                const indicator = this.getAttribute('data-indicator') || 'data ini';
-                if (!id) return;
-
-                if (confirm(`Pulihkan indikator "${indicator}" kembali ke daftar aktif?`)) {
-                    fetch(`${SITE_URL}/database/restore/${id}`, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                location.reload();
-                            } else {
-                                alert(data.message || 'Gagal memulihkan data.');
-                            }
+                // Soft Delete
+                const delBtn = e.target.closest('.btn-delete-record');
+                if (delBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = delBtn.getAttribute('data-id');
+                    const indicator = delBtn.getAttribute('data-indicator') || 'data ini';
+                    if (!id) return;
+                    if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
+                        fetch(`${cleanSite}/database/soft_delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         })
-                        .catch(() => {
-                            window.location.href = `${SITE_URL}/database/restore/${id}`;
-                        });
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memproses soft delete.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${cleanSite}/database/soft_delete/${id}`;
+                            });
+                    }
+                    return;
                 }
-            });
-        });
 
-        // Hard Delete (Permanent Delete)
-        document.querySelectorAll('.btn-hard-delete-record').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                const indicator = this.getAttribute('data-indicator') || 'data ini';
-                if (!id) return;
-
-                if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${indicator}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                    fetch(`${SITE_URL}/database/hard_delete/${id}`, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                location.reload();
-                            } else {
-                                alert(data.message || 'Gagal menghapus data secara permanen.');
-                            }
+                // Restore
+                const resBtn = e.target.closest('.btn-restore-record');
+                if (resBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = resBtn.getAttribute('data-id');
+                    const indicator = resBtn.getAttribute('data-indicator') || 'data ini';
+                    if (!id) return;
+                    if (confirm(`Pulihkan indikator "${indicator}" kembali ke daftar aktif?`)) {
+                        fetch(`${cleanSite}/database/restore/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         })
-                        .catch(() => {
-                            window.location.href = `${SITE_URL}/database/hard_delete/${id}`;
-                        });
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memulihkan data.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${cleanSite}/database/restore/${id}`;
+                            });
+                    }
+                    return;
+                }
+
+                // Hard Delete
+                const hardBtn = e.target.closest('.btn-hard-delete-record');
+                if (hardBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = hardBtn.getAttribute('data-id');
+                    const indicator = hardBtn.getAttribute('data-indicator') || 'data ini';
+                    if (!id) return;
+                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${indicator}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
+                        fetch(`${cleanSite}/database/hard_delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal menghapus data secara permanen.');
+                                }
+                            })
+                            .catch(() => {
+                                window.location.href = `${cleanSite}/database/hard_delete/${id}`;
+                            });
+                    }
+                    return;
                 }
             });
-        });
+        }
 
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {
@@ -3566,6 +3457,10 @@
             formEditId: 'form-edit-user',
             addErrorId: 'add-user-error',
             editErrorId: 'edit-user-error',
+            editBtnClass: 'btn-edit-user',
+            deleteBtnClass: 'btn-delete-user',
+            restoreBtnClass: 'btn-restore-user',
+            hardDeleteBtnClass: 'btn-hard-delete-user',
             populateForm: function (item) {
                 document.getElementById('edit-user-id').value = item.id;
                 document.getElementById('edit-user-username').value = item.nama_pengguna || '';
@@ -3583,7 +3478,7 @@
         const btnExportCsv = document.getElementById('btn-export-catalog-csv');
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', function () {
-                window.location.href = SITE_URL + '/catalog';
+                window.location.href = cleanSite + '/catalog';
             });
         }
 
@@ -3623,6 +3518,10 @@
             formEditId: 'form-edit-catalog',
             addErrorId: 'add-catalog-error',
             editErrorId: 'edit-catalog-error',
+            editBtnClass: 'btn-edit-catalog',
+            deleteBtnClass: 'btn-delete-catalog',
+            restoreBtnClass: 'btn-restore-catalog',
+            hardDeleteBtnClass: 'btn-hard-delete-catalog',
             populateForm: function (item) {
                 document.getElementById('edit-catalog-id').value = item.id;
                 document.getElementById('edit-catalog-code').value = item.kode_indikator || '';
