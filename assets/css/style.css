@@ -315,7 +315,7 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 }
 .risk-table-header {
     display: grid;
-    grid-template-columns: 2.2fr 1fr 1fr 110px 40px;
+    grid-template-columns: 2.2fr 1fr 1fr 110px;
     align-items: center;
     padding: 11px 18px;
     background: #f8fafc;
@@ -331,7 +331,7 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 .risk-table button.tr, 
 .risk-table .btn-alert-row {
     display: grid;
-    grid-template-columns: 2.2fr 1fr 1fr 110px 40px;
+    grid-template-columns: 2.2fr 1fr 1fr 110px;
     align-items: center;
     width: 100%;
     padding: 14px 18px;
@@ -443,6 +443,7 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 .risk-status {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
 }
 .risk-status .badge {
     font-size: 11px;

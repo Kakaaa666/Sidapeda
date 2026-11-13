@@ -19,57 +19,6 @@
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($status) && ($status === 'Terhapus' || $status === 'Sampah')): ?>
-        <!-- TEMPAT SAMPAH EWS -->
-        <article class="card large" style="margin-bottom:24px; border:1px dashed #f43f5e; background:rgba(244,63,94,0.03);">
-            <div class="card-head">
-                <div>
-                    <span class="badge danger">TEMPAT SAMPAH (SOFT DELETE)</span>
-                    <h3>Daftar Indikator EWS Terhapus (<?= count($ews) ?>)</h3>
-                    <p>Klik tombol Pulihkan untuk mengembalikan indikator ke sistem pemantauan dini aktif.</p>
-                </div>
-                <a href="<?= site_url('early_warning') ?>" class="button ghost">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                    <span>Kembali ke EWS Aktif</span>
-                </a>
-            </div>
-            <div class="data-table">
-                <div class="data-tr data-th" style="grid-template-columns: 1fr 2fr 1fr 1fr 1.2fr 120px;">
-                    <span>Kode</span>
-                    <span>Nama Indikator</span>
-                    <span>Nilai</span>
-                    <span>Threshold</span>
-                    <span>Dihapus Pada</span>
-                    <span>Aksi</span>
-                </div>
-                <?php if (empty($ews)): ?>
-                    <div style="padding:24px; text-align:center; color:var(--muted); font-size:11px;">
-                        Tempat sampah kosong. Tidak ada indikator EWS yang terhapus.
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($ews as $item): ?>
-                        <div class="data-tr" style="grid-template-columns: 1fr 2fr 1fr 1fr 1.2fr 120px;">
-                            <span><code><?= htmlspecialchars($item['code']) ?></code></span>
-                            <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
-                            <span><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
-                            <span><?= number_format($item['threshold'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?></span>
-                            <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
-                            <span class="row-actions">
-                                <button type="button" class="btn-restore-ews" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Pulihkan Indikator">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                                    <span>Pulihkan</span>
-                                </button>
-                                <button type="button" class="btn-hard-delete-ews danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus Permanen">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </button>
-                            </span>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </article>
-    <?php endif; ?>
-
     <div class="module-intro">
         <div>
             <span class="eyebrow"><?= $eyebrow ?></span>
@@ -77,22 +26,6 @@
             <p><?= $subtitle ?></p>
         </div>
         <div class="intro-actions">
-            <?php if ($trash_count > 0): ?>
-                <?php if ($status === 'Terhapus'): ?>
-                    <a href="<?= site_url('early_warning') ?>" class="button ghost">
-                        <span>Kembali ke Aktif</span>
-                    </a>
-                <?php else: ?>
-                    <a href="<?= site_url('early_warning?status=Terhapus') ?>" class="button ghost danger">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        <span>Sampah (<?= $trash_count ?>)</span>
-                    </a>
-                <?php endif; ?>
-            <?php endif; ?>
-            <button class="button primary" id="btn-open-add-ews">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Tambah Indikator EWS</span>
-            </button>
             <button class="button secondary" id="btn-export-ews">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
                 <span>Ekspor CSV</span>
@@ -142,7 +75,7 @@
                 <div>
                     <span class="eyebrow">RISK MONITORING</span>
                     <h3>Indikator dalam Pemantauan Dini</h3>
-                    <p>Status dihitung otomatis dari nilai riil dan threshold konfigurasi. Klik baris indikator untuk detail analisis dan penyesuaian threshold.</p>
+                    <p>Status dihitung otomatis dari nilai riil dan batas ambang (threshold). Anda dapat menentukan sendiri nilai threshold dan arah kondisi risiko dengan mengklik baris indikator di bawah.</p>
                 </div>
             </div>
 
@@ -158,8 +91,7 @@
                     <span>Indikator Pemantauan</span>
                     <span>Nilai Riil</span>
                     <span>Batas Ambang</span>
-                    <span>Status Risiko</span>
-                    <span style="text-align:right;">Aksi</span>
+                    <span style="text-align:right;">Status Risiko</span>
                 </div>
                 <?php foreach ($ews as $item):
                     $st = $item['status'] ?? $item['status_risiko'] ?? 'Normal';
@@ -170,12 +102,14 @@
                     $val = (float)($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0);
                     $th = (float)($item['threshold'] ?? $item['ambang_batas'] ?? 0);
                     $unit = $item['unit'] ?? $item['satuan'] ?? '%';
+                    $dir = strtolower($item['direction'] ?? $item['arah_risiko'] ?? 'above');
                 ?>
-                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0">
+                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0" title="Klik untuk analisis & penyesuaian threshold">
                         <div class="risk-indicator">
                             <strong><?= htmlspecialchars($name) ?></strong>
                             <small>
                                 <code><?= htmlspecialchars($code) ?></code>
+                                <span style="color:var(--muted);">• <?= ($dir === 'above') ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></span>
                             </small>
                         </div>
                         <div class="risk-value">
@@ -189,15 +123,15 @@
                         <div class="risk-status">
                             <span class="badge <?= $badgeCls ?>"><?= htmlspecialchars($st) ?></span>
                         </div>
-                        <div class="risk-action">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-                        </div>
                     </div>
                 <?php endforeach; ?>
             </div>
 
-            <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line);">
-                <strong>Kriteria Status Risiko:</strong> Nilai &gt; Threshold = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>; Nilai = Threshold = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>; Nilai &lt; Threshold = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.
+            <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line); line-height:1.6;">
+                <strong>Kriteria Penentuan Status Risiko:</strong><br>
+                • <strong>Indikator Beban/Risiko</strong> (Inflasi, Kemiskinan Ekstrem, Pengangguran): Nilai &lt; Ambang = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>, Nilai &gt; Ambang = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.<br>
+                • <strong>Indikator Kinerja/Target</strong> (Belanja Modal, Pertumbuhan Kredit): Nilai &gt; Ambang = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>, Nilai &lt; Ambang = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.<br>
+                • Nilai sama persis dengan ambang batas = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>.
             </div>
         </article>
 
@@ -230,9 +164,9 @@
         </article>
     </section>
 
-    <!-- MODAL ALERT DETAIL -->
+    <!-- MODAL ALERT DETAIL & THRESHOLD CUSTOMIZATION -->
     <div class="modal-backdrop" id="ews-modal-backdrop" style="display:none;">
-        <div class="modal" id="ews-modal-card">
+        <div class="modal" id="ews-modal-card" style="max-width: 580px;">
             <div class="modal-head">
                 <div>
                     <span class="badge danger" id="modal-alert-badge">KRITIS</span>
@@ -246,12 +180,12 @@
 
             <div class="alert-metrics">
                 <span>
-                    <small>Nilai Terkini</small>
-                    <strong id="modal-metric-val">8,40 % yoy</strong>
+                    <small>Nilai Riil Terkini</small>
+                    <strong id="modal-metric-val">8,40 %</strong>
                 </span>
                 <span>
-                    <small>Threshold Ambang</small>
-                    <strong id="modal-metric-th">7,00 % yoy</strong>
+                    <small>Threshold Saat Ini</small>
+                    <strong id="modal-metric-th">7,00 %</strong>
                 </span>
                 <span>
                     <small>Deviasi dari Ambang</small>
@@ -259,160 +193,57 @@
                 </span>
             </div>
 
-            <div class="threshold-editor">
-                <label>
-                    Ubah Nilai Threshold: <strong id="modal-editor-label">7,00 % yoy</strong>
-                    <input type="number" step="any" id="modal-input-threshold" value="7.0">
-                </label>
-                <small>Perubahan disimpan langsung ke sistem dan memperbarui status secara realtime.</small>
+            <!-- VALUE & THRESHOLD CUSTOMIZER -->
+            <div class="modal-section threshold-editor" style="background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:16px; margin:16px 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:13px; font-weight:700; color:var(--navy); display:flex; align-items:center; gap:6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Penyesuaian Nilai Riil & Ambang Batas
+                    </h3>
+                    <span id="modal-live-preview-badge" class="badge danger" style="font-size:10px;">Status: KRITIS</span>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr; gap:10px; margin-bottom:8px;">
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:600; color:var(--navy); margin-bottom:4px;">
+                            Nilai Riil (<span class="modal-unit-label">%</span>)
+                        </label>
+                        <input type="number" step="any" id="modal-input-value" value="0.0" style="width:100%; height:36px; border:1px solid var(--line); border-radius:6px; padding:0 10px; font-size:13px; font-weight:600; color:var(--navy); background:#fff;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:600; color:var(--navy); margin-bottom:4px;">
+                            Batas Ambang (<span class="modal-unit-label">%</span>)
+                        </label>
+                        <input type="number" step="any" id="modal-input-threshold" value="7.0" style="width:100%; height:36px; border:1px solid var(--line); border-radius:6px; padding:0 10px; font-size:13px; font-weight:600; color:var(--navy); background:#fff;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:600; color:var(--navy); margin-bottom:4px;">
+                            Kondisi / Arah Batas Kritis
+                        </label>
+                        <select id="modal-input-direction" style="width:100%; height:36px; border:1px solid var(--line); border-radius:6px; padding:0 8px; font-size:11px; font-weight:500; color:var(--navy); background:#fff;">
+                            <option value="above">Kritis jika Nilai &gt; Ambang (Beban)</option>
+                            <option value="below">Kritis jika Nilai &lt; Ambang (Target)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <small style="display:block; color:var(--muted); font-size:10px; line-height:1.4;">
+                    Sesuaikan nilai riil atau ambang batas indikator di atas. Status risiko akan disimulasikan secara realtime dan tersimpan ke sistem.
+                </small>
             </div>
 
             <div class="modal-section">
-                <h3>Interpretasi Otomatis Intelijen</h3>
-                <p id="modal-alert-interpretation">Nilai telah melampaui batas ambang risiko sebesar 20,0%. Direkomendasikan koordinasi lintas OPD untuk intervensi harga pasar.</p>
+                <h3 style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px;">Interpretasi Otomatis Intelijen</h3>
+                <p id="modal-alert-interpretation" style="font-size:12px; line-height:1.5; color:var(--slate);">Nilai telah melampaui batas ambang risiko sebesar 20,0%.</p>
             </div>
 
-            <div class="modal-actions">
-                <button class="button ghost" id="modal-btn-cancel">Tutup</button>
-                <button class="button primary" id="modal-btn-save-threshold">Simpan Threshold</button>
-                <button class="button secondary" id="modal-btn-toggle-followup">Tandai Ditindaklanjuti</button>
+            <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <button class="button secondary" id="modal-btn-toggle-followup" style="font-size:11px;">Tandai Ditindaklanjuti</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="button secondary" id="modal-btn-cancel">Batal</button>
+                    <button class="button primary" id="modal-btn-save-threshold">Simpan Nilai & Threshold</button>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- TABEL DATASET INDIKATOR EARLY WARNING (CRUD & SOFT DELETE) -->
-    <article class="card large" style="margin-top:24px;">
-        <div class="card-head">
-            <div>
-                <span class="eyebrow">PENGATURAN INDIKATOR EWS</span>
-                <h3>Daftar Indikator Pemantauan Risiko (<?= count($ews) ?>)</h3>
-                <p>Kelola data riil dan ambang batas threshold indikator EWS.</p>
-            </div>
-        </div>
-
-        <div class="data-table">
-            <div class="data-tr data-th" style="grid-template-columns: 130px 2fr 1.2fr 1.2fr 1fr 100px;">
-                <span>Kode</span>
-                <span>Nama Indikator</span>
-                <span>Nilai Terkini</span>
-                <span>Threshold</span>
-                <span>Status</span>
-                <span style="text-align:right;">Aksi</span>
-            </div>
-            <?php foreach ($ews as $item): ?>
-                <div class="data-tr" style="grid-template-columns: 130px 2fr 1.2fr 1.2fr 1fr 100px;">
-                    <span><code><?= htmlspecialchars($item['code']) ?></code></span>
-                    <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
-                    <span><?= number_format($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
-                    <span><?= number_format($item['threshold'] ?? $item['ambang_batas'] ?? 0, 2, ',', '.') ?> <?= htmlspecialchars($item['unit'] ?? $item['satuan'] ?? '%') ?></span>
-                    <span><span class="badge <?= ($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Kritis' ? 'danger' : ((($item['status'] ?? $item['status_risiko'] ?? 'Normal') === 'Waspada') ? 'warning' : 'success') ?>"><?= htmlspecialchars($item['status'] ?? $item['status_risiko'] ?? 'Normal') ?></span></span>
-                    <span class="row-actions" style="justify-content:flex-end;">
-                        <button type="button" class="btn-edit-ews" data-id="<?= $item['id'] ?>" title="Edit Indikator">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button type="button" class="btn-delete-ews danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus (Soft Delete)">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                    </span>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </article>
-
-    <!-- MODAL TAMBAH INDIKATOR EWS -->
-    <div class="modal-backdrop" id="add-ews-modal" style="display:none;">
-        <div class="modal admin-data-modal" style="max-width:520px;">
-            <div class="modal-head">
-                <div>
-                    <span class="badge info">TAMBAH EWS</span>
-                    <h2>Tambah Indikator Peringatan Dini</h2>
-                    <p>Simpan indikator pemantauan risiko baru ke tabel database <code>early_warning</code>.</p>
-                </div>
-                <button class="icon-button" id="modal-btn-close-add-ews">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
-                </button>
-            </div>
-
-            <form id="form-add-ews" method="POST" action="<?= site_url('early_warning/create') ?>">
-                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
-                    <label>
-                        Kode Indikator
-                        <input type="text" name="kode_indikator" id="add-ews-code" placeholder="Contoh: ews_kemiskinan" required>
-                    </label>
-                    <label>
-                        Satuan Ukuran
-                        <input type="text" name="satuan" id="add-ews-unit" placeholder="Contoh: % / Poin / Indeks" required>
-                    </label>
-                    <label style="grid-column: 1 / 3;">
-                        Nama Indikator EWS
-                        <input type="text" name="nama_indikator" id="add-ews-name" placeholder="Contoh: Rasio Kenaikan Harga Sembako" required>
-                    </label>
-                    <label>
-                        Nilai Riil Terkini
-                        <input type="number" step="0.01" name="nilai_terkini" id="add-ews-current" placeholder="Contoh: 4.50" required>
-                    </label>
-                    <label>
-                        Batas Ambang (Threshold)
-                        <input type="number" step="0.01" name="ambang_batas" id="add-ews-threshold" placeholder="Contoh: 5.00" required>
-                    </label>
-                </div>
-
-                <div id="add-ews-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
-
-                <div class="modal-actions">
-                    <button type="button" class="button ghost" id="modal-btn-cancel-add-ews">Batal</button>
-                    <button type="submit" class="button primary" id="modal-btn-submit-add-ews">Simpan Indikator</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL EDIT INDIKATOR EWS -->
-    <div class="modal-backdrop" id="edit-ews-modal" style="display:none;">
-        <div class="modal admin-data-modal" style="max-width:520px;">
-            <div class="modal-head">
-                <div>
-                    <span class="badge warning">PERBARUI EWS</span>
-                    <h2>Edit Indikator Peringatan Dini</h2>
-                    <p>Perbarui nilai aktual dan batas ambang threshold indikator EWS.</p>
-                </div>
-                <button class="icon-button" id="modal-btn-close-edit-ews">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
-                </button>
-            </div>
-
-            <form id="form-edit-ews" method="POST">
-                <input type="hidden" name="id" id="edit-ews-id">
-                <div class="manual-form" style="grid-template-columns: 1fr 1fr;">
-                    <label>
-                        Kode Indikator
-                        <input type="text" name="kode_indikator" id="edit-ews-code" required>
-                    </label>
-                    <label>
-                        Satuan Ukuran
-                        <input type="text" name="satuan" id="edit-ews-unit" required>
-                    </label>
-                    <label style="grid-column: 1 / 3;">
-                        Nama Indikator EWS
-                        <input type="text" name="nama_indikator" id="edit-ews-name" required>
-                    </label>
-                    <label>
-                        Nilai Riil Terkini
-                        <input type="number" step="0.01" name="nilai_terkini" id="edit-ews-current" required>
-                    </label>
-                    <label>
-                        Batas Ambang (Threshold)
-                        <input type="number" step="0.01" name="ambang_batas" id="edit-ews-threshold" required>
-                    </label>
-                </div>
-
-                <div id="edit-ews-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
-
-                <div class="modal-actions">
-                    <button type="button" class="button ghost" id="modal-btn-cancel-edit-ews">Batal</button>
-                    <button type="submit" class="button primary" id="modal-btn-submit-edit-ews">Simpan Perubahan</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>

@@ -10,9 +10,9 @@ class Akun extends CI_Controller {
     }
 
     public function index() {
-        // Jika sudah login, langsung arahkan ke Beranda
+        // Jika sudah login, langsung arahkan ke Dashboard Admin (Pengelolaan Sistem)
         if ($this->M_auth->is_logged_in()) {
-            redirect('beranda');
+            redirect('admin');
             return;
         }
 
@@ -38,7 +38,7 @@ class Akun extends CI_Controller {
                         // Otomatis login setelah pendaftaran berhasil
                         $this->M_auth->login($username, $password);
                         $this->session->set_flashdata('success', 'Akun berhasil didaftarkan! Selamat datang, ' . $reg['user']['name']);
-                        redirect('beranda');
+                        redirect('admin');
                         return;
                     } else {
                         $error = $reg['message'];
@@ -53,11 +53,11 @@ class Akun extends CI_Controller {
                 if ($result['status']) {
                     $this->session->set_flashdata('success', 'Selamat datang kembali, ' . $result['user']['name']);
 
-                    // Redirect ke halaman yang semula dituju, atau default ke Beranda
+                    // Redirect ke halaman yang semula dituju, atau default ke Dashboard Admin
                     $target = $this->session->userdata('redirect_url');
                     $this->session->unset_userdata('redirect_url');
 
-                    redirect(!empty($target) ? $target : 'beranda');
+                    redirect(!empty($target) ? $target : 'admin');
                     return;
                 } else {
                     $error = $result['message'];
@@ -90,7 +90,7 @@ class Akun extends CI_Controller {
                 $target = $this->session->userdata('redirect_url');
                 $this->session->unset_userdata('redirect_url');
                 
-                redirect(!empty($target) ? $target : 'beranda');
+                redirect(!empty($target) ? $target : 'admin');
                 return;
             }
         }
@@ -100,7 +100,7 @@ class Akun extends CI_Controller {
     public function logout() {
         $this->M_auth->logout();
         $this->session->set_flashdata('success', 'Anda telah berhasil keluar dari akun SI-DAPEDA.');
-        redirect('akun');
+        redirect('beranda');
     }
 }
 

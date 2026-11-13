@@ -11,9 +11,11 @@ class MY_Controller extends CI_Controller {
         // Pastikan akun awal siap di database
         $this->M_auth->ensure_default_accounts();
 
-        // Autentikasi Wajib: Jika belum login, dialihkan ke halaman Akun
+        // Autentikasi: Hanya modul Pengelolaan Sistem (Admin) yang mewajibkan login
         $currentClass = strtolower($this->router->fetch_class());
-        if ($currentClass !== 'akun' && $currentClass !== 'login') {
+        $adminControllers = array('admin', 'database', 'input', 'validation', 'catalog', 'ews_admin', 'forecast_admin', 'users');
+
+        if (in_array($currentClass, $adminControllers)) {
             if (!$this->M_auth->is_logged_in()) {
                 // Simpan URL yang dituju untuk kembali setelah login
                 $intended = uri_string();
@@ -31,7 +33,7 @@ class MY_Controller extends CI_Controller {
             // Menu Pengguna (/users) khusus Level 1 (Administrator)
             if ($currentClass === 'users' && $level !== 1) {
                 $this->session->set_flashdata('error', 'Akses ditolak: Menu Manajemen Akun hanya dapat diakses oleh Akun Level 1 (Administrator).');
-                redirect('beranda');
+                redirect('admin');
                 exit;
             }
         }

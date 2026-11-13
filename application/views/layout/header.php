@@ -31,15 +31,6 @@
             </button>
         </div>
 
-        <div class="region-chip">
-            <span class="crest">B</span>
-            <div>
-                <small>Wilayah aktif</small>
-                <strong>Kab. Banyuwangi</strong>
-            </div>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
-        </div>
-
         <nav>
             <div class="nav-label"><?= !empty($is_admin) ? 'PENGELOLAAN SISTEM' : 'PUBLIC DASHBOARD' ?></div>
             
@@ -92,23 +83,31 @@
             <?php endif; ?>
 
             <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
-                <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    <span>Keluar (Logout)</span>
-                </a>
+                <?php if (!empty($user)): ?>
+                    <?php if (empty($is_admin)): ?>
+                        <a href="<?= site_url('admin') ?>" class="nav-item" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            <span>Pengelolaan Sistem &rarr;</span>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= site_url('beranda') ?>" class="nav-item" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            <span>&larr; Dashboard Publik</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Keluar (Logout)</span>
+                    </a>
+                <?php else: ?>
+                    <a href="<?= site_url('akun') ?>" class="nav-item login-nav-item" style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Masuk (Login)</span>
+                    </a>
+                <?php endif; ?>
             </div>
         </nav>
-
-        <div class="sidebar-bottom">
-            <div class="data-status">
-                <span class="pulse"></span>
-                <div>
-                    <strong>SI-DAPEDA</strong>
-                    <small>Sistem Informasi Daerah</small>
-                </div>
-            </div>
-            <p>KAB. BANYUWANGI</p>
-        </div>
     </aside>
 
     <div class="sidebar-scrim" id="sidebar-scrim"></div>
@@ -148,11 +147,11 @@
                             </div>
                         </a>
                     <?php else: ?>
-                        <a href="<?= (!empty($user['level']) && (int)$user['level'] === 1) ? site_url('admin') : 'javascript:void(0)' ?>" class="profile" title="<?= (!empty($user['level']) && (int)$user['level'] === 1) ? 'Masuk ke Dashboard Admin' : 'Profil Pengguna' ?>">
+                        <a href="<?= site_url('admin') ?>" class="profile" title="Masuk ke Pengelolaan Sistem">
                             <span class="avatar"><?= strtoupper(substr($user['nama_lengkap'] ?? $user['name'] ?? 'US', 0, 2)) ?></span>
                             <div>
                                 <strong><?= htmlspecialchars($user['nama_lengkap'] ?? $user['name'] ?? 'Pengguna') ?></strong>
-                                <small><?= htmlspecialchars($user['level_label'] ?? ('Level ' . ($user['level'] ?? 3))) ?><?= (!empty($user['level']) && (int)$user['level'] === 1) ? ' &bull; Ke Admin' : '' ?></small>
+                                <small><?= htmlspecialchars($user['level_label'] ?? ('Level ' . ($user['level'] ?? 3))) ?> &bull; Ke Admin</small>
                             </div>
                         </a>
                     <?php endif; ?>
@@ -162,8 +161,9 @@
                         <span>Keluar</span>
                     </a>
                 <?php else: ?>
-                    <a href="<?= site_url('akun') ?>" class="button primary" style="height:36px;">
-                        <span>Masuk Akun</span>
+                    <a href="<?= site_url('akun') ?>" class="button primary" style="height:36px; gap:6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Masuk (Login)</span>
                     </a>
                 <?php endif; ?>
             </div>

@@ -16,7 +16,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | 8. Laporan Ekonomi     -> Laporan_ekonomi.php   (views/laporan_ekonomi)
 */
 
-$route['default_controller'] = 'Akun';
+$route['default_controller'] = 'Beranda';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = TRUE;
 

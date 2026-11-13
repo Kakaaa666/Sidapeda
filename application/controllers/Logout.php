@@ -11,7 +11,7 @@ class Logout extends CI_Controller {
     public function index() {
         $this->M_auth->logout();
         $this->session->set_flashdata('success', 'Anda telah berhasil keluar dari akun sistem SI-DAPEDA.');
-        redirect('akun');
+        redirect('beranda');
     }
 }
 

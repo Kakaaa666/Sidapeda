@@ -86,13 +86,14 @@
                     Klaster
                     <select id="dir-cluster">
                         <option>Output & Pertumbuhan</option>
-                        <option>Produksi Sektoral</option>
-                        <option>Pariwisata & Ekonomi Kreatif</option>
+                        <option>Harga & Inflasi</option>
                         <option>Ketenagakerjaan</option>
-                        <option>Harga & Daya Beli</option>
+                        <option>Kesejahteraan Sosial</option>
                         <option>Investasi & Usaha</option>
                         <option>Fiskal Daerah</option>
-                        <option>Kesejahteraan & Inklusivitas</option>
+                        <option>Pariwisata & Ekonomi Kreatif</option>
+                        <option>Produksi Sektoral</option>
+                        <option>Keterkaitan Antarsektor</option>
                     </select>
                 </label>
                 <label>
@@ -119,6 +120,13 @@
                 <label>
                     Satuan
                     <input type="text" id="dir-unit" value="%" required>
+                </label>
+                <label>
+                    Status Validasi
+                    <select id="dir-status">
+                        <option value="Tervalidasi" selected>Tervalidasi (Langsung Masuk Beranda)</option>
+                        <option value="Perlu review">Perlu review</option>
+                    </select>
                 </label>
                 <label style="grid-column: 1 / 3;">
                     Sumber Data

@@ -443,7 +443,7 @@ class M_economy extends CI_Model {
             'nilai'             => (float)($data['value'] ?? $data['nilai']),
             'satuan'            => $data['unit'] ?? $data['satuan'] ?? '%',
             'sumber_data'       => $data['source'] ?? $data['sumber_data'] ?? 'Input Manual',
-            'status_validasi'   => $data['status'] ?? $data['status_validasi'] ?? 'Perlu review',
+            'status_validasi'   => $data['status'] ?? $data['status_validasi'] ?? 'Tervalidasi',
             'diverifikasi_oleh' => $data['verified_by'] ?? $data['diverifikasi_oleh'] ?? null,
             'catatan'           => $data['notes'] ?? $data['catatan'] ?? null,
             'is_deleted'        => 0,
@@ -460,7 +460,15 @@ class M_economy extends CI_Model {
         if ($exists > 0) {
             return false;
         }
-        return $this->db->insert('database_ekonomi', $record);
+        $res = $this->db->insert('database_ekonomi', $record);
+        if ($res) {
+            // Sinkronkan ke early_warning jika kode indikator ada di tabel EWS
+            $ewsMatch = $this->db->where('kode_indikator', $record['kode_indikator'])->get('early_warning')->row_array();
+            if ($ewsMatch) {
+                $this->update_ews_threshold($record['kode_indikator'], (float)$ewsMatch['ambang_batas'], $ewsMatch['arah_risiko'], (float)$record['nilai']);
+            }
+        }
+        return $res;
     }
 
     public function update_indicator_record($id, $data) {
@@ -576,15 +584,21 @@ class M_economy extends CI_Model {
         foreach ($res->result_array() as $row) {
             $val = (float)$row['nilai_terkini'];
             $th = (float)$row['ambang_batas'];
+            $dir = strtolower($row['arah_risiko'] ?? 'above');
+            if ($dir !== 'below') {
+                $dir = 'above';
+            }
+
             if ($val == $th) {
                 $status = 'Waspada';
-            } elseif ($val < $th) {
-                $status = 'Kritis';
-            } else {
-                $status = 'Normal';
+            } elseif ($dir === 'below') {
+                $status = ($val < $th) ? 'Kritis' : 'Normal';
+            } else { // 'above'
+                $status = ($val > $th) ? 'Kritis' : 'Normal';
             }
+
             $distance = ($th == 0) ? (abs($val) * 100) : (abs($val - $th) / abs($th) * 100);
-            $breached = ($val <= $th);
+            $breached = ($dir === 'below') ? ($val <= $th) : ($val >= $th);
 
             $results[] = array(
                 'id' => (int)$row['id'],
@@ -599,8 +613,8 @@ class M_economy extends CI_Model {
                 'satuan' => $row['satuan'],
                 'threshold' => $th,
                 'ambang_batas' => $th,
-                'direction' => $row['arah_risiko'],
-                'arah_risiko' => $row['arah_risiko'],
+                'direction' => $dir,
+                'arah_risiko' => $dir,
                 'breached' => $breached,
                 'distance' => round($distance, 2),
                 'status' => $status,
@@ -612,19 +626,41 @@ class M_economy extends CI_Model {
         return $results;
     }
 
-    public function update_ews_threshold($code, $threshold) {
+    public function update_ews_threshold($code, $threshold, $direction = null, $value = null) {
         $th = (float)$threshold;
         $row = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
-        $val = $row ? (float)$row['nilai_terkini'] : 0;
+        $val = ($value !== null) ? (float)$value : ($row ? (float)$row['nilai_terkini'] : 0);
+        $dir = $direction ? strtolower($direction) : strtolower($row['arah_risiko'] ?? 'above');
+        if ($dir !== 'below') {
+            $dir = 'above';
+        }
+
         if ($val == $th) {
             $st = 'Waspada';
-        } elseif ($val < $th) {
-            $st = 'Kritis';
+        } elseif ($dir === 'below') {
+            $st = ($val < $th) ? 'Kritis' : 'Normal';
         } else {
-            $st = 'Normal';
+            $st = ($val > $th) ? 'Kritis' : 'Normal';
         }
+
+        $updateData = array('ambang_batas' => $th, 'status_risiko' => $st);
+        if ($direction !== null) {
+            $updateData['arah_risiko'] = $dir;
+        }
+        if ($value !== null) {
+            $updateData['nilai_terkini'] = $val;
+        }
+
         $this->db->where('kode_indikator', $code);
-        return $this->db->update('early_warning', array('ambang_batas' => $th, 'status_risiko' => $st));
+        $res = $this->db->update('early_warning', $updateData);
+        return array(
+            'success' => (bool)$res,
+            'value' => $val,
+            'nilai_terkini' => $val,
+            'threshold' => $th,
+            'direction' => $dir,
+            'status' => $st
+        );
     }
 
     public function toggle_ews_followup($code) {
@@ -638,22 +674,158 @@ class M_economy extends CI_Model {
     }
 
     public function get_beranda_cards($year = null, $status = null) {
-        if ($status === 'Terhapus' || $status === 'Sampah') {
-            $this->db->where('is_deleted', 1);
-        } else {
-            $this->db->where('is_deleted', 0);
-            if ($year) {
-                $this->db->where('tahun', (int)$year);
+        $year = $year ? (int)$year : 2024;
+
+        $this->db->where('is_deleted', 0);
+        $this->db->where('tahun', $year);
+        $this->db->where('status_validasi !=', 'Ditolak');
+        $records = $this->db->order_by('id', 'ASC')->get('database_ekonomi')->result_array();
+
+        if (empty($records)) {
+            // Fallback ke tahun terbaru yang tersedia di database_ekonomi
+            $latest = $this->db->select_max('tahun')->where('is_deleted', 0)->where('status_validasi !=', 'Ditolak')->get('database_ekonomi')->row();
+            if ($latest && $latest->tahun) {
+                $year = (int)$latest->tahun;
+                $this->db->where('is_deleted', 0);
+                $this->db->where('tahun', $year);
+                $this->db->where('status_validasi !=', 'Ditolak');
+                $records = $this->db->order_by('id', 'ASC')->get('database_ekonomi')->result_array();
             }
         }
-        $res = $this->db->get('beranda');
-        if ($res->num_rows() > 0) {
-            return $res->result_array();
+
+        if (empty($records)) {
+            return array();
         }
-        if ($status !== 'Terhapus') {
-            return $this->db->where('is_deleted', 0)->get('beranda')->result_array();
+
+        $cards = array();
+        $lower_is_better = array('inflasi', 'ihk', 'pengangguran', 'tpt', 'kemiskinan', 'miskin', 'gini');
+
+        foreach ($records as $row) {
+            $code = $row['kode_indikator'];
+            $current_val = (float)$row['nilai'];
+
+            // Komparasi tahun sebelumnya
+            $prev_row = $this->db->where('is_deleted', 0)
+                ->where('kode_indikator', $code)
+                ->where('tahun', $year - 1)
+                ->get('database_ekonomi')
+                ->row_array();
+
+            $is_pct = (trim($row['satuan']) === '%');
+            if (!empty($prev_row)) {
+                $prev_val = (float)$prev_row['nilai'];
+                $delta = round($current_val - $prev_val, 2);
+                $unit_suffix = $is_pct ? ' pp' : (' ' . $row['satuan']);
+                $perubahan = ($delta >= 0 ? '+' : '') . number_format($delta, 2, ',', '.') . $unit_suffix;
+                $trend = ($delta >= 0) ? 'up' : 'down';
+            } else {
+                $delta = 0;
+                $perubahan = '+0,00' . ($is_pct ? ' pp' : '');
+                $trend = 'up';
+            }
+
+            // Logika tone & status indikator
+            $is_lower_better = false;
+            $ind_lower = strtolower($row['nama_indikator']);
+            foreach ($lower_is_better as $needle) {
+                if (strpos($ind_lower, $needle) !== false) {
+                    $is_lower_better = true;
+                    break;
+                }
+            }
+
+            if ($is_lower_better) {
+                if ($delta < 0) {
+                    $card_status = (strpos($ind_lower, 'inflasi') !== false) ? 'Terkendali' : 'Membaik';
+                } elseif ($delta > 0) {
+                    $card_status = 'Perlu perhatian';
+                } else {
+                    $card_status = 'Stabil';
+                }
+            } else {
+                if ($delta > 0) {
+                    $card_status = 'Meningkat';
+                } elseif ($delta < 0) {
+                    $card_status = 'Menurun';
+                } else {
+                    $card_status = 'Stabil';
+                }
+            }
+
+            // Deret historis untuk sparkline grafik mini
+            $hist_rows = $this->db->where('is_deleted', 0)
+                ->where('kode_indikator', $code)
+                ->where('tahun <=', $year)
+                ->order_by('tahun', 'ASC')
+                ->get('database_ekonomi')
+                ->result_array();
+
+            $series_vals = array();
+            if (count($hist_rows) > 1) {
+                foreach ($hist_rows as $hr) {
+                    $series_vals[] = (float)$hr['nilai'];
+                }
+            } else {
+                $factor = ($trend === 'up') ? 0.95 : 1.05;
+                $series_vals = array(
+                    round($current_val * pow($factor, 3), 2),
+                    round($current_val * pow($factor, 2), 2),
+                    round($current_val * $factor, 2),
+                    $current_val
+                );
+            }
+
+            $cards[] = array(
+                'id'              => (int)$row['id'],
+                'kode_indikator'  => $row['kode_indikator'],
+                'nama_indikator'  => $row['nama_indikator'],
+                'klaster'         => !empty($row['klaster']) ? $row['klaster'] : 'Output & Pertumbuhan',
+                'nilai'           => number_format($current_val, 2, ',', '.'),
+                'satuan'          => $row['satuan'],
+                'perubahan'       => $perubahan,
+                'arah_tren'       => $trend,
+                'status'          => $card_status,
+                'deret_mini'      => json_encode($series_vals),
+                'tahun'           => (int)$row['tahun'],
+                'wilayah'         => $row['wilayah'],
+                'sumber_data'     => $row['sumber_data'],
+                'status_validasi' => $row['status_validasi']
+            );
         }
-        return array();
+
+        return $cards;
+    }
+
+    public function get_beranda_categories($year = null) {
+        $year = $year ? (int)$year : 2024;
+        $this->db->select('klaster, COUNT(*) as total');
+        $this->db->where('is_deleted', 0);
+        $this->db->where('tahun', $year);
+        $this->db->where('status_validasi !=', 'Ditolak');
+        $this->db->group_by('klaster');
+        $this->db->order_by('total', 'DESC');
+        $res = $this->db->get('database_ekonomi')->result_array();
+
+        if (empty($res)) {
+            $latest = $this->db->select_max('tahun')->where('is_deleted', 0)->where('status_validasi !=', 'Ditolak')->get('database_ekonomi')->row();
+            if ($latest && $latest->tahun) {
+                $year = (int)$latest->tahun;
+                $this->db->select('klaster, COUNT(*) as total');
+                $this->db->where('is_deleted', 0);
+                $this->db->where('tahun', $year);
+                $this->db->where('status_validasi !=', 'Ditolak');
+                $this->db->group_by('klaster');
+                $this->db->order_by('total', 'DESC');
+                $res = $this->db->get('database_ekonomi')->result_array();
+            }
+        }
+
+        $cats = array();
+        foreach ($res as $r) {
+            $cluster = !empty($r['klaster']) ? $r['klaster'] : 'Output & Pertumbuhan';
+            $cats[$cluster] = (int)$r['total'];
+        }
+        return $cats;
     }
 
     public function get_economic_insights($year = null, $status = null) {
@@ -1201,12 +1373,17 @@ class M_economy extends CI_Model {
 
         $val = (float)($data['nilai_terkini'] ?? $data['value'] ?? 0);
         $th = (float)($data['ambang_batas'] ?? $data['threshold'] ?? 0);
+        $dir = strtolower($data['arah_risiko'] ?? $data['direction'] ?? 'above');
+        if ($dir !== 'below') {
+            $dir = 'above';
+        }
+
         if ($val == $th) {
             $status_risiko = 'Waspada';
-        } elseif ($val < $th) {
-            $status_risiko = 'Kritis';
+        } elseif ($dir === 'below') {
+            $status_risiko = ($val < $th) ? 'Kritis' : 'Normal';
         } else {
-            $status_risiko = 'Normal';
+            $status_risiko = ($val > $th) ? 'Kritis' : 'Normal';
         }
 
         $record = array(
@@ -1215,7 +1392,7 @@ class M_economy extends CI_Model {
             'nilai_terkini'         => $val,
             'satuan'                => trim($data['satuan'] ?? $data['unit'] ?? '%'),
             'ambang_batas'          => $th,
-            'arah_risiko'           => 'above',
+            'arah_risiko'           => $dir,
             'status_risiko'         => $status_risiko,
             'sudah_ditindaklanjuti' => (int)($data['sudah_ditindaklanjuti'] ?? 0),
             'is_deleted'            => 0,
@@ -1235,17 +1412,27 @@ class M_economy extends CI_Model {
         if (isset($data['satuan'])) $record['satuan'] = trim($data['satuan']);
         if (isset($data['ambang_batas'])) $record['ambang_batas'] = (float)$data['ambang_batas'];
         if (isset($data['sudah_ditindaklanjuti'])) $record['sudah_ditindaklanjuti'] = (int)$data['sudah_ditindaklanjuti'];
+        if (isset($data['arah_risiko'])) {
+            $record['arah_risiko'] = (strtolower($data['arah_risiko']) === 'below') ? 'below' : 'above';
+        } elseif (isset($data['direction'])) {
+            $record['arah_risiko'] = (strtolower($data['direction']) === 'below') ? 'below' : 'above';
+        }
 
-        if (isset($data['nilai_terkini']) || isset($data['ambang_batas'])) {
+        if (isset($data['nilai_terkini']) || isset($data['ambang_batas']) || isset($record['arah_risiko'])) {
             $curr = $this->get_ews_by_id($id);
             $val = isset($data['nilai_terkini']) ? (float)$data['nilai_terkini'] : (float)($curr['nilai_terkini'] ?? 0);
             $th = isset($data['ambang_batas']) ? (float)$data['ambang_batas'] : (float)($curr['ambang_batas'] ?? 0);
+            $dir = isset($record['arah_risiko']) ? $record['arah_risiko'] : strtolower($curr['arah_risiko'] ?? 'above');
+            if ($dir !== 'below') {
+                $dir = 'above';
+            }
+
             if ($val == $th) {
                 $record['status_risiko'] = 'Waspada';
-            } elseif ($val < $th) {
-                $record['status_risiko'] = 'Kritis';
+            } elseif ($dir === 'below') {
+                $record['status_risiko'] = ($val < $th) ? 'Kritis' : 'Normal';
             } else {
-                $record['status_risiko'] = 'Normal';
+                $record['status_risiko'] = ($val > $th) ? 'Kritis' : 'Normal';
             }
         } elseif (isset($data['status_risiko'])) {
             $record['status_risiko'] = in_array($data['status_risiko'], array('Normal', 'Waspada', 'Kritis')) ? $data['status_risiko'] : 'Normal';

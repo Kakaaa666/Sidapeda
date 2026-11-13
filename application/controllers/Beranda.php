@@ -15,6 +15,7 @@ class Beranda extends MY_Controller {
         if (!in_array($selected_year, $years)) $selected_year = 2024;
         
         $beranda_cards = $this->M_economy->get_beranda_cards($selected_year, $status);
+        $categories = $this->M_economy->get_beranda_categories($selected_year);
 
         $year_idx = array_search($selected_year, $years);
         if ($year_idx === false) $year_idx = count($years) - 1;
@@ -32,6 +33,7 @@ class Beranda extends MY_Controller {
             'sectors' => $sectors,
             'ews' => $ews,
             'beranda_cards' => $beranda_cards,
+            'categories' => $categories,
             'selected_year' => $selected_year,
             'year_idx' => $year_idx,
             'prev_idx' => $prev_idx,

@@ -43,14 +43,24 @@ class Api extends CI_Controller {
     public function update_threshold() {
         $code = $this->input->post('code');
         $threshold = $this->input->post('threshold');
+        $direction = $this->input->post('direction');
+        $value = $this->input->post('value');
 
         if (!$code || !is_numeric($threshold)) {
             $this->json_response(array('status' => 'error', 'message' => 'Kode dan threshold numerik diperlukan.'), 400);
             return;
         }
 
-        $res = $this->M_economy->update_ews_threshold($code, $threshold);
-        $this->json_response(array('status' => 'success', 'updated' => $res));
+        $val = (is_numeric($value)) ? (float)$value : null;
+        $res = $this->M_economy->update_ews_threshold($code, $threshold, $direction, $val);
+        $this->json_response(array(
+            'status' => 'success',
+            'updated' => $res['success'],
+            'value' => $res['value'],
+            'threshold' => $res['threshold'],
+            'direction' => $res['direction'],
+            'status_risiko' => $res['status']
+        ));
     }
 
     public function toggle_followup() {
@@ -74,6 +84,7 @@ class Api extends CI_Controller {
         $value = (float)$this->input->post('value');
         $unit = trim($this->input->post('unit')) ?: '%';
         $source = trim($this->input->post('source')) ?: 'Input admin';
+        $status = trim($this->input->post('status')) ?: 'Tervalidasi';
 
         if (!$code || !$indicator || !$year || !is_numeric($this->input->post('value'))) {
             $this->json_response(array('status' => 'error', 'message' => 'Kode, indikator, tahun, dan nilai wajib diisi dengan benar.'), 400);
@@ -90,7 +101,7 @@ class Api extends CI_Controller {
             'value' => $value,
             'unit' => $unit,
             'source' => $source,
-            'status' => 'Perlu review'
+            'status' => $status
         ));
 
         if (!$inserted) {

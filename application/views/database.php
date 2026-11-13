@@ -217,13 +217,13 @@
                         Klaster
                         <select name="cluster" id="add-cluster">
                             <option>Output & Pertumbuhan</option>
-                            <option>Produksi Sektoral</option>
-                            <option>Pariwisata & Ekonomi Kreatif</option>
+                            <option>Harga & Inflasi</option>
                             <option>Ketenagakerjaan</option>
-                            <option>Harga & Daya Beli</option>
+                            <option>Kesejahteraan Sosial</option>
                             <option>Investasi & Usaha</option>
                             <option>Fiskal Daerah</option>
-                            <option>Kesejahteraan & Inklusivitas</option>
+                            <option>Pariwisata & Ekonomi Kreatif</option>
+                            <option>Produksi Sektoral</option>
                             <option>Keterkaitan Antarsektor</option>
                         </select>
                     </label>
@@ -251,6 +251,13 @@
                     <label>
                         Satuan
                         <input type="text" name="unit" id="add-unit" value="%" required>
+                    </label>
+                    <label>
+                        Status Validasi
+                        <select name="status" id="add-status">
+                            <option value="Tervalidasi" selected>Tervalidasi (Langsung Masuk Beranda)</option>
+                            <option value="Perlu review">Perlu review</option>
+                        </select>
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Sumber Data
@@ -297,13 +304,13 @@
                         Klaster
                         <select name="cluster" id="edit-cluster">
                             <option>Output & Pertumbuhan</option>
-                            <option>Produksi Sektoral</option>
-                            <option>Pariwisata & Ekonomi Kreatif</option>
+                            <option>Harga & Inflasi</option>
                             <option>Ketenagakerjaan</option>
-                            <option>Harga & Daya Beli</option>
+                            <option>Kesejahteraan Sosial</option>
                             <option>Investasi & Usaha</option>
                             <option>Fiskal Daerah</option>
-                            <option>Kesejahteraan & Inklusivitas</option>
+                            <option>Pariwisata & Ekonomi Kreatif</option>
+                            <option>Produksi Sektoral</option>
                             <option>Keterkaitan Antarsektor</option>
                         </select>
                     </label>
