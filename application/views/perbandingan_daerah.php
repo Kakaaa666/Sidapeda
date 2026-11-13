@@ -60,14 +60,76 @@
             <button class="button secondary" id="btn-reset-regions">Reset Wilayah</button>
         </div>
 
-        <div class="selected-regions">
-            <span>Wilayah dalam ranking:</span>
-            <?php foreach ($all_active_regional as $r): ?>
-                <label class="region-toggle">
-                    <input type="checkbox" class="region-cb" value="<?= htmlspecialchars($r['name']) ?>" checked <?= $r['name'] === 'Kab. Banyuwangi' ? 'disabled' : '' ?>>
-                    <?= htmlspecialchars($r['name']) ?>
-                </label>
-            <?php endforeach; ?>
+        <div class="selected-regions selected-regions-bar">
+            <span class="regions-bar-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Wilayah dalam ranking:</span>
+            </span>
+
+            <!-- Dropdown Multiselect Checkbox dengan Pencarian -->
+            <div class="region-multiselect" id="region-multiselect">
+                <button type="button" class="region-dropdown-btn" id="btn-toggle-region-dropdown" onclick="toggleRegionDropdown(event)" aria-haspopup="true" aria-expanded="false">
+                    <span class="dropdown-btn-text" id="region-dropdown-label">Semua Wilayah Terpilih (<?= count($all_active_regional) ?>)</span>
+                    <svg class="dropdown-chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+
+                <div class="region-dropdown-panel" id="region-dropdown-panel" style="display:none;">
+                    <!-- Input Pencarian Wilayah -->
+                    <div class="region-search-box">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="text" id="region-search-input" placeholder="Cari nama kabupaten / kota..." autocomplete="off">
+                        <button type="button" id="btn-clear-region-search" class="clear-search-btn" style="display:none;" title="Bersihkan pencarian">&times;</button>
+                    </div>
+
+                    <!-- Header Aksi Cepat & Counter -->
+                    <div class="region-dropdown-header">
+                        <div class="dropdown-quick-actions">
+                            <button type="button" id="btn-select-all-regions" class="quick-link">Pilih Semua</button>
+                            <span class="dot-sep">•</span>
+                            <button type="button" id="btn-deselect-all-regions" class="quick-link">Hapus Semua</button>
+                        </div>
+                        <span class="region-selected-counter" id="region-selected-counter"><?= count($all_active_regional) ?> / <?= count($all_active_regional) ?> dipilih</span>
+                    </div>
+
+                    <!-- Daftar Pilihan Checkbox -->
+                    <div class="region-options-list" id="region-options-list">
+                        <?php foreach ($all_active_regional as $r): ?>
+                            <label class="region-option-item" data-name="<?= strtolower(htmlspecialchars($r['name'])) ?>">
+                                <input type="checkbox" class="region-cb" value="<?= htmlspecialchars($r['name']) ?>" checked <?= $r['name'] === 'Kab. Banyuwangi' ? 'disabled' : '' ?>>
+                                <span class="option-name"><?= htmlspecialchars($r['name']) ?></span>
+                                <?php if ($r['name'] === 'Kab. Banyuwangi'): ?>
+                                    <span class="badge info main-badge" title="Wilayah acuan utama">Utama</span>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                        <div id="region-search-not-found" class="region-not-found" style="display:none;">
+                            Wilayah tidak ditemukan
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function toggleRegionDropdown(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                var panel = document.getElementById('region-dropdown-panel');
+                var btn = document.getElementById('btn-toggle-region-dropdown');
+                var search = document.getElementById('region-search-input');
+                if (!panel) return;
+                var isHidden = (panel.style.display === 'none' || !panel.style.display || panel.style.display === '');
+                panel.style.display = isHidden ? 'block' : 'none';
+                if (btn) {
+                    btn.classList.toggle('active', isHidden);
+                    btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                }
+                if (isHidden && search) {
+                    setTimeout(function() { search.focus(); }, 60);
+                }
+            }
+            </script>
         </div>
     </section>
 

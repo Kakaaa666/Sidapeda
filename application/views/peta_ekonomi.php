@@ -140,11 +140,17 @@
             </div>
 
             <div class="legend-block">
-                <div class="layer-title">
-                    <strong id="legend-title">Legenda</strong>
-                    <button id="btn-reverse-legend">Balik urutan</button>
+                <div class="legend-head">
+                    <div class="legend-heading-left">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="legend-icon"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                        <strong id="legend-title">Legenda Klasifikasi</strong>
+                    </div>
+                    <button type="button" id="btn-reverse-legend" class="btn-reverse-legend" title="Balik urutan kelas (Tertinggi / Terendah)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg>
+                        <span>Balik urutan</span>
+                    </button>
                 </div>
-                <div id="legend-items-container">
+                <div id="legend-items-container" class="legend-items-wrap">
                     <!-- Populated by JS -->
                 </div>
             </div>

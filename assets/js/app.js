@@ -1547,25 +1547,179 @@
 
         if (periodSelect) periodSelect.addEventListener('change', renderComparison);
 
-        document.querySelectorAll('.region-cb').forEach(cb => {
-            cb.addEventListener('change', function () {
-                const val = this.value;
-                if (this.checked) {
-                    if (!selectedRegions.includes(val)) selectedRegions.push(val);
+        // Multiselect Dropdown Logic
+        const dropdownTrigger = document.getElementById('btn-toggle-region-dropdown');
+        const dropdownPanel = document.getElementById('region-dropdown-panel');
+        const searchInput = document.getElementById('region-search-input');
+        const clearSearchBtn = document.getElementById('btn-clear-region-search');
+        const selectAllBtn = document.getElementById('btn-select-all-regions');
+        const deselectAllBtn = document.getElementById('btn-deselect-all-regions');
+        const dropdownLabel = document.getElementById('region-dropdown-label');
+        const counterBadge = document.getElementById('region-selected-counter');
+        const emptyMsg = document.getElementById('region-search-not-found');
+
+        function updateDropdownUI() {
+            const allCbs = document.querySelectorAll('.region-cb');
+            const checkedCbs = document.querySelectorAll('.region-cb:checked');
+            const total = allCbs.length;
+            const count = checkedCbs.length;
+
+            if (counterBadge) {
+                counterBadge.textContent = `${count} / ${total} dipilih`;
+            }
+
+            if (dropdownLabel) {
+                if (count === 0) {
+                    dropdownLabel.textContent = 'Tidak ada wilayah dipilih';
+                } else if (count === total) {
+                    dropdownLabel.textContent = `Semua Wilayah Terpilih (${total})`;
+                } else if (count === 1) {
+                    dropdownLabel.textContent = checkedCbs[0].value;
+                } else if (count === 2) {
+                    dropdownLabel.textContent = `${checkedCbs[0].value}, ${checkedCbs[1].value}`;
                 } else {
-                    selectedRegions = selectedRegions.filter(r => r !== val);
+                    dropdownLabel.textContent = `${count} Wilayah Terpilih`;
                 }
-                renderComparison();
+            }
+        }
+
+        window.toggleRegionDropdown = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (!dropdownPanel) return;
+            const isHidden = dropdownPanel.style.display === 'none' || !dropdownPanel.style.display || getComputedStyle(dropdownPanel).display === 'none';
+            dropdownPanel.style.display = isHidden ? 'block' : 'none';
+            if (dropdownTrigger) {
+                dropdownTrigger.classList.toggle('active', isHidden);
+                dropdownTrigger.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            }
+            if (isHidden && searchInput) {
+                setTimeout(() => searchInput.focus(), 60);
+            }
+        };
+
+        if (dropdownPanel && !dropdownPanel.dataset.bound) {
+            dropdownPanel.dataset.bound = 'true';
+
+            dropdownPanel.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
+
+            document.addEventListener('click', (e) => {
+                if (dropdownPanel && dropdownPanel.style.display !== 'none') {
+                    if (!dropdownPanel.contains(e.target) && (!dropdownTrigger || !dropdownTrigger.contains(e.target))) {
+                        dropdownPanel.style.display = 'none';
+                        if (dropdownTrigger) {
+                            dropdownTrigger.classList.remove('active');
+                            dropdownTrigger.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && dropdownPanel && dropdownPanel.style.display !== 'none') {
+                    dropdownPanel.style.display = 'none';
+                    if (dropdownTrigger) {
+                        dropdownTrigger.classList.remove('active');
+                        dropdownTrigger.setAttribute('aria-expanded', 'false');
+                        dropdownTrigger.focus();
+                    }
+                }
+            });
+        }
+
+        if (searchInput && !searchInput.dataset.bound) {
+            searchInput.dataset.bound = 'true';
+            searchInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                const items = document.querySelectorAll('.region-option-item');
+                let visibleCount = 0;
+
+                items.forEach(item => {
+                    const name = item.getAttribute('data-name') || '';
+                    const match = name.includes(query);
+                    item.style.display = match ? 'flex' : 'none';
+                    if (match) visibleCount++;
+                });
+
+                if (emptyMsg) emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+                if (clearSearchBtn) clearSearchBtn.style.display = query ? 'block' : 'none';
+            });
+        }
+
+        if (clearSearchBtn && searchInput && !clearSearchBtn.dataset.bound) {
+            clearSearchBtn.dataset.bound = 'true';
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            });
+        }
+
+        if (selectAllBtn && !selectAllBtn.dataset.bound) {
+            selectAllBtn.dataset.bound = 'true';
+            selectAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.region-cb').forEach(cb => {
+                    const parent = cb.closest('.region-option-item');
+                    if (!parent || parent.style.display !== 'none') {
+                        cb.checked = true;
+                        if (!selectedRegions.includes(cb.value)) {
+                            selectedRegions.push(cb.value);
+                        }
+                    }
+                });
+                renderComparison();
+                updateDropdownUI();
+            });
+        }
+
+        if (deselectAllBtn && !deselectAllBtn.dataset.bound) {
+            deselectAllBtn.dataset.bound = 'true';
+            deselectAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.region-cb').forEach(cb => {
+                    if (!cb.disabled) {
+                        const parent = cb.closest('.region-option-item');
+                        if (!parent || parent.style.display !== 'none') {
+                            cb.checked = false;
+                            selectedRegions = selectedRegions.filter(r => r !== cb.value);
+                        }
+                    }
+                });
+                renderComparison();
+                updateDropdownUI();
+            });
+        }
+
+        document.querySelectorAll('.region-cb').forEach(cb => {
+            if (!cb.dataset.bound) {
+                cb.dataset.bound = 'true';
+                cb.addEventListener('change', function () {
+                    const val = this.value;
+                    if (this.checked) {
+                        if (!selectedRegions.includes(val)) selectedRegions.push(val);
+                    } else {
+                        selectedRegions = selectedRegions.filter(r => r !== val);
+                    }
+                    renderComparison();
+                    updateDropdownUI();
+                });
+            }
         });
 
-        if (btnReset) {
+        if (btnReset && !btnReset.dataset.bound) {
+            btnReset.dataset.bound = 'true';
             btnReset.addEventListener('click', () => {
                 selectedRegions = AppState.regional.map(r => r.name);
                 document.querySelectorAll('.region-cb').forEach(cb => cb.checked = true);
                 renderComparison();
+                updateDropdownUI();
             });
         }
+
+        updateDropdownUI();
 
         if (btnExport) {
             btnExport.addEventListener('click', () => {
@@ -1961,10 +2115,12 @@
         const hotspotLayer = document.getElementById('layer-hotspots');
         const hotspotBox = document.getElementById('hotspot-note-box');
         const modeTabs = document.getElementById('map-mode-tabs');
+        const btnReverseLegend = document.getElementById('btn-reverse-legend');
 
         let zoomLevel = 1.0;
         let selectedDistrict = 'Banyuwangi';
         let activeMode = 'Thematic Layer';
+        let legendReversed = false;
 
         const mapGroups = {
             'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektor'],
@@ -2006,16 +2162,64 @@
 
             // Render Legend
             if (legendContainer) {
-                legendContainer.innerHTML = [1, 2, 3, 4, 5].map(cls => {
+                const classOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
+                const step = range / 5;
+                const decimals = step < 0.2 ? 2 : (step >= 10 ? 0 : 1);
+                const unit = isInv ? ' poin' : '%';
+
+                const mapContextUnit = document.getElementById('map-context-unit');
+                if (mapContextUnit) {
+                    mapContextUnit.textContent = isInv ? 'Poin' : '%';
+                }
+
+                const barOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
+                const barHtml = `
+                    <div class="legend-color-bar" title="Rentang nilai visual: ${formatNum(minV, decimals)}${unit} s.d. ${formatNum(maxV, decimals)}${unit}">
+                        ${barOrder.map(c => `<span class="l${c}"></span>`).join('')}
+                    </div>
+                    <div class="legend-bar-labels">
+                        <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? maxV : minV, decimals)}${unit})</small>
+                        <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? minV : maxV, decimals)}${unit})</small>
+                    </div>
+                `;
+
+                const itemsHtml = classOrder.map(cls => {
                     const low = minV + (range * (cls - 1)) / 5;
                     const high = minV + (range * cls) / 5;
                     return `
-                        <span>
-                            <i class="l${cls}"></i>
-                            <b>Kelas ${cls}</b>
-                            <small>${formatNum(low, 1)} – ${formatNum(high, 1)}</small>
-                        </span>`;
+                        <div class="legend-row" data-class="${cls}" title="Arahkan kursor atau klik untuk menyorot kecamatan Kelas ${cls}">
+                            <div class="legend-row-main">
+                                <span class="legend-chip l${cls}"></span>
+                                <b class="legend-class-lbl">Kelas ${cls}</b>
+                            </div>
+                            <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
+                        </div>`;
                 }).join('');
+
+                legendContainer.innerHTML = barHtml + itemsHtml;
+
+                // Interactive highlight on hover
+                legendContainer.querySelectorAll('.legend-row').forEach(row => {
+                    const targetCls = row.getAttribute('data-class');
+                    row.addEventListener('mouseenter', () => {
+                        if (!markersGroup) return;
+                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
+                            if (m.classList.contains(`l${targetCls}`)) {
+                                m.style.filter = 'drop-shadow(0 0 6px rgba(21,154,156,0.95))';
+                                m.style.opacity = '1';
+                            } else {
+                                m.style.opacity = '0.3';
+                            }
+                        });
+                    });
+                    row.addEventListener('mouseleave', () => {
+                        if (!markersGroup) return;
+                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
+                            m.style.filter = '';
+                            m.style.opacity = '1';
+                        });
+                    });
+                });
             }
 
             // Render SVG District Markers
@@ -2112,6 +2316,15 @@
         if (groupSelect) groupSelect.addEventListener('change', updateIndicators);
         if (indicatorSelect) indicatorSelect.addEventListener('change', renderMap);
         if (searchInput) searchInput.addEventListener('input', renderMap);
+
+        if (btnReverseLegend) {
+            btnReverseLegend.addEventListener('click', function (e) {
+                e.preventDefault();
+                legendReversed = !legendReversed;
+                this.classList.toggle('active', legendReversed);
+                renderMap();
+            });
+        }
 
         // Zoom Controls
         if (btnZoomIn && svg) {
@@ -3257,25 +3470,6 @@
         }
         if (filterStatus) filterStatus.addEventListener('change', reloadFiltered);
         if (sortSelect) sortSelect.addEventListener('change', reloadFiltered);
-
-        // Toggle record status via API
-        document.querySelectorAll('.btn-toggle-record-status').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const code = this.getAttribute('data-code');
-                const year = this.getAttribute('data-year');
-                const currentStatus = this.getAttribute('data-status');
-                const nextStatus = currentStatus === 'Tervalidasi' ? 'Perlu review' : 'Tervalidasi';
-
-                const fd = new FormData();
-                fd.append('code', code);
-                fd.append('year', year);
-                fd.append('status', nextStatus);
-
-                fetch(BASE_URL + 'api/update_status', { method: 'POST', body: fd })
-                    .then(res => res.json())
-                    .then(() => location.reload());
-            });
-        });
 
         // Add modal (Create)
         if (btnOpenModal && addModal) {
