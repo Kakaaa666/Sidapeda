@@ -5,17 +5,23 @@ class Early_warning extends MY_Controller {
 
     public function index() {
         $status = $this->input->get('status');
-        $ews = $this->M_economy->get_ews_indicators($status);
+        $raw_year = $this->input->get('year');
+        $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
+
+        $ews = $this->M_economy->get_ews_indicators($status, $selected_year);
         $trash_count = $this->M_economy->count_trash_ews();
+        $available_years = $this->M_economy->get_catalog_years();
 
         $data = array(
-            'active_page' => 'early_warning',
-            'title' => 'Early Warning System',
-            'eyebrow' => 'ECONOMIC RISK MONITORING CENTER • CRUD & SOFT DELETE',
-            'subtitle' => 'Deteksi dini risiko, pantau ambang batas, dan kelola dataset indikator peringatan dini ekonomi daerah.',
-            'ews' => $ews,
-            'status' => $status,
-            'trash_count' => $trash_count
+            'active_page'     => 'early_warning',
+            'title'           => 'Early Warning System',
+            'eyebrow'         => 'ECONOMIC RISK MONITORING CENTER • CRUD & SOFT DELETE',
+            'subtitle'        => 'Deteksi dini risiko, pantau ambang batas, dan kelola dataset indikator peringatan dini ekonomi daerah.',
+            'ews'             => $ews,
+            'status'          => $status,
+            'trash_count'     => $trash_count,
+            'available_years' => $available_years,
+            'selected_year'   => $selected_year
         );
 
         $this->render('early_warning', $data, false);

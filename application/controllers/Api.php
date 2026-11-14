@@ -116,13 +116,17 @@ class Api extends CI_Controller {
         $code = $this->input->post('code');
         $year = (int)$this->input->post('year');
         $status = $this->input->post('status');
+        $notes = $this->input->post('notes');
 
-        if (!in_array($status, array('Tervalidasi', 'Perlu review', 'Belum lengkap'))) {
+        if (!in_array($status, array('Tervalidasi', 'Perlu review', 'Belum lengkap', 'Ditolak'))) {
             $this->json_response(array('status' => 'error', 'message' => 'Status tidak valid.'), 400);
             return;
         }
 
-        $this->M_economy->update_record_status($code, $year, $status);
+        $user = $this->session->userdata('user');
+        $verifier = !empty($user['nama_lengkap']) ? $user['nama_lengkap'] : (!empty($user['name']) ? $user['name'] : 'Admin Verifikator');
+
+        $this->M_economy->update_record_status($code, $year, $status, $notes, $verifier);
         $this->json_response(array('status' => 'success', 'message' => 'Status data berhasil diperbarui.'));
     }
 

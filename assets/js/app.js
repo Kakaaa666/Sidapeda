@@ -161,6 +161,9 @@
             const bgGradient = item.color || (isHighlight ? 'linear-gradient(90deg, #0284c7, #06b6d4)' : (isPos ? 'linear-gradient(90deg, #2463a6, #38bdf8)' : 'linear-gradient(90deg, #ef4444, #f87171)'));
             const borderStyle = isHighlight ? 'background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;' : 'background: #ffffff; border: 1px solid #f1f5f9; border-radius: 8px;';
 
+            const valFormatted = `${formatNum(v, opts.decimals ?? 2)}${unit}`.trim();
+            const hasDistinctBadge = item.badge && item.badge.trim() !== valFormatted && item.badge.trim() !== `${v}${unit}`.trim() && item.badge.trim() !== `${v}`.trim();
+
             rowsHtml += `
                 <div class="h-bar-row ${isHighlight ? 'highlighted' : ''}" data-index="${idx}" data-label="${item.label}" style="display:grid; grid-template-columns: ${showRank ? '28px ' : ''}160px 1fr 105px; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; font-size:11px; ${borderStyle} cursor:pointer; transition: all 0.2s ease;">
                     ${showRank ? `<span class="badge ${isHighlight ? 'primary' : 'neutral'}" style="font-size:9px; padding:2px 4px; text-align:center; font-weight:700;">#${idx + 1}</span>` : ''}
@@ -173,8 +176,8 @@
                         <div style="position:absolute; left:${leftPct}%; width:${w}%; top:0; bottom:0; background:${bgGradient}; border-radius:6px; transition:width 0.4s ease;"></div>
                     </div>
                     <div style="text-align:right;">
-                        <strong style="color:${isHighlight ? 'var(--blue)' : 'var(--navy)'}; font-size:11px;">${formatNum(v, opts.decimals ?? 2)}${unit}</strong>
-                        ${item.badge ? `<br><span class="badge ${item.badgeClass || 'info'}" style="font-size:8px; padding:1px 5px; font-weight:600;">${item.badge}</span>` : ''}
+                        <strong style="color:${isHighlight ? 'var(--blue)' : 'var(--navy)'}; font-size:11px;">${valFormatted}</strong>
+                        ${hasDistinctBadge ? `<br><span class="badge ${item.badgeClass || 'info'}" style="font-size:8px; padding:1px 5px; font-weight:600;">${item.badge}</span>` : ''}
                     </div>
                 </div>`;
         });
@@ -608,6 +611,8 @@
             initReportPage();
         } else if (document.getElementById('admin-table-body')) {
             initAdminDatabasePage();
+        } else if (document.querySelector('.btn-quick-verify') || document.querySelector('.admin-status-row')) {
+            initAdminDashboardPage();
         } else if (document.getElementById('csv-file-input')) {
             initAdminInputPage();
         } else if (document.getElementById('validation-table-body')) {
@@ -3436,6 +3441,43 @@
         });
     }
 
+    // 8.5. ADMIN DASHBOARD PAGE
+    function initAdminDashboardPage() {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+        document.querySelectorAll('.btn-quick-verify').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const code = this.getAttribute('data-code');
+                const year = this.getAttribute('data-year');
+                
+                const self = this;
+                self.disabled = true;
+                self.style.opacity = '0.6';
+
+                const fd = new FormData();
+                fd.append('code', code);
+                fd.append('year', year);
+                fd.append('status', 'Tervalidasi');
+
+                fetch(`${cleanSite}/api/update_status`, { method: 'POST', body: fd })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            location.reload();
+                        } else {
+                            self.disabled = false;
+                            self.style.opacity = '1';
+                            alert(res.message || 'Gagal memvalidasi data.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        self.disabled = false;
+                        self.style.opacity = '1';
+                    });
+            });
+        });
+    }
+
     // 9. ADMIN DATABASE PAGE
     function initAdminDatabasePage() {
         const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
@@ -3583,15 +3625,57 @@
                                 document.getElementById('edit-id').value = d.id;
                                 document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
                                 document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
-                                document.getElementById('edit-cluster').value = d.cluster || d.klaster || 'Output & Pertumbuhan';
+                                
+                                const clusterVal = (d.cluster || d.klaster || 'Output & Pertumbuhan').trim();
+                                const editClusterEl = document.getElementById('edit-cluster');
+                                if (editClusterEl) {
+                                    if (editClusterEl.tagName === 'SELECT') {
+                                        let found = false;
+                                        for (let opt of editClusterEl.options) {
+                                            if (opt.value.trim().toLowerCase() === clusterVal.toLowerCase() || opt.text.trim().toLowerCase() === clusterVal.toLowerCase()) {
+                                                editClusterEl.value = opt.value;
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!found && clusterVal) {
+                                            const newOpt = document.createElement('option');
+                                            newOpt.value = clusterVal;
+                                            newOpt.textContent = clusterVal;
+                                            newOpt.selected = true;
+                                            editClusterEl.appendChild(newOpt);
+                                            editClusterEl.value = clusterVal;
+                                        }
+                                    } else {
+                                        editClusterEl.value = clusterVal;
+                                    }
+                                }
+
                                 document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
                                 document.getElementById('edit-period').value = d.period || d.periode || 'Tahunan';
                                 document.getElementById('edit-year').value = d.year || d.tahun || 2024;
                                 document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
                                 document.getElementById('edit-unit').value = d.unit || d.satuan || '%';
                                 document.getElementById('edit-source').value = d.source || d.sumber_data || '';
-                                document.getElementById('edit-status').value = d.status || d.status_validasi || 'Perlu review';
-                                document.getElementById('edit-notes').value = d.notes || d.catatan || '';
+                                const noteVal = d.notes || d.catatan || '';
+                                const st = d.status || d.status_validasi || 'Perlu review';
+                                const wasRejected = (st === 'Belum lengkap' || st === 'Ditolak');
+
+                                const editStatusEl = document.getElementById('edit-status');
+                                if (editStatusEl) editStatusEl.value = wasRejected ? 'Perlu review' : st;
+                                const editNotesEl = document.getElementById('edit-notes');
+                                if (editNotesEl) editNotesEl.value = '';
+
+                                const rejectCallout = document.getElementById('edit-rejection-callout');
+                                const rejectCalloutText = document.getElementById('edit-rejection-reason-text');
+                                if (rejectCallout && rejectCalloutText) {
+                                    if (noteVal && wasRejected) {
+                                        rejectCallout.style.display = 'block';
+                                        rejectCalloutText.textContent = noteVal;
+                                    } else {
+                                        rejectCallout.style.display = 'none';
+                                    }
+                                }
 
                                 if (editModal) editModal.style.display = 'grid';
                             } else {
@@ -3701,8 +3785,9 @@
         }
     }
 
-    // 10. ADMIN INPUT & CSV IMPORT PAGE
+    // 10. ADMIN CSV IMPORT PAGE
     function initAdminInputPage() {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
         const fileInput = document.getElementById('csv-file-input');
         const filenameLabel = document.getElementById('csv-filename-label');
         const previewContainer = document.getElementById('csv-preview-container');
@@ -3711,8 +3796,6 @@
         const btnCommit = document.getElementById('btn-commit-import');
         const feedbackBox = document.getElementById('csv-feedback-box');
         const btnDownloadTemplate = document.getElementById('btn-download-template-csv');
-        const formDirect = document.getElementById('form-direct-input');
-        const dirFeedback = document.getElementById('dir-feedback-box');
 
         let parsedRows = [];
 
@@ -3787,7 +3870,7 @@
             btnCommit.addEventListener('click', () => {
                 if (!parsedRows.length) return;
 
-                fetch(BASE_URL + 'api/import_csv', {
+                fetch(`${cleanSite}/api/import_csv`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(parsedRows)
@@ -3805,70 +3888,249 @@
                     });
             });
         }
-
-        // Direct manual single input
-        if (formDirect) {
-            formDirect.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const fd = new FormData();
-                fd.append('code', document.getElementById('dir-code').value);
-                fd.append('indicator', document.getElementById('dir-indicator').value);
-                fd.append('cluster', document.getElementById('dir-cluster').value);
-                fd.append('region', document.getElementById('dir-region').value);
-                fd.append('period', document.getElementById('dir-period').value);
-                fd.append('year', document.getElementById('dir-year').value);
-                fd.append('value', document.getElementById('dir-value').value);
-                fd.append('unit', document.getElementById('dir-unit').value);
-                fd.append('source', document.getElementById('dir-source').value);
-                const dirStatus = document.getElementById('dir-status');
-                if (dirStatus) {
-                    fd.append('status', dirStatus.value);
-                }
-
-                fetch(BASE_URL + 'api/add_record', { method: 'POST', body: fd })
-                    .then(res => res.json())
-                    .then(data => {
-                        dirFeedback.style.display = 'block';
-                        dirFeedback.textContent = data.message;
-                        if (data.status === 'success') {
-                            formDirect.reset();
-                        }
-                    });
-            });
-        }
     }
 
     // 11. ADMIN VALIDATION PAGE
     function initAdminValidationPage() {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+
+        // Search, Filter & Sort
+        const searchInput = document.getElementById('validation-search-input');
+        const filterStatus = document.getElementById('validation-filter-status');
+        const sortSelect = document.getElementById('validation-sort');
+
+        function reloadValidationFiltered() {
+            const q = searchInput ? encodeURIComponent(searchInput.value) : '';
+            const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
+            const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'status';
+            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}`;
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') reloadValidationFiltered();
+            });
+        }
+        if (filterStatus) filterStatus.addEventListener('change', reloadValidationFiltered);
+        if (sortSelect) sortSelect.addEventListener('change', reloadValidationFiltered);
+
+        // 1. Approve (Centang / ctg) - Langsung setujui tanpa popup alert / confirm
         document.querySelectorAll('.btn-verify-record').forEach(btn => {
             btn.addEventListener('click', function () {
                 const code = this.getAttribute('data-code');
                 const year = this.getAttribute('data-year');
-                const status = this.getAttribute('data-status');
+                const status = this.getAttribute('data-status') || 'Tervalidasi';
+
+                const self = this;
+                self.disabled = true;
+                self.style.opacity = '0.6';
 
                 const fd = new FormData();
                 fd.append('code', code);
                 fd.append('year', year);
                 fd.append('status', status);
 
-                fetch(BASE_URL + 'api/update_status', { method: 'POST', body: fd })
+                fetch(`${cleanSite}/api/update_status`, { method: 'POST', body: fd })
                     .then(res => res.json())
-                    .then(() => location.reload());
+                    .then(res => {
+                        if (res.status === 'success') {
+                            location.reload();
+                        } else {
+                            self.disabled = false;
+                            self.style.opacity = '1';
+                            alert(res.message || 'Gagal menyetujui validasi data.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        self.disabled = false;
+                        self.style.opacity = '1';
+                    });
             });
         });
+
+        // 2. Reject (Silang / X) Modal & Form Handling
+        const rejectModal = document.getElementById('modal-reject-record');
+        const rejectForm = document.getElementById('form-reject-record');
+        const btnCloseReject = document.getElementById('btn-close-reject-modal');
+        const btnCancelReject = document.getElementById('btn-cancel-reject');
+        const rejectReasonInput = document.getElementById('reject-reason');
+        const rejectReasonError = document.getElementById('reject-reason-error');
+
+        function closeRejectModal() {
+            if (rejectModal) {
+                rejectModal.style.display = 'none';
+            }
+            if (rejectForm) {
+                rejectForm.reset();
+            }
+            if (rejectReasonError) {
+                rejectReasonError.style.display = 'none';
+            }
+        }
+
+        if (btnCloseReject) btnCloseReject.addEventListener('click', closeRejectModal);
+        if (btnCancelReject) btnCancelReject.addEventListener('click', closeRejectModal);
+        if (rejectModal) {
+            rejectModal.addEventListener('click', function (e) {
+                if (e.target === rejectModal) closeRejectModal();
+            });
+        }
+
+        document.querySelectorAll('.btn-reject-record').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const code = this.getAttribute('data-code') || '';
+                const year = this.getAttribute('data-year') || '';
+                const indicator = this.getAttribute('data-indicator') || '';
+                const val = this.getAttribute('data-val') || '';
+                const period = this.getAttribute('data-period') || '';
+                const existingNotes = this.getAttribute('data-notes') || '';
+
+                const codeInput = document.getElementById('reject-code');
+                const yearInput = document.getElementById('reject-year');
+                const dispCode = document.getElementById('reject-display-code');
+                const dispInd = document.getElementById('reject-display-indicator');
+                const dispPer = document.getElementById('reject-display-period');
+                const dispVal = document.getElementById('reject-display-value');
+
+                if (codeInput) codeInput.value = code;
+                if (yearInput) yearInput.value = year;
+                if (dispCode) dispCode.textContent = code;
+                if (dispInd) dispInd.textContent = indicator;
+                if (dispPer) dispPer.textContent = period;
+                if (dispVal) dispVal.textContent = val;
+
+                if (rejectReasonInput) rejectReasonInput.value = existingNotes;
+                if (rejectReasonError) rejectReasonError.style.display = 'none';
+
+                if (rejectModal) {
+                    rejectModal.style.display = 'grid';
+                    setTimeout(() => {
+                        if (rejectReasonInput) rejectReasonInput.focus();
+                    }, 50);
+                }
+            });
+        });
+
+        if (rejectForm) {
+            rejectForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const reason = (rejectReasonInput ? rejectReasonInput.value : '').trim();
+                if (!reason) {
+                    if (rejectReasonError) rejectReasonError.style.display = 'block';
+                    if (rejectReasonInput) rejectReasonInput.focus();
+                    return;
+                }
+
+                const submitBtn = document.getElementById('btn-submit-reject');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span>Menyimpan...</span>';
+                }
+
+                const code = document.getElementById('reject-code').value;
+                const year = document.getElementById('reject-year').value;
+
+                const fd = new FormData();
+                fd.append('code', code);
+                fd.append('year', year);
+                fd.append('status', 'Belum lengkap');
+                fd.append('notes', reason);
+
+                fetch(`${cleanSite}/api/update_status`, { method: 'POST', body: fd })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert(res.message || 'Gagal menyimpan penolakan data.');
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg><span>Simpan Penolakan</span>';
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Terjadi kesalahan jaringan.');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg><span>Simpan Penolakan</span>';
+                        }
+                    });
+            });
+        }
     }
 
     // 12. ADMIN EWS PAGE
     function initAdminEwsPage() {
+        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+
+        // Auto-scroll active year tab into view on load
+        const slideTrack = document.getElementById('year-slide-track');
+        if (slideTrack) {
+            const activeTab = slideTrack.querySelector('.year-slide-tab.active');
+            if (activeTab) {
+                setTimeout(() => {
+                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }, 100);
+            }
+        }
+
+        // Live calculation of Status Risiko based on real value vs threshold and direction
+        function updateRowStatus(row) {
+            const code = row.getAttribute('data-code');
+            const thInput = row.querySelector('.threshold-input');
+            const valInput = row.querySelector('.value-input');
+            const dirSelect = row.querySelector('.direction-input');
+            const badge = document.getElementById(`status-badge-${code}`);
+
+            if (!thInput || !valInput || !dirSelect || !badge) return;
+
+            const val = parseFloat(valInput.value);
+            const th = parseFloat(thInput.value);
+            const dir = dirSelect.value || 'above';
+
+            if (!Number.isFinite(th)) return;
+
+            let st = 'Normal';
+            if (val === th) {
+                st = 'Waspada';
+            } else if (dir === 'below') {
+                st = (val < th) ? 'Kritis' : 'Normal';
+            } else {
+                st = (val > th) ? 'Kritis' : 'Normal';
+            }
+
+            const badgeCls = (st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success');
+            badge.className = badgeCls;
+            badge.textContent = st;
+        }
+
+        document.querySelectorAll('.threshold-admin-row').forEach(row => {
+            const thInput = row.querySelector('.threshold-input');
+            const dirSelect = row.querySelector('.direction-input');
+
+            if (thInput) {
+                thInput.addEventListener('input', () => updateRowStatus(row));
+            }
+            if (dirSelect) {
+                dirSelect.addEventListener('change', () => updateRowStatus(row));
+            }
+        });
+
         const btnSaveAll = document.getElementById('btn-save-all-thresholds');
         const feedback = document.getElementById('ews-admin-feedback');
 
         if (btnSaveAll) {
             btnSaveAll.addEventListener('click', () => {
                 const inputs = document.querySelectorAll('.threshold-input');
+                if (!inputs.length) return;
+
                 let count = 0;
+                let errorCount = 0;
                 btnSaveAll.disabled = true;
-                const prevTxt = btnSaveAll.textContent;
+                const prevHtml = btnSaveAll.innerHTML;
                 btnSaveAll.textContent = 'Menyimpan...';
 
                 inputs.forEach(input => {
@@ -3887,22 +4149,43 @@
                         fd.append('value', val);
                     }
 
-                    fetch(BASE_URL + 'api/update_threshold', { method: 'POST', body: fd })
-                        .then(() => {
+                    fetch(cleanSite + '/api/update_threshold', { method: 'POST', body: fd })
+                        .then(res => res.json())
+                        .then(data => {
                             count++;
+                            if (data.status === 'success' && data.status_risiko) {
+                                const badge = document.getElementById(`status-badge-${code}`);
+                                if (badge) {
+                                    const st = data.status_risiko;
+                                    badge.className = (st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success');
+                                    badge.textContent = st;
+                                }
+                            }
                             if (count === inputs.length) {
                                 btnSaveAll.disabled = false;
-                                btnSaveAll.textContent = prevTxt;
+                                btnSaveAll.innerHTML = prevHtml;
                                 if (feedback) {
                                     feedback.style.display = 'block';
                                     feedback.className = 'method-notice forecast';
-                                    feedback.innerHTML = '<strong>Berhasil!</strong><p>Seluruh konfigurasi nilai riil, threshold, dan arah risiko berhasil disimpan ke sistem.</p>';
+                                    feedback.innerHTML = `<strong>Berhasil!</strong><p>Konfigurasi ambang batas untuk ${count} indikator berhasil disimpan dan status risiko telah diperbarui.</p>`;
+                                    setTimeout(() => {
+                                        feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                    }, 100);
                                 }
                             }
                         })
                         .catch(() => {
-                            btnSaveAll.disabled = false;
-                            btnSaveAll.textContent = prevTxt;
+                            count++;
+                            errorCount++;
+                            if (count === inputs.length) {
+                                btnSaveAll.disabled = false;
+                                btnSaveAll.innerHTML = prevHtml;
+                                if (feedback) {
+                                    feedback.style.display = 'block';
+                                    feedback.className = 'method-notice danger';
+                                    feedback.innerHTML = `<strong>Selesai dengan catatan!</strong><p>${count - errorCount} indikator tersimpan, ${errorCount} gagal.</p>`;
+                                }
+                            }
                         });
                 });
             });
@@ -3958,11 +4241,12 @@
                 const val = String(sel.value).trim();
                 if (levelMap[val] !== undefined) levelMap[val]++;
             });
+            const totUser = (levelMap['1'] + levelMap['2'] + levelMap['3'] + levelMap['4']) || 1;
             const levelData = [
-                { label: 'Level 1 - Administrator', value: levelMap['1'], subLabel: 'Otoritas tertinggi & konfigurasi penuh sistem', badge: `${levelMap['1']} Akun`, badgeClass: 'primary', color: 'linear-gradient(90deg, #0284c7, #38bdf8)' },
-                { label: 'Level 2 - Analis Data', value: levelMap['2'], subLabel: 'Kajian ekonomi, validasi data & generator laporan', badge: `${levelMap['2']} Akun`, badgeClass: 'info', color: 'linear-gradient(90deg, #06b6d4, #67e8f9)' },
-                { label: 'Level 3 - Operator OPD', value: levelMap['3'], subLabel: 'Entri indikator sektoral & master dataset', badge: `${levelMap['3']} Akun`, badgeClass: 'success', color: 'linear-gradient(90deg, #10b981, #6ee7b7)' },
-                { label: 'Level 4 - Reviewer / Eksekutif', value: levelMap['4'], subLabel: 'Monitoring dashboard publik & evaluasi capaian', badge: `${levelMap['4']} Akun`, badgeClass: 'warning', color: 'linear-gradient(90deg, #f59e0b, #fcd34d)' }
+                { label: 'Level 1 - Administrator', value: levelMap['1'], subLabel: 'Otoritas tertinggi & konfigurasi penuh sistem', badge: `${Math.round((levelMap['1'] / totUser) * 100)}%`, badgeClass: 'primary', color: 'linear-gradient(90deg, #0284c7, #38bdf8)' },
+                { label: 'Level 2 - Analis Data', value: levelMap['2'], subLabel: 'Kajian ekonomi, validasi data & generator laporan', badge: `${Math.round((levelMap['2'] / totUser) * 100)}%`, badgeClass: 'info', color: 'linear-gradient(90deg, #06b6d4, #67e8f9)' },
+                { label: 'Level 3 - Operator OPD', value: levelMap['3'], subLabel: 'Entri indikator sektoral & master dataset', badge: `${Math.round((levelMap['3'] / totUser) * 100)}%`, badgeClass: 'success', color: 'linear-gradient(90deg, #10b981, #6ee7b7)' },
+                { label: 'Level 4 - Reviewer / Eksekutif', value: levelMap['4'], subLabel: 'Monitoring dashboard publik & evaluasi capaian', badge: `${Math.round((levelMap['4'] / totUser) * 100)}%`, badgeClass: 'warning', color: 'linear-gradient(90deg, #f59e0b, #fcd34d)' }
             ];
             userChart.innerHTML = createHorizontalBarChartSVG(levelData, { unit: ' Akun', decimals: 0, showRank: false });
         }
@@ -3997,10 +4281,46 @@
 
     // ADMIN CATALOG PAGE
     function initAdminCatalogPage() {
+        // Auto-scroll active year tab into view on load
+        const slideTrack = document.getElementById('year-slide-track');
+        if (slideTrack) {
+            const activeTab = slideTrack.querySelector('.year-slide-tab.active');
+            if (activeTab) {
+                setTimeout(() => {
+                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }, 100);
+            }
+        }
+
         const btnExportCsv = document.getElementById('btn-export-catalog-csv');
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', function () {
-                window.location.href = cleanSite + '/catalog';
+                const rows = [];
+                const table = document.querySelector('.result-table');
+                if (table) {
+                    const headers = [];
+                    table.querySelectorAll('thead th').forEach((th, idx) => {
+                        // Skip last column (Aksi)
+                        if (idx < table.querySelectorAll('thead th').length - 1) {
+                            headers.push(th.textContent.trim());
+                        }
+                    });
+                    rows.push(headers);
+                    table.querySelectorAll('tbody tr').forEach(tr => {
+                        const rowData = [];
+                        const tds = tr.querySelectorAll('td');
+                        if (tds.length > 1) {
+                            tds.forEach((td, idx) => {
+                                if (idx < tds.length - 1) {
+                                    rowData.push(td.innerText.replace(/\s+/g, ' ').trim());
+                                }
+                            });
+                            rows.push(rowData);
+                        }
+                    });
+                }
+                const yr = new URLSearchParams(window.location.search).get('year') || 'semua';
+                downloadCSV(`katalog-indikator-banyuwangi-${yr}.csv`, rows);
             });
         }
 
@@ -4009,19 +4329,21 @@
         if (catChart) {
             const clusterMap = {};
             document.querySelectorAll('.data-card table tbody tr').forEach(tr => {
-                const tds = tr.querySelectorAll('td');
-                if (tds.length >= 3) {
-                    const cl = tds[2].textContent.trim();
-                    if (cl && cl !== 'Tidak ada indikator katalog ditemukan.') clusterMap[cl] = (clusterMap[cl] || 0) + 1;
+                const cl = tr.getAttribute('data-cluster') || (tr.querySelectorAll('td')[2] ? tr.querySelectorAll('td')[2].textContent.trim() : '');
+                if (cl && cl !== 'Tidak ada indikator katalog ditemukan.') {
+                    clusterMap[cl] = (clusterMap[cl] || 0) + 1;
                 }
             });
-            const clusterItems = Object.keys(clusterMap).map(k => ({
-                label: k,
-                value: clusterMap[k],
-                subLabel: 'Klaster Tematik Data',
-                badge: `${clusterMap[k]} Indikator`,
-                badgeClass: 'info'
-            })).sort((a, b) => b.value - a.value);
+            const totalInd = Object.values(clusterMap).reduce((a, b) => a + b, 0) || 1;
+            const clusterItems = Object.keys(clusterMap).map(k => {
+                const count = clusterMap[k];
+                const pct = Math.round((count / totalInd) * 100);
+                return {
+                    label: k,
+                    value: count,
+                    subLabel: `${pct}% dari total indikator`
+                };
+            }).sort((a, b) => b.value - a.value);
 
             if (clusterItems.length > 0) {
                 catChart.innerHTML = createHorizontalBarChartSVG(clusterItems, { unit: ' Indikator', decimals: 0, showRank: true });

@@ -62,84 +62,21 @@
         <div id="csv-feedback-box" class="method-note" style="display:none; margin-top: 15px;"></div>
     </article>
 
-    <!-- MANUAL FORM CARD -->
-    <article class="card" style="margin-top: 20px;">
-        <div class="card-head">
+    <!-- PANDUAN INPUT MANUAL DI DATABASE EKONOMI -->
+    <div style="margin-top: 20px; padding: 16px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 9px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </div>
             <div>
-                <span class="eyebrow">FORM INPUT TUNGGAL</span>
-                <h3>Input Manual Indikator</h3>
-                <p>Tambah data langsung ke tabel <code>indicator_records</code>.</p>
+                <strong style="display: block; font-size: 13px; color: var(--navy); margin-bottom: 2px;">Input Data Manual</strong>
+                <p style="margin: 0; font-size: 11.5px; color: #64748b;">Penambahan dan pembaruan data secara manual terpusat di menu <strong>Database Ekonomi</strong> melalui tombol <strong>+ Tambah Data Baru</strong>.</p>
             </div>
         </div>
-
-        <form id="form-direct-input" style="margin-top: 15px;">
-            <div class="manual-form">
-                <label>
-                    Kode Indikator
-                    <input type="text" id="dir-code" placeholder="EKO-201" required>
-                </label>
-                <label>
-                    Nama Indikator
-                    <input type="text" id="dir-indicator" placeholder="PDRB Sektor Tertentu" required>
-                </label>
-                <label>
-                    Klaster
-                    <select id="dir-cluster">
-                        <option>Output & Pertumbuhan</option>
-                        <option>Harga & Inflasi</option>
-                        <option>Ketenagakerjaan</option>
-                        <option>Kesejahteraan Sosial</option>
-                        <option>Investasi & Usaha</option>
-                        <option>Fiskal Daerah</option>
-                        <option>Pariwisata & Ekonomi Kreatif</option>
-                        <option>Produksi Sektoral</option>
-                        <option>Keterkaitan Antarsektor</option>
-                    </select>
-                </label>
-                <label>
-                    Wilayah
-                    <input type="text" id="dir-region" value="Kabupaten Banyuwangi" required>
-                </label>
-                <label>
-                    Periode
-                    <select id="dir-period">
-                        <option>Tahunan</option>
-                        <option>Semesteran</option>
-                        <option>Triwulanan</option>
-                        <option>Bulanan</option>
-                    </select>
-                </label>
-                <label>
-                    Tahun
-                    <input type="number" id="dir-year" value="2024" required>
-                </label>
-                <label>
-                    Nilai
-                    <input type="number" step="any" id="dir-value" placeholder="10.5" required>
-                </label>
-                <label>
-                    Satuan
-                    <input type="text" id="dir-unit" value="%" required>
-                </label>
-                <label>
-                    Status Validasi
-                    <select id="dir-status">
-                        <option value="Tervalidasi" selected>Tervalidasi (Langsung Masuk Beranda)</option>
-                        <option value="Perlu review">Perlu review</option>
-                    </select>
-                </label>
-                <label style="grid-column: 1 / 3;">
-                    Sumber Data
-                    <input type="text" id="dir-source" value="BPS Kabupaten Banyuwangi" required>
-                </label>
-            </div>
-
-            <div id="dir-feedback-box" class="method-note" style="display:none;"></div>
-
-            <div style="text-align: right; margin-top: 10px;">
-                <button type="submit" class="button primary" id="btn-submit-direct">Simpan Rekaman Baru</button>
-            </div>
-        </form>
-    </article>
+        <a href="<?= site_url('database') ?>" class="button secondary" style="height: 34px; font-size: 11.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+            <span>Buka Database Ekonomi</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+    </div>
 </div>
 

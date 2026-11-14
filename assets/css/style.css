@@ -143,11 +143,14 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 .threshold-editor label strong { grid-column: 1; grid-row: 2; color: var(--navy); }
 .threshold-editor input { grid-column: 2; grid-row: 1 / 3; width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; }
 .threshold-editor small { display: block; margin-top: 7px; color: var(--muted); font-size: 8px; }
-.threshold-admin-row { display: grid; grid-template-columns: 1fr 160px; gap: 16px; align-items: center; padding: 13px 0; border-top: 1px solid #edf0f4; }
-.threshold-admin-row strong, .threshold-admin-row small { display: block; }
-.threshold-admin-row strong { color: var(--navy); font-size: 9px; }
-.threshold-admin-row small { color: var(--muted); font-size: 8px; margin-top: 4px; }
-.threshold-admin-row input { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 7px; padding: 0 9px; }
+tr.threshold-admin-row {
+  display: table-row !important;
+}
+tr.threshold-admin-row td {
+  padding: 12px 14px !important;
+  vertical-align: middle !important;
+  border-top: 1px solid var(--line) !important;
+}
 .file-picker { border: 1px dashed #9eb6cc; border-radius: 11px; background: #f7fbfd; min-height: 170px; padding: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--blue); cursor: pointer; text-align: center; }
 .file-picker strong { color: var(--navy); font-size: 11px; }
 .file-picker span { color: var(--muted); font-size: 8px; }
@@ -159,8 +162,14 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 .row-actions { display: inline-flex; align-items: center; gap: 4px; }
 .row-actions button { width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--muted); display: grid; place-items: center; cursor: pointer; transition: all .15s ease; }
 .row-actions button:hover { color: var(--blue); border-color: #a9c4dd; background: #f0f7ff; }
-.row-actions button.danger:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
-.row-actions button.success:hover { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+.row-actions button.danger { color: #ef4444; border-color: #fecaca; }
+.row-actions button.danger:hover { color: #dc2626; border-color: #f87171; background: #fee2e2; }
+.row-actions button.danger.is-active { background: #ef4444; color: #fff; border-color: #ef4444; }
+.row-actions button.danger.is-active:hover { background: #dc2626; border-color: #dc2626; }
+.row-actions button.success { color: #16a34a; border-color: #bbf7d0; }
+.row-actions button.success:hover { color: #15803d; border-color: #86efac; background: #f0fdf4; }
+.row-actions button.success.is-active { background: #16a34a; color: #fff; border-color: #16a34a; }
+.row-actions button.success.is-active:hover { background: #15803d; border-color: #15803d; }
 .row-actions .btn-restore-record { width: auto; height: 26px; padding: 0 9px; font-size: 8px; gap: 4px; display: inline-flex; align-items: center; font-weight: 600; color: #16a34a; border-color: #86efac; background: #f0fdf4; border-radius: 5px; cursor: pointer; }
 .row-actions .btn-restore-record:hover { background: #dcfce7; border-color: #4ade80; color: #15803d; }
 .row-actions .btn-hard-delete-record:hover { color: #b91c1c; border-color: #f87171; background: #fee2e2; }
@@ -178,7 +187,6 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
 }
 @media (max-width: 600px) {
   .method-summary-grid, .method-summary-grid.four, .shift-components, .gap-overview { grid-template-columns: 1fr 1fr; }
-  .threshold-admin-row { grid-template-columns: 1fr 110px; }
   .manual-form { grid-template-columns: 1fr; }
   .threshold-editor label { grid-template-columns: 1fr; }
   .threshold-editor input { grid-column: 1; grid-row: auto; }
@@ -1438,7 +1446,125 @@ footer{height:46px;padding:0 30px;border-top:1px solid var(--line);display:flex;
     font-style: italic;
 }
 
+/* ==========================================
+   YEAR SLIDE / BAR SELECTOR (KATALOG INDIKATOR)
+   Concept from reference: Solid pill bar with elevated white active pill
+   Theme: SI-DAPEDA Navy & Blue (Not Green)
+   ========================================== */
+.year-slide-card {
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow);
+}
 
+.year-slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 12px;
+}
 
+.year-slide-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
+.year-slide-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: rgba(36, 99, 166, 0.08);
+    color: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 
+.year-slide-title-wrap strong {
+    font-size: 13.5px;
+    color: var(--navy);
+    display: block;
+    font-weight: 700;
+}
+
+.year-slide-title-wrap small {
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-top: 1px;
+}
+
+.year-slide-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.year-slide-meta strong {
+    color: var(--blue);
+    font-weight: 700;
+}
+
+/* Outer pill bar container (Navy/Blue brand theme) */
+.year-slide-bar-wrap {
+    background: linear-gradient(135deg, #142d4e 0%, #1e40af 100%);
+    border-radius: 12px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(20, 45, 78, 0.12);
+}
+
+.year-slide-bar-wrap::-webkit-scrollbar {
+    height: 4px;
+}
+
+.year-slide-bar-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+/* Individual year tab button */
+.year-slide-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.year-slide-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+/* Active tab: Solid white pill with bold Navy text */
+.year-slide-tab.active {
+    background: #ffffff !important;
+    color: #142d4e !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    cursor: default;
+}

@@ -47,7 +47,7 @@
             <option value="Semua status" <?= ($status === 'Semua status' || !$status) ? 'selected' : '' ?>>Semua status (Aktif)</option>
             <option value="Tervalidasi" <?= $status === 'Tervalidasi' ? 'selected' : '' ?>>Tervalidasi</option>
             <option value="Perlu review" <?= $status === 'Perlu review' ? 'selected' : '' ?>>Perlu review</option>
-            <option value="Belum lengkap" <?= $status === 'Belum lengkap' ? 'selected' : '' ?>>Belum lengkap</option>
+            <option value="Belum lengkap" <?= ($status === 'Belum lengkap' || $status === 'Ditolak') ? 'selected' : '' ?>>Belum lengkap / Ditolak</option>
             <option value="Terhapus" <?= $status === 'Terhapus' ? 'selected' : '' ?>>🗑️ Sampah / Terhapus (<?= (int)$trash_count ?>)</option>
         </select>
         <select id="admin-sort">
@@ -137,6 +137,12 @@
                             <span>
                                 <strong><?= htmlspecialchars($item['indicator']) ?></strong>
                                 <small><?= htmlspecialchars($item['region']) ?> • <?= htmlspecialchars($item['source']) ?></small>
+                                <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
+                                    <div class="table-rejection-note" style="margin-top: 5px; font-size: 11px; line-height: 1.4; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; display: inline-flex; align-items: flex-start; gap: 5px; max-width: 100%;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        <span><strong>Catatan:</strong> <?= htmlspecialchars($item['notes']) ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </span>
                             <span><?= htmlspecialchars($item['cluster']) ?></span>
                             <span><?= htmlspecialchars($item['period']) ?> <?= $item['year'] ?></span>
@@ -147,9 +153,12 @@
                                         Terhapus
                                     </span>
                                 <?php else: ?>
-                                    <span class="badge <?= $item['status'] === 'Tervalidasi' ? 'success' : ($item['status'] === 'Perlu review' ? 'warning' : 'neutral') ?>">
+                                    <span class="badge <?= $item['status'] === 'Tervalidasi' ? 'success' : ($item['status'] === 'Perlu review' ? 'warning' : 'danger') ?>">
                                         <?= $item['status'] ?>
                                     </span>
+                                    <?php if (!empty($item['verified_by']) && $item['status'] !== 'Perlu review'): ?>
+                                        <small style="display:block; font-size:10px; color:#64748b; margin-top:3px;">Oleh: <?= htmlspecialchars($item['verified_by']) ?></small>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </span>
                             <span class="row-actions">
@@ -192,7 +201,7 @@
                 <div>
                     <span class="badge info">TAMBAH DATA BARU</span>
                     <h2>Tambah Data Indikator Ekonomi</h2>
-                    <p>Data baru akan tersimpan ke sistem dengan status Perlu review.</p>
+                    <p>Data baru akan otomatis tersimpan dengan status <strong>Perlu review</strong> untuk diverifikasi.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-add">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
@@ -211,17 +220,7 @@
                     </label>
                     <label>
                         Klaster
-                        <select name="cluster" id="add-cluster">
-                            <option>Output & Pertumbuhan</option>
-                            <option>Harga & Inflasi</option>
-                            <option>Ketenagakerjaan</option>
-                            <option>Kesejahteraan Sosial</option>
-                            <option>Investasi & Usaha</option>
-                            <option>Fiskal Daerah</option>
-                            <option>Pariwisata & Ekonomi Kreatif</option>
-                            <option>Produksi Sektoral</option>
-                            <option>Keterkaitan Antarsektor</option>
-                        </select>
+                        <input type="text" name="cluster" id="add-cluster" list="cluster-options" value="Output & Pertumbuhan" required placeholder="Pilih atau ketik klaster...">
                     </label>
                     <label>
                         Wilayah
@@ -248,13 +247,6 @@
                         Satuan
                         <input type="text" name="unit" id="add-unit" value="%" required>
                     </label>
-                    <label>
-                        Status Validasi
-                        <select name="status" id="add-status">
-                            <option value="Tervalidasi" selected>Tervalidasi (Langsung Masuk Beranda)</option>
-                            <option value="Perlu review">Perlu review</option>
-                        </select>
-                    </label>
                     <label style="grid-column: 1 / 3;">
                         Sumber Data
                         <input type="text" name="source" id="add-source" value="BPS Kabupaten Banyuwangi" required>
@@ -278,11 +270,24 @@
                 <div>
                     <span class="badge warning">PERBARUI DATA</span>
                     <h2>Edit Data Indikator Ekonomi</h2>
-                    <p>Perbarui informasi data indikator ekonomi yang tersimpan dalam sistem.</p>
+                    <p>Perbarui informasi data. Data yang diedit otomatis berstatus <strong>Perlu review</strong> untuk diverifikasi ulang.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-edit">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
                 </button>
+            </div>
+
+            <!-- REJECTION REASON CALLOUT -->
+            <div id="edit-rejection-callout" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-top:14px; font-size:12px; color:#991b1b;">
+                <strong style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:12px; color:#b91c1c;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Catatan Penolakan Sebelumnya:
+                </strong>
+                <span id="edit-rejection-reason-text" style="line-height:1.45; display:block;"></span>
+                <div style="margin-top:6px; font-size:11px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Status otomatis menjadi "Perlu review" dan catatan ini otomatis terhapus saat disimpan.</span>
+                </div>
             </div>
 
             <form id="form-manual-edit" method="POST">
@@ -298,17 +303,7 @@
                     </label>
                     <label>
                         Klaster
-                        <select name="cluster" id="edit-cluster">
-                            <option>Output & Pertumbuhan</option>
-                            <option>Harga & Inflasi</option>
-                            <option>Ketenagakerjaan</option>
-                            <option>Kesejahteraan Sosial</option>
-                            <option>Investasi & Usaha</option>
-                            <option>Fiskal Daerah</option>
-                            <option>Pariwisata & Ekonomi Kreatif</option>
-                            <option>Produksi Sektoral</option>
-                            <option>Keterkaitan Antarsektor</option>
-                        </select>
+                        <input type="text" name="cluster" id="edit-cluster" list="cluster-options" required placeholder="Pilih atau ketik klaster...">
                     </label>
                     <label>
                         Wilayah
@@ -335,21 +330,9 @@
                         Satuan
                         <input type="text" name="unit" id="edit-unit" required>
                     </label>
-                    <label>
+                    <label style="grid-column: 1 / 3;">
                         Sumber Data
                         <input type="text" name="source" id="edit-source" required>
-                    </label>
-                    <label>
-                        Status Validasi
-                        <select name="status" id="edit-status">
-                            <option value="Tervalidasi">Tervalidasi</option>
-                            <option value="Perlu review">Perlu review</option>
-                            <option value="Belum lengkap">Belum lengkap</option>
-                        </select>
-                    </label>
-                    <label style="grid-column: 1 / 3;">
-                        Catatan Tambahan
-                        <input type="text" name="notes" id="edit-notes" placeholder="Catatan opsional...">
                     </label>
                 </div>
 
@@ -362,4 +345,17 @@
             </form>
         </div>
     </div>
+
+    <!-- DATALIST KLASTER INDIKATOR -->
+    <datalist id="cluster-options">
+        <option value="Output & Pertumbuhan">
+        <option value="Harga & Inflasi">
+        <option value="Ketenagakerjaan">
+        <option value="Kesejahteraan Sosial">
+        <option value="Investasi & Usaha">
+        <option value="Fiskal Daerah">
+        <option value="Pariwisata & Ekonomi Kreatif">
+        <option value="Produksi Sektoral">
+        <option value="Keterkaitan Antarsektor">
+    </datalist>
 </div>

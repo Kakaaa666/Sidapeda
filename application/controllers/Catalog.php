@@ -4,9 +4,25 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Catalog extends MY_Controller {
 
     public function index() {
+        // Sinkronkan seluruh data yang sudah tervalidasi agar otomatis masuk ke katalog indikator
+        $this->M_economy->sync_all_validated_to_catalog();
+
         $status = $this->input->get('status');
-        $catalog = $this->M_economy->get_indicator_catalog($status);
+        $raw_year = $this->input->get('year');
+        $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
+
+        $catalog = $this->M_economy->get_indicator_catalog($status, $selected_year);
         $trash_count = $this->M_economy->count_trash_catalog();
+        $available_years = $this->M_economy->get_catalog_years();
+
+        $total_all_records = 0;
+        foreach ($available_years as $ay) {
+            $total_all_records += (int)$ay['total_records'];
+        }
+
+        // Hitung total master indikator unik (semua tahun)
+        $master_catalog_all = $this->M_economy->get_indicator_catalog($status, null);
+        $total_master_indicators = count($master_catalog_all);
 
         $data = array(
             'active_page' => 'catalog',
@@ -15,7 +31,11 @@ class Catalog extends MY_Controller {
             'subtitle' => 'Kamus data, metadata indikator pembangunan daerah, dan manajemen master indikator.',
             'catalog' => $catalog,
             'status' => $status,
-            'trash_count' => $trash_count
+            'trash_count' => $trash_count,
+            'available_years' => $available_years,
+            'selected_year' => $selected_year,
+            'total_all_records' => $total_all_records,
+            'total_master_indicators' => $total_master_indicators
         );
 
         $this->render('catalog', $data, true);

@@ -6,9 +6,9 @@ class Input extends MY_Controller {
     public function index() {
         $data = array(
             'active_page' => 'input',
-            'title' => 'Input & Import Data',
-            'eyebrow' => 'LOCAL CSV & MANUAL INPUT',
-            'subtitle' => 'Tambah indikator baru secara manual atau upload file CSV.',
+            'title' => 'Import Data CSV',
+            'eyebrow' => 'DATA INGESTION • BATCH CSV IMPORT',
+            'subtitle' => 'Unggah dan impor berkas dataset indikator ekonomi daerah secara massal melalui format CSV.',
             'catalog' => $this->M_economy->get_indicator_catalog()
         );
 

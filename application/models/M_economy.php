@@ -337,7 +337,11 @@ class M_economy extends CI_Model {
         } else {
             $this->db->where('is_deleted', 0);
             if ($status && $status !== 'Semua status') {
-                $this->db->where('status_validasi', $status);
+                if ($status === 'Belum lengkap' || $status === 'Ditolak') {
+                    $this->db->where_in('status_validasi', array('Belum lengkap', 'Ditolak'));
+                } else {
+                    $this->db->where('status_validasi', $status);
+                }
             }
         }
 
@@ -354,6 +358,11 @@ class M_economy extends CI_Model {
             $this->db->order_by('nama_indikator', 'ASC');
         } elseif ($sort === 'value' || $sort === 'nilai') {
             $this->db->order_by('nilai', 'DESC');
+        } elseif ($sort === 'status') {
+            // Prioritaskan antrean: Perlu review (1), Belum lengkap / Ditolak (2), Tervalidasi (3)
+            $this->db->order_by("CASE WHEN status_validasi = 'Perlu review' THEN 1 WHEN status_validasi IN ('Belum lengkap', 'Ditolak') THEN 2 ELSE 3 END", "ASC", false);
+            $this->db->order_by('tahun', 'DESC');
+            $this->db->order_by('id', 'DESC');
         } else {
             $this->db->order_by('tahun', 'DESC');
             $this->db->order_by('id', 'DESC');
@@ -434,18 +443,18 @@ class M_economy extends CI_Model {
 
     public function add_indicator_record($data) {
         $record = array(
-            'kode_indikator'    => $data['code'] ?? $data['kode_indikator'],
-            'nama_indikator'    => $data['indicator'] ?? $data['nama_indikator'],
-            'klaster'           => $data['cluster'] ?? $data['klaster'] ?? 'Output & Pertumbuhan',
-            'wilayah'           => $data['region'] ?? $data['wilayah'] ?? 'Kabupaten Banyuwangi',
-            'periode'           => $data['period'] ?? $data['periode'] ?? 'Tahunan',
-            'tahun'             => (int)($data['year'] ?? $data['tahun']),
-            'nilai'             => (float)($data['value'] ?? $data['nilai']),
-            'satuan'            => $data['unit'] ?? $data['satuan'] ?? '%',
-            'sumber_data'       => $data['source'] ?? $data['sumber_data'] ?? 'Input Manual',
-            'status_validasi'   => $data['status'] ?? $data['status_validasi'] ?? 'Tervalidasi',
-            'diverifikasi_oleh' => $data['verified_by'] ?? $data['diverifikasi_oleh'] ?? null,
-            'catatan'           => $data['notes'] ?? $data['catatan'] ?? null,
+            'kode_indikator'    => trim($data['code'] ?? $data['kode_indikator'] ?? ''),
+            'nama_indikator'    => trim($data['indicator'] ?? $data['nama_indikator'] ?? ''),
+            'klaster'           => trim($data['cluster'] ?? $data['klaster'] ?? 'Output & Pertumbuhan'),
+            'wilayah'           => trim($data['region'] ?? $data['wilayah'] ?? 'Kabupaten Banyuwangi'),
+            'periode'           => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
+            'tahun'             => (int)($data['year'] ?? $data['tahun'] ?? 2024),
+            'nilai'             => (float)($data['value'] ?? $data['nilai'] ?? 0),
+            'satuan'            => trim($data['unit'] ?? $data['satuan'] ?? '%'),
+            'sumber_data'       => trim($data['source'] ?? $data['sumber_data'] ?? 'Input Manual'),
+            'status_validasi'   => 'Perlu review',
+            'diverifikasi_oleh' => null,
+            'catatan'           => null,
             'is_deleted'        => 0,
             'deleted_at'        => null,
             'dibuat_pada'       => date('Y-m-d H:i:s')
@@ -472,21 +481,22 @@ class M_economy extends CI_Model {
     }
 
     public function update_indicator_record($id, $data) {
+        $existing = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
         $record = array();
         if (isset($data['code']) || isset($data['kode_indikator'])) {
-            $record['kode_indikator'] = $data['code'] ?? $data['kode_indikator'];
+            $record['kode_indikator'] = trim($data['code'] ?? $data['kode_indikator']);
         }
         if (isset($data['indicator']) || isset($data['nama_indikator'])) {
-            $record['nama_indikator'] = $data['indicator'] ?? $data['nama_indikator'];
+            $record['nama_indikator'] = trim($data['indicator'] ?? $data['nama_indikator']);
         }
         if (isset($data['cluster']) || isset($data['klaster'])) {
-            $record['klaster'] = $data['cluster'] ?? $data['klaster'];
+            $record['klaster'] = trim($data['cluster'] ?? $data['klaster']);
         }
         if (isset($data['region']) || isset($data['wilayah'])) {
-            $record['wilayah'] = $data['region'] ?? $data['wilayah'];
+            $record['wilayah'] = trim($data['region'] ?? $data['wilayah']);
         }
         if (isset($data['period']) || isset($data['periode'])) {
-            $record['periode'] = $data['period'] ?? $data['periode'];
+            $record['periode'] = trim($data['period'] ?? $data['periode']);
         }
         if (isset($data['year']) || isset($data['tahun'])) {
             $record['tahun'] = (int)($data['year'] ?? $data['tahun']);
@@ -495,63 +505,293 @@ class M_economy extends CI_Model {
             $record['nilai'] = (float)($data['value'] ?? $data['nilai']);
         }
         if (isset($data['unit']) || isset($data['satuan'])) {
-            $record['satuan'] = $data['unit'] ?? $data['satuan'];
+            $record['satuan'] = trim($data['unit'] ?? $data['satuan']);
         }
         if (isset($data['source']) || isset($data['sumber_data'])) {
-            $record['sumber_data'] = $data['source'] ?? $data['sumber_data'];
+            $record['sumber_data'] = trim($data['source'] ?? $data['sumber_data']);
         }
-        if (isset($data['status']) || isset($data['status_validasi'])) {
-            $record['status_validasi'] = $data['status'] ?? $data['status_validasi'];
-        }
-        if (isset($data['notes']) || isset($data['catatan'])) {
-            $record['catatan'] = $data['notes'] ?? $data['catatan'];
-        }
+
+        // Setiap data yang diedit/diperbarui otomatis berstatus 'Perlu review' dan catatan penolakan lama dihapus
+        $record['status_validasi'] = 'Perlu review';
+        $record['catatan'] = null;
+        $record['diverifikasi_oleh'] = null;
 
         if (empty($record)) return false;
 
         $this->db->where('id', (int)$id);
-        return $this->db->update('database_ekonomi', $record);
+        $res = $this->db->update('database_ekonomi', $record);
+
+        // Jika data diedit (otomatis jadi Perlu review), cek apakah indikator ini masih memiliki data lain yang Tervalidasi
+        $code = $record['kode_indikator'] ?? $existing['kode_indikator'] ?? null;
+        if ($code) {
+            $hasValid = $this->db
+                ->where('kode_indikator', $code)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->count_all_results('database_ekonomi');
+            if ($hasValid === 0) {
+                $this->remove_from_catalog($code);
+            }
+        }
+        return $res;
     }
 
     public function soft_delete_indicator_record($id) {
+        $existing = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
         $this->db->where('id', (int)$id);
-        return $this->db->update('database_ekonomi', array(
+        $res = $this->db->update('database_ekonomi', array(
             'is_deleted' => 1,
             'deleted_at' => date('Y-m-d H:i:s')
         ));
+        if ($existing && !empty($existing['kode_indikator'])) {
+            $hasValid = $this->db
+                ->where('kode_indikator', $existing['kode_indikator'])
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->count_all_results('database_ekonomi');
+            if ($hasValid === 0) {
+                $this->remove_from_catalog($existing['kode_indikator']);
+            }
+        }
+        return $res;
     }
 
     public function restore_indicator_record($id) {
         $this->db->where('id', (int)$id);
-        return $this->db->update('database_ekonomi', array(
+        $res = $this->db->update('database_ekonomi', array(
             'is_deleted' => 0,
             'deleted_at' => null
         ));
+        $existing = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
+        if ($existing && $existing['status_validasi'] === 'Tervalidasi') {
+            $this->sync_to_catalog($existing['kode_indikator']);
+        }
+        return $res;
     }
 
     public function hard_delete_indicator_record($id) {
+        $existing = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
         $this->db->where('id', (int)$id);
-        return $this->db->delete('database_ekonomi');
+        $res = $this->db->delete('database_ekonomi');
+        if ($existing && !empty($existing['kode_indikator'])) {
+            $hasValid = $this->db
+                ->where('kode_indikator', $existing['kode_indikator'])
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->count_all_results('database_ekonomi');
+            if ($hasValid === 0) {
+                $this->remove_from_catalog($existing['kode_indikator']);
+            }
+        }
+        return $res;
     }
 
     public function count_trash_records() {
         return $this->db->where('is_deleted', 1)->count_all_results('database_ekonomi');
     }
 
-    public function update_record_status($code, $year, $status) {
+    public function update_record_status($code, $year, $status, $notes = null, $verifier = null) {
         $this->db->where('kode_indikator', $code)->where('tahun', $year);
-        return $this->db->update('database_ekonomi', array('status_validasi' => $status));
+        $data = array('status_validasi' => $status);
+        if ($status === 'Tervalidasi' || $status === 'Perlu review') {
+            // Data sudah disetujui atau dikembalikan untuk review ulang (sudah dibenarkan) -> hapus catatan penolakan otomatis
+            $data['catatan'] = null;
+        } elseif ($notes !== null) {
+            $noteVal = trim($notes);
+            $data['catatan'] = ($noteVal !== '') ? $noteVal : null;
+        }
+        if ($verifier !== null) {
+            $data['diverifikasi_oleh'] = $verifier;
+        }
+        $updated = $this->db->update('database_ekonomi', $data);
+
+        // Jika status menjadi Tervalidasi, otomatis masukkan / sinkronkan indikator ke katalog & EWS
+        if ($status === 'Tervalidasi' && $updated) {
+            $this->sync_to_catalog($code);
+            $this->sync_all_validated_to_ews();
+        } else {
+            // Jika status bukan Tervalidasi (diubah ke Belum lengkap, Ditolak, atau Perlu review),
+            // pastikan indikator tidak tampil di katalog & EWS jika tidak ada data aktif lain yang berstatus Tervalidasi
+            $hasValid = $this->db
+                ->where('kode_indikator', $code)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->count_all_results('database_ekonomi');
+            if ($hasValid === 0) {
+                $this->remove_from_catalog($code);
+                $this->clean_unvalidated_from_ews();
+            }
+        }
+
+        return $updated;
     }
 
-    public function get_indicator_catalog($status = null) {
-        if ($status === 'Terhapus' || $status === 'Sampah') {
-            $this->db->where('is_deleted', 1);
-        } else {
-            $this->db->where('is_deleted', 0);
+    public function remove_from_catalog($code) {
+        if (empty($code)) return false;
+        return $this->db->where('kode_indikator', $code)->delete('katalog_indikator');
+    }
+
+    public function sync_to_catalog($code) {
+        $record = $this->db
+            ->where('kode_indikator', $code)
+            ->where('status_validasi', 'Tervalidasi')
+            ->where('is_deleted', 0)
+            ->order_by('tahun', 'DESC')
+            ->order_by('id', 'DESC')
+            ->get('database_ekonomi')
+            ->row_array();
+
+        if (!$record) {
+            return false;
         }
-        $res = $this->db->order_by('kode_indikator', 'ASC')->get('katalog_indikator');
+
+        $kode = trim($record['kode_indikator']);
+        $nama = trim($record['nama_indikator']);
+        $klaster = trim($record['klaster'] ?: 'Output & Pertumbuhan');
+        $satuan = trim($record['satuan'] ?: '%');
+        $frekuensi = trim($record['periode'] ?: 'Tahunan');
+        $sumber = trim($record['sumber_data'] ?: 'BPS Kabupaten Banyuwangi');
+
+        $defMap = array(
+            'PDRB_01' => 'Laju perubahan Produk Domestik Regional Bruto (PDRB) atas dasar harga konstan tahun 2010 yang mencerminkan pertumbuhan ekonomi riil daerah.',
+            'PDRB_02' => 'Total nilai tambah bruto seluruh sektor ekonomi di wilayah Kabupaten Banyuwangi atas dasar harga konstan.',
+            'PDRB_03' => 'PDRB atas dasar harga berlaku dibagi jumlah penduduk pertengahan tahun, mengukur tingkat pendapatan rata-rata masyarakat.',
+            'INF_01'  => 'Persentase kenaikan harga barang dan jasa kebutuhan pokok konsumen dari waktu ke waktu berdasarkan survei IHK.',
+            'TPT_01'  => 'Persentase jumlah pengangguran terhadap jumlah keseluruhan angkatan kerja aktif daerah.',
+            'POV_01'  => 'Persentase penduduk yang memiliki rata-rata pengeluaran per kapita per bulan di bawah Garis Kemiskinan.',
+            'IPM_01'  => 'Indeks komposit pengukuran capaian pembangunan manusia berbasis dimensi umur panjang, pengetahuan, dan standar hidup layak.',
+            'INV_01'  => 'Total akumulasi nilai investasi penanaman modal dalam negeri (PMDN) dan penanaman modal asing (PMA) yang terealisasi.',
+            'INV_02'  => 'Persentase laju pertumbuhan realisasi penanaman modal di daerah dibandingkan tahun sebelumnya.',
+            'FIS_01'  => 'Penerimaan daerah dari sumber pajak daerah, retribusi, hasil pengelolaan kekayaan daerah yang dipisahkan, dan lain-lain PAD yang sah.',
+            'PAR_01'  => 'Jumlah kunjungan wisatawan nusantara dan mancanegara ke berbagai destinasi wisata di Kabupaten Banyuwangi.',
+            'SEK_01'  => 'Pangsa atau kontribusi persentase sektor pertanian, kehutanan, dan perikanan terhadap total PDRB daerah.'
+        );
+
+        $definisi = $defMap[$kode] ?? "Indikator {$nama} dalam klaster {$klaster} untuk pemantauan capaian pembangunan daerah Kabupaten Banyuwangi.";
+
+        // Cek apakah sudah ada di katalog_indikator
+        $existing = $this->db->where('kode_indikator', $kode)->get('katalog_indikator')->row_array();
+        if ($existing) {
+            $update = array(
+                'nama_indikator'       => $nama,
+                'klaster'              => $klaster,
+                'satuan'               => $satuan,
+                'frekuensi'            => $frekuensi,
+                'sumber_data'          => $sumber,
+                'is_deleted'           => 0,
+                'deleted_at'           => null
+            );
+            if (empty($existing['definisi_operasional'])) {
+                $update['definisi_operasional'] = $definisi;
+            }
+            $this->db->where('id', (int)$existing['id'])->update('katalog_indikator', $update);
+            return (int)$existing['id'];
+        } else {
+            $catalogData = array(
+                'kode_indikator'       => $kode,
+                'nama_indikator'       => $nama,
+                'klaster'              => $klaster,
+                'satuan'               => $satuan,
+                'frekuensi'            => $frekuensi,
+                'sumber_data'          => $sumber,
+                'definisi_operasional' => $definisi,
+                'is_deleted'           => 0,
+                'deleted_at'           => null
+            );
+            $this->db->insert('katalog_indikator', $catalogData);
+            return $this->db->insert_id();
+        }
+    }
+
+    public function clean_unvalidated_from_catalog() {
+        // Hapus dari katalog_indikator jika statusnya belum tervalidasi atau tidak memiliki rekaman aktif Tervalidasi di database_ekonomi
+        $this->db->query("DELETE FROM katalog_indikator WHERE kode_indikator NOT IN (
+            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0
+        )");
+    }
+
+    public function sync_all_validated_to_catalog() {
+        // 1. Bersihkan entri katalog yang statusnya belum tervalidasi atau diubah ke Belum lengkap / Ditolak / Perlu review
+        $this->clean_unvalidated_from_catalog();
+
+        // 2. Sinkronkan seluruh data yang berstatus Tervalidasi
+        $indicators = $this->db
+            ->select('DISTINCT(kode_indikator)')
+            ->where('status_validasi', 'Tervalidasi')
+            ->where('is_deleted', 0)
+            ->get('database_ekonomi')
+            ->result_array();
+
+        $count = 0;
+        foreach ($indicators as $row) {
+            if (!empty($row['kode_indikator'])) {
+                if ($this->sync_to_catalog($row['kode_indikator'])) {
+                    $count++;
+                }
+            }
+        }
+        return $count;
+    }
+
+    public function get_catalog_years() {
+        return $this->db
+            ->select('tahun, COUNT(*) as total_records, COUNT(DISTINCT kode_indikator) as total_indicators')
+            ->where('status_validasi', 'Tervalidasi')
+            ->where('is_deleted', 0)
+            ->group_by('tahun')
+            ->order_by('tahun', 'ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+    }
+
+    public function get_indicator_catalog($status = null, $year = null) {
+        $this->db->from('katalog_indikator k');
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('k.is_deleted', 1);
+        } else {
+            $this->db->where('k.is_deleted', 0);
+            // Hanya tampilkan indikator yang SUDAH Tervalidasi di database_ekonomi
+            if ($year && is_numeric($year)) {
+                $yInt = (int)$year;
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0 AND d.tahun = {$yInt})", null, false);
+            } else {
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0)", null, false);
+            }
+        }
+        $res = $this->db->order_by('k.kode_indikator', 'ASC')->get();
         $list = array();
         foreach ($res->result_array() as $row) {
+            $code = $row['kode_indikator'];
+            // Ambil statistik rekaman data dari database_ekonomi
+            $recordsInfo = $this->db
+                ->select('COUNT(*) as total_records, MIN(tahun) as min_year, MAX(tahun) as max_year')
+                ->where('kode_indikator', $code)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->get('database_ekonomi')
+                ->row_array();
+
+            $totalRecs = (int)($recordsInfo['total_records'] ?? 0);
+            $minYr = $recordsInfo['min_year'];
+            $maxYr = $recordsInfo['max_year'];
+            $periodSpan = ($minYr && $maxYr) ? ($minYr == $maxYr ? $minYr : "{$minYr} - {$maxYr}") : '-';
+
+            // Jika filter tahun spesifik dipilih, ambil nilai realisasi dan tahun tersebut
+            $yearValue = null;
+            if ($year && is_numeric($year)) {
+                $recYear = $this->db
+                    ->select('nilai, tahun, satuan')
+                    ->where('kode_indikator', $code)
+                    ->where('tahun', (int)$year)
+                    ->where('status_validasi', 'Tervalidasi')
+                    ->where('is_deleted', 0)
+                    ->get('database_ekonomi')
+                    ->row_array();
+                if ($recYear) {
+                    $yearValue = $recYear['nilai'];
+                }
+            }
+
             $list[] = array(
                 'id' => (int)$row['id'],
                 'code' => $row['kode_indikator'],
@@ -567,22 +807,138 @@ class M_economy extends CI_Model {
                 'source' => $row['sumber_data'],
                 'sumber_data' => $row['sumber_data'],
                 'definition' => $row['definisi_operasional'],
-                'definisi_operasional' => $row['definisi_operasional']
+                'definisi_operasional' => $row['definisi_operasional'],
+                'total_records' => $totalRecs,
+                'period_span' => $periodSpan,
+                'selected_year' => ($year && is_numeric($year)) ? (int)$year : null,
+                'selected_year_value' => $yearValue
             );
         }
         return $list;
     }
 
-    public function get_ews_indicators($status = null) {
+    public function clean_unvalidated_from_ews() {
+        // Hapus dari early_warning jika indikator tidak memiliki rekaman aktif Tervalidasi di database_ekonomi
+        $this->db->query("DELETE FROM early_warning WHERE kode_indikator NOT IN (
+            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0
+        )");
+    }
+
+    public function sync_all_validated_to_ews() {
+        // 1. Bersihkan indikator yang belum atau tidak lagi tervalidasi
+        $this->clean_unvalidated_from_ews();
+
+        // 2. Ambil seluruh indikator yang sudah tervalidasi di database_ekonomi
+        $validated = $this->db
+            ->select('kode_indikator, nama_indikator, satuan, AVG(nilai) as avg_val')
+            ->where('status_validasi', 'Tervalidasi')
+            ->where('is_deleted', 0)
+            ->group_by('kode_indikator, nama_indikator, satuan')
+            ->order_by('kode_indikator', 'ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+
+        foreach ($validated as $v) {
+            $code = trim($v['kode_indikator']);
+            if (empty($code)) continue;
+
+            $exists = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
+            if (!$exists) {
+                // Tentukan arah kondisi kritis default
+                // Indikator risiko/beban (Inflasi, Kemiskinan, Pengangguran): kritis jika di atas ambang (above)
+                // Indikator target/kinerja (PAD, Investasi, IPM, PDRB): kritis jika di bawah ambang (below)
+                $dir = in_array($code, array('INF_01', 'POV_01', 'TPT_01')) ? 'above' : 'below';
+                $th = round((float)$v['avg_val'], 2);
+
+                $insertData = array(
+                    'kode_indikator'       => $code,
+                    'nama_indikator'       => $v['nama_indikator'],
+                    'nilai_terkini'        => $th,
+                    'satuan'               => $v['satuan'],
+                    'ambang_batas'         => $th,
+                    'arah_risiko'          => $dir,
+                    'status_risiko'        => 'Normal',
+                    'sudah_ditindaklanjuti'=> 0,
+                    'is_deleted'           => 0
+                );
+                $this->db->insert('early_warning', $insertData);
+            } else {
+                // Update nama dan satuan jika ada perubahan, pastikan is_deleted = 0
+                $updateData = array(
+                    'nama_indikator' => $v['nama_indikator'],
+                    'satuan'         => $v['satuan'],
+                    'is_deleted'     => 0
+                );
+                $this->db->where('id', (int)$exists['id'])->update('early_warning', $updateData);
+            }
+        }
+    }
+
+    public function get_ews_indicators($status = null, $year = null) {
+        if ($status !== 'Terhapus' && $status !== 'Sampah') {
+            $this->sync_all_validated_to_ews();
+        }
+
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
-        } else {
-            $this->db->where('is_deleted', 0);
+            $res = $this->db->order_by('kode_indikator', 'ASC')->get('early_warning');
+            $results = array();
+            foreach ($res->result_array() as $row) {
+                $results[] = array(
+                    'id' => (int)$row['id'],
+                    'code' => $row['kode_indikator'],
+                    'kode_indikator' => $row['kode_indikator'],
+                    'name' => $row['nama_indikator'],
+                    'nama_indikator' => $row['nama_indikator'],
+                    'value' => (float)$row['nilai_terkini'],
+                    'nilai_terkini' => (float)$row['nilai_terkini'],
+                    'currentValue' => (float)$row['nilai_terkini'],
+                    'unit' => $row['satuan'],
+                    'satuan' => $row['satuan'],
+                    'klaster' => '',
+                    'year' => null,
+                    'tahun' => null,
+                    'threshold' => (float)$row['ambang_batas'],
+                    'ambang_batas' => (float)$row['ambang_batas'],
+                    'direction' => $row['arah_risiko'],
+                    'arah_risiko' => $row['arah_risiko'],
+                    'breached' => false,
+                    'distance' => 0,
+                    'status' => $row['status_risiko'],
+                    'status_risiko' => $row['status_risiko'],
+                    'is_followed_up' => (int)$row['sudah_ditindaklanjuti'],
+                    'sudah_ditindaklanjuti' => (int)$row['sudah_ditindaklanjuti']
+                );
+            }
+            return $results;
         }
-        $res = $this->db->get('early_warning');
+
+        // Ambil data EWS yang tervalidasi dari database_ekonomi (filter tahun jika ada)
+        $yearCond = ($year && is_numeric($year)) ? "AND d.tahun = " . (int)$year : "";
+        $sql = "SELECT e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db
+                FROM early_warning e
+                INNER JOIN database_ekonomi d ON d.kode_indikator = e.kode_indikator 
+                    AND d.status_validasi = 'Tervalidasi' 
+                    AND d.is_deleted = 0
+                    $yearCond
+                WHERE e.is_deleted = 0
+                ORDER BY e.kode_indikator ASC, d.tahun DESC";
+
+        $query = $this->db->query($sql);
+        $rows = $query->result_array();
+
+        // Deduplikasi kode_indikator (ambil tahun terbaru jika filter Semua Tahun)
+        $byCode = array();
+        foreach ($rows as $r) {
+            $c = $r['kode_indikator'];
+            if (!isset($byCode[$c])) {
+                $byCode[$c] = $r;
+            }
+        }
+
         $results = array();
-        foreach ($res->result_array() as $row) {
-            $val = (float)$row['nilai_terkini'];
+        foreach ($byCode as $row) {
+            $val = (float)$row['val_db'];
             $th = (float)$row['ambang_batas'];
             $dir = strtolower($row['arah_risiko'] ?? 'above');
             if ($dir !== 'below') {
@@ -590,11 +946,11 @@ class M_economy extends CI_Model {
             }
 
             if ($val == $th) {
-                $status = 'Waspada';
+                $statusRisiko = 'Waspada';
             } elseif ($dir === 'below') {
-                $status = ($val < $th) ? 'Kritis' : 'Normal';
+                $statusRisiko = ($val < $th) ? 'Kritis' : 'Normal';
             } else { // 'above'
-                $status = ($val > $th) ? 'Kritis' : 'Normal';
+                $statusRisiko = ($val > $th) ? 'Kritis' : 'Normal';
             }
 
             $distance = ($th == 0) ? (abs($val) * 100) : (abs($val - $th) / abs($th) * 100);
@@ -609,16 +965,19 @@ class M_economy extends CI_Model {
                 'value' => $val,
                 'nilai_terkini' => $val,
                 'currentValue' => $val,
-                'unit' => $row['satuan'],
-                'satuan' => $row['satuan'],
+                'unit' => $row['sat_db'] ?: $row['satuan'],
+                'satuan' => $row['sat_db'] ?: $row['satuan'],
+                'klaster' => $row['klaster_db'] ?? '',
+                'year' => (int)$row['yr_db'],
+                'tahun' => (int)$row['yr_db'],
                 'threshold' => $th,
                 'ambang_batas' => $th,
                 'direction' => $dir,
                 'arah_risiko' => $dir,
                 'breached' => $breached,
                 'distance' => round($distance, 2),
-                'status' => $status,
-                'status_risiko' => $status,
+                'status' => $statusRisiko,
+                'status_risiko' => $statusRisiko,
                 'is_followed_up' => (int)$row['sudah_ditindaklanjuti'],
                 'sudah_ditindaklanjuti' => (int)$row['sudah_ditindaklanjuti']
             );
@@ -629,7 +988,21 @@ class M_economy extends CI_Model {
     public function update_ews_threshold($code, $threshold, $direction = null, $value = null) {
         $th = (float)$threshold;
         $row = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
-        $val = ($value !== null) ? (float)$value : ($row ? (float)$row['nilai_terkini'] : 0);
+
+        if ($value !== null && is_numeric($value)) {
+            $val = (float)$value;
+        } else {
+            // Ambil nilai riil terkini yang tervalidasi dari database_ekonomi
+            $latest = $this->db->select('nilai')
+                ->where('kode_indikator', $code)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->order_by('tahun', 'DESC')
+                ->get('database_ekonomi')
+                ->row_array();
+            $val = $latest ? (float)$latest['nilai'] : ($row ? (float)$row['nilai_terkini'] : 0);
+        }
+
         $dir = $direction ? strtolower($direction) : strtolower($row['arah_risiko'] ?? 'above');
         if ($dir !== 'below') {
             $dir = 'above';
@@ -643,23 +1016,24 @@ class M_economy extends CI_Model {
             $st = ($val > $th) ? 'Kritis' : 'Normal';
         }
 
-        $updateData = array('ambang_batas' => $th, 'status_risiko' => $st);
+        $updateData = array(
+            'ambang_batas'  => $th,
+            'nilai_terkini' => $val,
+            'status_risiko' => $st
+        );
         if ($direction !== null) {
             $updateData['arah_risiko'] = $dir;
-        }
-        if ($value !== null) {
-            $updateData['nilai_terkini'] = $val;
         }
 
         $this->db->where('kode_indikator', $code);
         $res = $this->db->update('early_warning', $updateData);
         return array(
-            'success' => (bool)$res,
-            'value' => $val,
+            'success'       => (bool)$res,
+            'value'         => $val,
             'nilai_terkini' => $val,
-            'threshold' => $th,
-            'direction' => $dir,
-            'status' => $st
+            'threshold'     => $th,
+            'direction'     => $dir,
+            'status'        => $st
         );
     }
 
@@ -1597,8 +1971,15 @@ class M_economy extends CI_Model {
             'deleted_at'           => null
         );
 
-        $exists = $this->db->where('kode_indikator', $kode)->where('is_deleted', 0)->get('katalog_indikator')->num_rows();
-        if ($exists > 0) return false;
+        $existing = $this->db->where('kode_indikator', $kode)->get('katalog_indikator')->row_array();
+        if ($existing) {
+            if ($existing['is_deleted']) {
+                $record['is_deleted'] = 0;
+                $record['deleted_at'] = null;
+                return $this->db->where('id', (int)$existing['id'])->update('katalog_indikator', $record);
+            }
+            return false;
+        }
         return $this->db->insert('katalog_indikator', $record);
     }
 

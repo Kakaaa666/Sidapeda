@@ -39,7 +39,7 @@
                 $adminNav = array(
                     array('admin', 'Dashboard Admin', '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>', 'admin'),
                     array('database', 'Database Ekonomi', '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/>', 'database'),
-                    array('input', 'Input & Import Data', '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>', 'input'),
+                    array('input', 'Import Data', '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>', 'input'),
                     array('validation', 'Validasi Data', '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>', 'validation'),
                     array('catalog', 'Katalog Indikator', '<path d="M6 2h9l5 5v15H6V2Z"/><path d="M14 2v6h6M9 13h8M9 17h8"/>', 'catalog'),
                     array('ews_admin', 'Manajemen EWS', '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8v5M12 17h.01"/>', 'ews_admin'),

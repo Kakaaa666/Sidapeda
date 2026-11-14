@@ -98,14 +98,59 @@
         </div>
     </div>
 
+    <!-- SLIDE / TAB TAHUN KATALOG INDIKATOR (Sesuai Referensi Pengguna) -->
+    <div class="year-slide-card">
+        <div class="year-slide-header">
+            <div class="year-slide-title-wrap">
+                <div class="year-slide-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div>
+                    <strong>Pilih Periode Tahun Indikator</strong>
+                    <small>Klik tab tahun untuk memisahkan katalog indikator, grafik klaster, dan capaian realisasi berdasarkan tahun rilis.</small>
+                </div>
+            </div>
+            <div class="year-slide-meta">
+                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun" ?></strong></span>
+            </div>
+        </div>
+
+        <div class="year-slide-bar-wrap" id="year-slide-track">
+            <!-- Tab: Semua Tahun -->
+            <a href="<?= site_url('catalog?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
+                Semua Tahun
+            </a>
+
+            <!-- Tab per Tahun yang Tersedia -->
+            <?php if (!empty($available_years)): ?>
+                <?php foreach ($available_years as $ay): ?>
+                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
+                    <a href="<?= site_url('catalog?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
+                        Tahun <?= $ay['tahun'] ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- GRAFIK DISTRIBUSI KLASTER INDIKATOR (Sesuai Data Katalog) -->
     <article class="card large" style="margin-bottom:20px;">
         <div class="card-head">
             <div>
-                <span class="eyebrow">DISTRIBUSI KLASTER PEMBANGUNAN</span>
-                <h3>Grafik Komposisi Indikator per Klaster Data</h3>
-                <p>Proporsi sebaran indikator strategis daerah menurut kelompok klaster tema pembangunan.</p>
+                <span class="eyebrow"><?= !empty($selected_year) ? "DISTRIBUSI KLASTER PEMBANGUNAN • TAHUN {$selected_year}" : "DISTRIBUSI KLASTER PEMBANGUNAN • SEMUA PERIODE" ?></span>
+                <h3>Grafik Komposisi Indikator per Klaster Data <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></h3>
+                <p>Proporsi sebaran indikator strategis daerah menurut kelompok klaster tema pembangunan<?= !empty($selected_year) ? " pada tahun {$selected_year}." : "." ?></p>
             </div>
+            <?php if (!empty($selected_year)): ?>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge info" style="font-size:11px; padding:5px 12px; font-weight:600; border-radius:20px;">
+                        Tahun Terpilih: <strong><?= $selected_year ?></strong> (<?= count($catalog) ?> Indikator)
+                    </span>
+                    <a href="<?= site_url('catalog?year=all' . ($status ? '&status='.$status : '')) ?>" class="button ghost" style="font-size:11px; height:30px;">
+                        Lihat Semua Periode
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
         <div id="catalog-cluster-chart" class="chart-wrap dynamic-chart" style="height:auto; min-height:140px; padding:6px 0;">
             <!-- Rendered dynamically by JS -->
@@ -115,10 +160,21 @@
     <article class="card data-card">
         <div class="card-head">
             <div>
-                <span class="eyebrow">STANDAR METADATA</span>
-                <h3>Daftar Master Indikator Daerah (<?= count($catalog) ?>)</h3>
-                <p>Memuat metadata, definisi operasional, dan walidata indikator strategis.</p>
+                <span class="eyebrow"><?= !empty($selected_year) ? "STANDAR METADATA • INDIKATOR TAHUN {$selected_year}" : "STANDAR METADATA • KAMUS DATA MASTER" ?></span>
+                <?php $totalRecCount = array_sum(array_column($catalog, 'total_records')); ?>
+                <?php if (!empty($selected_year)): ?>
+                    <h3>Daftar Indikator Daerah Tahun <?= $selected_year ?> (<?= count($catalog) ?> Indikator • <?= count($catalog) ?> Rekaman Data)</h3>
+                    <p>Menampilkan metadata dan capaian realisasi indikator pembangunan daerah yang tervalidasi pada tahun anggaran <?= $selected_year ?>.</p>
+                <?php else: ?>
+                    <h3>Daftar Master Indikator Daerah (<?= count($catalog) ?> Indikator Master • <?= $totalRecCount ?> Rekaman Data)</h3>
+                    <p>Kamus data master indikator pembangunan daerah. Setiap 1 entri master indikator mencakup rekaman data berkala (tahunan) yang tersimpan di repositori database.</p>
+                <?php endif; ?>
             </div>
+            <?php if (!empty($selected_year)): ?>
+                <span class="badge primary" style="font-size:11px; padding:6px 14px; font-weight:700; border-radius:20px; box-shadow:0 2px 6px rgba(36,99,166,0.2);">
+                    Filter Aktif: Tahun <?= $selected_year ?>
+                </span>
+            <?php endif; ?>
         </div>
 
         <?php if ($status !== 'Terhapus' && !empty($catalog)): ?>
@@ -136,7 +192,7 @@
             ?>
             <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Indikator per Klaster Pembangunan</strong>
+                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Indikator per Klaster Pembangunan <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></strong>
                     <div style="display:grid; gap:5px;">
                         <?php foreach ($clCounts as $cName => $cCnt): ?>
                             <div style="display:grid; grid-template-columns: 140px 1fr 45px; align-items:center; gap:6px; font-size:8px;">
@@ -170,6 +226,9 @@
                         <th>Nama Indikator</th>
                         <th>Klaster Pembangunan</th>
                         <th>Satuan</th>
+                        <?php if (!empty($selected_year)): ?>
+                            <th>Nilai Realisasi (<?= $selected_year ?>)</th>
+                        <?php endif; ?>
                         <th>Frekuensi</th>
                         <th>Walidata / Sumber</th>
                         <th>Definisi Operasional</th>
@@ -179,15 +238,34 @@
                 <tbody>
                     <?php if (empty($catalog)): ?>
                         <tr>
-                            <td colspan="8" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada indikator katalog ditemukan.</td>
+                            <td colspan="<?= !empty($selected_year) ? 9 : 8 ?>" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada indikator katalog ditemukan.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($catalog as $item): ?>
-                            <tr>
+                            <tr data-cluster="<?= htmlspecialchars($item['cluster']) ?>">
                                 <td><code><?= htmlspecialchars($item['code']) ?></code></td>
-                                <td><strong><?= htmlspecialchars($item['name']) ?></strong></td>
+                                <td>
+                                    <strong><?= htmlspecialchars($item['name']) ?></strong>
+                                    <?php if (empty($selected_year) && !empty($item['total_records'])): ?>
+                                        <small style="display:block; font-size:10.5px; color:var(--teal); font-weight:600; margin-top:3px;">
+                                            <?= $item['total_records'] ?> rekaman tahunan (<?= htmlspecialchars($item['period_span']) ?>)
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($item['cluster']) ?></td>
                                 <td><?= htmlspecialchars($item['unit']) ?></td>
+                                <?php if (!empty($selected_year)): ?>
+                                    <td>
+                                        <?php if ($item['selected_year_value'] !== null): ?>
+                                            <strong style="color:var(--navy); font-size:12.5px; font-variant-numeric:tabular-nums;">
+                                                <?= number_format($item['selected_year_value'], 2, ',', '.') ?>
+                                            </strong>
+                                            <span class="badge info" style="font-size:9px; margin-left:4px; padding:1px 5px;"><?= htmlspecialchars($item['unit']) ?></span>
+                                        <?php else: ?>
+                                            <span style="color:var(--muted); font-size:11px;">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
                                 <td><?= htmlspecialchars($item['frequency']) ?></td>
                                 <td><?= htmlspecialchars($item['source']) ?></td>
                                 <td><?= htmlspecialchars($item['definition']) ?></td>
