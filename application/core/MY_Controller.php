@@ -13,9 +13,10 @@ class MY_Controller extends CI_Controller {
 
         // Autentikasi: Hanya modul Pengelolaan Sistem (Admin) yang mewajibkan login
         $currentClass = strtolower($this->router->fetch_class());
+        $currentDir = trim(str_replace('\\', '/', (string)$this->router->directory), '/');
         $adminControllers = array('admin', 'database', 'input', 'validation', 'catalog', 'ews_admin', 'forecast_admin', 'users');
 
-        if (in_array($currentClass, $adminControllers)) {
+        if (in_array($currentClass, $adminControllers) || $currentDir === 'admin') {
             if (!$this->M_auth->is_logged_in()) {
                 // Simpan URL yang dituju untuk kembali setelah login
                 $intended = uri_string();
@@ -45,7 +46,18 @@ class MY_Controller extends CI_Controller {
         $data['ews_list'] = $this->M_economy->get_ews_indicators();
         
         $this->load->view('layout/header', $data);
-        $this->load->view($view, $data);
+
+        // Resolusi folder view: dashboard/ atau admin/ atau path langsung
+        if (file_exists(APPPATH . 'views/' . $view . '.php')) {
+            $this->load->view($view, $data);
+        } elseif (file_exists(APPPATH . 'views/dashboard/' . $view . '.php')) {
+            $this->load->view('dashboard/' . $view, $data);
+        } elseif (file_exists(APPPATH . 'views/admin/' . $view . '.php')) {
+            $this->load->view('admin/' . $view, $data);
+        } else {
+            $this->load->view($view, $data);
+        }
+
         $this->load->view('layout/footer', $data);
     }
 }

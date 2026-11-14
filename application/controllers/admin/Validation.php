@@ -47,6 +47,6 @@ class Validation extends MY_Controller {
             'stats'       => $stats
         );
 
-        $this->render('validation', $data, true);
+        $this->render('admin/validation', $data, true);
     }
 }

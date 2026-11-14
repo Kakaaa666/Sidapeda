@@ -11,6 +11,6 @@ class Forecast_admin extends MY_Controller {
             'subtitle' => 'Pengaturan parameter algoritma proyeksi dan horizon estimasi.'
         );
 
-        $this->render('forecast_admin', $data, true);
+        $this->render('admin/forecast_admin', $data, true);
     }
 }

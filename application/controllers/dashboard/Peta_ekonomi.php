@@ -1,42 +1,31 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Analisis_ekonomi extends MY_Controller {
+class Peta_ekonomi extends MY_Controller {
 
     public function index() {
         $status = $this->input->get('status');
-        $years = $this->M_economy->get_years();
-        $series = $this->M_economy->get_economic_series();
-        $sectors = $this->M_economy->get_sectors($status);
-        $active_sectors = $this->M_economy->get_sectors();
-        $trash_count = $this->M_economy->count_trash_sectors();
-
-        $lq = $this->M_economy->calculate_lq($active_sectors);
-        $shift_share = $this->M_economy->calculate_shift_share($active_sectors);
-        $klassen = $this->M_economy->calculate_klassen($active_sectors, end($series['growth']));
+        $districts = $this->M_economy->get_districts($status);
+        $all_active_districts = $this->M_economy->get_districts();
+        $trash_count = $this->M_economy->count_trash_districts();
 
         $data = array(
-            'active_page' => 'analisis_ekonomi',
-            'title' => 'Eksplorasi & Analisis Ekonomi',
-            'eyebrow' => 'BUSINESS INTELLIGENCE WORKSPACE • CRUD & SOFT DELETE',
-            'subtitle' => 'Jalankan analisis sektoral, korelasi, dan kelola dataset lapangan usaha Kabupaten Banyuwangi.',
-            'years' => $years,
-            'series' => $series,
-            'sectors' => $sectors,
-            'active_sectors' => $active_sectors,
-            'lq' => $lq,
-            'shift_share' => $shift_share,
-            'klassen' => $klassen,
+            'active_page' => 'peta_ekonomi',
+            'title' => 'Peta Ekonomi Daerah',
+            'eyebrow' => 'GEOSPATIAL ECONOMIC INTELLIGENCE • CRUD & SOFT DELETE',
+            'subtitle' => 'Temukan pola, potensi, kesenjangan ekonomi, dan kelola dataset spasial kecamatan se-Kabupaten Banyuwangi.',
+            'districts' => $districts,
+            'all_active_districts' => $all_active_districts,
             'status' => $status,
             'trash_count' => $trash_count
         );
 
-        $this->render('analisis_ekonomi', $data, false);
+        $this->render('dashboard/peta_ekonomi', $data, false);
     }
 
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
-        $record = $this->M_economy->get_sector_by_id($id);
+        $record = $this->M_economy->get_district_by_id($id);
         if ($record) {
             $this->output
                 ->set_content_type('application/json')
@@ -45,144 +34,144 @@ class Analisis_ekonomi extends MY_Controller {
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
-                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data sektor ekonomi tidak ditemukan.')));
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data kecamatan tidak ditemukan.')));
         }
     }
 
     public function create() {
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->add_sector($data);
+        $result = $this->M_economy->add_district($data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Sektor ekonomi baru berhasil ditambahkan.'
+                    'message' => 'Data kecamatan baru berhasil ditambahkan.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menambahkan sektor: kode atau nama sektor wajib diisi atau sudah terdaftar.'
+                    'message' => 'Gagal menambahkan data kecamatan: nama kecamatan wajib diisi atau sudah terdaftar.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Sektor ekonomi baru berhasil ditambahkan.');
+            $this->session->set_flashdata('success', 'Data kecamatan baru berhasil ditambahkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menambahkan sektor ekonomi.');
+            $this->session->set_flashdata('error', 'Gagal menambahkan data kecamatan.');
         }
-        redirect('analisis_ekonomi');
+        redirect('peta_ekonomi');
     }
 
     public function update($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->update_sector($id, $data);
+        $result = $this->M_economy->update_district($id, $data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data sektor ekonomi berhasil diperbarui.'
+                    'message' => 'Data spasial kecamatan berhasil diperbarui.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui data sektor ekonomi.'
+                    'message' => 'Gagal memperbarui data kecamatan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data sektor ekonomi berhasil diperbarui.');
+            $this->session->set_flashdata('success', 'Data spasial kecamatan berhasil diperbarui.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memperbarui data sektor.');
+            $this->session->set_flashdata('error', 'Gagal memperbarui data kecamatan.');
         }
-        redirect('analisis_ekonomi');
+        redirect('peta_ekonomi');
     }
 
     public function soft_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->soft_delete_sector($id);
+        $result = $this->M_economy->soft_delete_district($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Sektor berhasil dipindahkan ke tempat sampah (Soft Delete).'
+                    'message' => 'Kecamatan berhasil dipindahkan ke tempat sampah (Soft Delete).'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus sektor ekonomi.'
+                    'message' => 'Gagal menghapus data kecamatan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Sektor berhasil dipindahkan ke tempat sampah (Soft Delete).');
+            $this->session->set_flashdata('success', 'Kecamatan berhasil dipindahkan ke tempat sampah (Soft Delete).');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus sektor ekonomi.');
+            $this->session->set_flashdata('error', 'Gagal menghapus kecamatan.');
         }
-        redirect('analisis_ekonomi');
+        redirect('peta_ekonomi');
     }
 
     public function restore($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->restore_sector($id);
+        $result = $this->M_economy->restore_district($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Sektor ekonomi berhasil dipulihkan dari tempat sampah.'
+                    'message' => 'Data kecamatan berhasil dipulihkan dari tempat sampah.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memulihkan sektor ekonomi.'
+                    'message' => 'Gagal memulihkan data kecamatan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Sektor ekonomi berhasil dipulihkan.');
+            $this->session->set_flashdata('success', 'Data kecamatan berhasil dipulihkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memulihkan sektor ekonomi.');
+            $this->session->set_flashdata('error', 'Gagal memulihkan data.');
         }
-        redirect('analisis_ekonomi?status=Terhapus');
+        redirect('peta_ekonomi?status=Terhapus');
     }
 
     public function hard_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->hard_delete_sector($id);
+        $result = $this->M_economy->hard_delete_district($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Sektor berhasil dihapus permanen dari basis data.'
+                    'message' => 'Kecamatan berhasil dihapus permanen dari basis data.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus permanen data sektor.'
+                    'message' => 'Gagal menghapus permanen data kecamatan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Sektor berhasil dihapus permanen.');
+            $this->session->set_flashdata('success', 'Data kecamatan berhasil dihapus permanen.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus data sektor.');
+            $this->session->set_flashdata('error', 'Gagal menghapus data kecamatan.');
         }
-        redirect('analisis_ekonomi?status=Terhapus');
+        redirect('peta_ekonomi?status=Terhapus');
     }
 }
 

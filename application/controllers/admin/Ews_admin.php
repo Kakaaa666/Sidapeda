@@ -23,6 +23,6 @@ class Ews_admin extends MY_Controller {
             'selected_year'   => $selected_year
         );
 
-        $this->render('ews_admin', $data, true);
+        $this->render('admin/ews_admin', $data, true);
     }
 }

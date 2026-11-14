@@ -26,7 +26,7 @@ class Perbandingan_daerah extends MY_Controller {
             'trash_count' => $trash_count
         );
 
-        $this->render('perbandingan_daerah', $data, false);
+        $this->render('dashboard/perbandingan_daerah', $data, false);
     }
 
     // Mengambil 1 data wilayah untuk modal edit (JSON)

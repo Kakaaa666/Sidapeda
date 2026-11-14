@@ -1,32 +1,35 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Peta_ekonomi extends MY_Controller {
+class Users extends MY_Controller {
 
     public function index() {
         $status = $this->input->get('status');
-        $districts = $this->M_economy->get_districts($status);
-        $all_active_districts = $this->M_economy->get_districts();
-        $trash_count = $this->M_economy->count_trash_districts();
+        $users = $this->M_auth->get_users($status);
+        $levels = $this->M_auth->get_levels();
+        $logs = $this->M_auth->get_recent_logs(8);
+        $trash_count = $this->M_auth->count_trash_users();
 
         $data = array(
-            'active_page' => 'peta_ekonomi',
-            'title' => 'Peta Ekonomi Daerah',
-            'eyebrow' => 'GEOSPATIAL ECONOMIC INTELLIGENCE • CRUD & SOFT DELETE',
-            'subtitle' => 'Temukan pola, potensi, kesenjangan ekonomi, dan kelola dataset spasial kecamatan se-Kabupaten Banyuwangi.',
-            'districts' => $districts,
-            'all_active_districts' => $all_active_districts,
+            'active_page' => 'users',
+            'title' => 'Pengguna & Level Akun',
+            'eyebrow' => 'USER LEVEL & ACCESS CONTROL • CRUD & SOFT DELETE',
+            'subtitle' => 'Daftar akun terdaftar, hierarki level akses (Level 1–4), audit riwayat autentikasi, dan manajemen akun.',
+            'users' => $users,
+            'levels' => $levels,
+            'logs' => $logs,
             'status' => $status,
             'trash_count' => $trash_count
         );
 
-        $this->render('peta_ekonomi', $data, false);
+        $this->render('admin/users', $data, true);
     }
 
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
-        $record = $this->M_economy->get_district_by_id($id);
+        $record = $this->M_auth->get_user_by_id($id);
         if ($record) {
+            unset($record['password'], $record['kata_sandi']);
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode(array('status' => 'success', 'data' => $record)));
@@ -34,144 +37,145 @@ class Peta_ekonomi extends MY_Controller {
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
-                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data kecamatan tidak ditemukan.')));
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Akun tidak ditemukan.')));
         }
     }
 
     public function create() {
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->add_district($data);
+        $result = $this->M_auth->add_user($data);
 
         if ($this->input->is_ajax_request()) {
-            if ($result) {
+            if ($result && !empty($result['status'])) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data kecamatan baru berhasil ditambahkan.'
+                    'message' => 'Akun baru berhasil didaftarkan.'
                 )));
             } else {
+                $msg = $result['message'] ?? 'Gagal mendaftarkan akun.';
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menambahkan data kecamatan: nama kecamatan wajib diisi atau sudah terdaftar.'
+                    'message' => $msg
                 )));
             }
             return;
         }
 
-        if ($result) {
-            $this->session->set_flashdata('success', 'Data kecamatan baru berhasil ditambahkan.');
+        if ($result && !empty($result['status'])) {
+            $this->session->set_flashdata('success', 'Akun baru berhasil didaftarkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menambahkan data kecamatan.');
+            $this->session->set_flashdata('error', $result['message'] ?? 'Gagal menambahkan akun.');
         }
-        redirect('peta_ekonomi');
+        redirect('users');
     }
 
     public function update($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->update_district($id, $data);
+        $result = $this->M_auth->update_user_full($id, $data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data spasial kecamatan berhasil diperbarui.'
+                    'message' => 'Data akun berhasil diperbarui.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui data kecamatan.'
+                    'message' => 'Gagal memperbarui data akun.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data spasial kecamatan berhasil diperbarui.');
+            $this->session->set_flashdata('success', 'Data akun berhasil diperbarui.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memperbarui data kecamatan.');
+            $this->session->set_flashdata('error', 'Gagal memperbarui data akun.');
         }
-        redirect('peta_ekonomi');
+        redirect('users');
     }
 
     public function soft_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->soft_delete_district($id);
+        $result = $this->M_auth->soft_delete_user($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Kecamatan berhasil dipindahkan ke tempat sampah (Soft Delete).'
+                    'message' => 'Akun berhasil dipindahkan ke tempat sampah (Soft Delete).'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus data kecamatan.'
+                    'message' => 'Gagal menghapus akun: Akun Administrator utama atau akun yang sedang aktif tidak dapat dihapus.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Kecamatan berhasil dipindahkan ke tempat sampah (Soft Delete).');
+            $this->session->set_flashdata('success', 'Akun berhasil dipindahkan ke tempat sampah (Soft Delete).');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus kecamatan.');
+            $this->session->set_flashdata('error', 'Gagal menghapus akun: Akun Administrator utama atau akun aktif dilindungi.');
         }
-        redirect('peta_ekonomi');
+        redirect('users');
     }
 
     public function restore($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->restore_district($id);
+        $result = $this->M_auth->restore_user($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data kecamatan berhasil dipulihkan dari tempat sampah.'
+                    'message' => 'Akun berhasil dipulihkan dari tempat sampah.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memulihkan data kecamatan.'
+                    'message' => 'Gagal memulihkan akun.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data kecamatan berhasil dipulihkan.');
+            $this->session->set_flashdata('success', 'Akun berhasil dipulihkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memulihkan data.');
+            $this->session->set_flashdata('error', 'Gagal memulihkan akun.');
         }
-        redirect('peta_ekonomi?status=Terhapus');
+        redirect('users?status=Terhapus');
     }
 
     public function hard_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->hard_delete_district($id);
+        $result = $this->M_auth->hard_delete_user($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Kecamatan berhasil dihapus permanen dari basis data.'
+                    'message' => 'Akun berhasil dihapus permanen dari basis data.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus permanen data kecamatan.'
+                    'message' => 'Gagal menghapus permanen akun.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data kecamatan berhasil dihapus permanen.');
+            $this->session->set_flashdata('success', 'Akun berhasil dihapus permanen.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus data kecamatan.');
+            $this->session->set_flashdata('error', 'Gagal menghapus akun.');
         }
-        redirect('peta_ekonomi?status=Terhapus');
+        redirect('users?status=Terhapus');
     }
 }
 

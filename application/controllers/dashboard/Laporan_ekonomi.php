@@ -1,35 +1,36 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Users extends MY_Controller {
+class Laporan_ekonomi extends MY_Controller {
 
     public function index() {
         $status = $this->input->get('status');
-        $users = $this->M_auth->get_users($status);
-        $levels = $this->M_auth->get_levels();
-        $logs = $this->M_auth->get_recent_logs(8);
-        $trash_count = $this->M_auth->count_trash_users();
+        $years = $this->M_economy->get_years();
+        $series = $this->M_economy->get_economic_series();
+        $sectors = $this->M_economy->get_sectors();
+        $reports = $this->M_economy->get_laporan_ekonomi($status);
+        $trash_count = $this->M_economy->count_trash_laporan();
 
         $data = array(
-            'active_page' => 'users',
-            'title' => 'Pengguna & Level Akun',
-            'eyebrow' => 'USER LEVEL & ACCESS CONTROL • CRUD & SOFT DELETE',
-            'subtitle' => 'Daftar akun terdaftar, hierarki level akses (Level 1–4), audit riwayat autentikasi, dan manajemen akun.',
-            'users' => $users,
-            'levels' => $levels,
-            'logs' => $logs,
+            'active_page' => 'laporan_ekonomi',
+            'title' => 'Generator Laporan Ekonomi',
+            'eyebrow' => 'AUTOMATED REPORTING • CRUD & SOFT DELETE',
+            'subtitle' => 'Susun laporan analitis terstandardisasi, kelola arsip dokumen laporan, dan ekspor ringkasan ekonomi daerah.',
+            'years' => $years,
+            'series' => $series,
+            'sectors' => $sectors,
+            'reports' => $reports,
             'status' => $status,
             'trash_count' => $trash_count
         );
 
-        $this->render('users', $data, true);
+        $this->render('dashboard/laporan_ekonomi', $data, false);
     }
 
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
-        $record = $this->M_auth->get_user_by_id($id);
+        $record = $this->M_economy->get_laporan_by_id($id);
         if ($record) {
-            unset($record['password'], $record['kata_sandi']);
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode(array('status' => 'success', 'data' => $record)));
@@ -37,145 +38,144 @@ class Users extends MY_Controller {
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
-                ->set_output(json_encode(array('status' => 'error', 'message' => 'Akun tidak ditemukan.')));
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Dokumen laporan tidak ditemukan.')));
         }
     }
 
     public function create() {
         $data = $this->input->post(null, true);
-        $result = $this->M_auth->add_user($data);
+        $result = $this->M_economy->add_laporan($data);
 
         if ($this->input->is_ajax_request()) {
-            if ($result && !empty($result['status'])) {
+            if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Akun baru berhasil didaftarkan.'
+                    'message' => 'Dokumen laporan baru berhasil didaftarkan.'
                 )));
             } else {
-                $msg = $result['message'] ?? 'Gagal mendaftarkan akun.';
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => $msg
+                    'message' => 'Gagal mendaftarkan laporan: judul laporan wajib diisi.'
                 )));
             }
             return;
         }
 
-        if ($result && !empty($result['status'])) {
-            $this->session->set_flashdata('success', 'Akun baru berhasil didaftarkan.');
+        if ($result) {
+            $this->session->set_flashdata('success', 'Dokumen laporan berhasil didaftarkan.');
         } else {
-            $this->session->set_flashdata('error', $result['message'] ?? 'Gagal menambahkan akun.');
+            $this->session->set_flashdata('error', 'Gagal mendaftarkan dokumen laporan.');
         }
-        redirect('users');
+        redirect('laporan_ekonomi');
     }
 
     public function update($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
         $data = $this->input->post(null, true);
-        $result = $this->M_auth->update_user_full($id, $data);
+        $result = $this->M_economy->update_laporan($id, $data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data akun berhasil diperbarui.'
+                    'message' => 'Dokumen laporan berhasil diperbarui.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui data akun.'
+                    'message' => 'Gagal memperbarui dokumen laporan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data akun berhasil diperbarui.');
+            $this->session->set_flashdata('success', 'Dokumen laporan berhasil diperbarui.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memperbarui data akun.');
+            $this->session->set_flashdata('error', 'Gagal memperbarui data laporan.');
         }
-        redirect('users');
+        redirect('laporan_ekonomi');
     }
 
     public function soft_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_auth->soft_delete_user($id);
+        $result = $this->M_economy->soft_delete_laporan($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Akun berhasil dipindahkan ke tempat sampah (Soft Delete).'
+                    'message' => 'Laporan berhasil dipindahkan ke tempat sampah (Soft Delete).'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus akun: Akun Administrator utama atau akun yang sedang aktif tidak dapat dihapus.'
+                    'message' => 'Gagal menghapus dokumen laporan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Akun berhasil dipindahkan ke tempat sampah (Soft Delete).');
+            $this->session->set_flashdata('success', 'Laporan berhasil dipindahkan ke tempat sampah (Soft Delete).');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus akun: Akun Administrator utama atau akun aktif dilindungi.');
+            $this->session->set_flashdata('error', 'Gagal menghapus laporan.');
         }
-        redirect('users');
+        redirect('laporan_ekonomi');
     }
 
     public function restore($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_auth->restore_user($id);
+        $result = $this->M_economy->restore_laporan($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Akun berhasil dipulihkan dari tempat sampah.'
+                    'message' => 'Dokumen laporan berhasil dipulihkan dari tempat sampah.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memulihkan akun.'
+                    'message' => 'Gagal memulihkan dokumen laporan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Akun berhasil dipulihkan.');
+            $this->session->set_flashdata('success', 'Dokumen laporan berhasil dipulihkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memulihkan akun.');
+            $this->session->set_flashdata('error', 'Gagal memulihkan laporan.');
         }
-        redirect('users?status=Terhapus');
+        redirect('laporan_ekonomi?status=Terhapus');
     }
 
     public function hard_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_auth->hard_delete_user($id);
+        $result = $this->M_economy->hard_delete_laporan($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Akun berhasil dihapus permanen dari basis data.'
+                    'message' => 'Dokumen laporan berhasil dihapus permanen dari basis data.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus permanen akun.'
+                    'message' => 'Gagal menghapus permanen dokumen laporan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Akun berhasil dihapus permanen.');
+            $this->session->set_flashdata('success', 'Laporan berhasil dihapus permanen.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus akun.');
+            $this->session->set_flashdata('error', 'Gagal menghapus data laporan.');
         }
-        redirect('users?status=Terhapus');
+        redirect('laporan_ekonomi?status=Terhapus');
     }
 }
 

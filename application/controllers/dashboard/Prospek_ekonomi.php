@@ -1,49 +1,35 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Catalog extends MY_Controller {
+class Prospek_ekonomi extends MY_Controller {
 
     public function index() {
-        // Sinkronkan seluruh data yang sudah tervalidasi agar otomatis masuk ke katalog indikator
-        $this->M_economy->sync_all_validated_to_catalog();
-
         $status = $this->input->get('status');
-        $raw_year = $this->input->get('year');
-        $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
-
-        $catalog = $this->M_economy->get_indicator_catalog($status, $selected_year);
-        $trash_count = $this->M_economy->count_trash_catalog();
-        $available_years = $this->M_economy->get_catalog_years();
-
-        $total_all_records = 0;
-        foreach ($available_years as $ay) {
-            $total_all_records += (int)$ay['total_records'];
-        }
-
-        // Hitung total master indikator unik (semua tahun)
-        $master_catalog_all = $this->M_economy->get_indicator_catalog($status, null);
-        $total_master_indicators = count($master_catalog_all);
+        $years = $this->M_economy->get_years();
+        $series = $this->M_economy->get_economic_series();
+        $sectors = $this->M_economy->get_sectors();
+        $prospek_records = $this->M_economy->get_prospek_records($status);
+        $trash_count = $this->M_economy->count_trash_prospek();
 
         $data = array(
-            'active_page' => 'catalog',
-            'title' => 'Katalog Indikator',
-            'eyebrow' => 'DATA GOVERNANCE & CATALOG • CRUD & SOFT DELETE',
-            'subtitle' => 'Kamus data, metadata indikator pembangunan daerah, dan manajemen master indikator.',
-            'catalog' => $catalog,
+            'active_page' => 'prospek_ekonomi',
+            'title' => 'Prospek Perekonomian',
+            'eyebrow' => 'FORECASTING & SCENARIO • CRUD & SOFT DELETE',
+            'subtitle' => 'Uji tren historis, skenario ekonomi, dan kelola dataset proyeksi tahunan Kabupaten Banyuwangi.',
+            'years' => $years,
+            'series' => $series,
+            'sectors' => $sectors,
+            'prospek_records' => $prospek_records,
             'status' => $status,
-            'trash_count' => $trash_count,
-            'available_years' => $available_years,
-            'selected_year' => $selected_year,
-            'total_all_records' => $total_all_records,
-            'total_master_indicators' => $total_master_indicators
+            'trash_count' => $trash_count
         );
 
-        $this->render('catalog', $data, true);
+        $this->render('dashboard/prospek_ekonomi', $data, false);
     }
 
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
-        $record = $this->M_economy->get_catalog_by_id($id);
+        $record = $this->M_economy->get_prospek_by_id($id);
         if ($record) {
             $this->output
                 ->set_content_type('application/json')
@@ -52,133 +38,133 @@ class Catalog extends MY_Controller {
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
-                ->set_output(json_encode(array('status' => 'error', 'message' => 'Indikator katalog tidak ditemukan.')));
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data prospek tidak ditemukan.')));
         }
     }
 
     public function create() {
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->add_catalog($data);
+        $result = $this->M_economy->add_prospek($data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator master katalog baru berhasil ditambahkan.'
+                    'message' => 'Data tahun prospek baru berhasil ditambahkan.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menambahkan indikator: kode atau nama indikator wajib diisi atau sudah terdaftar.'
+                    'message' => 'Gagal menambahkan prospek: tahun wajib diisi atau sudah terdaftar.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator katalog baru berhasil ditambahkan.');
+            $this->session->set_flashdata('success', 'Data prospek tahunan berhasil ditambahkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menambahkan indikator katalog.');
+            $this->session->set_flashdata('error', 'Gagal menambahkan data prospek.');
         }
-        redirect('catalog');
+        redirect('prospek_ekonomi');
     }
 
     public function update($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->update_catalog($id, $data);
+        $result = $this->M_economy->update_prospek($id, $data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data indikator katalog berhasil diperbarui.'
+                    'message' => 'Data prospek berhasil diperbarui.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui indikator katalog.'
+                    'message' => 'Gagal memperbarui data prospek.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data indikator katalog berhasil diperbarui.');
+            $this->session->set_flashdata('success', 'Data prospek berhasil diperbarui.');
         } else {
             $this->session->set_flashdata('error', 'Gagal memperbarui data.');
         }
-        redirect('catalog');
+        redirect('prospek_ekonomi');
     }
 
     public function soft_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->soft_delete_catalog($id);
+        $result = $this->M_economy->soft_delete_prospek($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator katalog berhasil dipindahkan ke tempat sampah (Soft Delete).'
+                    'message' => 'Data prospek berhasil dipindahkan ke tempat sampah (Soft Delete).'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus indikator katalog.'
+                    'message' => 'Gagal menghapus data prospek.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator katalog berhasil dipindahkan ke tempat sampah (Soft Delete).');
+            $this->session->set_flashdata('success', 'Data prospek berhasil dipindahkan ke tempat sampah (Soft Delete).');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus indikator.');
+            $this->session->set_flashdata('error', 'Gagal menghapus data prospek.');
         }
-        redirect('catalog');
+        redirect('prospek_ekonomi');
     }
 
     public function restore($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->restore_catalog($id);
+        $result = $this->M_economy->restore_prospek($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator katalog berhasil dipulihkan dari tempat sampah.'
+                    'message' => 'Data prospek berhasil dipulihkan dari tempat sampah.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memulihkan indikator katalog.'
+                    'message' => 'Gagal memulihkan data prospek.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator katalog berhasil dipulihkan.');
+            $this->session->set_flashdata('success', 'Data prospek berhasil dipulihkan.');
         } else {
             $this->session->set_flashdata('error', 'Gagal memulihkan data.');
         }
-        redirect('catalog?status=Terhapus');
+        redirect('prospek_ekonomi?status=Terhapus');
     }
 
     public function hard_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->hard_delete_catalog($id);
+        $result = $this->M_economy->hard_delete_prospek($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator katalog berhasil dihapus permanen dari basis data.'
+                    'message' => 'Data prospek berhasil dihapus permanen dari basis data.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus permanen indikator katalog.'
+                    'message' => 'Gagal menghapus permanen data prospek.'
                 )));
             }
             return;
@@ -189,7 +175,7 @@ class Catalog extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Gagal menghapus data.');
         }
-        redirect('catalog?status=Terhapus');
+        redirect('prospek_ekonomi?status=Terhapus');
     }
 }
 

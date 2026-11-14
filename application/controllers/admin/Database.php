@@ -23,7 +23,7 @@ class Database extends MY_Controller {
             'trash_count' => $trash_count
         );
 
-        $this->render('database', $data, true);
+        $this->render('admin/database', $data, true);
     }
 
     // Mendapatkan data 1 record untuk modal edit (JSON)

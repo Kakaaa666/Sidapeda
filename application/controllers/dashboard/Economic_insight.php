@@ -1,35 +1,35 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Early_warning extends MY_Controller {
+class Economic_insight extends MY_Controller {
 
     public function index() {
         $status = $this->input->get('status');
-        $raw_year = $this->input->get('year');
-        $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
-
-        $ews = $this->M_economy->get_ews_indicators($status, $selected_year);
-        $trash_count = $this->M_economy->count_trash_ews();
-        $available_years = $this->M_economy->get_catalog_years();
+        $years = $this->M_economy->get_years();
+        $series = $this->M_economy->get_economic_series();
+        $sectors = $this->M_economy->get_sectors();
+        $insights = $this->M_economy->get_economic_insights(null, $status);
+        $trash_count = $this->M_economy->count_trash_insights();
 
         $data = array(
-            'active_page'     => 'early_warning',
-            'title'           => 'Early Warning System',
-            'eyebrow'         => 'ECONOMIC RISK MONITORING CENTER • CRUD & SOFT DELETE',
-            'subtitle'        => 'Deteksi dini risiko, pantau ambang batas, dan kelola dataset indikator peringatan dini ekonomi daerah.',
-            'ews'             => $ews,
-            'status'          => $status,
-            'trash_count'     => $trash_count,
-            'available_years' => $available_years,
-            'selected_year'   => $selected_year
+            'active_page' => 'economic_insight',
+            'title' => 'Economic Insight',
+            'eyebrow' => 'POLICY INTELLIGENCE • CRUD & SOFT DELETE',
+            'subtitle' => 'Temuan strategis, rekomendasi kebijakan, dan kelola dataset intelijen kebijakan ekonomi daerah.',
+            'years' => $years,
+            'series' => $series,
+            'sectors' => $sectors,
+            'insights' => $insights,
+            'status' => $status,
+            'trash_count' => $trash_count
         );
 
-        $this->render('early_warning', $data, false);
+        $this->render('dashboard/economic_insight', $data, false);
     }
 
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
-        $record = $this->M_economy->get_ews_by_id($id);
+        $record = $this->M_economy->get_insight_by_id($id);
         if ($record) {
             $this->output
                 ->set_content_type('application/json')
@@ -38,144 +38,144 @@ class Early_warning extends MY_Controller {
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
-                ->set_output(json_encode(array('status' => 'error', 'message' => 'Indikator EWS tidak ditemukan.')));
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Insight kebijakan tidak ditemukan.')));
         }
     }
 
     public function create() {
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->add_ews($data);
+        $result = $this->M_economy->add_insight($data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator pemantauan EWS berhasil ditambahkan.'
+                    'message' => 'Insight & rekomendasi kebijakan baru berhasil ditambahkan.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menambahkan EWS: kode atau nama indikator wajib diisi atau sudah terdaftar.'
+                    'message' => 'Gagal menambahkan insight: judul insight wajib diisi.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator pemantauan EWS berhasil ditambahkan.');
+            $this->session->set_flashdata('success', 'Insight kebijakan berhasil ditambahkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menambahkan indikator EWS.');
+            $this->session->set_flashdata('error', 'Gagal menambahkan insight.');
         }
-        redirect('early_warning');
+        redirect('economic_insight');
     }
 
     public function update($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
         $data = $this->input->post(null, true);
-        $result = $this->M_economy->update_ews($id, $data);
+        $result = $this->M_economy->update_insight($id, $data);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Data indikator EWS berhasil diperbarui.'
+                    'message' => 'Data insight kebijakan berhasil diperbarui.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui indikator EWS.'
+                    'message' => 'Gagal memperbarui insight kebijakan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data indikator EWS berhasil diperbarui.');
+            $this->session->set_flashdata('success', 'Data insight kebijakan berhasil diperbarui.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memperbarui data EWS.');
+            $this->session->set_flashdata('error', 'Gagal memperbarui data.');
         }
-        redirect('early_warning');
+        redirect('economic_insight');
     }
 
     public function soft_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->soft_delete_ews($id);
+        $result = $this->M_economy->soft_delete_insight($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator EWS berhasil dipindahkan ke tempat sampah (Soft Delete).'
+                    'message' => 'Insight berhasil dipindahkan ke tempat sampah (Soft Delete).'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus indikator EWS.'
+                    'message' => 'Gagal menghapus insight.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator EWS berhasil dipindahkan ke tempat sampah (Soft Delete).');
+            $this->session->set_flashdata('success', 'Insight berhasil dipindahkan ke tempat sampah (Soft Delete).');
         } else {
-            $this->session->set_flashdata('error', 'Gagal menghapus indikator EWS.');
+            $this->session->set_flashdata('error', 'Gagal menghapus insight.');
         }
-        redirect('early_warning');
+        redirect('economic_insight');
     }
 
     public function restore($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->restore_ews($id);
+        $result = $this->M_economy->restore_insight($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator EWS berhasil dipulihkan dari tempat sampah.'
+                    'message' => 'Insight kebijakan berhasil dipulihkan dari tempat sampah.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal memulihkan indikator EWS.'
+                    'message' => 'Gagal memulihkan insight kebijakan.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Indikator EWS berhasil dipulihkan.');
+            $this->session->set_flashdata('success', 'Insight kebijakan berhasil dipulihkan.');
         } else {
-            $this->session->set_flashdata('error', 'Gagal memulihkan data EWS.');
+            $this->session->set_flashdata('error', 'Gagal memulihkan data insight.');
         }
-        redirect('early_warning?status=Terhapus');
+        redirect('economic_insight?status=Terhapus');
     }
 
     public function hard_delete($id = null) {
         $id = (int)($id ?: $this->input->post('id'));
-        $result = $this->M_economy->hard_delete_ews($id);
+        $result = $this->M_economy->hard_delete_insight($id);
 
         if ($this->input->is_ajax_request()) {
             if ($result) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Indikator EWS berhasil dihapus permanen dari basis data.'
+                    'message' => 'Insight berhasil dihapus permanen dari basis data.'
                 )));
             } else {
                 $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array(
                     'status' => 'error',
-                    'message' => 'Gagal menghapus permanen indikator EWS.'
+                    'message' => 'Gagal menghapus permanen data insight.'
                 )));
             }
             return;
         }
 
         if ($result) {
-            $this->session->set_flashdata('success', 'Data berhasil dihapus permanen.');
+            $this->session->set_flashdata('success', 'Data insight berhasil dihapus permanen.');
         } else {
             $this->session->set_flashdata('error', 'Gagal menghapus data.');
         }
-        redirect('early_warning?status=Terhapus');
+        redirect('economic_insight?status=Terhapus');
     }
 }
 

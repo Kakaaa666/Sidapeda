@@ -9,15 +9,19 @@ class M_economy extends CI_Model {
     }
 
     public function get_years() {
-        $query = $this->db->select('tahun')->order_by('tahun', 'ASC')->get('prospek_ekonomi');
+        $query = $this->db->select('DISTINCT(tahun) as th')
+            ->where('is_deleted', 0)
+            ->where('status_validasi !=', 'Ditolak')
+            ->order_by('tahun', 'ASC')
+            ->get('database_ekonomi');
         if ($query->num_rows() > 0) {
             $years = array();
             foreach ($query->result() as $row) {
-                $years[] = (int)$row->tahun;
+                $years[] = (int)$row->th;
             }
             return $years;
         }
-        return array(2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024);
+        return array(2023, 2024);
     }
 
     public function get_economic_series() {
@@ -331,7 +335,7 @@ class M_economy extends CI_Model {
         );
     }
 
-    public function get_indicator_records($status = null, $query = null, $sort = 'tahun') {
+    public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null) {
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
@@ -343,6 +347,10 @@ class M_economy extends CI_Model {
                     $this->db->where('status_validasi', $status);
                 }
             }
+        }
+
+        if ($year && is_numeric($year)) {
+            $this->db->where('tahun', (int)$year);
         }
 
         if ($query) {
@@ -1048,23 +1056,26 @@ class M_economy extends CI_Model {
     }
 
     public function get_beranda_cards($year = null, $status = null) {
-        $year = $year ? (int)$year : 2024;
-
         $this->db->where('is_deleted', 0);
-        $this->db->where('tahun', $year);
         $this->db->where('status_validasi !=', 'Ditolak');
-        $records = $this->db->order_by('id', 'ASC')->get('database_ekonomi')->result_array();
 
-        if (empty($records)) {
-            // Fallback ke tahun terbaru yang tersedia di database_ekonomi
-            $latest = $this->db->select_max('tahun')->where('is_deleted', 0)->where('status_validasi !=', 'Ditolak')->get('database_ekonomi')->row();
-            if ($latest && $latest->tahun) {
-                $year = (int)$latest->tahun;
-                $this->db->where('is_deleted', 0);
-                $this->db->where('tahun', $year);
-                $this->db->where('status_validasi !=', 'Ditolak');
-                $records = $this->db->order_by('id', 'ASC')->get('database_ekonomi')->result_array();
+        if ($year && is_numeric($year)) {
+            $yearInt = (int)$year;
+            $this->db->where('tahun', $yearInt);
+            $this->db->order_by('id', 'ASC');
+            $records = $this->db->get('database_ekonomi')->result_array();
+        } else {
+            // Semua Tahun / Default: Ambil seluruh data indikator yang telah diinput (rekaman terbaru per kode)
+            $this->db->order_by('kode_indikator', 'ASC');
+            $this->db->order_by('tahun', 'DESC');
+            $rawRecords = $this->db->get('database_ekonomi')->result_array();
+            $byCode = array();
+            foreach ($rawRecords as $r) {
+                if (!isset($byCode[$r['kode_indikator']])) {
+                    $byCode[$r['kode_indikator']] = $r;
+                }
             }
+            $records = array_values($byCode);
         }
 
         if (empty($records)) {
@@ -1077,11 +1088,12 @@ class M_economy extends CI_Model {
         foreach ($records as $row) {
             $code = $row['kode_indikator'];
             $current_val = (float)$row['nilai'];
+            $rowYear = (int)$row['tahun'];
 
             // Komparasi tahun sebelumnya
             $prev_row = $this->db->where('is_deleted', 0)
                 ->where('kode_indikator', $code)
-                ->where('tahun', $year - 1)
+                ->where('tahun', $rowYear - 1)
                 ->get('database_ekonomi')
                 ->row_array();
 
@@ -1129,7 +1141,7 @@ class M_economy extends CI_Model {
             // Deret historis untuk sparkline grafik mini
             $hist_rows = $this->db->where('is_deleted', 0)
                 ->where('kode_indikator', $code)
-                ->where('tahun <=', $year)
+                ->where('tahun <=', $rowYear)
                 ->order_by('tahun', 'ASC')
                 ->get('database_ekonomi')
                 ->result_array();
@@ -1160,7 +1172,7 @@ class M_economy extends CI_Model {
                 'arah_tren'       => $trend,
                 'status'          => $card_status,
                 'deret_mini'      => json_encode($series_vals),
-                'tahun'           => (int)$row['tahun'],
+                'tahun'           => $rowYear,
                 'wilayah'         => $row['wilayah'],
                 'sumber_data'     => $row['sumber_data'],
                 'status_validasi' => $row['status_validasi']
@@ -1171,28 +1183,15 @@ class M_economy extends CI_Model {
     }
 
     public function get_beranda_categories($year = null) {
-        $year = $year ? (int)$year : 2024;
         $this->db->select('klaster, COUNT(*) as total');
         $this->db->where('is_deleted', 0);
-        $this->db->where('tahun', $year);
         $this->db->where('status_validasi !=', 'Ditolak');
+        if ($year && is_numeric($year)) {
+            $this->db->where('tahun', (int)$year);
+        }
         $this->db->group_by('klaster');
         $this->db->order_by('total', 'DESC');
         $res = $this->db->get('database_ekonomi')->result_array();
-
-        if (empty($res)) {
-            $latest = $this->db->select_max('tahun')->where('is_deleted', 0)->where('status_validasi !=', 'Ditolak')->get('database_ekonomi')->row();
-            if ($latest && $latest->tahun) {
-                $year = (int)$latest->tahun;
-                $this->db->select('klaster, COUNT(*) as total');
-                $this->db->where('is_deleted', 0);
-                $this->db->where('tahun', $year);
-                $this->db->where('status_validasi !=', 'Ditolak');
-                $this->db->group_by('klaster');
-                $this->db->order_by('total', 'DESC');
-                $res = $this->db->get('database_ekonomi')->result_array();
-            }
-        }
 
         $cats = array();
         foreach ($res as $r) {

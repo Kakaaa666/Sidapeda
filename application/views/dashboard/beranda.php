@@ -10,13 +10,48 @@
             <div>
                 <span class="pulse"></span>
                 <small>Periode referensi</small>
-                <strong id="hero-selected-year"><?= $selected_year ?> • Tahunan</strong>
+                <strong id="hero-selected-year"><?= !empty($selected_year) ? "Tahun {$selected_year} • Tahunan" : "Semua Periode • Tahunan" ?></strong>
             </div>
         </div>
     </section>
 
+    <!-- SLIDE / TAB TAHUN DASHBOARD (Sesuai Konsep Katalog & EWS) -->
+    <div class="year-slide-card" style="margin-top: 15px; margin-bottom: 22px;">
+        <div class="year-slide-header">
+            <div class="year-slide-title-wrap">
+                <div class="year-slide-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div>
+                    <strong>Pilih Periode Tahun Dashboard</strong>
+                    <small>Klik tab tahun untuk menampilkan seluruh indikator ekonomi daerah dan data capaian sesuai rekaman yang telah diinput.</small>
+                </div>
+            </div>
+            <div class="year-slide-meta">
+                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun (Terkini)" ?></strong></span>
+            </div>
+        </div>
+
+        <div class="year-slide-bar-wrap" id="year-slide-track">
+            <!-- Tab: Semua Tahun -->
+            <a href="<?= site_url('beranda?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
+                Semua Tahun
+            </a>
+
+            <!-- Tab per Tahun yang Tersedia (Diurutkan ASC Dari Terendah ke Terbaru) -->
+            <?php if (!empty($available_years)): ?>
+                <?php foreach ($available_years as $ay): ?>
+                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
+                    <a href="<?= site_url('beranda?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
+                        Tahun <?= $ay['tahun'] ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- FILTER BAR -->
-    <div class="filterbar">
+    <div class="filterbar" style="display:none;">
         <div class="filter-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg>
             <div>
@@ -35,8 +70,8 @@
         <label>
             <span>Tahun</span>
             <select id="filter-year">
-                <?php foreach (array_reverse($years) as $y): ?>
-                    <option value="<?= $y ?>" <?= $y == $selected_year ? 'selected' : '' ?>><?= $y ?></option>
+                <?php foreach ($years as $y): ?>
+                    <option value="<?= $y ?>" <?= $y == ($selected_year ?: (!empty($years) ? max($years) : 2024)) ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -75,37 +110,30 @@
     <?php
     $display_cards = !empty($beranda_cards) ? $beranda_cards : array();
     
-    // Calculate macro values for summary highlights
+    // Ambil capaian riil langsung dari data indikator yang telah diinput
+    $macroByCode = array();
+    foreach ($display_cards as $c) {
+        $rawNum = (float)str_replace(',', '.', str_replace('.', '', $c['nilai']));
+        $macroByCode[$c['kode_indikator']] = $rawNum;
+    }
+
     $idx = $year_idx;
     $prev = $prev_idx;
-    $gNow = $series['growth'][$idx] ?? 5.18;
-    $gPrev = $series['growth'][$prev] ?? 5.03;
-    $gDelta = round($gNow - $gPrev, 2);
-    $pcapNow = $series['perCapita'][$idx] ?? 62.4;
-    $pcapPrev = $series['perCapita'][$prev] ?? 58.4;
-    $pcapDelta = round($pcapNow - $pcapPrev, 2);
-    $infNow = $series['inflation'][$idx] ?? 2.41;
-    $infPrev = $series['inflation'][$prev] ?? 2.81;
-    $infDelta = round($infNow - $infPrev, 2);
-    $tptNow = $series['tpt'][$idx] ?? 4.03;
-    $tptPrev = $series['tpt'][$prev] ?? 4.10;
-    $tptDelta = round($tptNow - $tptPrev, 2);
-    $povNow = $series['poverty'][$idx] ?? 7.34;
-    $povPrev = $series['poverty'][$prev] ?? 7.34;
-    $povDelta = round($povNow - $povPrev, 2);
-    $ipmNow = $series['ipm'][$idx] ?? 73.79;
-    $ipmPrev = $series['ipm'][$prev] ?? 73.08;
-    $ipmDelta = round($ipmNow - $ipmPrev, 2);
-    $invNow = $series['investmentGrowth'][$idx] ?? 12.42;
-    $invPrev = $series['investmentGrowth'][$prev] ?? 14.20;
-    $invDelta = round($invNow - $invPrev, 2);
+    $display_year = !empty($selected_year) ? $selected_year : $active_chart_year;
+    $gNow = $macroByCode['PDRB_01'] ?? ($series['growth'][$idx] ?? 5.18);
+    $pcapNow = $macroByCode['PDRB_03'] ?? ($series['perCapita'][$idx] ?? 62.4);
+    $infNow = $macroByCode['INF_01'] ?? ($series['inflation'][$idx] ?? 2.41);
+    $tptNow = $macroByCode['TPT_01'] ?? ($series['tpt'][$idx] ?? 4.03);
+    $povNow = $macroByCode['POV_01'] ?? ($series['poverty'][$idx] ?? 7.34);
+    $ipmNow = $macroByCode['IPM_01'] ?? ($series['ipm'][$idx] ?? 73.79);
+    $invNow = $macroByCode['INV_02'] ?? ($series['investmentGrowth'][$idx] ?? 12.42);
     ?>
     <section class="section">
         <div class="section-heading">
             <div>
-                <span class="eyebrow">RINGKASAN KINERJA</span>
-                <h2>Indikator Utama Ekonomi</h2>
-                <p>Perkembangan indikator strategis daerah pada periode berjalan sesuai klaster kategori.</p>
+                <span class="eyebrow">RINGKASAN KINERJA • <?= !empty($selected_year) ? "TAHUN {$selected_year}" : "SEMUA PERIODE" ?></span>
+                <h2>Indikator Utama Ekonomi <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></h2>
+                <p>Menampilkan <?= count($display_cards) ?> indikator pembangunan daerah yang bersumber langsung dari data yang telah diinput ke dalam sistem.</p>
             </div>
             <div>
                 <a href="<?= site_url('analisis_ekonomi') ?>" class="button ghost">
@@ -206,7 +234,7 @@
         <article class="card chart-card large">
             <div class="card-head">
                 <div>
-                    <span class="eyebrow" id="trend-eyebrow">HISTORIS HINGGA <?= $selected_year ?></span>
+                    <span class="eyebrow" id="trend-eyebrow">HISTORIS HINGGA <?= $display_year ?></span>
                     <h3 id="overview-chart-title">Tren Pertumbuhan Ekonomi</h3>
                     <p id="overview-chart-desc">Persentase pertumbuhan PDRB ADHK • perbandingan wilayah</p>
                 </div>
@@ -242,7 +270,7 @@
                 <div>
                     <span class="eyebrow">LAPANGAN USAHA</span>
                     <h3>Pertumbuhan Sektoral</h3>
-                    <p>Pertumbuhan tahunan per sektor (Tahun <?= $selected_year ?>)</p>
+                    <p>Pertumbuhan tahunan per sektor (Tahun <?= $display_year ?>)</p>
                 </div>
                 <span class="more" aria-hidden="true">•••</span>
             </div>
@@ -283,7 +311,7 @@
 
             <div class="insight-strip">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.5 15a7 7 0 1 1 7 0c-.9.7-1.3 1.5-1.5 2h-4c-.2-.5-.6-1.3-1.5-2Z"/></svg>
-                <span><strong><?= $topSector['short'] ?></strong> mencatat laju pertumbuhan tertinggi pada tahun <?= $selected_year ?>: <?= number_format($topSector['growthSeries'][$year_idx] ?? $topSector['growthLocal'], 1, ',', '.') ?>%.</span>
+                <span><strong><?= $topSector['short'] ?></strong> mencatat laju pertumbuhan tertinggi pada tahun <?= $display_year ?>: <?= number_format($topSector['growthSeries'][$year_idx] ?? $topSector['growthLocal'], 1, ',', '.') ?>%.</span>
             </div>
             <div class="source">Sumber: PDRB Lapangan Usaha Kabupaten Banyuwangi</div>
         </article>
@@ -308,7 +336,7 @@
                 <span class="signal <?= $gNow >= 0 ? 'success' : 'warning' ?>"></span>
                 <div>
                     <strong><?= $gNow >= 0 ? 'Pertumbuhan ekonomi positif' : 'Pertumbuhan ekonomi terkontraksi' ?></strong>
-                    <p>Pertumbuhan ekonomi <?= number_format($gNow, 2, ',', '.') ?>% pada <?= $selected_year ?>; sektor <?= $topSector['short'] ?> memimpin laju pertumbuhan sektoral.</p>
+                    <p>Pertumbuhan ekonomi <?= number_format($gNow, 2, ',', '.') ?>% pada tahun <?= $display_year ?>; sektor <?= $topSector['short'] ?> memimpin laju pertumbuhan sektoral.</p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
             </a>
@@ -317,7 +345,7 @@
                 <span class="signal info"></span>
                 <div>
                     <strong>Dinamika investasi daerah</strong>
-                    <p>Realisasi investasi tumbuh <?= number_format($invNow, 2, ',', '.') ?>% pada tahun <?= $selected_year ?> mendukung penyerapan tenaga kerja lokal.</p>
+                    <p>Realisasi investasi tumbuh <?= number_format($invNow, 2, ',', '.') ?>% pada tahun <?= $display_year ?> mendukung penyerapan tenaga kerja lokal.</p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
             </a>
@@ -326,7 +354,7 @@
                 <span class="signal <?= $infNow <= 4 ? 'success' : 'warning' ?>"></span>
                 <div>
                     <strong>Perkembangan harga & inflasi</strong>
-                    <p>Inflasi tercatat <?= number_format($infNow, 2, ',', '.') ?>% pada tahun <?= $selected_year ?>. Stabilitas harga terjaga melalui koordinasi TPID.</p>
+                    <p>Inflasi tercatat <?= number_format($infNow, 2, ',', '.') ?>% pada tahun <?= $display_year ?>. Stabilitas harga terjaga melalui koordinasi TPID.</p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
             </a>

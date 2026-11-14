@@ -577,7 +577,7 @@
                     AppState.districts = data.districts || [];
                     AppState.records = data.records || [];
                     AppState.catalog = data.catalog || [];
-                    AppState.ews = data.ews || [];
+                    AppState.ews = (window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) ? window.__EWS_DATA__ : (data.ews || []);
                     AppState.user = data.user || null;
                     AppState.loaded = true;
 
@@ -591,6 +591,17 @@
     }
 
     function dispatchPageLogic() {
+        // Auto-scroll active year tab into view on load if Slide Tahun is present
+        const slideTrack = document.getElementById('year-slide-track');
+        if (slideTrack) {
+            const activeTab = slideTrack.querySelector('.year-slide-tab.active');
+            if (activeTab) {
+                setTimeout(() => {
+                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }, 100);
+            }
+        }
+
         const path = window.location.pathname.toLowerCase();
 
         if (document.getElementById('overview-line-chart-container') || document.getElementById('btn-open-add-beranda')) {
@@ -2734,8 +2745,8 @@
             }
         }
 
-        // Seed AppState.ews from server-rendered global state if needed
-        if ((!AppState.ews || AppState.ews.length === 0) && window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) {
+        // Always prioritize server-rendered page dataset (__EWS_DATA__) if available
+        if (window.__EWS_DATA__ && Array.isArray(window.__EWS_DATA__)) {
             AppState.ews = window.__EWS_DATA__;
         }
 
@@ -2793,6 +2804,7 @@
                                 <strong>${name}</strong>
                                 <small>
                                     <code>${code}</code>
+                                    ${item.tahun || item.year ? `<span style="color:var(--navy); font-weight:600;">• Thn ${item.tahun || item.year}</span>` : ''}
                                     <span style="color:var(--muted);">• ${dir === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang'}</span>
                                 </small>
                             </div>
@@ -3120,12 +3132,13 @@
         if (btnExport) {
             btnExport.addEventListener('click', () => {
                 downloadCSV('monitoring-ews-banyuwangi.csv', [
-                    ['Kode', 'Indikator', 'Nilai Terkini', 'Threshold', 'Arah Risiko', 'Status'],
+                    ['Kode', 'Indikator', 'Tahun', 'Nilai Terkini', 'Threshold', 'Arah Risiko', 'Status'],
                     ...AppState.ews.map(i => {
                         const v = Number(i.value !== undefined ? i.value : (i.nilai_terkini || 0));
                         const t = Number(i.threshold !== undefined ? i.threshold : (i.ambang_batas || 0));
                         const dir = i.direction || i.arah_risiko || 'above';
-                        return [i.code || i.kode_indikator, i.name || i.nama_indikator, v, t, dir, calcEwsStatus(v, t, dir)];
+                        const yr = i.tahun || i.year || '-';
+                        return [i.code || i.kode_indikator, i.name || i.nama_indikator, yr, v, t, dir, calcEwsStatus(v, t, dir)];
                     })
                 ]);
             });

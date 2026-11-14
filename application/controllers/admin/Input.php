@@ -12,7 +12,7 @@ class Input extends MY_Controller {
             'catalog' => $this->M_economy->get_indicator_catalog()
         );
 
-        $this->render('input', $data, true);
+        $this->render('admin/input', $data, true);
     }
 }
 

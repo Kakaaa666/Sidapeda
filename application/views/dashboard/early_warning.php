@@ -33,6 +33,41 @@
         </div>
     </div>
 
+    <!-- SLIDE / TAB TAHUN EARLY WARNING SYSTEM (Sesuai Konsep Katalog & Beranda) -->
+    <div class="year-slide-card" style="margin-top: 15px; margin-bottom: 22px;">
+        <div class="year-slide-header">
+            <div class="year-slide-title-wrap">
+                <div class="year-slide-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div>
+                    <strong>Pilih Periode Tahun Indikator EWS</strong>
+                    <small>Pantau status risiko, ambang batas, dan realisasi indikator peringatan dini berdasarkan tahun data.</small>
+                </div>
+            </div>
+            <div class="year-slide-meta">
+                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun (Terkini)" ?></strong></span>
+            </div>
+        </div>
+
+        <div class="year-slide-bar-wrap" id="year-slide-track">
+            <!-- Tab: Semua Tahun -->
+            <a href="<?= site_url('early_warning?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
+                Semua Tahun
+            </a>
+
+            <!-- Tab per Tahun yang Tersedia (Diurutkan ASC Dari Terendah ke Terbaru) -->
+            <?php if (!empty($available_years)): ?>
+                <?php foreach ($available_years as $ay): ?>
+                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
+                    <a href="<?= site_url('early_warning?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
+                        Tahun <?= $ay['tahun'] ?>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- STATS OVERVIEW -->
     <div class="risk-overview" id="ews-stats-container">
         <?php
@@ -73,9 +108,9 @@
         <article class="card large">
             <div class="card-head">
                 <div>
-                    <span class="eyebrow">RISK MONITORING</span>
-                    <h3>Indikator dalam Pemantauan Dini</h3>
-                    <p>Status dihitung otomatis dari nilai riil dan batas ambang (threshold). Anda dapat menentukan sendiri nilai threshold dan arah kondisi risiko dengan mengklik baris indikator di bawah.</p>
+                    <span class="eyebrow">RISK MONITORING • <?= !empty($selected_year) ? "TAHUN {$selected_year}" : "SEMUA PERIODE" ?></span>
+                    <h3>Indikator dalam Pemantauan Dini <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></h3>
+                    <p>Status dihitung otomatis dari nilai riil tervalidasi <?= !empty($selected_year) ? "tahun {$selected_year}" : "periode terkini" ?> dan batas ambang (threshold). Anda dapat menentukan sendiri nilai threshold dan arah kondisi risiko dengan mengklik baris indikator di bawah.</p>
                 </div>
             </div>
 
@@ -103,12 +138,16 @@
                     $th = (float)($item['threshold'] ?? $item['ambang_batas'] ?? 0);
                     $unit = $item['unit'] ?? $item['satuan'] ?? '%';
                     $dir = strtolower($item['direction'] ?? $item['arah_risiko'] ?? 'above');
+                    $rowYr = $item['year'] ?? $item['tahun'] ?? null;
                 ?>
                     <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0" title="Klik untuk analisis & penyesuaian threshold">
                         <div class="risk-indicator">
                             <strong><?= htmlspecialchars($name) ?></strong>
                             <small>
                                 <code><?= htmlspecialchars($code) ?></code>
+                                <?php if (!empty($rowYr)): ?>
+                                    <span style="color:var(--navy); font-weight:600;">• Thn <?= $rowYr ?></span>
+                                <?php endif; ?>
                                 <span style="color:var(--muted);">• <?= ($dir === 'above') ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></span>
                             </small>
                         </div>
