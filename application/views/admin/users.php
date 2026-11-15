@@ -208,6 +208,7 @@
                         <th>ID</th>
                         <th>Nama Pengguna</th>
                         <th>Username / Akun</th>
+                        <th>Wilayah (Kab/Kota)</th>
                         <th>Level Akun (Tingkat Akses)</th>
                         <th>Status</th>
                         <th>Aksi Status</th>
@@ -225,6 +226,11 @@
                                 <?php endif; ?>
                             </td>
                             <td><code><?= htmlspecialchars($u['username']) ?></code></td>
+                            <td>
+                                <span class="badge info" style="font-size:11px; font-weight:600;">
+                                    <?= htmlspecialchars($u['kode_wilayah'] ?? '35.10') ?>
+                                </span>
+                            </td>
                             <td>
                                 <select class="user-role-select" data-user-id="<?= $u['id'] ?>" style="height:34px; border:1px solid #cbd5e1; border-radius:7px; padding:0 8px; font-weight:700; font-size:12px; background:#fff; cursor:pointer;">
                                     <option value="1" <?= (int)$u['level'] === 1 ? 'selected' : '' ?>>1 — Administrator</option>
@@ -324,6 +330,20 @@
                         Alamat Email
                         <input type="email" name="email" id="add-user-email" placeholder="Contoh: rahmat@banyuwangikab.go.id">
                     </label>
+                    <label style="grid-column: 1 / 3;">
+                        Wilayah Kabupaten / Kota
+                        <select name="kode_wilayah" id="add-user-wilayah">
+                            <?php if (!empty($kab_kota)): ?>
+                                <?php foreach ($kab_kota as $item): ?>
+                                    <option value="<?= htmlspecialchars($item['kode']) ?>" <?= ($item['kode'] === '35.10') ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($item['kode']) ?> — <?= htmlspecialchars($item['nama']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="35.10" selected>35.10 — KAB. BANYUWANGI</option>
+                            <?php endif; ?>
+                        </select>
+                    </label>
                     <label>
                         Level Akun (Tingkat Akses)
                         <select name="level" id="add-user-level">
@@ -380,6 +400,20 @@
                     <label style="grid-column: 1 / 3;">
                         Alamat Email
                         <input type="email" name="email" id="edit-user-email">
+                    </label>
+                    <label style="grid-column: 1 / 3;">
+                        Wilayah Kabupaten / Kota
+                        <select name="kode_wilayah" id="edit-user-wilayah">
+                            <?php if (!empty($kab_kota)): ?>
+                                <?php foreach ($kab_kota as $item): ?>
+                                    <option value="<?= htmlspecialchars($item['kode']) ?>">
+                                        <?= htmlspecialchars($item['kode']) ?> — <?= htmlspecialchars($item['nama']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="35.10">35.10 — KAB. BANYUWANGI</option>
+                            <?php endif; ?>
+                        </select>
                     </label>
                     <label>
                         Level Akun (Tingkat Akses)

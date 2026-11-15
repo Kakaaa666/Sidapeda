@@ -29,11 +29,12 @@ class Akun extends CI_Controller {
                 $password = $this->input->post('password', true);
                 $email = $this->input->post('email', true);
                 $level = $this->input->post('level') ?: $this->input->post('role') ?: 3;
+                $kode_wilayah = $this->input->post('kode_wilayah', true) ?: '35.10';
 
                 if (empty($username) || empty($password) || empty($name)) {
                     $error = 'Nama lengkap, nama akun/username, dan kata sandi wajib diisi.';
                 } else {
-                    $reg = $this->M_auth->register($username, $password, $name, $email, $level);
+                    $reg = $this->M_auth->register($username, $password, $name, $email, $level, $kode_wilayah);
                     if ($reg['status']) {
                         // Otomatis login setelah pendaftaran berhasil
                         $this->M_auth->login($username, $password);
@@ -69,7 +70,8 @@ class Akun extends CI_Controller {
             'title' => 'Akun SI-DAPEDA — Masuk Sistem',
             'error' => $error,
             'success' => $success,
-            'users' => $this->M_auth->get_users()
+            'users' => $this->M_auth->get_users(),
+            'kab_kota' => $this->M_auth->get_daftar_kab_kota()
         );
 
         $this->load->view('akun', $data);
@@ -77,9 +79,10 @@ class Akun extends CI_Controller {
 
     public function quick($role = 'admin') {
         $passMap = array(
-            'admin'    => 'admin123',
-            'analis'   => 'analis123',
-            'operator' => 'operator123'
+            'admin'      => 'admin123',
+            'banyuwangi' => 'banyuwangi123',
+            'analis'     => 'analis123',
+            'operator'   => 'operator123'
         );
 
         if (isset($passMap[$role])) {

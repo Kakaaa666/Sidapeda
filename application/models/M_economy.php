@@ -8,10 +8,75 @@ class M_economy extends CI_Model {
         $this->load->database();
     }
 
-    public function get_years() {
+    public function get_active_kode_wilayah($override = null) {
+        if (!empty($override)) {
+            return $override;
+        }
+        $ci =& get_instance();
+        if (isset($ci->session)) {
+            $user = $ci->session->userdata('user_logged');
+            if (!empty($user['kode_wilayah'])) {
+                return $user['kode_wilayah'];
+            }
+            $sessKode = $ci->session->userdata('active_kode_wilayah');
+            if (!empty($sessKode)) {
+                return $sessKode;
+            }
+        }
+        return '35.10'; // Default Banyuwangi
+    }
+
+    public function get_nama_wilayah($kode = null) {
+        if (empty($kode)) {
+            $kode = $this->get_active_kode_wilayah();
+        }
+        if ($kode === '35.10') {
+            return 'Kabupaten Banyuwangi';
+        }
+        if ($this->db->table_exists('kodewilayah')) {
+            $row = $this->db->select('Nama')->where('Kode', $kode)->limit(1)->get('kodewilayah')->row_array();
+            if ($row && !empty($row['Nama'])) {
+                $nama = ucwords(strtolower($row['Nama']));
+                $nama = str_replace('Kab.', 'Kabupaten', $nama);
+                return $nama;
+            }
+        }
+        return 'Wilayah ' . $kode;
+    }
+
+    public function get_daftar_kab_kota() {
+        if (!$this->db->table_exists('kodewilayah')) {
+            return array(
+                array('kode' => '35.10', 'nama' => 'Kabupaten Banyuwangi', 'raw_nama' => 'KAB. BANYUWANGI')
+            );
+        }
+        $rows = $this->db->select('Kode as kode, Nama as nama')
+            ->like('Kode', '35.', 'after')
+            ->where('LENGTH(Kode)', 5)
+            ->group_by('Kode')
+            ->order_by('Kode', 'ASC')
+            ->get('kodewilayah')
+            ->result_array();
+        
+        $result = array();
+        foreach ($rows as $r) {
+            $namaFormatted = ucwords(strtolower($r['nama']));
+            $namaFormatted = str_replace('Kab.', 'Kabupaten', $namaFormatted);
+            $result[] = array(
+                'kode' => $r['kode'],
+                'nama' => $namaFormatted,
+                'raw_nama' => $r['nama']
+            );
+        }
+        return $result;
+    }
+
+    public function get_years($kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         $query = $this->db->select('DISTINCT(tahun) as th')
             ->where('is_deleted', 0)
             ->where('status_validasi !=', 'Ditolak')
+            ->where('kode_wilayah', $kode)
             ->order_by('tahun', 'ASC')
             ->get('database_ekonomi');
         if ($query->num_rows() > 0) {
@@ -21,11 +86,12 @@ class M_economy extends CI_Model {
             }
             return $years;
         }
-        return array(2023, 2024);
+        return array();
     }
 
-    public function get_economic_series() {
-        $query = $this->db->order_by('tahun', 'ASC')->get('prospek_ekonomi');
+    public function get_economic_series($kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $query = $this->db->where('kode_wilayah', $kode)->order_by('tahun', 'ASC')->get('prospek_ekonomi');
         if ($query->num_rows() > 0) {
             $growth = array();
             $eastJavaGrowth = array();
@@ -62,25 +128,41 @@ class M_economy extends CI_Model {
             );
         }
 
+        if ($kode === '35.10') {
+            return array(
+                'growth' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 5.03, 5.18),
+                'eastJavaGrowth' => array(5.44, 5.46, 5.45, 5.50, 5.52, -2.33, 3.56, 5.34, 4.95, 4.93),
+                'nationalGrowth' => array(4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.70, 5.31, 5.05, 5.03),
+                'tpt' => array(3.20, 3.12, 3.05, 2.94, 3.84, 5.50, 5.10, 4.30, 4.10, 4.03),
+                'investmentGrowth' => array(6.1, 7.2, 8.0, 8.8, 9.4, -2.0, 4.2, 8.8, 14.2, 12.42),
+                'poverty' => array(9.17, 8.75, 8.64, 8.32, 7.52, 8.06, 7.45, 7.51, 7.34, 7.34),
+                'inflation' => array(3.12, 2.71, 3.61, 2.88, 2.94, 1.68, 1.87, 6.12, 2.81, 2.41),
+                'ipm' => array(68.11, 68.63, 69.13, 69.64, 70.06, 70.62, 71.26, 72.45, 73.08, 73.79),
+                'perCapita' => array(35.2, 37.1, 39.4, 42.8, 45.9, 43.7, 47.6, 53.2, 58.4, 62.4)
+            );
+        }
+
         return array(
-            'growth' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 5.03, 5.18),
-            'eastJavaGrowth' => array(5.44, 5.46, 5.45, 5.50, 5.52, -2.33, 3.56, 5.34, 4.95, 4.93),
-            'nationalGrowth' => array(4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.70, 5.31, 5.05, 5.03),
-            'tpt' => array(3.20, 3.12, 3.05, 2.94, 3.84, 5.50, 5.10, 4.30, 4.10, 4.03),
-            'investmentGrowth' => array(6.1, 7.2, 8.0, 8.8, 9.4, -2.0, 4.2, 8.8, 14.2, 12.42),
-            'poverty' => array(9.17, 8.75, 8.64, 8.32, 7.52, 8.06, 7.45, 7.51, 7.34, 7.34),
-            'inflation' => array(3.12, 2.71, 3.61, 2.88, 2.94, 1.68, 1.87, 6.12, 2.81, 2.41),
-            'ipm' => array(68.11, 68.63, 69.13, 69.64, 70.06, 70.62, 71.26, 72.45, 73.08, 73.79),
-            'perCapita' => array(35.2, 37.1, 39.4, 42.8, 45.9, 43.7, 47.6, 53.2, 58.4, 62.4)
+            'growth' => array(),
+            'eastJavaGrowth' => array(),
+            'nationalGrowth' => array(),
+            'tpt' => array(),
+            'investmentGrowth' => array(),
+            'poverty' => array(),
+            'inflation' => array(),
+            'ipm' => array(),
+            'perCapita' => array()
         );
     }
 
-    public function get_sectors($status = null) {
+    public function get_sectors($status = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
             $this->db->where('is_deleted', 0);
         }
+        $this->db->where('kode_wilayah', $kode);
         $query = $this->db->get('analisis_ekonomi');
         if ($query->num_rows() > 0) {
             $sectors = array();
@@ -111,6 +193,7 @@ class M_economy extends CI_Model {
                     'growthSeries' => json_decode($row->deret_pertumbuhan, true) ?: array(),
                     'growthProvinceSeries' => json_decode($row->deret_pertumbuhan_provinsi, true) ?: array(),
                     'id' => (int)$row->id,
+                    'kode_wilayah' => $row->kode_wilayah ?? $kode,
                     'is_deleted' => (int)($row->is_deleted ?? 0),
                     'deleted_at' => $row->deleted_at ?? null
                 );
@@ -118,23 +201,29 @@ class M_economy extends CI_Model {
             return $sectors;
         }
 
-        return array(
-            array('key' => 'agri', 'name' => 'Pertanian, Kehutanan & Perikanan', 'short' => 'Pertanian', 'shareLocal' => 28.5, 'shareProvince' => 11.7, 'growthLocal' => 4.3, 'growthProvince' => 3.1, 'employmentBase' => 18000, 'employmentCurrent' => 20500, 'provinceEmploymentBase' => 1050000, 'provinceEmploymentCurrent' => 1120000, 'growthSeries' => array(3.9, 4.1, 4.4, 4.2, 3.8, 2.1, 3.0, 3.6, 4.0, 4.3), 'growthProvinceSeries' => array(3.7, 3.3, 3.4, 3.5, 3.4, -1.2, 2.0, 3.1, 3.0, 3.1)),
-            array('key' => 'trade', 'name' => 'Perdagangan Besar & Eceran', 'short' => 'Perdagangan', 'shareLocal' => 18.5, 'shareProvince' => 18.2, 'growthLocal' => 5.4, 'growthProvince' => 5.2, 'employmentBase' => 7000, 'employmentCurrent' => 9800, 'provinceEmploymentBase' => 680000, 'provinceEmploymentCurrent' => 780000, 'growthSeries' => array(5.0, 5.2, 5.4, 5.8, 5.7, -4.2, 4.3, 5.0, 5.2, 5.4), 'growthProvinceSeries' => array(4.4, 5.0, 5.2, 5.4, 5.3, -4.1, 4.0, 5.1, 5.0, 5.2)),
-            array('key' => 'manufacture', 'name' => 'Industri Pengolahan', 'short' => 'Industri', 'shareLocal' => 12.2, 'shareProvince' => 30.5, 'growthLocal' => 4.1, 'growthProvince' => 4.8, 'employmentBase' => 5200, 'employmentCurrent' => 7200, 'provinceEmploymentBase' => 520000, 'provinceEmploymentCurrent' => 600000, 'growthSeries' => array(4.0, 4.2, 4.4, 4.8, 4.7, -2.8, 3.1, 4.0, 4.0, 4.1), 'growthProvinceSeries' => array(5.0, 4.8, 4.6, 4.8, 4.7, -2.7, 3.2, 4.2, 4.6, 4.8)),
-            array('key' => 'accommodation', 'name' => 'Akomodasi & Makan Minum', 'short' => 'Akomodasi', 'shareLocal' => 9.1, 'shareProvince' => 4.2, 'growthLocal' => 7.3, 'growthProvince' => 6.4, 'employmentBase' => 2100, 'employmentCurrent' => 5600, 'provinceEmploymentBase' => 110000, 'provinceEmploymentCurrent' => 190000, 'growthSeries' => array(6.0, 6.4, 6.9, 7.1, 6.8, -8.0, 5.9, 9.2, 7.0, 7.3), 'growthProvinceSeries' => array(6.5, 6.7, 6.9, 7.2, 6.8, -8.4, 5.4, 8.0, 6.5, 6.4)),
-            array('key' => 'construction', 'name' => 'Konstruksi', 'short' => 'Konstruksi', 'shareLocal' => 8.0, 'shareProvince' => 9.2, 'growthLocal' => 4.8, 'growthProvince' => 5.1, 'employmentBase' => 4300, 'employmentCurrent' => 6500, 'provinceEmploymentBase' => 450000, 'provinceEmploymentCurrent' => 530000, 'growthSeries' => array(5.1, 5.3, 5.2, 5.4, 5.3, -3.9, 3.3, 4.5, 4.6, 4.8), 'growthProvinceSeries' => array(5.3, 5.2, 5.1, 5.4, 5.1, -4.2, 2.8, 5.5, 5.0, 5.1)),
-            array('key' => 'transport', 'name' => 'Transportasi & Pergudangan', 'short' => 'Transportasi', 'shareLocal' => 5.0, 'shareProvince' => 5.2, 'growthLocal' => 5.1, 'growthProvince' => 5.0, 'employmentBase' => 2600, 'employmentCurrent' => 3600, 'provinceEmploymentBase' => 230000, 'provinceEmploymentCurrent' => 280000, 'growthSeries' => array(4.7, 4.9, 5.2, 5.4, 5.2, -7.2, 4.2, 7.8, 5.3, 5.1), 'growthProvinceSeries' => array(5.8, 5.5, 5.2, 5.5, 5.4, -8.0, 3.3, 8.0, 5.1, 5.0)),
-            array('key' => 'services', 'name' => 'Jasa Lainnya', 'short' => 'Jasa lainnya', 'shareLocal' => 18.7, 'shareProvince' => 21.0, 'growthLocal' => 5.0, 'growthProvince' => 5.1, 'employmentBase' => 9000, 'employmentCurrent' => 13000, 'provinceEmploymentBase' => 850000, 'provinceEmploymentCurrent' => 1050000, 'growthSeries' => array(4.8, 4.9, 5.0, 5.1, 5.0, -1.8, 3.7, 4.8, 4.9, 5.0), 'growthProvinceSeries' => array(5.1, 5.0, 4.9, 5.0, 5.0, -2.0, 3.8, 4.8, 5.0, 5.1))
-        );
+        if ($kode === '35.10') {
+            return array(
+                array('key' => 'agri', 'name' => 'Pertanian, Kehutanan & Perikanan', 'short' => 'Pertanian', 'shareLocal' => 28.5, 'shareProvince' => 11.7, 'growthLocal' => 4.3, 'growthProvince' => 3.1, 'employmentBase' => 18000, 'employmentCurrent' => 20500, 'provinceEmploymentBase' => 1050000, 'provinceEmploymentCurrent' => 1120000, 'growthSeries' => array(3.9, 4.1, 4.4, 4.2, 3.8, 2.1, 3.0, 3.6, 4.0, 4.3), 'growthProvinceSeries' => array(3.7, 3.3, 3.4, 3.5, 3.4, -1.2, 2.0, 3.1, 3.0, 3.1)),
+                array('key' => 'trade', 'name' => 'Perdagangan Besar & Eceran', 'short' => 'Perdagangan', 'shareLocal' => 18.5, 'shareProvince' => 18.2, 'growthLocal' => 5.4, 'growthProvince' => 5.2, 'employmentBase' => 7000, 'employmentCurrent' => 9800, 'provinceEmploymentBase' => 680000, 'provinceEmploymentCurrent' => 780000, 'growthSeries' => array(5.0, 5.2, 5.4, 5.8, 5.7, -4.2, 4.3, 5.0, 5.2, 5.4), 'growthProvinceSeries' => array(4.4, 5.0, 5.2, 5.4, 5.3, -4.1, 4.0, 5.1, 5.0, 5.2)),
+                array('key' => 'manufacture', 'name' => 'Industri Pengolahan', 'short' => 'Industri', 'shareLocal' => 12.2, 'shareProvince' => 30.5, 'growthLocal' => 4.1, 'growthProvince' => 4.8, 'employmentBase' => 5200, 'employmentCurrent' => 7200, 'provinceEmploymentBase' => 520000, 'provinceEmploymentCurrent' => 600000, 'growthSeries' => array(4.0, 4.2, 4.4, 4.8, 4.7, -2.8, 3.1, 4.0, 4.0, 4.1), 'growthProvinceSeries' => array(5.0, 4.8, 4.6, 4.8, 4.7, -2.7, 3.2, 4.2, 4.6, 4.8)),
+                array('key' => 'accommodation', 'name' => 'Akomodasi & Makan Minum', 'short' => 'Akomodasi', 'shareLocal' => 9.1, 'shareProvince' => 4.2, 'growthLocal' => 7.3, 'growthProvince' => 6.4, 'employmentBase' => 2100, 'employmentCurrent' => 5600, 'provinceEmploymentBase' => 110000, 'provinceEmploymentCurrent' => 190000, 'growthSeries' => array(6.0, 6.4, 6.9, 7.1, 6.8, -8.0, 5.9, 9.2, 7.0, 7.3), 'growthProvinceSeries' => array(6.5, 6.7, 6.9, 7.2, 6.8, -8.4, 5.4, 8.0, 6.5, 6.4)),
+                array('key' => 'construction', 'name' => 'Konstruksi', 'short' => 'Konstruksi', 'shareLocal' => 8.0, 'shareProvince' => 9.2, 'growthLocal' => 4.8, 'growthProvince' => 5.1, 'employmentBase' => 4300, 'employmentCurrent' => 6500, 'provinceEmploymentBase' => 450000, 'provinceEmploymentCurrent' => 530000, 'growthSeries' => array(5.1, 5.3, 5.2, 5.4, 5.3, -3.9, 3.3, 4.5, 4.6, 4.8), 'growthProvinceSeries' => array(5.3, 5.2, 5.1, 5.4, 5.1, -4.2, 2.8, 5.5, 5.0, 5.1)),
+                array('key' => 'transport', 'name' => 'Transportasi & Pergudangan', 'short' => 'Transportasi', 'shareLocal' => 5.0, 'shareProvince' => 5.2, 'growthLocal' => 5.1, 'growthProvince' => 5.0, 'employmentBase' => 2600, 'employmentCurrent' => 3600, 'provinceEmploymentBase' => 230000, 'provinceEmploymentCurrent' => 280000, 'growthSeries' => array(4.7, 4.9, 5.2, 5.4, 5.2, -7.2, 4.2, 7.8, 5.3, 5.1), 'growthProvinceSeries' => array(5.8, 5.5, 5.2, 5.5, 5.4, -8.0, 3.3, 8.0, 5.1, 5.0)),
+                array('key' => 'services', 'name' => 'Jasa Lainnya', 'short' => 'Jasa lainnya', 'shareLocal' => 18.7, 'shareProvince' => 21.0, 'growthLocal' => 5.0, 'growthProvince' => 5.1, 'employmentBase' => 9000, 'employmentCurrent' => 13000, 'provinceEmploymentBase' => 850000, 'provinceEmploymentCurrent' => 1050000, 'growthSeries' => array(4.8, 4.9, 5.0, 5.1, 5.0, -1.8, 3.7, 4.8, 4.9, 5.0), 'growthProvinceSeries' => array(5.1, 5.0, 4.9, 5.0, 5.0, -2.0, 3.8, 4.8, 5.0, 5.1))
+            );
+        }
+
+        return array();
     }
 
-    public function get_regional_growth($status = null) {
+    public function get_regional_growth($status = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
             $this->db->where('is_deleted', 0);
         }
+        $this->db->where('kode_wilayah', $kode);
         $query = $this->db->order_by('nilai_pertumbuhan', 'DESC')->get('perbandingan_daerah');
         if ($query->num_rows() > 0) {
             $list = array();
@@ -149,6 +238,7 @@ class M_economy extends CI_Model {
                     'perubahan' => (float)$row->perubahan,
                     'series' => json_decode($row->deret_historis, true) ?: array(),
                     'deret_historis' => $row->deret_historis,
+                    'kode_wilayah' => $row->kode_wilayah ?? $kode,
                     'is_deleted' => (int)($row->is_deleted ?? 0),
                     'deleted_at' => $row->deleted_at ?? null
                 );
@@ -156,16 +246,20 @@ class M_economy extends CI_Model {
             return $list;
         }
 
-        return array(
-            array('id' => 1, 'name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
-            array('id' => 2, 'name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
-            array('id' => 3, 'name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
-            array('id' => 4, 'name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
-            array('id' => 5, 'name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
-            array('id' => 6, 'name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
-            array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
-            array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
-        );
+        if ($kode === '35.10') {
+            return array(
+                array('id' => 1, 'name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
+                array('id' => 2, 'name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
+                array('id' => 3, 'name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
+                array('id' => 4, 'name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
+                array('id' => 5, 'name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
+                array('id' => 6, 'name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
+                array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
+                array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
+            );
+        }
+
+        return array();
     }
 
     public function get_regional_by_id($id) {
@@ -181,6 +275,7 @@ class M_economy extends CI_Model {
             'perubahan' => (float)$row['perubahan'],
             'series' => json_decode($row['deret_historis'], true) ?: array(),
             'deret_historis' => $row['deret_historis'],
+            'kode_wilayah' => $row['kode_wilayah'] ?? '35.10',
             'is_deleted' => (int)($row['is_deleted'] ?? 0),
             'deleted_at' => $row['deleted_at'] ?? null
         );
@@ -190,6 +285,7 @@ class M_economy extends CI_Model {
         $nama = trim($data['nama_wilayah'] ?? $data['name'] ?? '');
         $nilai = (float)($data['nilai_pertumbuhan'] ?? $data['value'] ?? 5.0);
         $perubahan = (float)($data['perubahan'] ?? $data['change'] ?? 0.2);
+        $kodeWilayah = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         if (empty($nama)) return false;
 
@@ -227,11 +323,12 @@ class M_economy extends CI_Model {
             'nilai_pertumbuhan' => $nilai,
             'perubahan' => $perubahan,
             'deret_historis' => json_encode(array_values($series)),
+            'kode_wilayah' => $kodeWilayah,
             'is_deleted' => 0,
             'deleted_at' => null
         );
 
-        $exists = $this->db->where('nama_wilayah', $nama)->where('is_deleted', 0)->get('perbandingan_daerah')->num_rows();
+        $exists = $this->db->where('nama_wilayah', $nama)->where('kode_wilayah', $kodeWilayah)->where('is_deleted', 0)->get('perbandingan_daerah')->num_rows();
         if ($exists > 0) {
             return false;
         }
@@ -249,6 +346,9 @@ class M_economy extends CI_Model {
         }
         if (isset($data['perubahan']) || isset($data['change'])) {
             $record['perubahan'] = (float)($data['perubahan'] ?? $data['change']);
+        }
+        if (isset($data['kode_wilayah'])) {
+            $record['kode_wilayah'] = trim($data['kode_wilayah']);
         }
         if (!empty($data['deret_historis'])) {
             if (is_array($data['deret_historis'])) {
@@ -291,16 +391,19 @@ class M_economy extends CI_Model {
         return $this->db->delete('perbandingan_daerah');
     }
 
-    public function count_trash_regional() {
-        return $this->db->where('is_deleted', 1)->count_all_results('perbandingan_daerah');
+    public function count_trash_regional($kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $kode)->count_all_results('perbandingan_daerah');
     }
 
-    public function get_districts($status = null) {
+    public function get_districts($status = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
             $this->db->where('is_deleted', 0);
         }
+        $this->db->where('kode_wilayah', $kode);
         $query = $this->db->get('peta_ekonomi');
         if ($query->num_rows() > 0) {
             $list = array();
@@ -321,6 +424,7 @@ class M_economy extends CI_Model {
                     'lat' => (float)$row->garis_lintang,
                     'lng' => (float)$row->garis_bujur,
                     'id' => (int)$row->id,
+                    'kode_wilayah' => $row->kode_wilayah ?? $kode,
                     'is_deleted' => (int)($row->is_deleted ?? 0),
                     'deleted_at' => $row->deleted_at ?? null
                 );
@@ -328,14 +432,19 @@ class M_economy extends CI_Model {
             return $list;
         }
 
-        return array(
-            array('name' => 'Banyuwangi', 'share' => 14.8, 'growth' => 5.82, 'poverty' => 5.2, 'density' => 2450, 'category' => 'Perkotaan & Jasa', 'lat' => -8.2192, 'lng' => 114.3692),
-            array('name' => 'Rogojampi', 'share' => 8.9, 'growth' => 5.41, 'poverty' => 6.8, 'density' => 1320, 'category' => 'Perdagangan & Agro', 'lat' => -8.3045, 'lng' => 114.2925),
-            array('name' => 'Genteng', 'share' => 9.2, 'growth' => 5.35, 'poverty' => 6.1, 'density' => 1480, 'category' => 'Pusat Niaga Selatan', 'lat' => -8.3619, 'lng' => 114.1528)
-        );
+        if ($kode === '35.10') {
+            return array(
+                array('name' => 'Banyuwangi', 'share' => 14.8, 'growth' => 5.82, 'poverty' => 5.2, 'density' => 2450, 'category' => 'Perkotaan & Jasa', 'lat' => -8.2192, 'lng' => 114.3692),
+                array('name' => 'Rogojampi', 'share' => 8.9, 'growth' => 5.41, 'poverty' => 6.8, 'density' => 1320, 'category' => 'Perdagangan & Agro', 'lat' => -8.3045, 'lng' => 114.2925),
+                array('name' => 'Genteng', 'share' => 9.2, 'growth' => 5.35, 'poverty' => 6.1, 'density' => 1480, 'category' => 'Pusat Niaga Selatan', 'lat' => -8.3619, 'lng' => 114.1528)
+            );
+        }
+        return array();
     }
 
-    public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null) {
+    public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $this->db->where('kode_wilayah', $kode);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
@@ -405,6 +514,7 @@ class M_economy extends CI_Model {
                 'diverifikasi_oleh' => $row['diverifikasi_oleh'],
                 'notes' => $row['catatan'],
                 'catatan' => $row['catatan'],
+                'kode_wilayah' => $row['kode_wilayah'] ?? $kode,
                 'is_deleted' => (int)($row['is_deleted'] ?? 0),
                 'deleted_at' => $row['deleted_at'] ?? null,
                 'created_at' => $row['dibuat_pada'],
@@ -427,6 +537,7 @@ class M_economy extends CI_Model {
             'klaster' => $row['klaster'],
             'region' => $row['wilayah'],
             'wilayah' => $row['wilayah'],
+            'kode_wilayah' => $row['kode_wilayah'] ?? '35.10',
             'period' => $row['periode'],
             'periode' => $row['periode'],
             'year' => (int)$row['tahun'],
@@ -450,11 +561,15 @@ class M_economy extends CI_Model {
     }
 
     public function add_indicator_record($data) {
+        $kodeWilayah = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
+        $namaWilayah = $this->get_nama_wilayah($kodeWilayah);
+
         $record = array(
             'kode_indikator'    => trim($data['code'] ?? $data['kode_indikator'] ?? ''),
             'nama_indikator'    => trim($data['indicator'] ?? $data['nama_indikator'] ?? ''),
             'klaster'           => trim($data['cluster'] ?? $data['klaster'] ?? 'Output & Pertumbuhan'),
-            'wilayah'           => trim($data['region'] ?? $data['wilayah'] ?? 'Kabupaten Banyuwangi'),
+            'wilayah'           => trim($data['region'] ?? $data['wilayah'] ?? $namaWilayah),
+            'kode_wilayah'      => $kodeWilayah,
             'periode'           => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
             'tahun'             => (int)($data['year'] ?? $data['tahun'] ?? 2024),
             'nilai'             => (float)($data['value'] ?? $data['nilai'] ?? 0),
@@ -470,6 +585,7 @@ class M_economy extends CI_Model {
 
         $exists = $this->db->where('kode_indikator', $record['kode_indikator'])
             ->where('tahun', $record['tahun'])
+            ->where('kode_wilayah', $record['kode_wilayah'])
             ->where('is_deleted', 0)
             ->get('database_ekonomi')
             ->num_rows();
@@ -480,9 +596,9 @@ class M_economy extends CI_Model {
         $res = $this->db->insert('database_ekonomi', $record);
         if ($res) {
             // Sinkronkan ke early_warning jika kode indikator ada di tabel EWS
-            $ewsMatch = $this->db->where('kode_indikator', $record['kode_indikator'])->get('early_warning')->row_array();
+            $ewsMatch = $this->db->where('kode_indikator', $record['kode_indikator'])->where('kode_wilayah', $record['kode_wilayah'])->get('early_warning')->row_array();
             if ($ewsMatch) {
-                $this->update_ews_threshold($record['kode_indikator'], (float)$ewsMatch['ambang_batas'], $ewsMatch['arah_risiko'], (float)$record['nilai']);
+                $this->update_ews_threshold($record['kode_indikator'], (float)$ewsMatch['ambang_batas'], $ewsMatch['arah_risiko'], (float)$record['nilai'], $record['kode_wilayah']);
             }
         }
         return $res;
@@ -502,6 +618,9 @@ class M_economy extends CI_Model {
         }
         if (isset($data['region']) || isset($data['wilayah'])) {
             $record['wilayah'] = trim($data['region'] ?? $data['wilayah']);
+        }
+        if (isset($data['kode_wilayah']) && !empty($data['kode_wilayah'])) {
+            $record['kode_wilayah'] = trim($data['kode_wilayah']);
         }
         if (isset($data['period']) || isset($data['periode'])) {
             $record['periode'] = trim($data['period'] ?? $data['periode']);
@@ -531,14 +650,16 @@ class M_economy extends CI_Model {
 
         // Jika data diedit (otomatis jadi Perlu review), cek apakah indikator ini masih memiliki data lain yang Tervalidasi
         $code = $record['kode_indikator'] ?? $existing['kode_indikator'] ?? null;
+        $rowWilayah = $record['kode_wilayah'] ?? $existing['kode_wilayah'] ?? $this->get_active_kode_wilayah();
         if ($code) {
             $hasValid = $this->db
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $rowWilayah)
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->count_all_results('database_ekonomi');
             if ($hasValid === 0) {
-                $this->remove_from_catalog($code);
+                $this->remove_from_catalog($code, $rowWilayah);
             }
         }
         return $res;
@@ -554,11 +675,12 @@ class M_economy extends CI_Model {
         if ($existing && !empty($existing['kode_indikator'])) {
             $hasValid = $this->db
                 ->where('kode_indikator', $existing['kode_indikator'])
+                ->where('kode_wilayah', $existing['kode_wilayah'])
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->count_all_results('database_ekonomi');
             if ($hasValid === 0) {
-                $this->remove_from_catalog($existing['kode_indikator']);
+                $this->remove_from_catalog($existing['kode_indikator'], $existing['kode_wilayah']);
             }
         }
         return $res;
@@ -572,7 +694,7 @@ class M_economy extends CI_Model {
         ));
         $existing = $this->db->where('id', (int)$id)->get('database_ekonomi')->row_array();
         if ($existing && $existing['status_validasi'] === 'Tervalidasi') {
-            $this->sync_to_catalog($existing['kode_indikator']);
+            $this->sync_to_catalog($existing['kode_indikator'], $existing['kode_wilayah']);
         }
         return $res;
     }
@@ -584,22 +706,25 @@ class M_economy extends CI_Model {
         if ($existing && !empty($existing['kode_indikator'])) {
             $hasValid = $this->db
                 ->where('kode_indikator', $existing['kode_indikator'])
+                ->where('kode_wilayah', $existing['kode_wilayah'])
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->count_all_results('database_ekonomi');
             if ($hasValid === 0) {
-                $this->remove_from_catalog($existing['kode_indikator']);
+                $this->remove_from_catalog($existing['kode_indikator'], $existing['kode_wilayah']);
             }
         }
         return $res;
     }
 
-    public function count_trash_records() {
-        return $this->db->where('is_deleted', 1)->count_all_results('database_ekonomi');
+    public function count_trash_records($kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $kode)->count_all_results('database_ekonomi');
     }
 
-    public function update_record_status($code, $year, $status, $notes = null, $verifier = null) {
-        $this->db->where('kode_indikator', $code)->where('tahun', $year);
+    public function update_record_status($code, $year, $status, $notes = null, $verifier = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $this->db->where('kode_indikator', $code)->where('tahun', $year)->where('kode_wilayah', $kode);
         $data = array('status_validasi' => $status);
         if ($status === 'Tervalidasi' || $status === 'Perlu review') {
             // Data sudah disetujui atau dikembalikan untuk review ulang (sudah dibenarkan) -> hapus catatan penolakan otomatis
@@ -615,33 +740,37 @@ class M_economy extends CI_Model {
 
         // Jika status menjadi Tervalidasi, otomatis masukkan / sinkronkan indikator ke katalog & EWS
         if ($status === 'Tervalidasi' && $updated) {
-            $this->sync_to_catalog($code);
-            $this->sync_all_validated_to_ews();
+            $this->sync_to_catalog($code, $kode);
+            $this->sync_all_validated_to_ews($kode);
         } else {
             // Jika status bukan Tervalidasi (diubah ke Belum lengkap, Ditolak, atau Perlu review),
             // pastikan indikator tidak tampil di katalog & EWS jika tidak ada data aktif lain yang berstatus Tervalidasi
             $hasValid = $this->db
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode)
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->count_all_results('database_ekonomi');
             if ($hasValid === 0) {
-                $this->remove_from_catalog($code);
-                $this->clean_unvalidated_from_ews();
+                $this->remove_from_catalog($code, $kode);
+                $this->clean_unvalidated_from_ews($kode);
             }
         }
 
         return $updated;
     }
 
-    public function remove_from_catalog($code) {
+    public function remove_from_catalog($code, $kode_wilayah = null) {
         if (empty($code)) return false;
-        return $this->db->where('kode_indikator', $code)->delete('katalog_indikator');
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        return $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode)->delete('katalog_indikator');
     }
 
-    public function sync_to_catalog($code) {
+    public function sync_to_catalog($code, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         $record = $this->db
             ->where('kode_indikator', $code)
+            ->where('kode_wilayah', $kode_wil)
             ->where('status_validasi', 'Tervalidasi')
             ->where('is_deleted', 0)
             ->order_by('tahun', 'DESC')
@@ -658,11 +787,11 @@ class M_economy extends CI_Model {
         $klaster = trim($record['klaster'] ?: 'Output & Pertumbuhan');
         $satuan = trim($record['satuan'] ?: '%');
         $frekuensi = trim($record['periode'] ?: 'Tahunan');
-        $sumber = trim($record['sumber_data'] ?: 'BPS Kabupaten Banyuwangi');
+        $sumber = trim($record['sumber_data'] ?: ('BPS ' . $this->get_nama_wilayah($kode_wil)));
 
         $defMap = array(
             'PDRB_01' => 'Laju perubahan Produk Domestik Regional Bruto (PDRB) atas dasar harga konstan tahun 2010 yang mencerminkan pertumbuhan ekonomi riil daerah.',
-            'PDRB_02' => 'Total nilai tambah bruto seluruh sektor ekonomi di wilayah Kabupaten Banyuwangi atas dasar harga konstan.',
+            'PDRB_02' => 'Total nilai tambah bruto seluruh sektor ekonomi di wilayah atas dasar harga konstan.',
             'PDRB_03' => 'PDRB atas dasar harga berlaku dibagi jumlah penduduk pertengahan tahun, mengukur tingkat pendapatan rata-rata masyarakat.',
             'INF_01'  => 'Persentase kenaikan harga barang dan jasa kebutuhan pokok konsumen dari waktu ke waktu berdasarkan survei IHK.',
             'TPT_01'  => 'Persentase jumlah pengangguran terhadap jumlah keseluruhan angkatan kerja aktif daerah.',
@@ -671,14 +800,14 @@ class M_economy extends CI_Model {
             'INV_01'  => 'Total akumulasi nilai investasi penanaman modal dalam negeri (PMDN) dan penanaman modal asing (PMA) yang terealisasi.',
             'INV_02'  => 'Persentase laju pertumbuhan realisasi penanaman modal di daerah dibandingkan tahun sebelumnya.',
             'FIS_01'  => 'Penerimaan daerah dari sumber pajak daerah, retribusi, hasil pengelolaan kekayaan daerah yang dipisahkan, dan lain-lain PAD yang sah.',
-            'PAR_01'  => 'Jumlah kunjungan wisatawan nusantara dan mancanegara ke berbagai destinasi wisata di Kabupaten Banyuwangi.',
+            'PAR_01'  => 'Jumlah kunjungan wisatawan nusantara dan mancanegara ke berbagai destinasi wisata daerah.',
             'SEK_01'  => 'Pangsa atau kontribusi persentase sektor pertanian, kehutanan, dan perikanan terhadap total PDRB daerah.'
         );
 
-        $definisi = $defMap[$kode] ?? "Indikator {$nama} dalam klaster {$klaster} untuk pemantauan capaian pembangunan daerah Kabupaten Banyuwangi.";
+        $definisi = $defMap[$kode] ?? "Indikator {$nama} dalam klaster {$klaster} untuk pemantauan capaian pembangunan daerah.";
 
         // Cek apakah sudah ada di katalog_indikator
-        $existing = $this->db->where('kode_indikator', $kode)->get('katalog_indikator')->row_array();
+        $existing = $this->db->where('kode_indikator', $kode)->where('kode_wilayah', $kode_wil)->get('katalog_indikator')->row_array();
         if ($existing) {
             $update = array(
                 'nama_indikator'       => $nama,
@@ -703,6 +832,7 @@ class M_economy extends CI_Model {
                 'frekuensi'            => $frekuensi,
                 'sumber_data'          => $sumber,
                 'definisi_operasional' => $definisi,
+                'kode_wilayah'         => $kode_wil,
                 'is_deleted'           => 0,
                 'deleted_at'           => null
             );
@@ -711,21 +841,24 @@ class M_economy extends CI_Model {
         }
     }
 
-    public function clean_unvalidated_from_catalog() {
+    public function clean_unvalidated_from_catalog($kode_wilayah = null) {
+        $kode_wil = $this->db->escape($this->get_active_kode_wilayah($kode_wilayah));
         // Hapus dari katalog_indikator jika statusnya belum tervalidasi atau tidak memiliki rekaman aktif Tervalidasi di database_ekonomi
-        $this->db->query("DELETE FROM katalog_indikator WHERE kode_indikator NOT IN (
-            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0
+        $this->db->query("DELETE FROM katalog_indikator WHERE kode_wilayah = {$kode_wil} AND kode_indikator NOT IN (
+            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE kode_wilayah = {$kode_wil} AND status_validasi = 'Tervalidasi' AND is_deleted = 0
         )");
     }
 
-    public function sync_all_validated_to_catalog() {
+    public function sync_all_validated_to_catalog($kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         // 1. Bersihkan entri katalog yang statusnya belum tervalidasi atau diubah ke Belum lengkap / Ditolak / Perlu review
-        $this->clean_unvalidated_from_catalog();
+        $this->clean_unvalidated_from_catalog($kode_wil);
 
         // 2. Sinkronkan seluruh data yang berstatus Tervalidasi
         $indicators = $this->db
             ->select('DISTINCT(kode_indikator)')
             ->where('status_validasi', 'Tervalidasi')
+            ->where('kode_wilayah', $kode_wil)
             ->where('is_deleted', 0)
             ->get('database_ekonomi')
             ->result_array();
@@ -733,7 +866,7 @@ class M_economy extends CI_Model {
         $count = 0;
         foreach ($indicators as $row) {
             if (!empty($row['kode_indikator'])) {
-                if ($this->sync_to_catalog($row['kode_indikator'])) {
+                if ($this->sync_to_catalog($row['kode_indikator'], $kode_wil)) {
                     $count++;
                 }
             }
@@ -741,10 +874,12 @@ class M_economy extends CI_Model {
         return $count;
     }
 
-    public function get_catalog_years() {
+    public function get_catalog_years($kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         return $this->db
             ->select('tahun, COUNT(*) as total_records, COUNT(DISTINCT kode_indikator) as total_indicators')
             ->where('status_validasi', 'Tervalidasi')
+            ->where('kode_wilayah', $kode_wil)
             ->where('is_deleted', 0)
             ->group_by('tahun')
             ->order_by('tahun', 'ASC')
@@ -752,8 +887,12 @@ class M_economy extends CI_Model {
             ->result_array();
     }
 
-    public function get_indicator_catalog($status = null, $year = null) {
+    public function get_indicator_catalog($status = null, $year = null, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
+        $escapedWil = $this->db->escape($kode_wil);
+
         $this->db->from('katalog_indikator k');
+        $this->db->where('k.kode_wilayah', $kode_wil);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('k.is_deleted', 1);
         } else {
@@ -761,9 +900,9 @@ class M_economy extends CI_Model {
             // Hanya tampilkan indikator yang SUDAH Tervalidasi di database_ekonomi
             if ($year && is_numeric($year)) {
                 $yInt = (int)$year;
-                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0 AND d.tahun = {$yInt})", null, false);
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0 AND d.tahun = {$yInt})", null, false);
             } else {
-                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0)", null, false);
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0)", null, false);
             }
         }
         $res = $this->db->order_by('k.kode_indikator', 'ASC')->get();
@@ -774,6 +913,7 @@ class M_economy extends CI_Model {
             $recordsInfo = $this->db
                 ->select('COUNT(*) as total_records, MIN(tahun) as min_year, MAX(tahun) as max_year')
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode_wil)
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->get('database_ekonomi')
@@ -790,6 +930,7 @@ class M_economy extends CI_Model {
                 $recYear = $this->db
                     ->select('nilai, tahun, satuan')
                     ->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kode_wil)
                     ->where('tahun', (int)$year)
                     ->where('status_validasi', 'Tervalidasi')
                     ->where('is_deleted', 0)
@@ -816,6 +957,7 @@ class M_economy extends CI_Model {
                 'sumber_data' => $row['sumber_data'],
                 'definition' => $row['definisi_operasional'],
                 'definisi_operasional' => $row['definisi_operasional'],
+                'kode_wilayah' => $row['kode_wilayah'] ?? $kode_wil,
                 'total_records' => $totalRecs,
                 'period_span' => $periodSpan,
                 'selected_year' => ($year && is_numeric($year)) ? (int)$year : null,
@@ -825,21 +967,24 @@ class M_economy extends CI_Model {
         return $list;
     }
 
-    public function clean_unvalidated_from_ews() {
+    public function clean_unvalidated_from_ews($kode_wilayah = null) {
+        $kode_wil = $this->db->escape($this->get_active_kode_wilayah($kode_wilayah));
         // Hapus dari early_warning jika indikator tidak memiliki rekaman aktif Tervalidasi di database_ekonomi
-        $this->db->query("DELETE FROM early_warning WHERE kode_indikator NOT IN (
-            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0
+        $this->db->query("DELETE FROM early_warning WHERE kode_wilayah = {$kode_wil} AND kode_indikator NOT IN (
+            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE kode_wilayah = {$kode_wil} AND status_validasi = 'Tervalidasi' AND is_deleted = 0
         )");
     }
 
-    public function sync_all_validated_to_ews() {
+    public function sync_all_validated_to_ews($kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         // 1. Bersihkan indikator yang belum atau tidak lagi tervalidasi
-        $this->clean_unvalidated_from_ews();
+        $this->clean_unvalidated_from_ews($kode_wil);
 
         // 2. Ambil seluruh indikator yang sudah tervalidasi di database_ekonomi
         $validated = $this->db
             ->select('kode_indikator, nama_indikator, satuan, AVG(nilai) as avg_val')
             ->where('status_validasi', 'Tervalidasi')
+            ->where('kode_wilayah', $kode_wil)
             ->where('is_deleted', 0)
             ->group_by('kode_indikator, nama_indikator, satuan')
             ->order_by('kode_indikator', 'ASC')
@@ -850,11 +995,9 @@ class M_economy extends CI_Model {
             $code = trim($v['kode_indikator']);
             if (empty($code)) continue;
 
-            $exists = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
+            $exists = $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil)->get('early_warning')->row_array();
             if (!$exists) {
                 // Tentukan arah kondisi kritis default
-                // Indikator risiko/beban (Inflasi, Kemiskinan, Pengangguran): kritis jika di atas ambang (above)
-                // Indikator target/kinerja (PAD, Investasi, IPM, PDRB): kritis jika di bawah ambang (below)
                 $dir = in_array($code, array('INF_01', 'POV_01', 'TPT_01')) ? 'above' : 'below';
                 $th = round((float)$v['avg_val'], 2);
 
@@ -867,6 +1010,7 @@ class M_economy extends CI_Model {
                     'arah_risiko'          => $dir,
                     'status_risiko'        => 'Normal',
                     'sudah_ditindaklanjuti'=> 0,
+                    'kode_wilayah'         => $kode_wil,
                     'is_deleted'           => 0
                 );
                 $this->db->insert('early_warning', $insertData);
@@ -882,12 +1026,14 @@ class M_economy extends CI_Model {
         }
     }
 
-    public function get_ews_indicators($status = null, $year = null) {
+    public function get_ews_indicators($status = null, $year = null, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status !== 'Terhapus' && $status !== 'Sampah') {
-            $this->sync_all_validated_to_ews();
+            $this->sync_all_validated_to_ews($kode_wil);
         }
 
         if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('kode_wilayah', $kode_wil);
             $this->db->where('is_deleted', 1);
             $res = $this->db->order_by('kode_indikator', 'ASC')->get('early_warning');
             $results = array();
@@ -914,6 +1060,7 @@ class M_economy extends CI_Model {
                     'distance' => 0,
                     'status' => $row['status_risiko'],
                     'status_risiko' => $row['status_risiko'],
+                    'kode_wilayah' => $row['kode_wilayah'] ?? $kode_wil,
                     'is_followed_up' => (int)$row['sudah_ditindaklanjuti'],
                     'sudah_ditindaklanjuti' => (int)$row['sudah_ditindaklanjuti']
                 );
@@ -921,32 +1068,34 @@ class M_economy extends CI_Model {
             return $results;
         }
 
-        // Ambil data EWS yang tervalidasi dari database_ekonomi (filter tahun jika ada)
-        $yearCond = ($year && is_numeric($year)) ? "AND d.tahun = " . (int)$year : "";
-        $sql = "SELECT e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db
-                FROM early_warning e
-                INNER JOIN database_ekonomi d ON d.kode_indikator = e.kode_indikator 
-                    AND d.status_validasi = 'Tervalidasi' 
-                    AND d.is_deleted = 0
-                    $yearCond
-                WHERE e.is_deleted = 0
-                ORDER BY e.kode_indikator ASC, d.tahun DESC";
+        // Ambil data aktif dari early_warning
+        $this->db->select("e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db");
+        $this->db->from('early_warning e');
+        $this->db->where('e.kode_wilayah', $kode_wil);
+        $escapedWil = $this->db->escape($kode_wil);
 
-        $query = $this->db->query($sql);
-        $rows = $query->result_array();
-
-        // Deduplikasi kode_indikator (ambil tahun terbaru jika filter Semua Tahun)
-        $byCode = array();
-        foreach ($rows as $r) {
-            $c = $r['kode_indikator'];
-            if (!isset($byCode[$c])) {
-                $byCode[$c] = $r;
-            }
+        if ($year && is_numeric($year)) {
+            $yInt = (int)$year;
+            $this->db->join("database_ekonomi d", "d.kode_indikator = e.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.tahun = {$yInt} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0", "left");
+        } else {
+            $this->db->join("(SELECT d1.* FROM database_ekonomi d1 
+                INNER JOIN (
+                    SELECT kode_indikator, kode_wilayah, MAX(tahun) as max_yr 
+                    FROM database_ekonomi 
+                    WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0 AND kode_wilayah = {$escapedWil}
+                    GROUP BY kode_indikator, kode_wilayah
+                ) d2 ON d1.kode_indikator = d2.kode_indikator AND d1.kode_wilayah = d2.kode_wilayah AND d1.tahun = d2.max_yr
+                WHERE d1.status_validasi = 'Tervalidasi' AND d1.is_deleted = 0 AND d1.kode_wilayah = {$escapedWil}
+            ) d", "d.kode_indikator = e.kode_indikator", "left");
         }
 
+        $this->db->where('e.is_deleted', 0);
+        $this->db->order_by('e.kode_indikator', 'ASC');
+        $res = $this->db->get();
+
         $results = array();
-        foreach ($byCode as $row) {
-            $val = (float)$row['val_db'];
+        foreach ($res->result_array() as $row) {
+            $val = ($row['val_db'] !== null) ? (float)$row['val_db'] : (float)$row['nilai_terkini'];
             $th = (float)$row['ambang_batas'];
             $dir = strtolower($row['arah_risiko'] ?? 'above');
             if ($dir !== 'below') {
@@ -986,6 +1135,7 @@ class M_economy extends CI_Model {
                 'distance' => round($distance, 2),
                 'status' => $statusRisiko,
                 'status_risiko' => $statusRisiko,
+                'kode_wilayah' => $row['kode_wilayah'] ?? $kode_wil,
                 'is_followed_up' => (int)$row['sudah_ditindaklanjuti'],
                 'sudah_ditindaklanjuti' => (int)$row['sudah_ditindaklanjuti']
             );
@@ -993,9 +1143,10 @@ class M_economy extends CI_Model {
         return $results;
     }
 
-    public function update_ews_threshold($code, $threshold, $direction = null, $value = null) {
+    public function update_ews_threshold($code, $threshold, $direction = null, $value = null, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         $th = (float)$threshold;
-        $row = $this->db->where('kode_indikator', $code)->get('early_warning')->row_array();
+        $row = $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil)->get('early_warning')->row_array();
 
         if ($value !== null && is_numeric($value)) {
             $val = (float)$value;
@@ -1003,6 +1154,7 @@ class M_economy extends CI_Model {
             // Ambil nilai riil terkini yang tervalidasi dari database_ekonomi
             $latest = $this->db->select('nilai')
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode_wil)
                 ->where('status_validasi', 'Tervalidasi')
                 ->where('is_deleted', 0)
                 ->order_by('tahun', 'DESC')
@@ -1033,7 +1185,7 @@ class M_economy extends CI_Model {
             $updateData['arah_risiko'] = $dir;
         }
 
-        $this->db->where('kode_indikator', $code);
+        $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil);
         $res = $this->db->update('early_warning', $updateData);
         return array(
             'success'       => (bool)$res,
@@ -1045,19 +1197,22 @@ class M_economy extends CI_Model {
         );
     }
 
-    public function toggle_ews_followup($code) {
-        $item = $this->db->where('kode_indikator', $code)->get('early_warning')->row();
+    public function toggle_ews_followup($code, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
+        $item = $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil)->get('early_warning')->row();
         if ($item) {
             $next = $item->sudah_ditindaklanjuti ? 0 : 1;
-            $this->db->where('kode_indikator', $code)->update('early_warning', array('sudah_ditindaklanjuti' => $next));
+            $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil)->update('early_warning', array('sudah_ditindaklanjuti' => $next));
             return $next;
         }
         return false;
     }
 
-    public function get_beranda_cards($year = null, $status = null) {
+    public function get_beranda_cards($year = null, $status = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         $this->db->where('is_deleted', 0);
         $this->db->where('status_validasi !=', 'Ditolak');
+        $this->db->where('kode_wilayah', $kode);
 
         if ($year && is_numeric($year)) {
             $yearInt = (int)$year;
@@ -1093,6 +1248,7 @@ class M_economy extends CI_Model {
             // Komparasi tahun sebelumnya
             $prev_row = $this->db->where('is_deleted', 0)
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $row['kode_wilayah'] ?? $kode)
                 ->where('tahun', $rowYear - 1)
                 ->get('database_ekonomi')
                 ->row_array();
@@ -1141,6 +1297,7 @@ class M_economy extends CI_Model {
             // Deret historis untuk sparkline grafik mini
             $hist_rows = $this->db->where('is_deleted', 0)
                 ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $row['kode_wilayah'] ?? $kode)
                 ->where('tahun <=', $rowYear)
                 ->order_by('tahun', 'ASC')
                 ->get('database_ekonomi')
@@ -1174,6 +1331,7 @@ class M_economy extends CI_Model {
                 'deret_mini'      => json_encode($series_vals),
                 'tahun'           => $rowYear,
                 'wilayah'         => $row['wilayah'],
+                'kode_wilayah'    => $row['kode_wilayah'] ?? $kode,
                 'sumber_data'     => $row['sumber_data'],
                 'status_validasi' => $row['status_validasi']
             );
@@ -1182,10 +1340,12 @@ class M_economy extends CI_Model {
         return $cards;
     }
 
-    public function get_beranda_categories($year = null) {
+    public function get_beranda_categories($year = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         $this->db->select('klaster, COUNT(*) as total');
         $this->db->where('is_deleted', 0);
         $this->db->where('status_validasi !=', 'Ditolak');
+        $this->db->where('kode_wilayah', $kode);
         if ($year && is_numeric($year)) {
             $this->db->where('tahun', (int)$year);
         }
@@ -1201,7 +1361,9 @@ class M_economy extends CI_Model {
         return $cats;
     }
 
-    public function get_economic_insights($year = null, $status = null) {
+    public function get_economic_insights($year = null, $status = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $this->db->where('kode_wilayah', $kode);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
@@ -1213,11 +1375,16 @@ class M_economy extends CI_Model {
         return $this->db->order_by('id', 'ASC')->get('economic_insight')->result_array();
     }
 
-    public function get_laporan_ekonomi($status = null) {
+    public function get_laporan_ekonomi($status = null, $year = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $this->db->where('kode_wilayah', $kode);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
             $this->db->where('is_deleted', 0);
+            if ($year && is_numeric($year)) {
+                $this->db->where('periode_tahun', (int)$year);
+            }
         }
         return $this->db->order_by('id', 'DESC')->get('laporan_ekonomi')->result_array();
     }
@@ -1488,6 +1655,7 @@ class M_economy extends CI_Model {
             'status'         => trim($data['status'] ?? 'Stabil'),
             'deret_mini'     => !empty($data['deret_mini']) ? (is_array($data['deret_mini']) ? json_encode($data['deret_mini']) : $data['deret_mini']) : '[20, 25, 24, 28, 32, 36, 40]',
             'tahun'          => (int)($data['tahun'] ?? $data['year'] ?? 2024),
+            'kode_wilayah'   => !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah(),
             'is_deleted'     => 0,
             'deleted_at'     => null
         );
@@ -1521,7 +1689,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_beranda() {
-        return $this->db->where('is_deleted', 1)->count_all_results('beranda');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('beranda');
     }
 
     // ==========================================
@@ -1536,6 +1704,7 @@ class M_economy extends CI_Model {
         $nama = trim($data['nama_sektor'] ?? $data['name'] ?? '');
         $short = trim($data['nama_pendek'] ?? $data['short'] ?? $nama);
         if (empty($nama)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'kode_sektor'                 => $kode,
@@ -1551,11 +1720,12 @@ class M_economy extends CI_Model {
             'tenaga_kerja_provinsi_kini'  => (int)($data['tenaga_kerja_provinsi_kini'] ?? 240000),
             'deret_pertumbuhan'           => !empty($data['deret_pertumbuhan']) ? (is_array($data['deret_pertumbuhan']) ? json_encode($data['deret_pertumbuhan']) : $data['deret_pertumbuhan']) : '[4.0, 4.2, 4.5, 4.8, 5.0, -2.5, 3.5, 4.2, 4.5, 4.8]',
             'deret_pertumbuhan_provinsi'  => !empty($data['deret_pertumbuhan_provinsi']) ? (is_array($data['deret_pertumbuhan_provinsi']) ? json_encode($data['deret_pertumbuhan_provinsi']) : $data['deret_pertumbuhan_provinsi']) : '[4.2, 4.5, 4.6, 4.7, 4.9, -2.8, 3.2, 4.0, 4.4, 4.6]',
+            'kode_wilayah'                => $kw,
             'is_deleted'                  => 0,
             'deleted_at'                  => null
         );
 
-        $exists = $this->db->where('kode_sektor', $kode)->where('is_deleted', 0)->get('analisis_ekonomi')->num_rows();
+        $exists = $this->db->where('kode_sektor', $kode)->where('kode_wilayah', $kw)->where('is_deleted', 0)->get('analisis_ekonomi')->num_rows();
         if ($exists > 0) return false;
         return $this->db->insert('analisis_ekonomi', $record);
     }
@@ -1588,7 +1758,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_sectors() {
-        return $this->db->where('is_deleted', 1)->count_all_results('analisis_ekonomi');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('analisis_ekonomi');
     }
 
     // ==========================================
@@ -1601,6 +1771,7 @@ class M_economy extends CI_Model {
     public function add_district($data) {
         $nama = trim($data['nama_kecamatan'] ?? $data['name'] ?? '');
         if (empty($nama)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'nama_kecamatan' => $nama,
@@ -1611,11 +1782,12 @@ class M_economy extends CI_Model {
             'kategori'       => trim($data['kategori'] ?? $data['category'] ?? 'Perdagangan & Jasa'),
             'garis_lintang'  => (float)($data['garis_lintang'] ?? $data['lat'] ?? -8.2192),
             'garis_bujur'    => (float)($data['garis_bujur'] ?? $data['lng'] ?? 114.3692),
+            'kode_wilayah'   => $kw,
             'is_deleted'     => 0,
             'deleted_at'     => null
         );
 
-        $exists = $this->db->where('nama_kecamatan', $nama)->where('is_deleted', 0)->get('peta_ekonomi')->num_rows();
+        $exists = $this->db->where('nama_kecamatan', $nama)->where('kode_wilayah', $kw)->where('is_deleted', 0)->get('peta_ekonomi')->num_rows();
         if ($exists > 0) return false;
         return $this->db->insert('peta_ekonomi', $record);
     }
@@ -1647,13 +1819,15 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_districts() {
-        return $this->db->where('is_deleted', 1)->count_all_results('peta_ekonomi');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('peta_ekonomi');
     }
 
     // ==========================================
     // CRUD & SOFT DELETE: PROSPEK EKONOMI (PROYEKSI)
     // ==========================================
     public function get_prospek_records($status = null) {
+        $kw = $this->get_active_kode_wilayah();
+        $this->db->where('kode_wilayah', $kw);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
@@ -1669,6 +1843,7 @@ class M_economy extends CI_Model {
     public function add_prospek($data) {
         $tahun = (int)($data['tahun'] ?? $data['year'] ?? 0);
         if (!$tahun) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'tahun'                 => $tahun,
@@ -1681,11 +1856,12 @@ class M_economy extends CI_Model {
             'inflasi'               => (float)($data['inflasi'] ?? 2.5),
             'ipm'                   => (float)($data['ipm'] ?? 74.0),
             'pdrb_per_kapita'       => (float)($data['pdrb_per_kapita'] ?? 65.0),
+            'kode_wilayah'          => $kw,
             'is_deleted'            => 0,
             'deleted_at'            => null
         );
 
-        $exists = $this->db->where('tahun', $tahun)->where('is_deleted', 0)->get('prospek_ekonomi')->num_rows();
+        $exists = $this->db->where('tahun', $tahun)->where('kode_wilayah', $kw)->where('is_deleted', 0)->get('prospek_ekonomi')->num_rows();
         if ($exists > 0) return false;
         return $this->db->insert('prospek_ekonomi', $record);
     }
@@ -1719,7 +1895,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_prospek() {
-        return $this->db->where('is_deleted', 1)->count_all_results('prospek_ekonomi');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('prospek_ekonomi');
     }
 
     // ==========================================
@@ -1743,6 +1919,7 @@ class M_economy extends CI_Model {
         $kode = trim($data['kode_indikator'] ?? $data['code'] ?? '');
         $nama = trim($data['nama_indikator'] ?? $data['name'] ?? '');
         if (empty($kode) || empty($nama)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $val = (float)($data['nilai_terkini'] ?? $data['value'] ?? 0);
         $th = (float)($data['ambang_batas'] ?? $data['threshold'] ?? 0);
@@ -1768,11 +1945,12 @@ class M_economy extends CI_Model {
             'arah_risiko'           => $dir,
             'status_risiko'         => $status_risiko,
             'sudah_ditindaklanjuti' => (int)($data['sudah_ditindaklanjuti'] ?? 0),
+            'kode_wilayah'          => $kw,
             'is_deleted'            => 0,
             'deleted_at'            => null
         );
 
-        $exists = $this->db->where('kode_indikator', $kode)->where('is_deleted', 0)->get('early_warning')->num_rows();
+        $exists = $this->db->where('kode_indikator', $kode)->where('kode_wilayah', $kw)->where('is_deleted', 0)->get('early_warning')->num_rows();
         if ($exists > 0) return false;
         return $this->db->insert('early_warning', $record);
     }
@@ -1828,7 +2006,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_ews() {
-        return $this->db->where('is_deleted', 1)->count_all_results('early_warning');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('early_warning');
     }
 
     // ==========================================
@@ -1841,6 +2019,7 @@ class M_economy extends CI_Model {
     public function add_insight($data) {
         $judul = trim($data['judul'] ?? $data['title'] ?? '');
         if (empty($judul)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'judul'                 => $judul,
@@ -1851,6 +2030,7 @@ class M_economy extends CI_Model {
             'dampak_anggaran'       => trim($data['dampak_anggaran'] ?? $data['budget_impact'] ?? 'Efisiensi Belanja'),
             'opd_penanggung_jawab'  => trim($data['opd_penanggung_jawab'] ?? $data['opd'] ?? 'Bappeda Banyuwangi'),
             'tahun'                 => (int)($data['tahun'] ?? $data['year'] ?? 2024),
+            'kode_wilayah'          => $kw,
             'is_deleted'            => 0,
             'deleted_at'            => null
         );
@@ -1885,7 +2065,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_insights() {
-        return $this->db->where('is_deleted', 1)->count_all_results('economic_insight');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('economic_insight');
     }
 
     // ==========================================
@@ -1899,6 +2079,7 @@ class M_economy extends CI_Model {
         $nomor = trim($data['nomor_laporan'] ?? $data['number'] ?? ('LAP-' . date('Y') . '-' . rand(10, 99)));
         $judul = trim($data['judul_laporan'] ?? $data['title'] ?? '');
         if (empty($judul)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'nomor_laporan' => $nomor,
@@ -1908,11 +2089,12 @@ class M_economy extends CI_Model {
             'penyusun'      => trim($data['penyusun'] ?? 'Tim Analis BAPPEDA'),
             'status'        => in_array($data['status'] ?? '', array('Terpublikasi','Draf')) ? $data['status'] : 'Terpublikasi',
             'tanggal_terbit'=> !empty($data['tanggal_terbit']) ? $data['tanggal_terbit'] : date('Y-m-d'),
+            'kode_wilayah'  => $kw,
             'is_deleted'    => 0,
             'deleted_at'    => null
         );
 
-        $exists = $this->db->where('nomor_laporan', $nomor)->where('is_deleted', 0)->get('laporan_ekonomi')->num_rows();
+        $exists = $this->db->where('nomor_laporan', $nomor)->where('kode_wilayah', $kw)->where('is_deleted', 0)->get('laporan_ekonomi')->num_rows();
         if ($exists > 0) return false;
         return $this->db->insert('laporan_ekonomi', $record);
     }
@@ -1943,7 +2125,7 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_laporan() {
-        return $this->db->where('is_deleted', 1)->count_all_results('laporan_ekonomi');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('laporan_ekonomi');
     }
 
     // ==========================================
@@ -1957,6 +2139,7 @@ class M_economy extends CI_Model {
         $kode = trim($data['kode_indikator'] ?? $data['code'] ?? '');
         $nama = trim($data['nama_indikator'] ?? $data['name'] ?? '');
         if (empty($kode) || empty($nama)) return false;
+        $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
         $record = array(
             'kode_indikator'       => $kode,
@@ -1964,13 +2147,14 @@ class M_economy extends CI_Model {
             'klaster'              => trim($data['klaster'] ?? $data['cluster'] ?? 'Output & Pertumbuhan'),
             'satuan'               => trim($data['satuan'] ?? $data['unit'] ?? '%'),
             'frekuensi'            => trim($data['frekuensi'] ?? $data['frequency'] ?? 'Tahunan'),
-            'sumber_data'          => trim($data['sumber_data'] ?? $data['source'] ?? 'BPS Banyuwangi'),
+            'sumber_data'          => trim($data['sumber_data'] ?? $data['source'] ?? 'BPS'),
             'definisi_operasional' => trim($data['definisi_operasional'] ?? $data['definition'] ?? ''),
+            'kode_wilayah'         => $kw,
             'is_deleted'           => 0,
             'deleted_at'           => null
         );
 
-        $existing = $this->db->where('kode_indikator', $kode)->get('katalog_indikator')->row_array();
+        $existing = $this->db->where('kode_indikator', $kode)->where('kode_wilayah', $kw)->get('katalog_indikator')->row_array();
         if ($existing) {
             if ($existing['is_deleted']) {
                 $record['is_deleted'] = 0;
@@ -2008,6 +2192,6 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_catalog() {
-        return $this->db->where('is_deleted', 1)->count_all_results('katalog_indikator');
+        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('katalog_indikator');
     }
 }

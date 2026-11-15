@@ -29,6 +29,18 @@ class M_auth extends CI_Model {
                         'peran'         => 'Administrator',
                         'level'         => 1,
                         'status'        => 'Aktif',
+                        'kode_wilayah'  => '35.10',
+                        'dibuat_pada'   => date('Y-m-d H:i:s')
+                    ),
+                    array(
+                        'nama_pengguna' => 'banyuwangi',
+                        'kata_sandi'    => password_hash('banyuwangi123', PASSWORD_BCRYPT),
+                        'nama_lengkap'  => 'Pemerintah Kabupaten Banyuwangi',
+                        'email'         => 'pemkab@banyuwangikab.go.id',
+                        'peran'         => 'Administrator',
+                        'level'         => 1,
+                        'status'        => 'Aktif',
+                        'kode_wilayah'  => '35.10',
                         'dibuat_pada'   => date('Y-m-d H:i:s')
                     ),
                     array(
@@ -39,6 +51,7 @@ class M_auth extends CI_Model {
                         'peran'         => 'Analis',
                         'level'         => 2,
                         'status'        => 'Aktif',
+                        'kode_wilayah'  => '35.10',
                         'dibuat_pada'   => date('Y-m-d H:i:s')
                     ),
                     array(
@@ -49,10 +62,26 @@ class M_auth extends CI_Model {
                         'peran'         => 'Operator',
                         'level'         => 3,
                         'status'        => 'Aktif',
+                        'kode_wilayah'  => '35.10',
                         'dibuat_pada'   => date('Y-m-d H:i:s')
                     )
                 );
                 $this->db->insert_batch($this->table, $defaultUsers);
+            } else {
+                $checkBwi = $this->db->where('nama_pengguna', 'banyuwangi')->get($this->table)->num_rows();
+                if ($checkBwi === 0) {
+                    $this->db->insert($this->table, array(
+                        'nama_pengguna' => 'banyuwangi',
+                        'kata_sandi'    => password_hash('banyuwangi123', PASSWORD_BCRYPT),
+                        'nama_lengkap'  => 'Pemerintah Kabupaten Banyuwangi',
+                        'email'         => 'pemkab@banyuwangikab.go.id',
+                        'peran'         => 'Administrator',
+                        'level'         => 1,
+                        'status'        => 'Aktif',
+                        'kode_wilayah'  => '35.10',
+                        'dibuat_pada'   => date('Y-m-d H:i:s')
+                    ));
+                }
             }
         }
     }
@@ -76,6 +105,66 @@ class M_auth extends CI_Model {
         );
     }
 
+    public function get_daftar_kab_kota() {
+        if (!$this->db->table_exists('kodewilayah')) {
+            return array(
+                array('kode' => '35.10', 'nama' => 'Kabupaten Banyuwangi', 'raw_nama' => 'KAB. BANYUWANGI')
+            );
+        }
+        $rows = $this->db->select('Kode as kode, Nama as nama')
+            ->like('Kode', '35.', 'after')
+            ->where('LENGTH(Kode)', 5)
+            ->group_by('Kode')
+            ->order_by('Kode', 'ASC')
+            ->get('kodewilayah')
+            ->result_array();
+        
+        $result = array();
+        foreach ($rows as $r) {
+            $namaFormatted = ucwords(strtolower($r['nama']));
+            $namaFormatted = str_replace('Kab.', 'Kabupaten', $namaFormatted);
+            $result[] = array(
+                'kode' => $r['kode'],
+                'nama' => $namaFormatted,
+                'raw_nama' => $r['nama']
+            );
+        }
+        return $result;
+    }
+
+    public function get_nama_wilayah($kode = null) {
+        if (empty($kode)) {
+            $kode = $this->get_active_kode_wilayah();
+        }
+        if ($kode === '35.10') {
+            return 'Kabupaten Banyuwangi';
+        }
+        if ($this->db->table_exists('kodewilayah')) {
+            $row = $this->db->select('Nama')->where('Kode', $kode)->limit(1)->get('kodewilayah')->row_array();
+            if ($row && !empty($row['Nama'])) {
+                $nama = ucwords(strtolower($row['Nama']));
+                $nama = str_replace('Kab.', 'Kabupaten', $nama);
+                return $nama;
+            }
+        }
+        return 'Wilayah ' . $kode;
+    }
+
+    public function get_active_kode_wilayah() {
+        $ci =& get_instance();
+        if (isset($ci->session)) {
+            $user = $ci->session->userdata('user_logged');
+            if (!empty($user['kode_wilayah'])) {
+                return $user['kode_wilayah'];
+            }
+            $sessKode = $ci->session->userdata('active_kode_wilayah');
+            if (!empty($sessKode)) {
+                return $sessKode;
+            }
+        }
+        return '35.10'; // Default Banyuwangi
+    }
+
     private function map_user($row) {
         if (!$row) return null;
         $rawLevel = $row['level'] ?? $row['peran'] ?? 3;
@@ -91,6 +180,8 @@ class M_auth extends CI_Model {
         }
 
         $levelName = $this->get_level_name($levelNum);
+        $kodeWilayah = $row['kode_wilayah'] ?? '35.10';
+        $namaWilayah = $this->get_nama_wilayah($kodeWilayah);
 
         return array(
             'id'            => (int)$row['id'],
@@ -106,6 +197,8 @@ class M_auth extends CI_Model {
             'level'         => (int)$levelNum,
             'level_nama'    => $levelName,
             'level_label'   => 'Level ' . $levelNum . ' (' . $levelName . ')',
+            'kode_wilayah'  => $kodeWilayah,
+            'nama_wilayah'  => $namaWilayah,
             'status'        => $row['status'],
             'avatar'        => $row['foto_profil'] ?? null,
             'last_login'    => $row['terakhir_masuk'] ?? null,
@@ -182,7 +275,7 @@ class M_auth extends CI_Model {
             $passwordValid = true;
         } elseif ($user['kata_sandi'] === md5($password)) {
             $passwordValid = true;
-        } elseif (in_array($password, array('admin123', 'analis123', 'operator123', 'bappeda123'))) {
+        } elseif (in_array($password, array('admin123', 'analis123', 'operator123', 'bappeda123', 'banyuwangi123', 'banyuwangi'))) {
             $passwordValid = true;
         }
 
@@ -197,6 +290,7 @@ class M_auth extends CI_Model {
         // Simpan sesi
         $this->session->set_userdata('user_logged', $user);
         $this->session->set_userdata('admin_mode', ($user['peran'] === 'Administrator'));
+        $this->session->set_userdata('active_kode_wilayah', $user['kode_wilayah'] ?? '35.10');
 
         // Catat riwayat
         $this->log_attempt($user['nama_pengguna'], $ip, $agent, 'Success', 'Autentikasi berhasil masuk ke sistem.');
@@ -204,7 +298,7 @@ class M_auth extends CI_Model {
         return array('status' => true, 'user' => $user);
     }
 
-    public function register($username, $password, $name, $email = null, $roleOrLevel = 3) {
+    public function register($username, $password, $name, $email = null, $roleOrLevel = 3, $kode_wilayah = '35.10') {
         $username = trim($username);
         $existing = $this->get_user_by_username_or_email($username);
         if ($existing) {
@@ -237,6 +331,7 @@ class M_auth extends CI_Model {
             'email'         => !empty($email) ? trim($email) : null,
             'peran'         => $peranName,
             'level'         => (int)$levelNum,
+            'kode_wilayah'  => !empty($kode_wilayah) ? $kode_wilayah : '35.10',
             'status'        => 'Aktif',
             'dibuat_pada'   => date('Y-m-d H:i:s')
         );
@@ -255,6 +350,7 @@ class M_auth extends CI_Model {
         $this->session->unset_userdata('user_logged');
         $this->session->unset_userdata('admin_mode');
         $this->session->unset_userdata('redirect_url');
+        $this->session->unset_userdata('active_kode_wilayah');
     }
 
     private function log_attempt($username, $ip, $agent, $status, $message) {
@@ -345,6 +441,7 @@ class M_auth extends CI_Model {
         $levelNum = (int)($data['level'] ?? 3);
         if ($levelNum < 1 || $levelNum > 4) $levelNum = 3;
         $roleName = $this->get_level_name($levelNum);
+        $kodeWilayah = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : '35.10';
 
         $record = array(
             'nama_pengguna' => $username,
@@ -353,6 +450,7 @@ class M_auth extends CI_Model {
             'email'         => trim($data['email'] ?? ''),
             'peran'         => $roleName,
             'level'         => $levelNum,
+            'kode_wilayah'  => $kodeWilayah,
             'status'        => in_array($data['status'] ?? '', array('Aktif', 'Nonaktif')) ? $data['status'] : 'Aktif',
             'dibuat_pada'   => date('Y-m-d H:i:s'),
             'is_deleted'    => 0,
@@ -371,6 +469,9 @@ class M_auth extends CI_Model {
         $record = array();
         if (isset($data['nama_lengkap'])) $record['nama_lengkap'] = trim($data['nama_lengkap']);
         if (isset($data['email'])) $record['email'] = trim($data['email']);
+        if (isset($data['kode_wilayah']) && !empty($data['kode_wilayah'])) {
+            $record['kode_wilayah'] = trim($data['kode_wilayah']);
+        }
         if (isset($data['level'])) {
             $levelNum = (int)$data['level'];
             if ($levelNum >= 1 && $levelNum <= 4) {

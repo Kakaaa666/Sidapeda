@@ -16,7 +16,7 @@ class Perbandingan_daerah extends MY_Controller {
             'active_page' => 'perbandingan_daerah',
             'title' => 'Perbandingan Antar Daerah',
             'eyebrow' => 'REGIONAL BENCHMARKING • CRUD & SOFT DELETE',
-            'subtitle' => 'Bandingkan posisi dan daya saing ekonomi Banyuwangi dengan wilayah setara, serta kelola dataset wilayah.',
+            'subtitle' => 'Bandingkan posisi dan daya saing ekonomi antar-wilayah kabupaten/kota di Jawa Timur.',
             'years' => $years,
             'regional' => $regional,
             'all_active_regional' => $all_active_regional,

@@ -43,6 +43,8 @@ class MY_Controller extends CI_Controller {
     protected function render($view, $data = array(), $is_admin = false) {
         $data['user'] = $this->M_auth->current_user();
         $data['is_admin'] = $is_admin;
+        $data['active_kode_wilayah'] = $this->M_economy->get_active_kode_wilayah();
+        $data['nama_wilayah'] = $this->M_economy->get_nama_wilayah($data['active_kode_wilayah']);
         $data['ews_list'] = $this->M_economy->get_ews_indicators();
         
         $this->load->view('layout/header', $data);

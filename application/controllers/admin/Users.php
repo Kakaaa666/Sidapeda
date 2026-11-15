@@ -9,6 +9,7 @@ class Users extends MY_Controller {
         $levels = $this->M_auth->get_levels();
         $logs = $this->M_auth->get_recent_logs(8);
         $trash_count = $this->M_auth->count_trash_users();
+        $kab_kota = $this->M_auth->get_daftar_kab_kota();
 
         $data = array(
             'active_page' => 'users',
@@ -19,7 +20,8 @@ class Users extends MY_Controller {
             'levels' => $levels,
             'logs' => $logs,
             'status' => $status,
-            'trash_count' => $trash_count
+            'trash_count' => $trash_count,
+            'kab_kota' => $kab_kota
         );
 
         $this->render('admin/users', $data, true);

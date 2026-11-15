@@ -10,6 +10,7 @@ class Database extends MY_Controller {
 
         $records = $this->M_economy->get_indicator_records($status, $query, $sort);
         $trash_count = $this->M_economy->count_trash_records();
+        $kab_kota = $this->M_economy->get_daftar_kab_kota();
 
         $data = array(
             'active_page' => 'database',
@@ -20,7 +21,8 @@ class Database extends MY_Controller {
             'status' => $status,
             'query' => $query,
             'sort' => $sort,
-            'trash_count' => $trash_count
+            'trash_count' => $trash_count,
+            'kab_kota' => $kab_kota
         );
 
         $this->render('admin/database', $data, true);

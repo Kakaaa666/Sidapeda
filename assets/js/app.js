@@ -1118,54 +1118,120 @@
 
         let activeTab = 'Regional Ranking';
         let selectedRegions = Array.from(document.querySelectorAll('.region-cb:checked')).map(cb => cb.value);
-        if (selectedRegions.length === 0 && AppState.regional && AppState.regional.length > 0) {
-            selectedRegions = AppState.regional.map(r => r.name);
-        }
 
         function renderComparison() {
             const period = periodSelect ? periodSelect.value : '10';
             const sliceStart = period === '5' ? 5 : 0;
-            const years = AppState.years.slice(sliceStart);
+            const years = AppState.years ? AppState.years.slice(sliceStart) : [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024].slice(sliceStart);
             const periodBadge = document.getElementById('comp-tab-period-badge');
             if (periodLabel) periodLabel.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
             if (periodBadge) periodBadge.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
 
-            // Calculate regional rows
-            const rows = AppState.regional.map(item => {
-                const vals = item.series.slice(sliceStart);
+            // Calculate regional rows - HANYA untuk wilayah yang dicentang pengguna
+            const rows = (AppState.regional || []).map(item => {
+                const vals = (item.series || []).slice(sliceStart);
                 const avg = mean(vals);
                 const chg = vals.length > 1 ? vals[vals.length - 1] - vals[vals.length - 2] : 0;
                 return { ...item, avg, chg };
             }).filter(item => selectedRegions.includes(item.name)).sort((a, b) => b.avg - a.avg);
 
-            const bwi = rows.find(r => r.name === 'Kab. Banyuwangi') || { avg: 5.18, chg: 0.26 };
+            // JIKA TIDAK ADA WILAYAH YANG DIPILIH, JANGAN TAMPILKAN DATA (EMPTY STATE)
+            if (rows.length === 0) {
+                if (kpiContainer) {
+                    kpiContainer.innerHTML = `
+                        <div class="comparison-kpi">
+                            <div><span>Wilayah Terpilih</span><span class="badge neutral">0 Daerah</span></div>
+                            <strong>0</strong>
+                            <small>Belum ada wilayah dipilih</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Rata-rata Pertumbuhan</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
+                            <small>Pilih wilayah pembanding</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Pertumbuhan Tertinggi</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
+                            <small>Pilih wilayah pembanding</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Disparitas Laju</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
+                            <small>Pilih wilayah pembanding</small>
+                        </div>`;
+                }
+
+                if (tabContent) {
+                    tabContent.innerHTML = `
+                        <div class="empty-state" style="padding: 48px 24px; text-align: center; background: #f8fafc; border: 1px dashed var(--line); border-radius: 12px; margin: 16px 0;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--muted); margin-bottom: 12px;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <h4 style="font-size: 14px; font-weight: 700; color: var(--navy); margin: 0 0 6px 0;">Tidak Ada Wilayah yang Dipilih</h4>
+                            <p style="font-size: 11px; color: var(--muted); max-width: 440px; margin: 0 auto 16px;">Silakan pilih satu atau lebih kabupaten/kota pada menu dropdown wilayah di atas untuk menampilkan analisis perbandingan dan ranking data.</p>
+                            <button type="button" class="button primary" onclick="document.getElementById('btn-select-all-regions').click()" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:0 16px; height:34px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Pilih Semua Wilayah</span>
+                            </button>
+                        </div>`;
+                }
+                return;
+            }
+
+            const hasBwi = rows.some(r => r.name === 'Kab. Banyuwangi');
+            const bwi = rows.find(r => r.name === 'Kab. Banyuwangi');
             const peerAvg = mean(rows.map(r => r.avg));
-            const rank = rows.findIndex(r => r.name === 'Kab. Banyuwangi') + 1;
-            const gap = bwi.avg - peerAvg;
 
             // Render KPIs
             if (kpiContainer) {
-                kpiContainer.innerHTML = `
-                    <div class="comparison-kpi">
-                        <div><span>Peringkat Banyuwangi</span><span class="badge success">Posisi #${rank}</span></div>
-                        <strong>#${rank || '—'}</strong>
-                        <small>dari ${rows.length} wilayah terpilih</small>
-                    </div>
-                    <div class="comparison-kpi">
-                        <div><span>Rata-rata Banyuwangi</span><span class="badge info">Periode</span></div>
-                        <strong>${formatPct(bwi.avg)}</strong>
-                        <small>periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
-                    </div>
-                    <div class="comparison-kpi">
-                        <div><span>Rerata Wilayah Pembanding</span><span class="badge neutral">Benchmark</span></div>
-                        <strong>${formatPct(peerAvg)}</strong>
-                        <small>${rows.length} kabupaten/kota</small>
-                    </div>
-                    <div class="comparison-kpi">
-                        <div><span>Gap terhadap Rerata</span><span class="badge ${gap >= 0 ? 'success' : 'warning'}">Selisih</span></div>
-                        <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
-                        <small>${gap >= 0 ? 'Lebih tinggi' : 'Lebih rendah'} dari rerata</small>
-                    </div>`;
+                if (hasBwi) {
+                    const rank = rows.findIndex(r => r.name === 'Kab. Banyuwangi') + 1;
+                    const gap = bwi.avg - peerAvg;
+                    kpiContainer.innerHTML = `
+                        <div class="comparison-kpi">
+                            <div><span>Peringkat Banyuwangi</span><span class="badge success">Posisi #${rank}</span></div>
+                            <strong>#${rank}</strong>
+                            <small>dari ${rows.length} wilayah terpilih</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Rata-rata Banyuwangi</span><span class="badge info">Periode</span></div>
+                            <strong>${formatPct(bwi.avg)}</strong>
+                            <small>periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Rerata Wilayah Terpilih</span><span class="badge neutral">Benchmark</span></div>
+                            <strong>${formatPct(peerAvg)}</strong>
+                            <small>${rows.length} kabupaten/kota</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Gap terhadap Rerata</span><span class="badge ${gap >= 0 ? 'success' : 'warning'}">Selisih</span></div>
+                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
+                            <small>${gap >= 0 ? 'Lebih tinggi' : 'Lebih rendah'} dari rerata</small>
+                        </div>`;
+                } else {
+                    const topRegion = rows[0];
+                    const bottomRegion = rows[rows.length - 1];
+                    const disparity = topRegion.avg - bottomRegion.avg;
+                    kpiContainer.innerHTML = `
+                        <div class="comparison-kpi">
+                            <div><span>Wilayah Terpilih</span><span class="badge info">${rows.length} Daerah</span></div>
+                            <strong>${rows.length}</strong>
+                            <small>kabupaten/kota dalam ranking</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Pertumbuhan Tertinggi</span><span class="badge success">#1 ${topRegion.name.replace('Kab. ', '').replace('Kota ', '')}</span></div>
+                            <strong>${formatPct(topRegion.avg)}</strong>
+                            <small>${topRegion.name}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Rerata Wilayah Terpilih</span><span class="badge neutral">Benchmark</span></div>
+                            <strong>${formatPct(peerAvg)}</strong>
+                            <small>rerata ${rows.length} kabupaten/kota</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div><span>Disparitas Laju</span><span class="badge warning">Rentang</span></div>
+                            <strong class="positive">${formatNum(disparity)} pp</strong>
+                            <small>selisih tertinggi vs terendah</small>
+                        </div>`;
+                }
             }
 
             // Render Active Tab Content
@@ -1180,9 +1246,9 @@
                     label: r.name,
                     value: r.avg,
                     subLabel: `Perubahan: ${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp | Gap ke rerata: ${r.avg >= peerAvg ? '+' : ''}${formatNum(r.avg - peerAvg)} pp`,
-                    badge: r.name === 'Kab. Banyuwangi' ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
-                    badgeClass: r.name === 'Kab. Banyuwangi' ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
-                    isHighlight: r.name === 'Kab. Banyuwangi'
+                    badge: (hasBwi && r.name === 'Kab. Banyuwangi') ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
+                    badgeClass: (hasBwi && r.name === 'Kab. Banyuwangi') ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
+                    isHighlight: (hasBwi && r.name === 'Kab. Banyuwangi')
                 }));
 
                 let listHtml = `
@@ -1206,7 +1272,7 @@
                     <div class="comparison-ranking">`;
 
                 rows.forEach((r, idx) => {
-                    const isBwi = r.name === 'Kab. Banyuwangi';
+                    const isBwi = hasBwi && r.name === 'Kab. Banyuwangi';
                     const diff = r.avg - peerAvg;
                     listHtml += `
                         <div class="comparison-table-row ${isBwi ? 'selected' : ''}" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
@@ -1226,120 +1292,195 @@
             } else if (activeTab === 'Benchmarking') {
                 tabEyebrow.textContent = 'BENCHMARKING';
                 tabTitle.textContent = 'Perbandingan Tren Antar-Wilayah Terpilih';
-                tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi Banyuwangi dan wilayah pembanding yang dicentang.';
+                tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi wilayah pembanding yang dipilih.';
 
-                const bwiSeries = AppState.series.growth.slice(sliceStart);
-                const jatimSeries = AppState.series.eastJavaGrowth.slice(sliceStart);
+                const jatimSeries = (AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : [];
                 
-                // Bangun deret grafik yang sesuai dengan wilayah yang dicentang pengguna
+                // Bangun deret grafik yang sesuai HANYA dengan wilayah yang dicentang pengguna
                 const benchmarkSeries = [
-                    { name: 'Banyuwangi', values: bwiSeries, className: 'series-0' },
                     { name: 'Jawa Timur', values: jatimSeries, className: 'series-1' }
                 ];
 
-                const colorClasses = ['series-2', 'series-3', 'series-4', 'series-5'];
+                const colorClasses = ['series-0', 'series-2', 'series-3', 'series-4', 'series-5'];
                 let cIdx = 0;
                 rows.forEach(r => {
-                    if (r.name !== 'Kab. Banyuwangi' && r.series && r.series.length > 0) {
+                    let vals = r.series && r.series.length > 0 ? r.series.slice(sliceStart) : [];
+                    if (r.name === 'Kab. Banyuwangi' && AppState.series && AppState.series.growth) {
+                        vals = AppState.series.growth.slice(sliceStart);
+                    }
+                    if (vals.length > 0) {
                         benchmarkSeries.push({
                             name: r.name.replace('Kab. ', '').replace('Kota ', ''),
-                            values: r.series.slice(sliceStart),
-                            className: colorClasses[cIdx % colorClasses.length]
+                            values: vals,
+                            className: (r.name === 'Kab. Banyuwangi') ? 'series-0' : colorClasses[(cIdx++) % colorClasses.length]
                         });
-                        cIdx++;
                     }
                 });
 
-                tabContent.innerHTML = `
-                    <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">
-                        <div class="comparison-kpi"><span>Rerata Banyuwangi</span><strong>${formatPct(mean(bwiSeries))}</strong><small>Periode terpilih</small></div>
+                let benchKpiHtml = `
+                    <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">`;
+                if (hasBwi) {
+                    benchKpiHtml += `
+                        <div class="comparison-kpi"><span>Rerata Banyuwangi</span><strong>${formatPct(bwi.avg)}</strong><small>Periode terpilih</small></div>
                         <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
                         <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
-                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>
-                    </div>
+                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
+                } else {
+                    benchKpiHtml += `
+                        <div class="comparison-kpi"><span>Pertumbuhan Tertinggi</span><strong>${formatPct(rows[0].avg)}</strong><small>${rows[0].name}</small></div>
+                        <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
+                        <div class="comparison-kpi"><span>Rerata Wilayah Terpilih</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
+                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
+                }
+                benchKpiHtml += `</div>`;
+
+                tabContent.innerHTML = `
+                    ${benchKpiHtml}
                     <div class="chart-wrap dynamic-chart" style="height:290px;">
                         ${createLineChartSVG(years, benchmarkSeries, 290, '%')}
                     </div>
-                    <div class="method-note">Garis biru menunjukkan Kab. Banyuwangi, garis hijau toska menunjukkan Provinsi Jawa Timur, dan garis berwarna lainnya mewakili kabupaten/kota pembanding yang dipilih.</div>`;
+                    <div class="method-note">Garis hijau toska menunjukkan Provinsi Jawa Timur (Benchmark), dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.</div>`;
 
             } else if (activeTab === 'Gap Analysis') {
                 tabEyebrow.textContent = 'GAP ANALYSIS';
-                tabTitle.textContent = 'Selisih Kinerja terhadap Benchmark Utama';
-                tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi Kab. Banyuwangi terhadap provinsi dan wilayah pembanding.';
+                const jatimAvg = mean((AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : []);
 
-                const jatimAvg = mean(AppState.series.eastJavaGrowth.slice(sliceStart));
-                const gapJatim = bwi.avg - jatimAvg;
+                if (hasBwi) {
+                    tabTitle.textContent = 'Selisih Kinerja terhadap Benchmark Utama';
+                    tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi Kab. Banyuwangi terhadap provinsi dan wilayah pembanding yang dipilih.';
 
-                const gapBarData = rows.map(r => {
-                    const diff = r.avg - bwi.avg;
-                    return {
-                        label: r.name,
-                        value: diff,
-                        subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis Banyuwangi: ${formatPct(bwi.avg)}`,
-                        badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan (0 pp)' : `${formatNum(diff)} pp`),
-                        badgeClass: diff > 0 ? 'warning' : (diff === 0 ? 'primary' : 'success'),
-                        isHighlight: r.name === 'Kab. Banyuwangi'
-                    };
-                });
+                    const gapJatim = bwi.avg - jatimAvg;
 
-                let gapTableRows = `
-                    <tr>
-                        <td><strong>Provinsi Jawa Timur</strong></td>
-                        <td>${formatPct(bwi.avg)}</td>
-                        <td>${formatPct(jatimAvg)}</td>
-                        <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
-                        <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Rerata Daerah Terpilih</strong></td>
-                        <td>${formatPct(bwi.avg)}</td>
-                        <td>${formatPct(peerAvg)}</td>
-                        <td><strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong></td>
-                        <td><span class="badge ${gap >= 0 ? 'success' : 'warning'}">${gap >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
-                    </tr>`;
+                    const gapBarData = rows.map(r => {
+                        const diff = r.avg - bwi.avg;
+                        return {
+                            label: r.name,
+                            value: diff,
+                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis Banyuwangi: ${formatPct(bwi.avg)}`,
+                            badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan (0 pp)' : `${formatNum(diff)} pp`),
+                            badgeClass: diff > 0 ? 'warning' : (diff === 0 ? 'primary' : 'success'),
+                            isHighlight: r.name === 'Kab. Banyuwangi'
+                        };
+                    });
 
-                rows.filter(r => r.name !== 'Kab. Banyuwangi').forEach(r => {
-                    const diffVsBwi = bwi.avg - r.avg;
-                    gapTableRows += `
+                    let gapTableRows = `
                         <tr>
-                            <td><span>${r.name}</span></td>
+                            <td><strong>Provinsi Jawa Timur</strong></td>
                             <td>${formatPct(bwi.avg)}</td>
-                            <td>${formatPct(r.avg)}</td>
-                            <td><strong class="${diffVsBwi >= 0 ? 'positive' : 'negative'}">${diffVsBwi >= 0 ? '+' : ''}${formatNum(diffVsBwi)} pp</strong></td>
-                            <td><span class="badge ${diffVsBwi >= 0 ? 'success' : 'warning'}">${diffVsBwi >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
+                            <td>${formatPct(jatimAvg)}</td>
+                            <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
+                            <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Rerata Daerah Terpilih</strong></td>
+                            <td>${formatPct(bwi.avg)}</td>
+                            <td>${formatPct(peerAvg)}</td>
+                            <td><strong class="${(bwi.avg - peerAvg) >= 0 ? 'positive' : 'negative'}">${(bwi.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(bwi.avg - peerAvg)} pp</strong></td>
+                            <td><span class="badge ${(bwi.avg - peerAvg) >= 0 ? 'success' : 'warning'}">${(bwi.avg - peerAvg) >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
                         </tr>`;
-                });
 
-                tabContent.innerHTML = `
-                    <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
-                        <div class="metric-box" style="padding:12px;">
-                            <span>Gap Banyuwangi terhadap Jawa Timur</span>
-                            <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
-                            <small>${gapJatim >= 0 ? 'Banyuwangi tumbuh lebih cepat dari provinsi' : 'Banyuwangi tumbuh di bawah provinsi'}</small>
-                        </div>
-                        <div class="metric-box" style="padding:12px;">
-                            <span>Gap Banyuwangi terhadap Rerata ${rows.length} Daerah</span>
-                            <strong class="${gap >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
-                            <small>${gap >= 0 ? 'Banyuwangi di atas rata-rata pembanding' : 'Banyuwangi di bawah rata-rata pembanding'}</small>
-                        </div>
-                    </div>
+                    rows.filter(r => r.name !== 'Kab. Banyuwangi').forEach(r => {
+                        const diffVsBwi = bwi.avg - r.avg;
+                        gapTableRows += `
+                            <tr>
+                                <td><span>${r.name}</span></td>
+                                <td>${formatPct(bwi.avg)}</td>
+                                <td>${formatPct(r.avg)}</td>
+                                <td><strong class="${diffVsBwi >= 0 ? 'positive' : 'negative'}">${diffVsBwi >= 0 ? '+' : ''}${formatNum(diffVsBwi)} pp</strong></td>
+                                <td><span class="badge ${diffVsBwi >= 0 ? 'success' : 'warning'}">${diffVsBwi >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
+                            </tr>`;
+                    });
 
-                    <div style="margin: 18px 0;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
-                            <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi (${formatPct(bwi.avg)})</small>
+                    tabContent.innerHTML = `
+                        <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+                            <div class="metric-box" style="padding:12px;">
+                                <span>Gap Banyuwangi terhadap Jawa Timur</span>
+                                <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
+                                <small>${gapJatim >= 0 ? 'Banyuwangi tumbuh lebih cepat dari provinsi' : 'Banyuwangi tumbuh di bawah provinsi'}</small>
+                            </div>
+                            <div class="metric-box" style="padding:12px;">
+                                <span>Gap Banyuwangi terhadap Rerata ${rows.length} Daerah</span>
+                                <strong class="${(bwi.avg - peerAvg) >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${(bwi.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(bwi.avg - peerAvg)} pp</strong>
+                                <small>${(bwi.avg - peerAvg) >= 0 ? 'Banyuwangi di atas rata-rata pembanding' : 'Banyuwangi di bawah rata-rata pembanding'}</small>
+                            </div>
                         </div>
-                        <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                            ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
-                        </div>
-                    </div>
 
-                    <div class="result-table-wrap">
-                        <table class="result-table">
-                            <thead><tr><th>Benchmark / Wilayah</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap (Banyuwangi - Pembanding)</th><th>Status Relatif</th></tr></thead>
-                            <tbody>${gapTableRows}</tbody>
-                        </table>
-                    </div>`;
+                        <div style="margin: 18px 0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
+                                <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi (${formatPct(bwi.avg)})</small>
+                            </div>
+                            <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
+                            </div>
+                        </div>
+
+                        <div class="result-table-wrap">
+                            <table class="result-table">
+                                <thead><tr><th>Benchmark / Wilayah</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap (Banyuwangi - Pembanding)</th><th>Status Relatif</th></tr></thead>
+                                <tbody>${gapTableRows}</tbody>
+                            </table>
+                        </div>`;
+                } else {
+                    tabTitle.textContent = 'Selisih Kinerja terhadap Rata-rata Wilayah Terpilih';
+                    tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi masing-masing wilayah terhadap rata-rata kelompok terpilih.';
+
+                    const gapBarData = rows.map(r => {
+                        const diff = r.avg - peerAvg;
+                        return {
+                            label: r.name,
+                            value: diff,
+                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Rerata Kelompok: ${formatPct(peerAvg)}`,
+                            badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? '0 pp' : `${formatNum(diff)} pp`),
+                            badgeClass: diff > 0 ? 'success' : (diff === 0 ? 'neutral' : 'warning'),
+                            isHighlight: false
+                        };
+                    });
+
+                    let gapTableRows = '';
+                    rows.forEach(r => {
+                        const diff = r.avg - peerAvg;
+                        gapTableRows += `
+                            <tr>
+                                <td><strong>${r.name}</strong></td>
+                                <td>${formatPct(r.avg)}</td>
+                                <td>${formatPct(peerAvg)}</td>
+                                <td><strong class="${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</strong></td>
+                                <td><span class="badge ${diff >= 0 ? 'success' : 'warning'}">${diff >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
+                            </tr>`;
+                    });
+
+                    tabContent.innerHTML = `
+                        <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+                            <div class="metric-box" style="padding:12px;">
+                                <span>Rata-rata Pertumbuhan Terpilih</span>
+                                <strong style="font-size:18px; color:var(--navy);">${formatPct(peerAvg)}</strong>
+                                <small>Benchmark rata-rata ${rows.length} kabupaten/kota</small>
+                            </div>
+                            <div class="metric-box" style="padding:12px;">
+                                <span>Rata-rata Jawa Timur</span>
+                                <strong style="font-size:18px; color:var(--blue);">${formatPct(jatimAvg)}</strong>
+                                <small>Benchmark pertumbuhan provinsi</small>
+                            </div>
+                        </div>
+
+                        <div style="margin: 18px 0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <span class="eyebrow">GRAFIK DIVERGENSI TERHADAP RERATA KELOMPOK (PP)</span>
+                                <small style="color:var(--muted); font-size:9px;">Rata-rata kelompok: ${formatPct(peerAvg)}</small>
+                            </div>
+                            <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
+                            </div>
+                        </div>
+
+                        <div class="result-table-wrap">
+                            <table class="result-table">
+                                <thead><tr><th>Wilayah</th><th>Nilai Wilayah</th><th>Rerata Kelompok</th><th>Gap vs Rerata</th><th>Status</th></tr></thead>
+                                <tbody>${gapTableRows}</tbody>
+                            </table>
+                        </div>`;
+                }
 
             } else if (activeTab === 'Regional Profiling') {
                 tabEyebrow.textContent = 'REGIONAL PROFILING';
@@ -1351,21 +1492,21 @@
                     const vals = r.series.slice(sliceStart);
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
-                    const isBwi = r.name === 'Kab. Banyuwangi';
+                    const isHighlight = hasBwi && r.name === 'Kab. Banyuwangi';
                     const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
                     profCards += `
-                        <div style="background:${isBwi ? '#f0f9ff' : '#ffffff'}; border:1px solid ${isBwi ? '#93c5fd' : 'var(--line)'}; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">
+                        <div style="background:${isHighlight ? '#f0f9ff' : '#ffffff'}; border:1px solid ${isHighlight ? '#93c5fd' : 'var(--line)'}; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                                 <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:36px; height:36px; border-radius:10px; background:${isBwi ? '#0284c7' : '#eff6ff'}; color:${isBwi ? '#fff' : '#0284c7'}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; border:1px solid ${isBwi ? '#0284c7' : '#bfdbfe'};">
+                                    <div style="width:36px; height:36px; border-radius:10px; background:${isHighlight ? '#0284c7' : '#eff6ff'}; color:${isHighlight ? '#fff' : '#0284c7'}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; border:1px solid ${isHighlight ? '#0284c7' : '#bfdbfe'};">
                                         ${avatarLetters}
                                     </div>
                                     <div>
-                                        <span style="font-weight:700; color:${isBwi ? 'var(--blue)' : 'var(--navy)'}; font-size:14px; display:block; margin-bottom:2px;">${r.name}</span>
-                                        <small style="color:var(--muted); font-size:11px;">${isBwi ? 'Basis Acuan Analisis' : 'Wilayah Pembanding'}</small>
+                                        <span style="font-weight:700; color:${isHighlight ? 'var(--blue)' : 'var(--navy)'}; font-size:14px; display:block; margin-bottom:2px;">${r.name}</span>
+                                        <small style="color:var(--muted); font-size:11px;">Peringkat #${idx + 1}</small>
                                     </div>
                                 </div>
-                                <span class="badge ${isBwi ? 'primary' : 'neutral'}" style="font-size:10px; font-weight:700; padding:3px 8px;">#${idx + 1}</span>
+                                <span class="badge ${isHighlight ? 'primary' : 'neutral'}" style="font-size:10px; font-weight:700; padding:3px 8px;">#${idx + 1}</span>
                             </div>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                                 <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
@@ -1392,22 +1533,23 @@
                 let profTable = `
                     <div class="result-table-wrap" style="margin-top:16px;">
                         <table class="result-table">
-                            <thead><tr><th>Peringkat</th><th>Kabupaten / Kota</th><th>Rata-rata Pertumbuhan</th><th>Pertumbuhan Terkini</th><th>Tertinggi (Peak)</th><th>Terendah (Trough)</th><th>Gap vs Banyuwangi</th></tr></thead>
+                            <thead><tr><th>Peringkat</th><th>Kabupaten / Kota</th><th>Rata-rata Pertumbuhan</th><th>Pertumbuhan Terkini</th><th>Tertinggi (Peak)</th><th>Terendah (Trough)</th><th>Gap vs Rerata</th></tr></thead>
                             <tbody>`;
                 rows.forEach((r, idx) => {
                     const vals = r.series.slice(sliceStart);
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
-                    const gapVsBwi = r.avg - bwi.avg;
+                    const gapVsPeer = r.avg - peerAvg;
+                    const isHighlight = hasBwi && r.name === 'Kab. Banyuwangi';
                     profTable += `
-                        <tr style="${r.name === 'Kab. Banyuwangi' ? 'background:#eff6ff; font-weight:600;' : ''}">
+                        <tr style="${isHighlight ? 'background:#eff6ff; font-weight:600;' : ''}">
                             <td><strong>#${idx + 1}</strong></td>
-                            <td><strong>${r.name}</strong> ${r.name === 'Kab. Banyuwangi' ? '<span class="badge primary" style="font-size:7px; margin-left:4px;">Acuan</span>' : ''}</td>
+                            <td><strong>${r.name}</strong> ${isHighlight ? '<span class="badge primary" style="font-size:7px; margin-left:4px;">Banyuwangi</span>' : ''}</td>
                             <td><strong>${formatPct(r.avg)}</strong></td>
                             <td>${formatPct(vals[vals.length - 1])}</td>
                             <td style="color:var(--green); font-weight:600;">${formatPct(maxV)}</td>
                             <td style="color:var(--red); font-weight:600;">${formatPct(minV)}</td>
-                            <td><span class="badge ${gapVsBwi > 0 ? 'warning' : (gapVsBwi === 0 ? 'primary' : 'success')}">${gapVsBwi > 0 ? '+' : ''}${formatNum(gapVsBwi)} pp</span></td>
+                            <td><span class="badge ${gapVsPeer > 0 ? 'success' : (gapVsPeer === 0 ? 'neutral' : 'warning')}">${gapVsPeer > 0 ? '+' : ''}${formatNum(gapVsPeer)} pp</span></td>
                         </tr>`;
                 });
                 profTable += `</tbody></table></div>`;
@@ -1447,7 +1589,7 @@
                             <thead><tr><th>Wilayah</th><th>Kuadran</th><th>Klasifikasi</th><th>Rata-rata Pertumbuhan</th><th>Gap Pertumbuhan</th><th>Akselerasi Tahunan</th><th>Gap Akselerasi</th></tr></thead>
                             <tbody>`;
                 klassenRows.forEach(item => {
-                    const isBwi = item.name === 'Kab. Banyuwangi';
+                    const isBwi = hasBwi && item.name === 'Kab. Banyuwangi';
                     const qBadgeClass = item.quadrant === 'I' ? 'success' : (item.quadrant === 'II' ? 'warning' : (item.quadrant === 'III' ? 'info' : 'neutral'));
                     klassenTable += `
                         <tr style="${isBwi ? 'background:#edf5fc; font-weight:600;' : ''}">
@@ -1471,30 +1613,32 @@
             } else if (activeTab === 'Peer Comparison') {
                 tabEyebrow.textContent = 'PEER COMPARISON';
                 tabTitle.textContent = 'Kartu Profil Head-to-Head Wilayah Pembanding';
-                tabDesc.textContent = 'Perbandingan langsung indikator kinerja Kab. Banyuwangi dengan masing-masing daerah pembanding.';
+                tabDesc.textContent = 'Perbandingan langsung indikator kinerja antar-daerah yang dipilih.';
 
-                const peerList = rows.filter(r => r.name !== 'Kab. Banyuwangi');
+                const baseRegion = hasBwi ? bwi : rows[0];
+                const baseName = baseRegion.name;
+                const peerList = rows.filter(r => r.name !== baseName);
                 
                 let peerHtml = `
                     <div style="background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #1e40af, #0284c7); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; box-shadow:0 2px 6px rgba(30,64,175,0.2);">
-                                BW
+                                ${baseName.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                                <strong style="font-size:13px; color:var(--navy); display:block;">Basis Acuan: Kab. Banyuwangi</strong>
-                                <small style="color:var(--muted); font-size:10px;">Rata-rata: <b style="color:var(--blue);">${formatPct(bwi.avg)}</b> | Perubahan: <b class="${bwi.chg >= 0 ? 'positive' : 'negative'}">${bwi.chg >= 0 ? '+' : ''}${formatNum(bwi.chg)} pp</b> (${period === '5' ? '2020 - 2024' : '2015 - 2024'})</small>
+                                <strong style="font-size:13px; color:var(--navy); display:block;">Basis Acuan: ${baseName}</strong>
+                                <small style="color:var(--muted); font-size:10px;">Rata-rata: <b style="color:var(--blue);">${formatPct(baseRegion.avg)}</b> | Perubahan: <b class="${baseRegion.chg >= 0 ? 'positive' : 'negative'}">${baseRegion.chg >= 0 ? '+' : ''}${formatNum(baseRegion.chg)} pp</b> (${period === '5' ? '2020 - 2024' : '2015 - 2024'})</small>
                             </div>
                         </div>
-                        <span class="badge primary" style="font-size:10px; padding:4px 10px;">Wilayah Acuan Utama</span>
+                        <span class="badge primary" style="font-size:10px; padding:4px 10px;">Wilayah Acuan</span>
                     </div>`;
 
                 if (peerList.length === 0) {
-                    peerHtml += `<div class="table-empty" style="padding:32px; text-align:center; color:var(--muted); font-size:11px;">Tidak ada wilayah pembanding lain yang dipilih. Centang wilayah tambahan pada filter di atas.</div>`;
+                    peerHtml += `<div class="table-empty" style="padding:32px; text-align:center; color:var(--muted); font-size:11px;">Hanya satu wilayah yang dipilih. Centang wilayah tambahan pada filter di atas untuk membandingkan secara head-to-head.</div>`;
                 } else {
                     peerHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">`;
                     peerList.forEach((r, idx) => {
-                        const bwiLead = bwi.avg - r.avg;
+                        const lead = baseRegion.avg - r.avg;
                         const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
                         peerHtml += `
                             <div style="background:#ffffff; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 2px 10px rgba(15,23,42,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s ease, box-shadow 0.15s ease;">
@@ -1509,7 +1653,7 @@
                                                 <small style="color:var(--muted); font-size:11px;">Wilayah Pembanding #${idx + 1}</small>
                                             </div>
                                         </div>
-                                        <span class="badge neutral" style="font-size:10px; font-weight:700; padding:3px 10px;">Peringkat #${idx + 1}</span>
+                                        <span class="badge neutral" style="font-size:10px; font-weight:700; padding:3px 10px;">Peringkat #${rows.findIndex(x => x.name === r.name) + 1}</span>
                                     </div>
 
                                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
@@ -1526,19 +1670,19 @@
                                     </div>
                                 </div>
 
-                                <div style="background:${bwiLead >= 0 ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${bwiLead >= 0 ? '#bbf7d0' : '#fecaca'}; border-radius:10px; padding:12px 14px; margin-top:6px;">
+                                <div style="background:${lead >= 0 ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${lead >= 0 ? '#bbf7d0' : '#fecaca'}; border-radius:10px; padding:12px 14px; margin-top:6px;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                        <span style="font-size:11px; font-weight:600; color:${bwiLead >= 0 ? '#166534' : '#991b1b'};">Posisi Banyuwangi:</span>
-                                        <span class="badge ${bwiLead >= 0 ? 'success' : 'warning'}" style="font-size:10px; font-weight:700; padding:2px 8px;">
-                                            ${bwiLead >= 0 ? 'Banyuwangi Unggul' : 'Banyuwangi Tertinggal'}
+                                        <span style="font-size:11px; font-weight:600; color:${lead >= 0 ? '#166534' : '#991b1b'};">Posisi ${baseName}:</span>
+                                        <span class="badge ${lead >= 0 ? 'success' : 'warning'}" style="font-size:10px; font-weight:700; padding:2px 8px;">
+                                            ${lead >= 0 ? baseName + ' Unggul' : baseName + ' Tertinggal'}
                                         </span>
                                     </div>
                                     <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                                        <strong style="font-size:14px; color:${bwiLead >= 0 ? '#15803d' : '#b91c1c'}; font-weight:700;">
-                                            ${bwiLead >= 0 ? '+' : ''}${formatNum(bwiLead)} pp
+                                        <strong style="font-size:14px; color:${lead >= 0 ? '#15803d' : '#b91c1c'}; font-weight:700;">
+                                            ${lead >= 0 ? '+' : ''}${formatNum(lead)} pp
                                         </strong>
-                                        <small style="font-size:11px; color:${bwiLead >= 0 ? '#166534' : '#991b1b'};">
-                                            ${bwiLead >= 0 ? 'di atas rerata wilayah ini' : 'di bawah rerata wilayah ini'}
+                                        <small style="font-size:11px; color:${lead >= 0 ? '#166534' : '#991b1b'};">
+                                            ${lead >= 0 ? 'di atas rerata wilayah ini' : 'di bawah rerata wilayah ini'}
                                         </small>
                                     </div>
                                 </div>
@@ -1586,7 +1730,7 @@
 
             if (dropdownLabel) {
                 if (count === 0) {
-                    dropdownLabel.textContent = 'Tidak ada wilayah dipilih';
+                    dropdownLabel.textContent = 'Pilih Wilayah (0 dipilih)';
                 } else if (count === total) {
                     dropdownLabel.textContent = `Semua Wilayah Terpilih (${total})`;
                 } else if (count === 1) {
@@ -1696,12 +1840,10 @@
             deselectAllBtn.dataset.bound = 'true';
             deselectAllBtn.addEventListener('click', () => {
                 document.querySelectorAll('.region-cb').forEach(cb => {
-                    if (!cb.disabled) {
-                        const parent = cb.closest('.region-option-item');
-                        if (!parent || parent.style.display !== 'none') {
-                            cb.checked = false;
-                            selectedRegions = selectedRegions.filter(r => r !== cb.value);
-                        }
+                    const parent = cb.closest('.region-option-item');
+                    if (!parent || parent.style.display !== 'none') {
+                        cb.checked = false;
+                        selectedRegions = selectedRegions.filter(r => r !== cb.value);
                     }
                 });
                 renderComparison();
@@ -1728,8 +1870,8 @@
         if (btnReset && !btnReset.dataset.bound) {
             btnReset.dataset.bound = 'true';
             btnReset.addEventListener('click', () => {
-                selectedRegions = AppState.regional.map(r => r.name);
-                document.querySelectorAll('.region-cb').forEach(cb => cb.checked = true);
+                selectedRegions = [];
+                document.querySelectorAll('.region-cb').forEach(cb => cb.checked = false);
                 renderComparison();
                 updateDropdownUI();
             });
@@ -1743,7 +1885,7 @@
                     ['Peringkat', 'Wilayah', 'Rata-rata Pertumbuhan (%)', 'Perubahan Tahunan (pp)'],
                     ...AppState.regional.map((r, i) => [i + 1, r.name, r.value, r.change])
                 ];
-                downloadCSV('perbandingan-regional-banyuwangi.csv', csvRows);
+                downloadCSV('perbandingan-regional.csv', csvRows);
             });
         }
 
@@ -3665,6 +3807,9 @@
                                 }
 
                                 document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
+                                if (document.getElementById('edit-kode-wilayah')) {
+                                    document.getElementById('edit-kode-wilayah').value = d.kode_wilayah || '35.10';
+                                }
                                 document.getElementById('edit-period').value = d.period || d.periode || 'Tahunan';
                                 document.getElementById('edit-year').value = d.year || d.tahun || 2024;
                                 document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
@@ -4287,6 +4432,9 @@
                 document.getElementById('edit-user-email').value = item.email || '';
                 document.getElementById('edit-user-level').value = item.level || '1';
                 document.getElementById('edit-user-status').value = item.status || 'Aktif';
+                if (document.getElementById('edit-user-wilayah')) {
+                    document.getElementById('edit-user-wilayah').value = item.kode_wilayah || '35.10';
+                }
                 document.getElementById('edit-user-password').value = '';
             }
         });

@@ -467,6 +467,21 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label" for="reg_wilayah">Wilayah Kabupaten / Kota</label>
+                    <select id="reg_wilayah" name="kode_wilayah" class="form-input" style="padding-left:14px; padding-right:14px;">
+                        <?php if (!empty($kab_kota)): ?>
+                            <?php foreach ($kab_kota as $item): ?>
+                                <option value="<?= htmlspecialchars($item['kode']) ?>" <?= ($item['kode'] === '35.10') ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($item['kode']) ?> — <?= htmlspecialchars($item['nama']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="35.10" selected>35.10 — KAB. BANYUWANGI</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn-submit" style="margin-top:20px;">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                     <span>Daftar Akun Baru</span>

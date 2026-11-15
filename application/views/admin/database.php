@@ -224,7 +224,8 @@
                     </label>
                     <label>
                         Wilayah
-                        <input type="text" name="region" id="add-region" value="Kabupaten Banyuwangi" required>
+                        <input type="text" name="region" id="add-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>" required>
+                        <input type="hidden" name="kode_wilayah" id="add-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
                     </label>
                     <label>
                         Periode
@@ -308,6 +309,7 @@
                     <label>
                         Wilayah
                         <input type="text" name="region" id="edit-region" required>
+                        <input type="hidden" name="kode_wilayah" id="edit-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
                     </label>
                     <label>
                         Periode

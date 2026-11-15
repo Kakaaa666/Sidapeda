@@ -75,10 +75,12 @@ class Api extends CI_Controller {
     }
 
     public function add_record() {
+        $active_kw = $this->M_economy->get_active_kode_wilayah();
         $code = trim($this->input->post('code'));
         $indicator = trim($this->input->post('indicator'));
         $cluster = trim($this->input->post('cluster')) ?: 'Output & Pertumbuhan';
-        $region = trim($this->input->post('region')) ?: 'Kabupaten Banyuwangi';
+        $kode_wilayah = trim($this->input->post('kode_wilayah')) ?: $active_kw;
+        $region = trim($this->input->post('region')) ?: $this->M_economy->get_nama_wilayah($kode_wilayah);
         $period = trim($this->input->post('period')) ?: 'Tahunan';
         $year = (int)$this->input->post('year');
         $value = (float)$this->input->post('value');
@@ -96,6 +98,7 @@ class Api extends CI_Controller {
             'indicator' => $indicator,
             'cluster' => $cluster,
             'region' => $region,
+            'kode_wilayah' => $kode_wilayah,
             'period' => $period,
             'year' => $year,
             'value' => $value,
@@ -138,6 +141,7 @@ class Api extends CI_Controller {
             return;
         }
 
+        $active_kw = $this->M_economy->get_active_kode_wilayah();
         $imported = 0;
         $skipped = 0;
 
@@ -149,12 +153,15 @@ class Api extends CI_Controller {
 
             $code = !empty($item['code']) ? trim($item['code']) : ('IMP-' . rand(100, 999));
             $year = !empty($item['year']) ? (int)$item['year'] : 2024;
+            $kode_wilayah = !empty($item['kode_wilayah']) ? trim($item['kode_wilayah']) : $active_kw;
+            $region = !empty($item['region']) ? trim($item['region']) : $this->M_economy->get_nama_wilayah($kode_wilayah);
 
             $ok = $this->M_economy->add_indicator_record(array(
                 'code' => $code,
                 'indicator' => trim($item['indicator']),
                 'cluster' => !empty($item['cluster']) ? trim($item['cluster']) : 'Output & Pertumbuhan',
-                'region' => !empty($item['region']) ? trim($item['region']) : 'Kabupaten Banyuwangi',
+                'region' => $region,
+                'kode_wilayah' => $kode_wilayah,
                 'period' => !empty($item['period']) ? trim($item['period']) : 'Tahunan',
                 'year' => $year,
                 'value' => (float)$item['value'],
