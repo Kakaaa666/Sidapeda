@@ -48,7 +48,7 @@
                 <?php else: ?>
                     <?php foreach ($catalog as $item): ?>
                         <div class="data-tr" style="grid-template-columns: 120px 2fr 1.5fr 1.2fr 120px;">
-                            <span><code><?= htmlspecialchars($item['code']) ?></code></span>
+                            <span style="white-space: nowrap;"><code style="white-space: nowrap;"><?= htmlspecialchars($item['code']) ?></code></span>
                             <span><strong><?= htmlspecialchars($item['name']) ?></strong></span>
                             <span><?= htmlspecialchars($item['cluster']) ?></span>
                             <span><small><?= htmlspecialchars($item['deleted_at'] ?? '-') ?></small></span>
@@ -98,38 +98,30 @@
         </div>
     </div>
 
-    <!-- SLIDE / TAB TAHUN KATALOG INDIKATOR (Sesuai Referensi Pengguna) -->
-    <div class="year-slide-card">
-        <div class="year-slide-header">
-            <div class="year-slide-title-wrap">
-                <div class="year-slide-icon-box">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <div>
-                    <strong>Pilih Periode Tahun Indikator</strong>
-                    <small>Klik tab tahun untuk memisahkan katalog indikator, grafik klaster, dan capaian realisasi berdasarkan tahun rilis.</small>
-                </div>
+    <!-- FILTER TAHUN KATALOG INDIKATOR (DROPDOWN) -->
+    <div class="year-filter-bar">
+        <div class="year-filter-info">
+            <div class="year-filter-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <div class="year-slide-meta">
-                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun" ?></strong></span>
+            <div class="year-filter-text">
+                <strong>Periode Tahun Indikator</strong>
+                <small>Filter katalog indikator, grafik komposisi klaster, dan capaian realisasi berdasarkan tahun rilis.</small>
             </div>
         </div>
 
-        <div class="year-slide-bar-wrap" id="year-slide-track">
-            <!-- Tab: Semua Tahun -->
-            <a href="<?= site_url('catalog?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
-                Semua Tahun
-            </a>
-
-            <!-- Tab per Tahun yang Tersedia -->
-            <?php if (!empty($available_years)): ?>
-                <?php foreach ($available_years as $ay): ?>
-                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
-                    <a href="<?= site_url('catalog?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
-                        Tahun <?= $ay['tahun'] ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        <div class="year-filter-control">
+            <label for="catalog-year-select">Pilih Tahun:</label>
+            <select id="catalog-year-select" class="year-filter-select" onchange="window.location.href=this.value">
+                <option value="<?= site_url('catalog?year=all' . ($status ? '&status='.$status : '') . (!empty($selected_cluster) ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun</option>
+                <?php if (!empty($available_years)): ?>
+                    <?php foreach ($available_years as $ay): ?>
+                        <option value="<?= site_url('catalog?year=' . $ay['tahun'] . ($status ? '&status='.$status : '') . (!empty($selected_cluster) ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                            Tahun <?= $ay['tahun'] ?> (<?= $ay['total_records'] ?> Indikator)
+                        </option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
         </div>
     </div>
 
@@ -218,6 +210,53 @@
             </div>
         <?php endif; ?>
 
+        <!-- TOOLBAR PENCARIAN & FILTER KLASTER KATALOG -->
+        <div class="management-toolbar" style="padding: 12px 18px; border-bottom: 1px solid var(--line); display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#ffffff;">
+            <div class="search wide" style="flex:1; min-width:220px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                <input type="text" id="catalog-search-input" placeholder="Cari kode indikator, nama, klaster, walidata...">
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label for="catalog-toolbar-year-select" style="font-size:12px; font-weight:600; color:var(--navy); white-space:nowrap;">Filter Tahun:</label>
+                <select id="catalog-toolbar-year-select" onchange="window.location.href=this.value" style="min-width: 170px; font-weight: 600;">
+                    <option value="<?= site_url('catalog?year=all' . ($status ? '&status='.$status : '') . (!empty($selected_cluster) ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun</option>
+                    <?php if (!empty($available_years)): ?>
+                        <?php foreach ($available_years as $ay): ?>
+                            <option value="<?= site_url('catalog?year=' . $ay['tahun'] . ($status ? '&status='.$status : '') . (!empty($selected_cluster) ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                                Tahun <?= $ay['tahun'] ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label for="catalog-filter-cluster-select" style="font-size:12px; font-weight:600; color:var(--navy); white-space:nowrap;">Filter Klaster:</label>
+                <select id="catalog-filter-cluster-select" style="min-width: 250px; font-weight: 600;">
+                    <option value="all">Semua Klaster (9 Klaster)</option>
+                    <?php if (!empty($available_clusters)): ?>
+                        <?php foreach ($available_clusters as $ac): ?>
+                            <option value="<?= htmlspecialchars($ac['klaster']) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $ac['klaster']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($ac['klaster']) ?> (<?= $ac['total_indicators'] ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+                <span class="badge info" id="catalog-filter-counter-badge" style="font-size:11px; padding:6px 12px; font-weight:600; white-space:nowrap;">
+                    <span id="catalog-visible-count"><?php
+                        if (!empty($selected_cluster) && $selected_cluster !== 'all') {
+                            $cnt = 0;
+                            foreach ($catalog as $it) {
+                                if (($it['cluster'] ?? '') === $selected_cluster) $cnt++;
+                            }
+                            echo $cnt;
+                        } else {
+                            echo count($catalog);
+                        }
+                    ?></span> Indikator
+                </span>
+            </div>
+        </div>
+
         <div class="result-table-wrap">
             <table class="result-table">
                 <thead>
@@ -236,14 +275,24 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr id="catalog-filter-empty-row" style="display:none;">
+                        <td colspan="<?= !empty($selected_year) ? 9 : 8 ?>" style="text-align:center; padding:32px 16px; color:var(--muted); font-size:12px;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px; display:inline-block;"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                            <div>Tidak ada indikator yang sesuai dengan filter klaster dan pencarian saat ini.</div>
+                        </td>
+                    </tr>
                     <?php if (empty($catalog)): ?>
                         <tr>
-                            <td colspan="<?= !empty($selected_year) ? 9 : 8 ?>" style="text-align:center; padding:24px; color:var(--muted);">Tidak ada indikator katalog ditemukan.</td>
+                            <td colspan="<?= !empty($selected_year) ? 9 : 8 ?>" style="text-align:center; padding:32px 16px; color:var(--muted);">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px; display:inline-block;"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                                <div><strong><?= ($status === 'Terhapus') ? 'Tempat sampah kosong. Tidak ada indikator yang dihapus.' : 'Tidak ada indikator katalog ditemukan.' ?></strong></div>
+                            </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($catalog as $item): ?>
-                            <tr data-cluster="<?= htmlspecialchars($item['cluster']) ?>">
-                                <td><code><?= htmlspecialchars($item['code']) ?></code></td>
+                            <?php $isClHidden = (!empty($selected_cluster) && $selected_cluster !== 'all' && ($item['cluster'] ?? '') !== $selected_cluster); ?>
+                            <tr data-cluster="<?= htmlspecialchars($item['cluster']) ?>" style="<?= $isClHidden ? 'display:none;' : '' ?>">
+                                <td style="white-space: nowrap;"><code style="white-space: nowrap;"><?= htmlspecialchars($item['code']) ?></code></td>
                                 <td>
                                     <strong><?= htmlspecialchars($item['name']) ?></strong>
                                     <?php if (empty($selected_year) && !empty($item['total_records'])): ?>
@@ -271,12 +320,22 @@
                                 <td><?= htmlspecialchars($item['definition']) ?></td>
                                 <td>
                                     <div class="row-actions">
-                                        <button type="button" class="btn-edit-catalog" data-id="<?= $item['id'] ?>" title="Edit Indikator">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                        </button>
-                                        <button type="button" class="btn-delete-catalog danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus (Soft Delete)">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                        </button>
+                                        <?php if ($status === 'Terhapus'): ?>
+                                            <button type="button" class="btn-restore-catalog button small" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Pulihkan Indikator">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                                <span>Pulihkan</span>
+                                            </button>
+                                            <button type="button" class="btn-hard-delete-catalog danger button small" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus Permanen">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" class="btn-edit-catalog" data-id="<?= $item['id'] ?>" title="Edit Indikator">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            </button>
+                                            <button type="button" class="btn-delete-catalog danger" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['name']) ?>" title="Hapus (Soft Delete)">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -317,7 +376,21 @@
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <input type="text" name="klaster" id="add-catalog-cluster" placeholder="Contoh: Output & Pertumbuhan" required>
+                        <div class="combobox-wrap">
+                            <input type="text" name="klaster" id="add-catalog-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
+                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="combobox-menu">
+                                <?php if (!empty($all_clusters)): ?>
+                                    <?php foreach ($all_clusters as $clName): ?>
+                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
+                                            <?= htmlspecialchars($clName) ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </label>
                     <label>
                         Frekuensi Rilis
@@ -379,7 +452,21 @@
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <input type="text" name="klaster" id="edit-catalog-cluster" required>
+                        <div class="combobox-wrap">
+                            <input type="text" name="klaster" id="edit-catalog-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
+                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="combobox-menu">
+                                <?php if (!empty($all_clusters)): ?>
+                                    <?php foreach ($all_clusters as $clName): ?>
+                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
+                                            <?= htmlspecialchars($clName) ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </label>
                     <label>
                         Frekuensi Rilis
@@ -409,5 +496,6 @@
             </form>
         </div>
     </div>
+
 </div>
 

@@ -7,6 +7,10 @@ class Validation extends MY_Controller {
         $status = $this->input->get('status');
         $query = $this->input->get('q');
         $sort = $this->input->get('sort') ?: 'status';
+        $cluster = $this->input->get('cluster');
+        $year = $this->input->get('year');
+        $selected_year = ($year && is_numeric($year)) ? (int)$year : null;
+        $available_years = $this->M_economy->get_catalog_years();
 
         // Tampilkan semua data aktif secara default agar data yang sudah divalidasi atau ditolak tidak hilang dari menu
         $filterStatus = $status;
@@ -14,10 +18,11 @@ class Validation extends MY_Controller {
             $filterStatus = 'Semua status';
         }
 
-        $records = $this->M_economy->get_indicator_records($filterStatus, $query, $sort);
+        $records = $this->M_economy->get_indicator_records($filterStatus, $query, $sort, $selected_year, null, $cluster);
+        $clusters = $this->M_economy->get_database_clusters();
 
         // Hitung statistik untuk badge ringkasan
-        $allActive = $this->M_economy->get_indicator_records('Semua status');
+        $allActive = $this->M_economy->get_indicator_records('Semua status', null, 'status', $selected_year, null, $cluster);
         $stats = array(
             'total'       => count($allActive),
             'review'      => 0,
@@ -44,6 +49,12 @@ class Validation extends MY_Controller {
             'status'      => $filterStatus,
             'query'       => $query,
             'sort'        => $sort,
+            'cluster'     => $cluster,
+            'selected_cluster' => $cluster,
+            'year'        => $year,
+            'selected_year' => $selected_year,
+            'available_years' => $available_years,
+            'clusters'    => $clusters,
             'stats'       => $stats
         );
 

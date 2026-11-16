@@ -13,38 +13,30 @@
         </div>
     </div>
 
-    <!-- SLIDE / TAB TAHUN DASHBOARD ADMIN (Sesuai Konsep Katalog & EWS) -->
-    <div class="year-slide-card" style="margin-top: 15px; margin-bottom: 22px;">
-        <div class="year-slide-header">
-            <div class="year-slide-title-wrap">
-                <div class="year-slide-icon-box">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <div>
-                    <strong>Pilih Periode Tahun Dashboard</strong>
-                    <small>Pantau status kesehatan dataset, antrean verifikasi, dan aturan risiko sesuai tahun anggaran.</small>
-                </div>
+    <!-- FILTER TAHUN DASHBOARD ADMIN (DROPDOWN) -->
+    <div class="year-filter-bar" style="margin-top: 15px; margin-bottom: 22px;">
+        <div class="year-filter-info">
+            <div class="year-filter-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <div class="year-slide-meta">
-                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun (Terkini)" ?></strong></span>
+            <div class="year-filter-text">
+                <strong>Periode Tahun Dashboard Admin</strong>
+                <small>Pantau status kesehatan dataset, antrean verifikasi, dan aturan risiko sesuai tahun anggaran.</small>
             </div>
         </div>
 
-        <div class="year-slide-bar-wrap" id="year-slide-track">
-            <!-- Tab: Semua Tahun -->
-            <a href="<?= site_url('admin?year=all') ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
-                Semua Tahun
-            </a>
-
-            <!-- Tab per Tahun yang Tersedia (Diurutkan ASC Dari Terendah ke Terbaru) -->
-            <?php if (!empty($available_years)): ?>
-                <?php foreach ($available_years as $ay): ?>
-                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
-                    <a href="<?= site_url('admin?year=' . $ay['tahun']) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
-                        Tahun <?= $ay['tahun'] ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        <div class="year-filter-control">
+            <label for="admin-year-select">Pilih Tahun:</label>
+            <select id="admin-year-select" class="year-filter-select" onchange="window.location.href=this.value">
+                <option value="<?= site_url('admin?year=all') ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun (Terkini)</option>
+                <?php if (!empty($available_years)): ?>
+                    <?php foreach ($available_years as $ay): ?>
+                        <option value="<?= site_url('admin?year=' . $ay['tahun']) ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                            Tahun <?= $ay['tahun'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
         </div>
     </div>
 

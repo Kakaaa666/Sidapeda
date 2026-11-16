@@ -10,6 +10,7 @@ class Beranda extends MY_Controller {
 
         $raw_year = $this->input->get('year');
         $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
+        $selected_cluster = $this->input->get('cluster') ?: $this->input->get('category');
 
         $series = $this->M_economy->get_economic_series();
         $sectors = $this->M_economy->get_sectors();
@@ -39,6 +40,7 @@ class Beranda extends MY_Controller {
             'beranda_cards'     => $beranda_cards,
             'categories'        => $categories,
             'selected_year'     => $selected_year,
+            'selected_cluster'  => $selected_cluster,
             'active_chart_year' => $active_chart_year,
             'year_idx'          => $year_idx,
             'prev_idx'          => $prev_idx,

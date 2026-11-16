@@ -43,6 +43,26 @@
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
             <input type="text" id="admin-search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari kode, indikator, klaster, wilayah...">
         </div>
+        <select id="admin-filter-year">
+            <option value="" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun</option>
+            <?php if (!empty($available_years)): ?>
+                <?php foreach ($available_years as $ay): ?>
+                    <option value="<?= $ay['tahun'] ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                        Tahun <?= $ay['tahun'] ?>
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+        <select id="admin-filter-cluster">
+            <option value="" <?= empty($selected_cluster) ? 'selected' : '' ?>>Semua Klaster (9 Klaster)</option>
+            <?php if (!empty($clusters)): ?>
+                <?php foreach ($clusters as $c): ?>
+                    <option value="<?= htmlspecialchars($c['klaster']) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $c['klaster']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['klaster']) ?> (<?= $c['total_indicators'] ?>)
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
         <select id="admin-filter-status">
             <option value="Semua status" <?= ($status === 'Semua status' || !$status) ? 'selected' : '' ?>>Semua status (Aktif)</option>
             <option value="Tervalidasi" <?= $status === 'Tervalidasi' ? 'selected' : '' ?>>Tervalidasi</option>
@@ -60,6 +80,8 @@
             <span>Ekspor CSV</span>
         </button>
     </div>
+
+
 
     <!-- TABLE CARD -->
     <article class="card data-card">
@@ -132,11 +154,16 @@
                     </div>
                 <?php else: ?>
                     <?php foreach ($records as $item): ?>
-                        <div class="data-tr" data-id="<?= $item['id'] ?>" data-code="<?= $item['code'] ?>" data-year="<?= $item['year'] ?>">
-                            <span><code><?= htmlspecialchars($item['code']) ?></code></span>
+                        <div class="data-tr" data-id="<?= $item['id'] ?>" data-code="<?= $item['code'] ?>" data-year="<?= $item['year'] ?>" data-cluster="<?= htmlspecialchars($item['cluster'] ?? '') ?>" data-definition="<?= htmlspecialchars($item['definition'] ?? '') ?>">
+                            <span style="white-space: nowrap;"><code style="white-space: nowrap;"><?= htmlspecialchars($item['code']) ?></code></span>
                             <span>
                                 <strong><?= htmlspecialchars($item['indicator']) ?></strong>
-                                <small><?= htmlspecialchars($item['region']) ?> • <?= htmlspecialchars($item['source']) ?></small>
+                                <small><?= htmlspecialchars($item['source']) ?></small>
+                                <?php if (!empty($item['definition'])): ?>
+                                    <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size: 10px; color: #64748b; margin-top: 4px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 320px;">
+                                        <span style="color: #94a3b8; font-weight: 600;">Definisi:</span> <?= htmlspecialchars($item['definition']) ?>
+                                    </div>
+                                <?php endif; ?>
                                 <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
                                     <div class="table-rejection-note" style="margin-top: 5px; font-size: 11px; line-height: 1.4; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; display: inline-flex; align-items: flex-start; gap: 5px; max-width: 100%;">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -212,21 +239,32 @@
                 <div class="manual-form">
                     <label>
                         Kode Indikator
-                        <input type="text" name="code" id="add-code" placeholder="EKO-100" required>
+                        <input type="text" name="code" id="add-code" placeholder="EKO-100" list="catalog-code-list" autocomplete="off" required>
                     </label>
                     <label>
                         Nama Indikator
                         <input type="text" name="indicator" id="add-indicator" placeholder="Pertumbuhan Ekonomi" required>
                     </label>
-                    <label>
-                        Klaster
-                        <input type="text" name="cluster" id="add-cluster" list="cluster-options" value="Output & Pertumbuhan" required placeholder="Pilih atau ketik klaster...">
+                    <label style="grid-column: 1 / 3;">
+                        Klaster Indikator
+                        <div class="combobox-wrap">
+                            <input type="text" name="cluster" id="add-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
+                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="combobox-menu">
+                                <?php if (!empty($all_clusters)): ?>
+                                    <?php foreach ($all_clusters as $clName): ?>
+                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
+                                            <?= htmlspecialchars($clName) ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </label>
-                    <label>
-                        Wilayah
-                        <input type="text" name="region" id="add-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>" required>
-                        <input type="hidden" name="kode_wilayah" id="add-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
-                    </label>
+                    <input type="hidden" name="region" id="add-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>">
+                    <input type="hidden" name="kode_wilayah" id="add-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
                     <label>
                         Periode
                         <select name="period" id="add-period">
@@ -251,6 +289,10 @@
                     <label style="grid-column: 1 / 3;">
                         Sumber Data
                         <input type="text" name="source" id="add-source" value="BPS Kabupaten Banyuwangi" required>
+                    </label>
+                    <label style="grid-column: 1 / 3;">
+                        Definisi Operasional
+                        <textarea name="definition" id="add-definition" rows="2" placeholder="Uraikan batasan, konsep, dan metodologi penghitungan indikator..."></textarea>
                     </label>
                 </div>
 
@@ -302,15 +344,26 @@
                         Nama Indikator
                         <input type="text" name="indicator" id="edit-indicator" required>
                     </label>
-                    <label>
-                        Klaster
-                        <input type="text" name="cluster" id="edit-cluster" list="cluster-options" required placeholder="Pilih atau ketik klaster...">
+                    <label style="grid-column: 1 / 3;">
+                        Klaster Indikator
+                        <div class="combobox-wrap">
+                            <input type="text" name="cluster" id="edit-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
+                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="combobox-menu">
+                                <?php if (!empty($all_clusters)): ?>
+                                    <?php foreach ($all_clusters as $clName): ?>
+                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
+                                            <?= htmlspecialchars($clName) ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </label>
-                    <label>
-                        Wilayah
-                        <input type="text" name="region" id="edit-region" required>
-                        <input type="hidden" name="kode_wilayah" id="edit-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
-                    </label>
+                    <input type="hidden" name="region" id="edit-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>">
+                    <input type="hidden" name="kode_wilayah" id="edit-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
                     <label>
                         Periode
                         <select name="period" id="edit-period">
@@ -336,6 +389,10 @@
                         Sumber Data
                         <input type="text" name="source" id="edit-source" required>
                     </label>
+                    <label style="grid-column: 1 / 3;">
+                        Definisi Operasional
+                        <textarea name="definition" id="edit-definition" rows="2" placeholder="Uraikan batasan, konsep, dan metodologi penghitungan indikator..."></textarea>
+                    </label>
                 </div>
 
                 <div id="edit-modal-error" class="method-note" style="display:none; color:var(--red); margin-bottom:12px;"></div>
@@ -348,16 +405,24 @@
         </div>
     </div>
 
-    <!-- DATALIST KLASTER INDIKATOR -->
-    <datalist id="cluster-options">
-        <option value="Output & Pertumbuhan">
-        <option value="Harga & Inflasi">
-        <option value="Ketenagakerjaan">
-        <option value="Kesejahteraan Sosial">
-        <option value="Investasi & Usaha">
-        <option value="Fiskal Daerah">
-        <option value="Pariwisata & Ekonomi Kreatif">
-        <option value="Produksi Sektoral">
-        <option value="Keterkaitan Antarsektor">
-    </datalist>
+    <?php if (!empty($catalog_indicators)): ?>
+        <datalist id="catalog-code-list">
+            <?php foreach ($catalog_indicators as $catItem): ?>
+                <option value="<?= htmlspecialchars($catItem['code']) ?>" label="<?= htmlspecialchars($catItem['name']) ?> (<?= htmlspecialchars($catItem['cluster']) ?>)">
+            <?php endforeach; ?>
+        </datalist>
+        <script>
+            window.CATALOG_MASTER_LOOKUP = <?= json_encode(array_map(function($ci) {
+                return array(
+                    'code' => $ci['code'],
+                    'name' => $ci['name'],
+                    'cluster' => $ci['cluster'],
+                    'unit' => $ci['unit'],
+                    'source' => $ci['source'],
+                    'definition' => $ci['definition'] ?? ''
+                );
+            }, $catalog_indicators)) ?>;
+        </script>
+    <?php endif; ?>
+
 </div>

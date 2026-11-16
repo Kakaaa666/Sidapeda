@@ -442,7 +442,7 @@ class M_economy extends CI_Model {
         return array();
     }
 
-    public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null, $kode_wilayah = null) {
+    public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null, $kode_wilayah = null, $cluster = null) {
         $kode = $this->get_active_kode_wilayah($kode_wilayah);
         $this->db->where('kode_wilayah', $kode);
         if ($status === 'Terhapus' || $status === 'Sampah') {
@@ -460,6 +460,10 @@ class M_economy extends CI_Model {
 
         if ($year && is_numeric($year)) {
             $this->db->where('tahun', (int)$year);
+        }
+
+        if (!empty($cluster) && $cluster !== 'Semua klaster' && $cluster !== 'all') {
+            $this->db->where('klaster', $cluster);
         }
 
         if ($query) {
@@ -508,6 +512,8 @@ class M_economy extends CI_Model {
                 'satuan' => $row['satuan'],
                 'source' => $row['sumber_data'],
                 'sumber_data' => $row['sumber_data'],
+                'definition' => $row['definisi_operasional'] ?? '',
+                'definisi_operasional' => $row['definisi_operasional'] ?? '',
                 'status' => $row['status_validasi'],
                 'status_validasi' => $row['status_validasi'],
                 'verified_by' => $row['diverifikasi_oleh'],
@@ -548,6 +554,8 @@ class M_economy extends CI_Model {
             'satuan' => $row['satuan'],
             'source' => $row['sumber_data'],
             'sumber_data' => $row['sumber_data'],
+            'definition' => $row['definisi_operasional'] ?? '',
+            'definisi_operasional' => $row['definisi_operasional'] ?? '',
             'status' => $row['status_validasi'],
             'status_validasi' => $row['status_validasi'],
             'verified_by' => $row['diverifikasi_oleh'],
@@ -564,23 +572,43 @@ class M_economy extends CI_Model {
         $kodeWilayah = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
         $namaWilayah = $this->get_nama_wilayah($kodeWilayah);
 
+        $clusterVal = trim($data['cluster'] ?? $data['klaster'] ?? '');
+        if (($clusterVal === '__custom__' || $clusterVal === '__NEW__' || empty($clusterVal)) && !empty($data['cluster_custom'])) {
+            $clusterVal = trim($data['cluster_custom']);
+        }
+        if (empty($clusterVal)) {
+            $clusterVal = 'Output dan pertumbuhan';
+        }
+
+        $defVal = trim($data['definition'] ?? $data['definisi_operasional'] ?? '');
+        if (empty($defVal)) {
+            $catRow = $this->db->where('kode_indikator', trim($data['code'] ?? $data['kode_indikator'] ?? ''))
+                ->where('kode_wilayah', $kodeWilayah)
+                ->get('katalog_indikator')
+                ->row_array();
+            if ($catRow && !empty($catRow['definisi_operasional'])) {
+                $defVal = trim($catRow['definisi_operasional']);
+            }
+        }
+
         $record = array(
-            'kode_indikator'    => trim($data['code'] ?? $data['kode_indikator'] ?? ''),
-            'nama_indikator'    => trim($data['indicator'] ?? $data['nama_indikator'] ?? ''),
-            'klaster'           => trim($data['cluster'] ?? $data['klaster'] ?? 'Output & Pertumbuhan'),
-            'wilayah'           => trim($data['region'] ?? $data['wilayah'] ?? $namaWilayah),
-            'kode_wilayah'      => $kodeWilayah,
-            'periode'           => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
-            'tahun'             => (int)($data['year'] ?? $data['tahun'] ?? 2024),
-            'nilai'             => (float)($data['value'] ?? $data['nilai'] ?? 0),
-            'satuan'            => trim($data['unit'] ?? $data['satuan'] ?? '%'),
-            'sumber_data'       => trim($data['source'] ?? $data['sumber_data'] ?? 'Input Manual'),
-            'status_validasi'   => 'Perlu review',
-            'diverifikasi_oleh' => null,
-            'catatan'           => null,
-            'is_deleted'        => 0,
-            'deleted_at'        => null,
-            'dibuat_pada'       => date('Y-m-d H:i:s')
+            'kode_indikator'       => trim($data['code'] ?? $data['kode_indikator'] ?? ''),
+            'nama_indikator'       => trim($data['indicator'] ?? $data['nama_indikator'] ?? ''),
+            'klaster'              => $clusterVal,
+            'wilayah'              => trim($data['region'] ?? $data['wilayah'] ?? $namaWilayah),
+            'kode_wilayah'         => $kodeWilayah,
+            'periode'              => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
+            'tahun'                => (int)($data['year'] ?? $data['tahun'] ?? 2024),
+            'nilai'                => (float)($data['value'] ?? $data['nilai'] ?? 0),
+            'satuan'               => trim($data['unit'] ?? $data['satuan'] ?? '%'),
+            'sumber_data'          => trim($data['source'] ?? $data['sumber_data'] ?? 'Input Manual'),
+            'definisi_operasional' => $defVal,
+            'status_validasi'      => 'Perlu review',
+            'diverifikasi_oleh'    => null,
+            'catatan'              => null,
+            'is_deleted'           => 0,
+            'deleted_at'           => null,
+            'dibuat_pada'          => date('Y-m-d H:i:s')
         );
 
         $exists = $this->db->where('kode_indikator', $record['kode_indikator'])
@@ -595,6 +623,12 @@ class M_economy extends CI_Model {
         }
         $res = $this->db->insert('database_ekonomi', $record);
         if ($res) {
+            if (!empty($record['definisi_operasional'])) {
+                $catExists = $this->db->where('kode_indikator', $record['kode_indikator'])->where('kode_wilayah', $record['kode_wilayah'])->get('katalog_indikator')->row_array();
+                if ($catExists && empty($catExists['definisi_operasional'])) {
+                    $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array('definisi_operasional' => $record['definisi_operasional']));
+                }
+            }
             // Sinkronkan ke early_warning jika kode indikator ada di tabel EWS
             $ewsMatch = $this->db->where('kode_indikator', $record['kode_indikator'])->where('kode_wilayah', $record['kode_wilayah'])->get('early_warning')->row_array();
             if ($ewsMatch) {
@@ -614,7 +648,13 @@ class M_economy extends CI_Model {
             $record['nama_indikator'] = trim($data['indicator'] ?? $data['nama_indikator']);
         }
         if (isset($data['cluster']) || isset($data['klaster'])) {
-            $record['klaster'] = trim($data['cluster'] ?? $data['klaster']);
+            $cVal = trim($data['cluster'] ?? $data['klaster']);
+            if (($cVal === '__custom__' || $cVal === '__NEW__' || empty($cVal)) && !empty($data['cluster_custom'])) {
+                $cVal = trim($data['cluster_custom']);
+            }
+            if (!empty($cVal)) {
+                $record['klaster'] = $cVal;
+            }
         }
         if (isset($data['region']) || isset($data['wilayah'])) {
             $record['wilayah'] = trim($data['region'] ?? $data['wilayah']);
@@ -637,6 +677,9 @@ class M_economy extends CI_Model {
         if (isset($data['source']) || isset($data['sumber_data'])) {
             $record['sumber_data'] = trim($data['source'] ?? $data['sumber_data']);
         }
+        if (isset($data['definition']) || isset($data['definisi_operasional'])) {
+            $record['definisi_operasional'] = trim($data['definition'] ?? $data['definisi_operasional']);
+        }
 
         // Setiap data yang diedit/diperbarui otomatis berstatus 'Perlu review' dan catatan penolakan lama dihapus
         $record['status_validasi'] = 'Perlu review';
@@ -647,6 +690,14 @@ class M_economy extends CI_Model {
 
         $this->db->where('id', (int)$id);
         $res = $this->db->update('database_ekonomi', $record);
+
+        if ($res && isset($record['definisi_operasional']) && $record['definisi_operasional'] !== '' && $existing) {
+            $rowCode = $existing['kode_indikator'];
+            $rowWil = $existing['kode_wilayah'];
+            $this->db->where('kode_indikator', $rowCode)
+                ->where('kode_wilayah', $rowWil)
+                ->update('katalog_indikator', array('definisi_operasional' => $record['definisi_operasional']));
+        }
 
         // Jika data diedit (otomatis jadi Perlu review), cek apakah indikator ini masih memiliki data lain yang Tervalidasi
         $code = $record['kode_indikator'] ?? $existing['kode_indikator'] ?? null;
@@ -788,8 +839,89 @@ class M_economy extends CI_Model {
         $satuan = trim($record['satuan'] ?: '%');
         $frekuensi = trim($record['periode'] ?: 'Tahunan');
         $sumber = trim($record['sumber_data'] ?: ('BPS ' . $this->get_nama_wilayah($kode_wil)));
-
         $defMap = array(
+            'EKO-001' => 'Nilai tambah bruto seluruh lapangan usaha di wilayah pada harga yang berlaku pada periode berjalan.',
+            'EKO-002' => 'Nilai tambah bruto seluruh lapangan usaha yang dinilai dengan harga pada tahun dasar untuk mengukur volume/pertumbuhan riil.',
+            'EKO-003' => 'Nilai tambah bruto setiap lapangan usaha atas dasar harga berlaku.',
+            'EKO-004' => 'Nilai tambah bruto setiap lapangan usaha atas dasar harga konstan.',
+            'EKO-005' => 'Perubahan persentase PDRB ADHK suatu wilayah dibandingkan periode sebelumnya.',
+            'EKO-006' => 'Perubahan persentase PDRB ADHK setiap lapangan usaha dibandingkan tahun sebelumnya.',
+            'EKO-007' => 'Persentase nilai tambah suatu lapangan usaha terhadap total PDRB pada wilayah dan periode yang sama.',
+            'EKO-008' => 'PDRB ADHB dibagi jumlah penduduk pertengahan tahun; pendekatan rata-rata output per penduduk, bukan pendapatan aktual rumah tangga.',
+            'EKO-009' => 'PDRB ADHK dibagi penduduk pertengahan tahun untuk pendekatan output riil per penduduk.',
+            'EKO-010' => 'Komponen PDRB pengeluaran yang mencatat konsumsi akhir rumah tangga.',
+            'EKO-011' => 'Komponen PDRB pengeluaran yang mencerminkan penambahan aset tetap untuk kegiatan produksi.',
+            'EKO-012' => 'Komponen konsumsi akhir pemerintah dalam pendekatan PDRB pengeluaran.',
+            'EKO-013' => 'Komponen ekspor barang dan jasa pada pendekatan PDRB pengeluaran.',
+            'EKO-014' => 'Komponen impor barang dan jasa sebagai pengurang dalam pendekatan PDRB pengeluaran.',
+            'NAK-001' => 'Jumlah penduduk pada pertengahan tahun sebagai denominator beberapa indikator per kapita dan rasio.',
+            'TK-001' => 'Penduduk berumur 15 tahun ke atas yang menjadi basis penghitungan indikator pasar kerja.',
+            'TK-002' => 'Penduduk usia kerja yang bekerja atau menganggur menurut konsep statistik ketenagakerjaan.',
+            'TK-003' => 'Penduduk usia kerja yang bekerja atau memiliki pekerjaan tetapi sementara tidak bekerja sesuai konsep Sakernas.',
+            'TK-004' => 'Penduduk dalam angkatan kerja yang tidak bekerja dan memenuhi kriteria pengangguran Sakernas.',
+            'TK-005' => 'Persentase jumlah pengangguran terhadap jumlah angkatan kerja.',
+            'TK-006' => 'Persentase angkatan kerja terhadap penduduk usia kerja.',
+            'TK-007' => 'Jumlah penduduk bekerja yang dikelompokkan menurut lapangan usaha utama.',
+            'TK-008' => 'Penduduk bekerja yang dikelompokkan menurut status formal dan informal sesuai konsep BPS.',
+            'TK-009' => 'Rata-rata upah/gaji bersih buruh/karyawan menurut periode referensi statistik BPS.',
+            'TK-010' => 'Penduduk bekerja dengan jam kerja di bawah ambang yang ditetapkan dan masih mencari/bersedia menerima pekerjaan tambahan sesuai definisi BPS.',
+            'TK-011' => 'Output ekonomi yang dihasilkan per pekerja pada suatu wilayah/sektor.',
+            'INV-001' => 'Nilai investasi yang direalisasikan oleh pelaku usaha dan dilaporkan melalui sistem LKPM/OSS sesuai ketentuan.',
+            'INV-002' => 'Nilai realisasi penanaman modal asing yang dilaporkan melalui LKPM.',
+            'INV-003' => 'Nilai realisasi penanaman modal dalam negeri yang dilaporkan melalui LKPM.',
+            'INV-004' => 'Jumlah proyek/kegiatan usaha yang melaporkan investasi dalam periode pelaporan.',
+            'INV-005' => 'Jumlah tenaga kerja Indonesia yang dilaporkan terserap pada kegiatan investasi.',
+            'INV-006' => 'Jumlah Nomor Induk Berusaha atau unit usaha aktif sesuai definisi dan status administrasi OSS.',
+            'HRG-001' => 'Indeks yang mengukur perubahan rata-rata harga paket barang dan jasa konsumsi rumah tangga dalam suatu periode.',
+            'HRG-002' => 'Indeks harga konsumen yang dirinci menurut kelompok dan subkelompok pengeluaran.',
+            'HRG-003' => 'Persentase perubahan IHK bulan berjalan terhadap bulan sebelumnya.',
+            'HRG-004' => 'Persentase perubahan IHK bulan berjalan dibandingkan bulan yang sama tahun sebelumnya.',
+            'HRG-005' => 'Harga konsumen/eceran komoditas pangan pada pasar dan tanggal pemantauan tertentu.',
+            'HRG-006' => 'Bobot pengeluaran komoditas/kelompok yang digunakan dalam penghitungan IHK.',
+            'KES-001' => 'Proporsi penduduk dengan rata-rata pengeluaran per kapita per bulan di bawah garis kemiskinan.',
+            'KES-002' => 'Estimasi jumlah penduduk yang pengeluaran per kapitanya berada di bawah garis kemiskinan.',
+            'KES-003' => 'Nilai minimum pengeluaran per kapita per bulan untuk memenuhi kebutuhan dasar makanan dan bukan makanan.',
+            'KES-004' => 'Ukuran rata-rata kesenjangan pengeluaran penduduk miskin terhadap garis kemiskinan.',
+            'KES-005' => 'Ukuran penyebaran pengeluaran di antara penduduk miskin; memberi bobot lebih pada penduduk yang sangat jauh di bawah garis kemiskinan.',
+            'KES-006' => 'Penduduk yang berada di bawah ambang kemiskinan ekstrem sesuai metodologi/garis yang berlaku pada periode pelaporan.',
+            'KES-007' => 'Indeks komposit pembangunan manusia dari dimensi umur panjang dan hidup sehat, pengetahuan, serta standar hidup layak.',
+            'KES-008' => 'Rata-rata perkiraan lama hidup yang akan dijalani bayi yang baru lahir berdasarkan pola mortalitas pada periode tertentu.',
+            'KES-009' => 'Lamanya sekolah yang diharapkan akan dirasakan anak pada umur tertentu di masa mendatang.',
+            'KES-010' => 'Rata-rata jumlah tahun yang digunakan penduduk pada usia yang ditetapkan BPS dalam menempuh pendidikan formal.',
+            'KES-011' => 'Pengeluaran per kapita yang disesuaikan untuk merepresentasikan dimensi standar hidup dalam IPM.',
+            'KES-012' => 'Rata-rata pengeluaran konsumsi per kapita rumah tangga pada periode survei.',
+            'PAR-001' => 'Jumlah kunjungan wisatawan nusantara ke destinasi/objek wisata atau wilayah sesuai definisi pelaporan.',
+            'PAR-002' => 'Jumlah kunjungan wisatawan berkewarganegaraan asing sesuai cakupan pencatatan destinasi/akomodasi.',
+            'PAR-003' => 'Jumlah tamu yang menginap pada hotel dan jasa akomodasi yang dicakup statistik.',
+            'PAR-004' => 'Perbandingan antara jumlah malam kamar terpakai dan jumlah malam kamar tersedia pada periode tertentu.',
+            'PAR-005' => 'Jumlah kamar yang tersedia untuk tamu pada hotel dan akomodasi yang dicakup statistik.',
+            'PAR-006' => 'Jumlah unit usaha hotel dan jasa akomodasi yang tercatat aktif dalam cakupan statistik.',
+            'PRO-001' => 'Volume hasil produksi tanaman pangan, hortikultura, perkebunan, atau peternakan menurut komoditas.',
+            'PRO-002' => 'Luas lahan yang dipanen untuk komoditas pertanian pada periode tertentu.',
+            'PRO-003' => 'Hasil produksi komoditas per satuan luas panen.',
+            'PRO-004' => 'Volume produksi perikanan tangkap dan/atau budidaya menurut jenis dan lokasi.',
+            'PRO-005' => 'Jumlah atau nilai produksi industri pengolahan menurut subsektor pada cakupan usaha yang ditetapkan.',
+            'FIS-001' => 'Pendapatan daerah yang diperoleh dari pajak daerah, retribusi daerah, hasil pengelolaan kekayaan daerah yang dipisahkan, dan lain-lain PAD yang sah.',
+            'FIS-002' => 'Pendapatan daerah yang berasal dari transfer pemerintah pusat dan/atau antar daerah sesuai struktur APBD.',
+            'FIS-003' => 'Pengeluaran pemerintah daerah yang diakui sebagai belanja daerah pada laporan realisasi anggaran.',
+            'FIS-004' => 'Belanja pemerintah daerah untuk memperoleh aset tetap/aset lainnya sesuai klasifikasi APBD yang berlaku.',
+            'FIS-005' => 'Pagu dan realisasi belanja pemerintah daerah yang dirinci menurut urusan, OPD, program, kegiatan/subkegiatan.',
+            'GEO-001' => 'Kode unik provinsi, kabupaten/kota, kecamatan, desa/kelurahan dan relasi hierarkisnya.',
+            'GEO-002' => 'Geometri batas administrasi untuk mengaitkan data indikator dengan area geografis.',
+            'GEO-003' => 'Koordinat lokasi objek ekonomi yang dapat dipetakan, seperti pasar, destinasi wisata, proyek investasi, fasilitas produksi.',
+            'GEO-004' => 'Nilai indikator yang diobservasi atau dihitung untuk masing-masing kecamatan/desa dengan definisi, cakupan, dan metode estimasi yang jelas.',
+            'EWS-001' => 'Nilai terkini dari indikator yang dipilih sebagai pemicu peringatan dini.',
+            'EWS-002' => 'Batas numerik yang digunakan untuk mengelompokkan kondisi indikator ke status normal, waspada, dan kritis.',
+            'EWS-003' => 'Status hasil evaluasi nilai aktual terhadap threshold beserta waktu kejadian, tindak lanjut, dan penyelesaian.',
+            'ANA-001' => 'Ukuran spesialisasi relatif suatu sektor di wilayah dibandingkan wilayah referensi.',
+            'ANA-002' => 'Dekomposisi perubahan output/tenaga kerja sektoral lokal menjadi pengaruh pertumbuhan umum, bauran industri, dan daya saing lokal.',
+            'ANA-003' => 'Klasifikasi empat kuadran berdasarkan perbandingan tingkat pertumbuhan dan indikator kontribusi/pendapatan relatif.',
+            'ANA-004' => 'Ukuran arah dan kekuatan hubungan linear dua variabel numerik yang diamati pada pasangan observasi sepadan.',
+            'ANA-005' => 'Model hubungan linear satu variabel dependen dengan satu variabel independen untuk eksplorasi asosiasi.',
+            'ANA-006' => 'Kontribusi perubahan output sektor terhadap pertumbuhan PDRB total pada periode tertentu.',
+            'ANA-007' => 'Estimasi nilai indikator pada periode mendatang berdasarkan pola historis dengan metode yang dinyatakan.',
+            'ANA-008' => 'Simulasi perubahan hasil indikator berdasarkan asumsi perubahan input ekonomi tertentu.',
+            // Legacy fallbacks
             'PDRB_01' => 'Laju perubahan Produk Domestik Regional Bruto (PDRB) atas dasar harga konstan tahun 2010 yang mencerminkan pertumbuhan ekonomi riil daerah.',
             'PDRB_02' => 'Total nilai tambah bruto seluruh sektor ekonomi di wilayah atas dasar harga konstan.',
             'PDRB_03' => 'PDRB atas dasar harga berlaku dibagi jumlah penduduk pertengahan tahun, mengukur tingkat pendapatan rata-rata masyarakat.',
@@ -804,21 +936,24 @@ class M_economy extends CI_Model {
             'SEK_01'  => 'Pangsa atau kontribusi persentase sektor pertanian, kehutanan, dan perikanan terhadap total PDRB daerah.'
         );
 
-        $definisi = $defMap[$kode] ?? "Indikator {$nama} dalam klaster {$klaster} untuk pemantauan capaian pembangunan daerah.";
+        $definisi = !empty($record['definisi_operasional']) ? trim($record['definisi_operasional']) : ($defMap[$kode] ?? "Indikator {$nama} dalam klaster {$klaster} untuk pemantauan capaian pembangunan daerah.");
 
         // Cek apakah sudah ada di katalog_indikator
         $existing = $this->db->where('kode_indikator', $kode)->where('kode_wilayah', $kode_wil)->get('katalog_indikator')->row_array();
         if ($existing) {
+            // Jika indikator di katalog_indikator sedang berstatus soft-deleted (is_deleted == 1), jangan di-un-delete secara otomatis
+            if (!empty($existing['is_deleted'])) {
+                return false;
+            }
+
             $update = array(
                 'nama_indikator'       => $nama,
                 'klaster'              => $klaster,
                 'satuan'               => $satuan,
                 'frekuensi'            => $frekuensi,
-                'sumber_data'          => $sumber,
-                'is_deleted'           => 0,
-                'deleted_at'           => null
+                'sumber_data'          => $sumber
             );
-            if (empty($existing['definisi_operasional'])) {
+            if (empty($existing['definisi_operasional']) || !empty($record['definisi_operasional'])) {
                 $update['definisi_operasional'] = $definisi;
             }
             $this->db->where('id', (int)$existing['id'])->update('katalog_indikator', $update);
@@ -843,8 +978,10 @@ class M_economy extends CI_Model {
 
     public function clean_unvalidated_from_catalog($kode_wilayah = null) {
         $kode_wil = $this->db->escape($this->get_active_kode_wilayah($kode_wilayah));
-        // Hapus dari katalog_indikator jika statusnya belum tervalidasi atau tidak memiliki rekaman aktif Tervalidasi di database_ekonomi
-        $this->db->query("DELETE FROM katalog_indikator WHERE kode_wilayah = {$kode_wil} AND kode_indikator NOT IN (
+        // Hanya bersihkan entri katalog aktif yang berasal dari database_ekonomi tetapi sudah tidak ada rekaman Tervalidasi aktif
+        $this->db->query("DELETE FROM katalog_indikator WHERE kode_wilayah = {$kode_wil} AND is_deleted = 0 AND kode_indikator IN (
+            SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE kode_wilayah = {$kode_wil}
+        ) AND kode_indikator NOT IN (
             SELECT DISTINCT kode_indikator FROM database_ekonomi WHERE kode_wilayah = {$kode_wil} AND status_validasi = 'Tervalidasi' AND is_deleted = 0
         )");
     }
@@ -887,7 +1024,74 @@ class M_economy extends CI_Model {
             ->result_array();
     }
 
-    public function get_indicator_catalog($status = null, $year = null, $kode_wilayah = null) {
+    public function get_catalog_clusters($status = null, $year = null, $kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
+        $escapedWil = $this->db->escape($kode_wil);
+
+        $this->db->select('k.klaster, COUNT(*) as total_indicators');
+        $this->db->from('katalog_indikator k');
+        $this->db->where('k.kode_wilayah', $kode_wil);
+        if ($status === 'Terhapus' || $status === 'Sampah') {
+            $this->db->where('k.is_deleted', 1);
+        } else {
+            $this->db->where('k.is_deleted', 0);
+            if ($year && is_numeric($year)) {
+                $yInt = (int)$year;
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0 AND d.tahun = {$yInt})", null, false);
+            } else {
+                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0)", null, false);
+            }
+        }
+        $this->db->group_by('k.klaster');
+        $this->db->order_by('total_indicators', 'DESC');
+        return $this->db->get()->result_array();
+    }
+
+    public function get_database_clusters($kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
+        return $this->db
+            ->select('klaster, COUNT(DISTINCT kode_indikator) as total_indicators, COUNT(*) as total_records')
+            ->where('is_deleted', 0)
+            ->where('kode_wilayah', $kode_wil)
+            ->group_by('klaster')
+            ->order_by('total_records', 'DESC')
+            ->get('database_ekonomi')
+            ->result_array();
+    }
+
+    /**
+     * Mengambil daftar seluruh nama klaster unik yang sudah pernah di-input sebelumnya
+     * baik yang tercatat pada katalog master indikator maupun database repositori ekonomi.
+     */
+    public function get_all_distinct_clusters($kode_wilayah = null) {
+        $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
+
+        $q1 = $this->db->select('klaster')
+            ->where('is_deleted', 0)
+            ->where('kode_wilayah', $kode_wil)
+            ->where("klaster IS NOT NULL AND klaster != ''", null, false)
+            ->get('katalog_indikator')
+            ->result_array();
+
+        $q2 = $this->db->select('klaster')
+            ->where('is_deleted', 0)
+            ->where('kode_wilayah', $kode_wil)
+            ->where("klaster IS NOT NULL AND klaster != ''", null, false)
+            ->get('database_ekonomi')
+            ->result_array();
+
+        $clusterList = array();
+        foreach (array_merge($q1, $q2) as $row) {
+            $c = trim($row['klaster'] ?? '');
+            if ($c !== '' && !in_array($c, $clusterList)) {
+                $clusterList[] = $c;
+            }
+        }
+        sort($clusterList, SORT_NATURAL | SORT_FLAG_CASE);
+        return $clusterList;
+    }
+
+    public function get_indicator_catalog($status = null, $year = null, $kode_wilayah = null, $cluster = null) {
         $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         $escapedWil = $this->db->escape($kode_wil);
 
@@ -897,13 +1101,16 @@ class M_economy extends CI_Model {
             $this->db->where('k.is_deleted', 1);
         } else {
             $this->db->where('k.is_deleted', 0);
-            // Hanya tampilkan indikator yang SUDAH Tervalidasi di database_ekonomi
+            // Hanya tampilkan indikator yang SUDAH Tervalidasi di database_ekonomi (atau master indikator baru yang belum ada data di database_ekonomi)
             if ($year && is_numeric($year)) {
                 $yInt = (int)$year;
                 $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0 AND d.tahun = {$yInt})", null, false);
             } else {
-                $this->db->where("EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0)", null, false);
+                $this->db->where("(EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0) OR NOT EXISTS (SELECT 1 FROM database_ekonomi d WHERE d.kode_indikator = k.kode_indikator AND d.kode_wilayah = {$escapedWil}))", null, false);
             }
+        }
+        if (!empty($cluster) && $cluster !== 'Semua klaster' && $cluster !== 'all') {
+            $this->db->where('k.klaster', $cluster);
         }
         $res = $this->db->order_by('k.kode_indikator', 'ASC')->get();
         $list = array();
@@ -997,8 +1204,15 @@ class M_economy extends CI_Model {
 
             $exists = $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode_wil)->get('early_warning')->row_array();
             if (!$exists) {
-                // Tentukan arah kondisi kritis default
-                $dir = in_array($code, array('INF_01', 'POV_01', 'TPT_01')) ? 'above' : 'below';
+                // Tentukan arah kondisi kritis default (indikator yang nilainya makin tinggi makin berisiko)
+                $aboveRiskIndicators = array(
+                    'HRG-001', 'HRG-002', 'HRG-003', 'HRG-004', 'HRG-005', 'HRG-006',
+                    'KES-001', 'KES-002', 'KES-004', 'KES-005', 'KES-006',
+                    'TK-004', 'TK-005', 'TK-010', 'EKO-014', 'EWS-003',
+                    // legacy compatibility
+                    'INF_01', 'POV_01', 'TPT_01'
+                );
+                $dir = in_array($code, $aboveRiskIndicators) ? 'above' : 'below';
                 $th = round((float)$v['avg_val'], 2);
 
                 $insertData = array(
@@ -1033,9 +1247,12 @@ class M_economy extends CI_Model {
         }
 
         if ($status === 'Terhapus' || $status === 'Sampah') {
-            $this->db->where('kode_wilayah', $kode_wil);
-            $this->db->where('is_deleted', 1);
-            $res = $this->db->order_by('kode_indikator', 'ASC')->get('early_warning');
+            $this->db->select("e.*, k.klaster as klaster_katalog");
+            $this->db->from('early_warning e');
+            $this->db->join("katalog_indikator k", "k.kode_indikator = e.kode_indikator AND k.is_deleted = 0", "left");
+            $this->db->where('e.kode_wilayah', $kode_wil);
+            $this->db->where('e.is_deleted', 1);
+            $res = $this->db->order_by('e.kode_indikator', 'ASC')->get();
             $results = array();
             foreach ($res->result_array() as $row) {
                 $results[] = array(
@@ -1049,7 +1266,7 @@ class M_economy extends CI_Model {
                     'currentValue' => (float)$row['nilai_terkini'],
                     'unit' => $row['satuan'],
                     'satuan' => $row['satuan'],
-                    'klaster' => '',
+                    'klaster' => !empty($row['klaster_katalog']) ? $row['klaster_katalog'] : 'Umum',
                     'year' => null,
                     'tahun' => null,
                     'threshold' => (float)$row['ambang_batas'],
@@ -1069,7 +1286,7 @@ class M_economy extends CI_Model {
         }
 
         // Ambil data aktif dari early_warning
-        $this->db->select("e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db");
+        $this->db->select("e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db, k.klaster as klaster_katalog");
         $this->db->from('early_warning e');
         $this->db->where('e.kode_wilayah', $kode_wil);
         $escapedWil = $this->db->escape($kode_wil);
@@ -1088,6 +1305,7 @@ class M_economy extends CI_Model {
                 WHERE d1.status_validasi = 'Tervalidasi' AND d1.is_deleted = 0 AND d1.kode_wilayah = {$escapedWil}
             ) d", "d.kode_indikator = e.kode_indikator", "left");
         }
+        $this->db->join("katalog_indikator k", "k.kode_indikator = e.kode_indikator AND k.is_deleted = 0", "left");
 
         $this->db->where('e.is_deleted', 0);
         $this->db->order_by('e.kode_indikator', 'ASC');
@@ -1124,7 +1342,7 @@ class M_economy extends CI_Model {
                 'currentValue' => $val,
                 'unit' => $row['sat_db'] ?: $row['satuan'],
                 'satuan' => $row['sat_db'] ?: $row['satuan'],
-                'klaster' => $row['klaster_db'] ?? '',
+                'klaster' => !empty($row['klaster_db']) ? $row['klaster_db'] : (!empty($row['klaster_katalog']) ? $row['klaster_katalog'] : 'Umum'),
                 'year' => (int)$row['yr_db'],
                 'tahun' => (int)$row['yr_db'],
                 'threshold' => $th,
@@ -2141,10 +2359,18 @@ class M_economy extends CI_Model {
         if (empty($kode) || empty($nama)) return false;
         $kw = !empty($data['kode_wilayah']) ? trim($data['kode_wilayah']) : $this->get_active_kode_wilayah();
 
+        $klasterVal = trim($data['klaster'] ?? $data['cluster'] ?? '');
+        if (($klasterVal === '__custom__' || $klasterVal === '__NEW__' || empty($klasterVal)) && (!empty($data['klaster_custom']) || !empty($data['cluster_custom']))) {
+            $klasterVal = trim($data['klaster_custom'] ?? $data['cluster_custom']);
+        }
+        if (empty($klasterVal)) {
+            $klasterVal = 'Output dan pertumbuhan';
+        }
+
         $record = array(
             'kode_indikator'       => $kode,
             'nama_indikator'       => $nama,
-            'klaster'              => trim($data['klaster'] ?? $data['cluster'] ?? 'Output & Pertumbuhan'),
+            'klaster'              => $klasterVal,
             'satuan'               => trim($data['satuan'] ?? $data['unit'] ?? '%'),
             'frekuensi'            => trim($data['frekuensi'] ?? $data['frequency'] ?? 'Tahunan'),
             'sumber_data'          => trim($data['sumber_data'] ?? $data['source'] ?? 'BPS'),
@@ -2167,28 +2393,131 @@ class M_economy extends CI_Model {
     }
 
     public function update_catalog($id, $data) {
+        $existing = $this->db->where('id', (int)$id)->get('katalog_indikator')->row_array();
+        if (!$existing) return false;
+
+        $oldCode = $existing['kode_indikator'];
+        $oldWilayah = $existing['kode_wilayah'];
+
         $record = array();
-        if (isset($data['kode_indikator'])) $record['kode_indikator'] = trim($data['kode_indikator']);
-        if (isset($data['nama_indikator'])) $record['nama_indikator'] = trim($data['nama_indikator']);
-        if (isset($data['klaster'])) $record['klaster'] = trim($data['klaster']);
-        if (isset($data['satuan'])) $record['satuan'] = trim($data['satuan']);
-        if (isset($data['frekuensi'])) $record['frekuensi'] = trim($data['frekuensi']);
-        if (isset($data['sumber_data'])) $record['sumber_data'] = trim($data['sumber_data']);
-        if (isset($data['definisi_operasional'])) $record['definisi_operasional'] = trim($data['definisi_operasional']);
+        if (isset($data['kode_indikator']) || isset($data['code'])) {
+            $record['kode_indikator'] = trim($data['kode_indikator'] ?? $data['code']);
+        }
+        if (isset($data['nama_indikator']) || isset($data['name'])) {
+            $record['nama_indikator'] = trim($data['nama_indikator'] ?? $data['name']);
+        }
+        if (isset($data['klaster']) || isset($data['cluster'])) {
+            $klasterVal = trim($data['klaster'] ?? $data['cluster']);
+            if (($klasterVal === '__custom__' || $klasterVal === '__NEW__' || empty($klasterVal)) && (!empty($data['klaster_custom']) || !empty($data['cluster_custom']))) {
+                $klasterVal = trim($data['klaster_custom'] ?? $data['cluster_custom']);
+            }
+            if (!empty($klasterVal)) {
+                $record['klaster'] = $klasterVal;
+            }
+        }
+        if (isset($data['satuan']) || isset($data['unit'])) {
+            $record['satuan'] = trim($data['satuan'] ?? $data['unit']);
+        }
+        if (isset($data['frekuensi']) || isset($data['frequency'])) {
+            $record['frekuensi'] = trim($data['frekuensi'] ?? $data['frequency']);
+        }
+        if (isset($data['sumber_data']) || isset($data['source'])) {
+            $record['sumber_data'] = trim($data['sumber_data'] ?? $data['source']);
+        }
+        if (isset($data['definisi_operasional']) || isset($data['definition'])) {
+            $record['definisi_operasional'] = trim($data['definisi_operasional'] ?? $data['definition']);
+        }
+
         if (empty($record)) return false;
-        return $this->db->where('id', (int)$id)->update('katalog_indikator', $record);
+
+        $res = $this->db->where('id', (int)$id)->update('katalog_indikator', $record);
+
+        if ($res) {
+            // Sinkronkan ke database_ekonomi (perbarui semua baris data dengan indikator ini)
+            $dbUpdate = array();
+            if (isset($record['kode_indikator'])) $dbUpdate['kode_indikator'] = $record['kode_indikator'];
+            if (isset($record['nama_indikator'])) $dbUpdate['nama_indikator'] = $record['nama_indikator'];
+            if (isset($record['klaster'])) $dbUpdate['klaster'] = $record['klaster'];
+            if (isset($record['satuan'])) $dbUpdate['satuan'] = $record['satuan'];
+            if (isset($record['frekuensi'])) $dbUpdate['periode'] = $record['frekuensi'];
+            if (isset($record['sumber_data'])) $dbUpdate['sumber_data'] = $record['sumber_data'];
+            if (isset($record['definisi_operasional'])) $dbUpdate['definisi_operasional'] = $record['definisi_operasional'];
+
+            if (!empty($dbUpdate)) {
+                $this->db->where('kode_indikator', $oldCode)
+                         ->where('kode_wilayah', $oldWilayah)
+                         ->update('database_ekonomi', $dbUpdate);
+            }
+
+            // Sinkronkan ke early_warning jika terdaftar di sana
+            if (isset($record['kode_indikator']) || isset($record['nama_indikator'])) {
+                $ewsUpdate = array();
+                if (isset($record['kode_indikator'])) $ewsUpdate['kode_indikator'] = $record['kode_indikator'];
+                if (isset($record['nama_indikator'])) $ewsUpdate['nama_indikator'] = $record['nama_indikator'];
+                $this->db->where('kode_indikator', $oldCode)
+                         ->where('kode_wilayah', $oldWilayah)
+                         ->update('early_warning', $ewsUpdate);
+            }
+        }
+        return $res;
     }
 
     public function soft_delete_catalog($id) {
-        return $this->db->where('id', (int)$id)->update('katalog_indikator', array('is_deleted' => 1, 'deleted_at' => date('Y-m-d H:i:s')));
+        $cat = $this->db->where('id', (int)$id)->get('katalog_indikator')->row_array();
+        if (!$cat) return false;
+
+        $now = date('Y-m-d H:i:s');
+        $res = $this->db->where('id', (int)$id)->update('katalog_indikator', array(
+            'is_deleted' => 1,
+            'deleted_at' => $now
+        ));
+
+        if ($res) {
+            // Pindahkan seluruh rekaman tahunan data di database_ekonomi ke tempat sampah juga
+            $this->db->where('kode_indikator', $cat['kode_indikator'])
+                     ->where('kode_wilayah', $cat['kode_wilayah'])
+                     ->update('database_ekonomi', array(
+                         'is_deleted' => 1,
+                         'deleted_at' => $now
+                     ));
+        }
+        return $res;
     }
 
     public function restore_catalog($id) {
-        return $this->db->where('id', (int)$id)->update('katalog_indikator', array('is_deleted' => 0, 'deleted_at' => null));
+        $cat = $this->db->where('id', (int)$id)->get('katalog_indikator')->row_array();
+        if (!$cat) return false;
+
+        $res = $this->db->where('id', (int)$id)->update('katalog_indikator', array(
+            'is_deleted' => 0,
+            'deleted_at' => null
+        ));
+
+        if ($res) {
+            // Pulihkan juga seluruh rekaman tahunan data di database_ekonomi
+            $this->db->where('kode_indikator', $cat['kode_indikator'])
+                     ->where('kode_wilayah', $cat['kode_wilayah'])
+                     ->update('database_ekonomi', array(
+                         'is_deleted' => 0,
+                         'deleted_at' => null
+                     ));
+        }
+        return $res;
     }
 
     public function hard_delete_catalog($id) {
-        return $this->db->where('id', (int)$id)->delete('katalog_indikator');
+        $cat = $this->db->where('id', (int)$id)->get('katalog_indikator')->row_array();
+        if (!$cat) return false;
+
+        $res = $this->db->where('id', (int)$id)->delete('katalog_indikator');
+
+        if ($res) {
+            // Hapus permanen dari database_ekonomi
+            $this->db->where('kode_indikator', $cat['kode_indikator'])
+                     ->where('kode_wilayah', $cat['kode_wilayah'])
+                     ->delete('database_ekonomi');
+        }
+        return $res;
     }
 
     public function count_trash_catalog() {

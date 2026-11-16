@@ -53,6 +53,26 @@
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
             <input type="text" id="validation-search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari kode, indikator, klaster, wilayah...">
         </div>
+        <select id="validation-filter-year">
+            <option value="" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun</option>
+            <?php if (!empty($available_years)): ?>
+                <?php foreach ($available_years as $ay): ?>
+                    <option value="<?= $ay['tahun'] ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                        Tahun <?= $ay['tahun'] ?>
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+        <select id="validation-filter-cluster">
+            <option value="" <?= empty($selected_cluster) ? 'selected' : '' ?>>Semua Klaster (9 Klaster)</option>
+            <?php if (!empty($clusters)): ?>
+                <?php foreach ($clusters as $c): ?>
+                    <option value="<?= htmlspecialchars($c['klaster']) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $c['klaster']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['klaster']) ?> (<?= $c['total_indicators'] ?>)
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
         <select id="validation-filter-status">
             <option value="Semua status" <?= ($status === 'Semua status' || !$status) ? 'selected' : '' ?>>Semua Status (Aktif) (<?= $stats['total'] ?>)</option>
             <option value="Perlu review" <?= $status === 'Perlu review' ? 'selected' : '' ?>>Perlu review (<?= $stats['review'] ?>)</option>
@@ -66,6 +86,8 @@
             <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>Nilai terbesar</option>
         </select>
     </div>
+
+
 
     <article class="card data-card">
         <div class="card-head">
@@ -101,11 +123,11 @@
                             $isRejected = ($st === 'Belum lengkap' || $st === 'Ditolak');
                             $isReview = ($st === 'Perlu review');
                         ?>
-                        <div class="data-tr" data-code="<?= $item['code'] ?>" data-year="<?= $item['year'] ?>">
-                            <span><code><?= htmlspecialchars($item['code']) ?></code></span>
+                        <div class="data-tr" data-code="<?= $item['code'] ?>" data-year="<?= $item['year'] ?>" data-cluster="<?= htmlspecialchars($item['cluster'] ?? '') ?>">
+                            <span style="white-space: nowrap;"><code style="white-space: nowrap;"><?= htmlspecialchars($item['code']) ?></code></span>
                             <span>
                                 <strong><?= htmlspecialchars($item['indicator']) ?></strong>
-                                <small><?= htmlspecialchars($item['region']) ?> • <?= htmlspecialchars($item['source']) ?></small>
+                                <small><?= htmlspecialchars($item['source']) ?></small>
                                 <?php if (!empty($item['notes']) && !$isValid): ?>
                                     <div class="table-rejection-note" style="margin-top: 5px; font-size: 11px; line-height: 1.4; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; display: inline-flex; align-items: flex-start; gap: 5px; max-width: 100%;">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

@@ -17,18 +17,15 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-head">
-            <a href="<?= site_url() ?>" class="logo">
+            <a href="<?= site_url() ?>" class="logo" title="SI-DAPEDA Economic Intelligence">
                 <div class="logo-mark">
                     <span></span><span></span><span></span>
                 </div>
-                <div>
+                <div class="logo-text">
                     <strong>SI-DAPEDA</strong>
                     <small>Economic Intelligence</small>
                 </div>
             </a>
-            <button class="icon-button mobile-only" id="btn-close-sidebar" aria-label="Tutup Menu">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
-            </button>
         </div>
 
         <?php if (!empty($user)): ?>
@@ -64,7 +61,7 @@
                     }
                     $isActive = ($active_page === $item[3]);
                 ?>
-                    <a href="<?= site_url($item[0]) ?>" class="nav-item <?= $isActive ? 'active' : '' ?>">
+                    <a href="<?= site_url($item[0]) ?>" class="nav-item <?= $isActive ? 'active' : '' ?>" title="<?= htmlspecialchars($item[1]) ?>">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><?= $item[2] ?></svg>
                         <span><?= $item[1] ?></span>
                         <?= $isActive ? '<i></i>' : '' ?>
@@ -85,7 +82,7 @@
                 foreach ($publicNav as $item):
                     $isActive = ($active_page === $item[3]);
                 ?>
-                    <a href="<?= site_url($item[0]) ?>" class="nav-item <?= $isActive ? 'active' : '' ?>">
+                    <a href="<?= site_url($item[0]) ?>" class="nav-item <?= $isActive ? 'active' : '' ?>" title="<?= htmlspecialchars($item[1]) ?>">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><?= $item[2] ?></svg>
                         <span><?= $item[1] ?></span>
                         <?= $isActive ? '<i></i>' : '' ?>
@@ -97,23 +94,23 @@
             <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
                 <?php if (!empty($user)): ?>
                     <?php if (empty($is_admin)): ?>
-                        <a href="<?= site_url('admin') ?>" class="nav-item" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                        <a href="<?= site_url('admin') ?>" class="nav-item" title="Pengelolaan Sistem" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                             <span>Pengelolaan Sistem &rarr;</span>
                         </a>
                     <?php else: ?>
-                        <a href="<?= site_url('beranda') ?>" class="nav-item" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                        <a href="<?= site_url('beranda') ?>" class="nav-item" title="Dashboard Publik" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                             <span>&larr; Dashboard Publik</span>
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
+                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" title="Keluar (Logout)" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         <span>Keluar (Logout)</span>
                     </a>
                 <?php else: ?>
-                    <a href="<?= site_url('akun') ?>" class="nav-item login-nav-item" style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                    <a href="<?= site_url('akun') ?>" class="nav-item login-nav-item" title="Masuk (Login)" style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.25);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Masuk (Login)</span>
                     </a>
@@ -138,7 +135,7 @@
     <div class="main-shell">
         <header class="topbar">
             <div class="topbar-title">
-                <button class="icon-button mobile-only" id="btn-open-sidebar" aria-label="Buka Menu">
+                <button class="icon-button btn-sidebar-toggle" id="btn-open-sidebar" aria-label="Buka/Tutup Menu" title="Sembunyikan / Tampilkan Sidebar">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
                 <div>

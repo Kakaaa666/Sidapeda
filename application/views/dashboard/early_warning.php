@@ -33,38 +33,46 @@
         </div>
     </div>
 
-    <!-- SLIDE / TAB TAHUN EARLY WARNING SYSTEM (Sesuai Konsep Katalog & Beranda) -->
-    <div class="year-slide-card" style="margin-top: 15px; margin-bottom: 22px;">
-        <div class="year-slide-header">
-            <div class="year-slide-title-wrap">
-                <div class="year-slide-icon-box">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div>
-                    <strong>Pilih Periode Tahun Indikator EWS</strong>
-                    <small>Pantau status risiko, ambang batas, dan realisasi indikator peringatan dini berdasarkan tahun data.</small>
-                </div>
+    <!-- FILTER BAR EARLY WARNING SYSTEM (TAHUN & KATEGORI / KLASTER) -->
+    <div class="year-filter-bar" style="margin-top: 15px; margin-bottom: 22px;">
+        <div class="year-filter-info">
+            <div class="year-filter-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <div class="year-slide-meta">
-                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun (Terkini)" ?></strong></span>
+            <div class="year-filter-text">
+                <strong>Filter & Periode Indikator EWS</strong>
+                <small>Pantau status risiko, ambang batas, dan realisasi indikator peringatan dini berdasarkan tahun dan klaster tematik.</small>
             </div>
         </div>
 
-        <div class="year-slide-bar-wrap" id="year-slide-track">
-            <!-- Tab: Semua Tahun -->
-            <a href="<?= site_url('early_warning?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
-                Semua Tahun
-            </a>
+        <div class="year-filter-control" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="ews-year-select">Pilih Tahun:</label>
+                <select id="ews-year-select" class="year-filter-select" style="min-width: 170px;" onchange="window.location.href=this.value">
+                    <option value="<?= site_url('early_warning?year=all' . ($status ? '&status='.$status : '') . (!empty($selected_cluster) && $selected_cluster !== 'all' ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun (Terkini)</option>
+                    <?php if (!empty($available_years)): ?>
+                        <?php foreach ($available_years as $ay): ?>
+                            <option value="<?= site_url('early_warning?year=' . $ay['tahun'] . ($status ? '&status='.$status : '') . (!empty($selected_cluster) && $selected_cluster !== 'all' ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                                Tahun <?= $ay['tahun'] ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
 
-            <!-- Tab per Tahun yang Tersedia (Diurutkan ASC Dari Terendah ke Terbaru) -->
-            <?php if (!empty($available_years)): ?>
-                <?php foreach ($available_years as $ay): ?>
-                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
-                    <a href="<?= site_url('early_warning?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
-                        Tahun <?= $ay['tahun'] ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="ews-category-select">Pilih Kategori:</label>
+                <select id="ews-category-select" class="category-filter-select" style="min-width: 240px;">
+                    <option value="all" <?= (empty($selected_cluster) || $selected_cluster === 'all') ? 'selected' : '' ?>>Semua Kategori (<?= count($ews) ?> Indikator)</option>
+                    <?php if (!empty($categories)): ?>
+                        <?php foreach ($categories as $catName => $catCount): ?>
+                            <option value="<?= htmlspecialchars($catName) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $catName) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($catName) ?> (<?= $catCount ?> Indikator)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -139,12 +147,16 @@
                     $unit = $item['unit'] ?? $item['satuan'] ?? '%';
                     $dir = strtolower($item['direction'] ?? $item['arah_risiko'] ?? 'above');
                     $rowYr = $item['year'] ?? $item['tahun'] ?? null;
+                    $cl = $item['klaster'] ?? 'Umum';
                 ?>
-                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" role="button" tabindex="0" title="Klik untuk analisis & penyesuaian threshold">
+                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" data-code="<?= htmlspecialchars($code) ?>" data-status="<?= htmlspecialchars($st) ?>" data-category="<?= htmlspecialchars($cl) ?>" role="button" tabindex="0" title="Klik untuk analisis & penyesuaian threshold">
                         <div class="risk-indicator">
+                            <span class="badge info" style="display:inline-block; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none; margin-bottom:4px;">
+                                <?= htmlspecialchars($cl) ?>
+                            </span>
                             <strong><?= htmlspecialchars($name) ?></strong>
                             <small>
-                                <code><?= htmlspecialchars($code) ?></code>
+                                <code style="white-space: nowrap;"><?= htmlspecialchars($code) ?></code>
                                 <?php if (!empty($rowYr)): ?>
                                     <span style="color:var(--navy); font-weight:600;">• Thn <?= $rowYr ?></span>
                                 <?php endif; ?>
@@ -164,6 +176,11 @@
                         </div>
                     </div>
                 <?php endforeach; ?>
+                <div id="ews-empty-message" style="display: none; padding: 36px 20px; text-align: center; color: var(--muted); background: white; border: 1px dashed var(--line); border-radius: 10px; margin-top: 10px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px; color: var(--muted);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <strong style="display: block; font-size: 13px; color: var(--navy); margin-bottom: 3px;">Tidak ada indikator yang cocok</strong>
+                    <small style="font-size: 11px;">Silakan ubah filter kategori atau status pemantauan.</small>
+                </div>
             </div>
 
             <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line); line-height:1.6;">

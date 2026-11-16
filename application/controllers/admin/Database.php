@@ -7,10 +7,17 @@ class Database extends MY_Controller {
         $status = $this->input->get('status');
         $query = $this->input->get('q');
         $sort = $this->input->get('sort') ?: 'year';
+        $cluster = $this->input->get('cluster');
+        $year = $this->input->get('year');
+        $selected_year = ($year && is_numeric($year)) ? (int)$year : null;
 
-        $records = $this->M_economy->get_indicator_records($status, $query, $sort);
+        $records = $this->M_economy->get_indicator_records($status, $query, $sort, $selected_year, null, $cluster);
         $trash_count = $this->M_economy->count_trash_records();
         $kab_kota = $this->M_economy->get_daftar_kab_kota();
+        $clusters = $this->M_economy->get_database_clusters();
+        $all_clusters = $this->M_economy->get_all_distinct_clusters();
+        $available_years = $this->M_economy->get_catalog_years();
+        $catalog_indicators = $this->M_economy->get_indicator_catalog(null, null);
 
         $data = array(
             'active_page' => 'database',
@@ -21,6 +28,14 @@ class Database extends MY_Controller {
             'status' => $status,
             'query' => $query,
             'sort' => $sort,
+            'cluster' => $cluster,
+            'selected_cluster' => $cluster,
+            'year' => $year,
+            'selected_year' => $selected_year,
+            'available_years' => $available_years,
+            'clusters' => $clusters,
+            'all_clusters' => $all_clusters,
+            'catalog_indicators' => $catalog_indicators,
             'trash_count' => $trash_count,
             'kab_kota' => $kab_kota
         );

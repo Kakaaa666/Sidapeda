@@ -468,6 +468,7 @@
     function runInit() {
         initNavigation();
         initGlobalCrudDelegation();
+        initComboboxDelegation();
         dispatchPageLogic(); // Immediately bind all CRUD modals and interactive buttons on page load
         initDataLoad();      // Then asynchronously fetch central state / time series
     }
@@ -518,27 +519,180 @@
         });
     }
 
+    // ========================================================
+    // SINGLE COMBOBOX DELEGATION (PILIH DARI DAFTAR ATAU KETIK MANUAL)
+    // ========================================================
+    function initComboboxDelegation() {
+        if (window._comboboxDelegationInitialized) return;
+        window._comboboxDelegationInitialized = true;
+
+        // Klik handler untuk toggle button, input, dan pilihan item
+        document.addEventListener('click', function (e) {
+            const toggleBtn = e.target.closest('.combobox-toggle-btn');
+            const inputEl = e.target.closest('.cluster-combobox-input');
+            const item = e.target.closest('.combobox-item');
+
+            // 1. Jika klik pada salah satu opsi dalam dropdown
+            if (item) {
+                e.preventDefault();
+                e.stopPropagation();
+                const wrap = item.closest('.combobox-wrap');
+                if (wrap) {
+                    const inp = wrap.querySelector('.cluster-combobox-input');
+                    const selectedVal = item.getAttribute('data-value') || item.textContent.trim();
+                    if (inp) {
+                        inp.value = selectedVal;
+                        inp.dispatchEvent(new Event('input', { bubbles: true }));
+                        inp.dispatchEvent(new Event('change', { bubbles: true }));
+                        inp.focus();
+                    }
+                    wrap.classList.remove('is-open');
+                }
+                return;
+            }
+
+            // 2. Jika klik pada tombol toggle panah (chevron)
+            if (toggleBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const wrap = toggleBtn.closest('.combobox-wrap');
+                if (wrap) {
+                    const wasOpen = wrap.classList.contains('is-open');
+                    // Tutup semua combobox lain
+                    document.querySelectorAll('.combobox-wrap.is-open').forEach(w => {
+                        if (w !== wrap) w.classList.remove('is-open');
+                    });
+                    if (wasOpen) {
+                        wrap.classList.remove('is-open');
+                    } else {
+                        // Tampilkan semua opsi & buka menu
+                        const inp = wrap.querySelector('.cluster-combobox-input');
+                        const curVal = inp ? (inp.value || '').trim().toLowerCase() : '';
+                        wrap.querySelectorAll('.combobox-item').forEach(it => {
+                            it.style.display = 'block';
+                            const itVal = (it.getAttribute('data-value') || it.textContent).trim().toLowerCase();
+                            if (curVal && itVal === curVal) {
+                                it.classList.add('active');
+                            } else {
+                                it.classList.remove('active');
+                            }
+                        });
+                        wrap.classList.add('is-open');
+                        if (inp) inp.focus();
+                    }
+                }
+                return;
+            }
+
+            // 3. Jika klik pada input field combobox
+            if (inputEl) {
+                const wrap = inputEl.closest('.combobox-wrap');
+                if (wrap) {
+                    // Tutup combobox lain
+                    document.querySelectorAll('.combobox-wrap.is-open').forEach(w => {
+                        if (w !== wrap) w.classList.remove('is-open');
+                    });
+                    // Jika belum terbuka, buka dan reset tampilan opsi
+                    if (!wrap.classList.contains('is-open')) {
+                        const curVal = (inputEl.value || '').trim().toLowerCase();
+                        wrap.querySelectorAll('.combobox-item').forEach(it => {
+                            const itVal = (it.getAttribute('data-value') || it.textContent).trim().toLowerCase();
+                            if (!curVal || itVal.includes(curVal)) {
+                                it.style.display = 'block';
+                            } else {
+                                it.style.display = 'none';
+                            }
+                            if (curVal && itVal === curVal) {
+                                it.classList.add('active');
+                            } else {
+                                it.classList.remove('active');
+                            }
+                        });
+                        wrap.classList.add('is-open');
+                    }
+                }
+                return;
+            }
+
+            // 4. Klik di luar combobox: tutup seluruh dropdown
+            document.querySelectorAll('.combobox-wrap.is-open').forEach(w => {
+                w.classList.remove('is-open');
+            });
+        });
+
+        // Filter opsi secara live saat pengguna mengetik manual
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.classList.contains('cluster-combobox-input')) {
+                const inp = e.target;
+                const wrap = inp.closest('.combobox-wrap');
+                if (wrap) {
+                    const q = inp.value.toLowerCase().trim();
+                    wrap.classList.add('is-open');
+                    wrap.querySelectorAll('.combobox-item').forEach(item => {
+                        const txt = (item.getAttribute('data-value') || item.textContent).toLowerCase().trim();
+                        if (!q || txt.includes(q)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+            }
+        });
+
+        // Tutup menu combobox saat menekan Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.combobox-wrap.is-open').forEach(w => {
+                    w.classList.remove('is-open');
+                });
+            }
+        });
+    }
+
     // Navigation & Global Events
     function initNavigation() {
-        const btnOpen = document.getElementById('btn-open-sidebar');
-        const btnClose = document.getElementById('btn-close-sidebar');
+        const btnToggle = document.getElementById('btn-open-sidebar');
         const sidebar = document.getElementById('sidebar');
         const scrim = document.getElementById('sidebar-scrim');
 
-        if (btnOpen && sidebar && scrim) {
-            btnOpen.addEventListener('click', () => {
-                sidebar.classList.add('mobile-open');
-                scrim.style.display = 'block';
-            });
-        }
+        // Restore desktop collapsed state from localStorage
+        try {
+            if (window.innerWidth > 780 && localStorage.getItem('sidapeda_sidebar_collapsed') === '1') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+        } catch (e) {}
 
-        const closeSidebar = () => {
-            if (sidebar) sidebar.classList.remove('mobile-open');
-            if (scrim) scrim.style.display = 'none';
+        const toggleSidebar = () => {
+            if (window.innerWidth <= 780) {
+                // Mobile behavior: drawer
+                if (sidebar) {
+                    const isOpen = sidebar.classList.contains('mobile-open');
+                    if (isOpen) {
+                        sidebar.classList.remove('mobile-open');
+                        if (scrim) scrim.style.display = 'none';
+                    } else {
+                        sidebar.classList.add('mobile-open');
+                        if (scrim) scrim.style.display = 'block';
+                    }
+                }
+            } else {
+                // Desktop behavior: collapse / expand mini-sidebar (preserving logo)
+                const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                try {
+                    localStorage.setItem('sidapeda_sidebar_collapsed', isCollapsed ? '1' : '0');
+                } catch (e) {}
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 270);
+            }
         };
 
-        if (btnClose) btnClose.addEventListener('click', closeSidebar);
-        if (scrim) scrim.addEventListener('click', closeSidebar);
+        if (btnToggle) btnToggle.addEventListener('click', toggleSidebar);
+        if (scrim) {
+            scrim.addEventListener('click', () => {
+                if (sidebar) sidebar.classList.remove('mobile-open');
+                scrim.style.display = 'none';
+            });
+        }
 
         // Global Search
         const searchInput = document.getElementById('header-search-input');
@@ -656,6 +810,7 @@
                 btn.onclick = function (e) {
                     e.preventDefault();
                     if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
+                    if (formAdd) formAdd.reset();
                     addModal.style.display = 'grid';
                 };
             }
@@ -702,6 +857,12 @@
                 e.preventDefault();
                 if (addErr) { addErr.style.display = 'none'; addErr.textContent = ''; }
                 const fd = new FormData(formAdd);
+                if (fd.get('klaster') === '__custom__' && fd.get('klaster_custom')) {
+                    fd.set('klaster', fd.get('klaster_custom').trim());
+                }
+                if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
+                    fd.set('cluster', fd.get('cluster_custom').trim());
+                }
                 fetch(`${cleanSite}/${cfg.controller}/create`, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -733,6 +894,12 @@
                 e.preventDefault();
                 if (editErr) { editErr.style.display = 'none'; editErr.textContent = ''; }
                 const fd = new FormData(formEdit);
+                if (fd.get('klaster') === '__custom__' && fd.get('klaster_custom')) {
+                    fd.set('klaster', fd.get('klaster_custom').trim());
+                }
+                if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
+                    fd.set('cluster', fd.get('cluster_custom').trim());
+                }
                 const id = fd.get('id') || (formEdit.querySelector('input[name="id"]') ? formEdit.querySelector('input[name="id"]').value : '');
                 fetch(`${cleanSite}/${cfg.controller}/update/${id}`, {
                     method: 'POST',
@@ -1029,26 +1196,65 @@
             });
         });
 
-        // Tab Filter Kategori Indikator Beranda
+        // Filter Kategori Indikator Beranda (Dropdown & Tabs)
+        const catSelect = document.getElementById('beranda-category-select');
         const catTabs = document.getElementById('beranda-category-tabs');
+        const kpiCards = document.querySelectorAll('#kpi-container .kpi-card');
+        const kpiEmpty = document.getElementById('kpi-empty-message');
+        const countDisplay = document.getElementById('kpi-count-display');
+
+        function applyBerandaCategoryFilter(targetCat) {
+            let visibleCount = 0;
+            kpiCards.forEach(card => {
+                const cardCat = card.getAttribute('data-category');
+                if (!targetCat || targetCat === 'all' || cardCat === targetCat) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (kpiEmpty) {
+                kpiEmpty.style.display = (visibleCount === 0) ? 'block' : 'none';
+            }
+            if (countDisplay) {
+                countDisplay.textContent = visibleCount;
+            }
+        }
+
+        if (catSelect) {
+            catSelect.addEventListener('change', function () {
+                const val = this.value;
+                applyBerandaCategoryFilter(val);
+                try {
+                    const url = new URL(window.location.href);
+                    if (val && val !== 'all') {
+                        url.searchParams.set('cluster', val);
+                    } else {
+                        url.searchParams.delete('cluster');
+                        url.searchParams.delete('category');
+                    }
+                    window.history.replaceState({}, '', url.toString());
+                } catch (e) {}
+            });
+
+            // Initial check if pre-selected via server / URL
+            if (catSelect.value && catSelect.value !== 'all') {
+                applyBerandaCategoryFilter(catSelect.value);
+            }
+        }
+
         if (catTabs) {
             const tabButtons = catTabs.querySelectorAll('button');
-            const kpiCards = document.querySelectorAll('#kpi-container .kpi-card');
-
             tabButtons.forEach(btn => {
                 btn.addEventListener('click', function () {
                     tabButtons.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
 
                     const targetCat = this.getAttribute('data-category');
-                    kpiCards.forEach(card => {
-                        const cardCat = card.getAttribute('data-category');
-                        if (targetCat === 'all' || cardCat === targetCat) {
-                            card.style.display = '';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
+                    if (catSelect) catSelect.value = targetCat;
+                    applyBerandaCategoryFilter(targetCat);
                 });
             });
         }
@@ -2861,6 +3067,7 @@
     // 6. EWS PAGE
     function initEwsPage() {
         const filterTabs = document.getElementById('ews-filter-tabs');
+        const catSelect = document.getElementById('ews-category-select');
         const statsContainer = document.getElementById('ews-stats-container');
         const tableRows = document.getElementById('ews-table-rows');
         const distBars = document.getElementById('ews-distribution-bars');
@@ -2872,6 +3079,7 @@
         const btnExport = document.getElementById('btn-export-ews');
 
         let activeFilter = 'Semua';
+        let activeCategory = (catSelect && catSelect.value) ? catSelect.value : 'all';
         let selectedAlertCode = null;
 
         function calcEwsStatus(val, th, direction) {
@@ -2893,7 +3101,7 @@
         }
 
         function renderEWS() {
-            let normalC = 0, warnC = 0, critC = 0, followedC = 0;
+            let normalC = 0, warnC = 0, critC = 0, followedC = 0, totalMatching = 0;
             AppState.ews.forEach(item => {
                 const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                 const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
@@ -2902,11 +3110,15 @@
                 item.status = st;
                 item.status_risiko = st;
 
-                if (st === 'Normal') normalC++;
-                else if (st === 'Waspada') warnC++;
-                else if (st === 'Kritis') critC++;
+                const cat = item.klaster || item.cluster || 'Umum';
+                if (!activeCategory || activeCategory === 'all' || cat === activeCategory) {
+                    totalMatching++;
+                    if (st === 'Normal') normalC++;
+                    else if (st === 'Waspada') warnC++;
+                    else if (st === 'Kritis') critC++;
 
-                if (item.is_followed_up || item.sudah_ditindaklanjuti) followedC++;
+                    if (item.is_followed_up || item.sudah_ditindaklanjuti) followedC++;
+                }
             });
 
             if (statsContainer) {
@@ -2914,66 +3126,91 @@
                     <div class="risk-stat danger"><span>Status Kritis</span><strong>${critC}</strong><small>Memerlukan intervensi segera</small></div>
                     <div class="risk-stat warning"><span>Status Waspada</span><strong>${warnC}</strong><small>Mendekati ambang batas</small></div>
                     <div class="risk-stat success"><span>Status Normal</span><strong>${normalC}</strong><small>Dalam batas aman</small></div>
-                    <div class="risk-stat neutral"><span>Total Indikator</span><strong>${AppState.ews.length}</strong><small>Dipantau sistem (${followedC} ditindaklanjuti)</small></div>`;
+                    <div class="risk-stat neutral"><span>Total Indikator</span><strong>${totalMatching}</strong><small>Dipantau sistem (${followedC} ditindaklanjuti)</small></div>`;
             }
 
             const filtered = AppState.ews.filter(item => {
                 const st = item.status || item.status_risiko || 'Normal';
-                return activeFilter === 'Semua' || st === activeFilter;
+                const cat = item.klaster || item.cluster || 'Umum';
+                const matchStatus = (activeFilter === 'Semua' || st === activeFilter);
+                const matchCategory = (!activeCategory || activeCategory === 'all' || cat === activeCategory);
+                return matchStatus && matchCategory;
             });
 
             if (tableRows) {
-                tableRows.innerHTML = `
-                    <div class="risk-table-header">
-                        <span>Indikator Pemantauan</span>
-                        <span>Nilai Riil</span>
-                        <span>Batas Ambang</span>
-                        <span style="text-align:right;">Status Risiko</span>
-                    </div>
-                    ${filtered.map(item => {
-                        const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
-                        const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
-                        const dir = item.direction || item.arah_risiko || 'above';
-                        const st = calcEwsStatus(val, th, dir);
-                        const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
-                        const rowStateCls = (st === 'Kritis') ? 'alerted' : ((st === 'Waspada') ? 'warning-row' : 'normal-row');
-                        const unit = item.unit || item.satuan || '%';
-                        const code = item.code || item.kode_indikator || '';
-                        const name = item.name || item.nama_indikator || '';
-                        return `
-                        <div class="risk-row btn-alert-row ${rowStateCls}" data-code="${code}" role="button" tabindex="0" style="cursor:pointer;" title="Klik untuk analisis & penyesuaian threshold">
-                            <div class="risk-indicator">
-                                <strong>${name}</strong>
-                                <small>
-                                    <code>${code}</code>
-                                    ${item.tahun || item.year ? `<span style="color:var(--navy); font-weight:600;">• Thn ${item.tahun || item.year}</span>` : ''}
-                                    <span style="color:var(--muted);">• ${dir === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang'}</span>
-                                </small>
-                            </div>
-                            <div class="risk-value">
-                                <span>Nilai Riil</span>
-                                <strong>${formatNum(val, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
-                            </div>
-                            <div class="risk-threshold">
-                                <span>Batas Ambang</span>
-                                <strong>${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
-                            </div>
-                            <div class="risk-status">
-                                <span class="badge ${badgeCls}">${st}</span>
-                            </div>
+                if (filtered.length === 0) {
+                    tableRows.innerHTML = `
+                        <div class="risk-table-header">
+                            <span>Indikator Pemantauan</span>
+                            <span>Nilai Riil</span>
+                            <span>Batas Ambang</span>
+                            <span style="text-align:right;">Status Risiko</span>
                         </div>
-                        `;
-                    }).join('')}`;
+                        <div id="ews-empty-message" style="padding: 36px 20px; text-align: center; color: var(--muted); background: white; border: 1px dashed var(--line); border-radius: 10px; margin-top: 10px;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px; color: var(--muted);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <strong style="display: block; font-size: 13px; color: var(--navy); margin-bottom: 3px;">Tidak ada indikator yang cocok</strong>
+                            <small style="font-size: 11px;">Silakan ubah filter kategori atau status pemantauan.</small>
+                        </div>
+                    `;
+                } else {
+                    tableRows.innerHTML = `
+                        <div class="risk-table-header">
+                            <span>Indikator Pemantauan</span>
+                            <span>Nilai Riil</span>
+                            <span>Batas Ambang</span>
+                            <span style="text-align:right;">Status Risiko</span>
+                        </div>
+                        ${filtered.map(item => {
+                            const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
+                            const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
+                            const dir = item.direction || item.arah_risiko || 'above';
+                            const st = calcEwsStatus(val, th, dir);
+                            const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
+                            const rowStateCls = (st === 'Kritis') ? 'alerted' : ((st === 'Waspada') ? 'warning-row' : 'normal-row');
+                            const unit = item.unit || item.satuan || '%';
+                            const code = item.code || item.kode_indikator || '';
+                            const name = item.name || item.nama_indikator || '';
+                            const cl = item.klaster || item.cluster || 'Umum';
+                            return `
+                            <div class="risk-row btn-alert-row ${rowStateCls}" data-code="${code}" data-status="${st}" data-category="${cl}" role="button" tabindex="0" style="cursor:pointer;" title="Klik untuk analisis & penyesuaian threshold">
+                                <div class="risk-indicator">
+                                    <span class="badge info" style="display:inline-block; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none; margin-bottom:4px;">${cl}</span>
+                                    <strong>${name}</strong>
+                                    <small>
+                                        <code style="white-space: nowrap;">${code}</code>
+                                        ${item.tahun || item.year ? `<span style="color:var(--navy); font-weight:600;">• Thn ${item.tahun || item.year}</span>` : ''}
+                                        <span style="color:var(--muted);">• ${dir === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang'}</span>
+                                    </small>
+                                </div>
+                                <div class="risk-value">
+                                    <span>Nilai Riil</span>
+                                    <strong>${formatNum(val, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
+                                </div>
+                                <div class="risk-threshold">
+                                    <span>Batas Ambang</span>
+                                    <strong>${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
+                                </div>
+                                <div class="risk-status">
+                                    <span class="badge ${badgeCls}">${st}</span>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}`;
 
-                tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
-                    row.addEventListener('click', function () {
-                        openAlertModal(this.getAttribute('data-code'));
+                    tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
+                        row.addEventListener('click', function () {
+                            openAlertModal(this.getAttribute('data-code'));
+                        });
                     });
-                });
+                }
             }
 
             if (distBars) {
-                distBars.innerHTML = AppState.ews.map(item => {
+                const distFiltered = AppState.ews.filter(item => {
+                    const cat = item.klaster || item.cluster || 'Umum';
+                    return !activeCategory || activeCategory === 'all' || cat === activeCategory;
+                });
+                distBars.innerHTML = distFiltered.map(item => {
                     const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                     const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                     const dir = item.direction || item.arah_risiko || 'above';
@@ -3271,16 +3508,34 @@
             });
         }
 
+        if (catSelect) {
+            catSelect.addEventListener('change', function () {
+                activeCategory = this.value;
+                renderEWS();
+                try {
+                    const url = new URL(window.location.href);
+                    if (activeCategory && activeCategory !== 'all') {
+                        url.searchParams.set('cluster', activeCategory);
+                    } else {
+                        url.searchParams.delete('cluster');
+                        url.searchParams.delete('category');
+                    }
+                    window.history.replaceState({}, '', url.toString());
+                } catch (e) {}
+            });
+        }
+
         if (btnExport) {
             btnExport.addEventListener('click', () => {
                 downloadCSV('monitoring-ews-banyuwangi.csv', [
-                    ['Kode', 'Indikator', 'Tahun', 'Nilai Terkini', 'Threshold', 'Arah Risiko', 'Status'],
+                    ['Kode', 'Indikator', 'Klaster', 'Tahun', 'Nilai Terkini', 'Threshold', 'Arah Risiko', 'Status'],
                     ...AppState.ews.map(i => {
                         const v = Number(i.value !== undefined ? i.value : (i.nilai_terkini || 0));
                         const t = Number(i.threshold !== undefined ? i.threshold : (i.ambang_batas || 0));
                         const dir = i.direction || i.arah_risiko || 'above';
                         const yr = i.tahun || i.year || '-';
-                        return [i.code || i.kode_indikator, i.name || i.nama_indikator, yr, v, t, dir, calcEwsStatus(v, t, dir)];
+                        const cl = i.klaster || i.cluster || 'Umum';
+                        return [i.code || i.kode_indikator, i.name || i.nama_indikator, cl, yr, v, t, dir, calcEwsStatus(v, t, dir)];
                     })
                 ]);
             });
@@ -3563,6 +3818,23 @@
 
         updateReport();
 
+        // Toggle Report Configuration Sidebar
+        const btnToggleConfig = document.getElementById('btn-toggle-report-config');
+        const reportConfig = document.querySelector('.report-config');
+        const reportBuilder = document.querySelector('.report-builder');
+        if (btnToggleConfig && reportConfig && reportBuilder) {
+            btnToggleConfig.addEventListener('click', () => {
+                const isHidden = reportConfig.classList.toggle('config-hidden');
+                reportBuilder.classList.toggle('no-config', isHidden);
+                const textSpan = document.getElementById('btn-toggle-report-config-text');
+                if (textSpan) {
+                    textSpan.textContent = isHidden ? 'Tampilkan Panel Filter' : 'Sembunyikan Panel Filter';
+                }
+                btnToggleConfig.classList.toggle('active', isHidden);
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+            });
+        }
+
         // Setup CRUD & Soft Delete for Laporan Ekonomi
         setupModuleCrud({
             controller: 'laporan_ekonomi',
@@ -3639,6 +3911,8 @@
         const searchInput = document.getElementById('admin-search-input');
         const filterStatus = document.getElementById('admin-filter-status');
         const sortSelect = document.getElementById('admin-sort');
+        const filterCluster = document.getElementById('admin-filter-cluster');
+        const filterYear = document.getElementById('admin-filter-year');
         const btnOpenModal = document.getElementById('btn-open-add-modal');
         const addModal = document.getElementById('add-data-modal');
         const btnCloseAdd = document.getElementById('modal-btn-close-add');
@@ -3657,7 +3931,9 @@
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
             const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'year';
-            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}`;
+            const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
+            const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
+            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}`;
         }
 
         if (searchInput) {
@@ -3667,10 +3943,16 @@
         }
         if (filterStatus) filterStatus.addEventListener('change', reloadFiltered);
         if (sortSelect) sortSelect.addEventListener('change', reloadFiltered);
+        if (filterCluster) filterCluster.addEventListener('change', reloadFiltered);
+        if (filterYear) filterYear.addEventListener('change', reloadFiltered);
 
         // Add modal (Create)
         if (btnOpenModal && addModal) {
-            btnOpenModal.addEventListener('click', () => { addModal.style.display = 'grid'; });
+            btnOpenModal.addEventListener('click', () => {
+                const addDefEl = document.getElementById('add-definition');
+                if (addDefEl) addDefEl.value = '';
+                addModal.style.display = 'grid';
+            });
         }
         const closeAddModal = () => { if (addModal) addModal.style.display = 'none'; };
         if (btnCloseAdd) btnCloseAdd.addEventListener('click', closeAddModal);
@@ -3681,10 +3963,37 @@
             });
         }
 
+        const addCodeInput = document.getElementById('add-code');
+        if (addCodeInput) {
+            const handleCodeAutocomplete = function () {
+                if (!window.CATALOG_MASTER_LOOKUP || !Array.isArray(window.CATALOG_MASTER_LOOKUP)) return;
+                const val = (addCodeInput.value || '').trim().toUpperCase();
+                if (!val) return;
+                const match = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === val);
+                if (match) {
+                    const indEl = document.getElementById('add-indicator');
+                    if (indEl && (!indEl.value || indEl.value === 'Pertumbuhan Ekonomi')) indEl.value = match.name;
+                    const clEl = document.getElementById('add-cluster');
+                    if (clEl && !clEl.value) clEl.value = match.cluster;
+                    const unEl = document.getElementById('add-unit');
+                    if (unEl && (!unEl.value || unEl.value === '%')) unEl.value = match.unit;
+                    const srcEl = document.getElementById('add-source');
+                    if (srcEl && (!srcEl.value || srcEl.value === 'BPS Kabupaten Banyuwangi')) srcEl.value = match.source;
+                    const defEl = document.getElementById('add-definition');
+                    if (defEl && !defEl.value) defEl.value = match.definition || '';
+                }
+            };
+            addCodeInput.addEventListener('input', handleCodeAutocomplete);
+            addCodeInput.addEventListener('change', handleCodeAutocomplete);
+        }
+
         if (formAdd) {
             formAdd.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const fd = new FormData(this);
+                if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
+                    fd.set('cluster', fd.get('cluster_custom').trim());
+                }
                 const errBox = document.getElementById('add-modal-error');
 
                 fetch(`${cleanSite}/database/create`, {
@@ -3728,6 +4037,9 @@
                 if (!id) return;
 
                 const fd = new FormData(this);
+                if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
+                    fd.set('cluster', fd.get('cluster_custom').trim());
+                }
                 if (editErrBox) editErrBox.style.display = 'none';
 
                 fetch(`${cleanSite}/database/update/${id}`, {
@@ -3781,29 +4093,10 @@
                                 document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
                                 document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
                                 
-                                const clusterVal = (d.cluster || d.klaster || 'Output & Pertumbuhan').trim();
+                                const clusterVal = (d.cluster || d.klaster || 'Output dan pertumbuhan').trim();
                                 const editClusterEl = document.getElementById('edit-cluster');
                                 if (editClusterEl) {
-                                    if (editClusterEl.tagName === 'SELECT') {
-                                        let found = false;
-                                        for (let opt of editClusterEl.options) {
-                                            if (opt.value.trim().toLowerCase() === clusterVal.toLowerCase() || opt.text.trim().toLowerCase() === clusterVal.toLowerCase()) {
-                                                editClusterEl.value = opt.value;
-                                                found = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!found && clusterVal) {
-                                            const newOpt = document.createElement('option');
-                                            newOpt.value = clusterVal;
-                                            newOpt.textContent = clusterVal;
-                                            newOpt.selected = true;
-                                            editClusterEl.appendChild(newOpt);
-                                            editClusterEl.value = clusterVal;
-                                        }
-                                    } else {
-                                        editClusterEl.value = clusterVal;
-                                    }
+                                    editClusterEl.value = clusterVal;
                                 }
 
                                 document.getElementById('edit-region').value = d.region || d.wilayah || 'Kabupaten Banyuwangi';
@@ -3815,6 +4108,10 @@
                                 document.getElementById('edit-value').value = d.value !== undefined ? d.value : d.nilai;
                                 document.getElementById('edit-unit').value = d.unit || d.satuan || '%';
                                 document.getElementById('edit-source').value = d.source || d.sumber_data || '';
+                                const editDefEl = document.getElementById('edit-definition');
+                                if (editDefEl) {
+                                    editDefEl.value = d.definition || d.definisi_operasional || '';
+                                }
                                 const noteVal = d.notes || d.catatan || '';
                                 const st = d.status || d.status_validasi || 'Perlu review';
                                 const wasRejected = (st === 'Belum lengkap' || st === 'Ditolak');
@@ -3936,8 +4233,8 @@
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {
                 downloadCSV('database-ekonomi-banyuwangi.csv', [
-                    ['Kode', 'Indikator', 'Klaster', 'Wilayah', 'Periode', 'Tahun', 'Nilai', 'Satuan', 'Sumber', 'Status'],
-                    ...AppState.records.map(r => [r.code, r.indicator, r.cluster, r.region, r.period, r.year, r.value, r.unit, r.source, r.status])
+                    ['Kode', 'Indikator', 'Klaster', 'Definisi Operasional', 'Wilayah', 'Periode', 'Tahun', 'Nilai', 'Satuan', 'Sumber', 'Status'],
+                    ...AppState.records.map(r => [r.code, r.indicator, r.cluster, r.definition || r.definisi_operasional || '', r.region, r.period, r.year, r.value, r.unit, r.source, r.status])
                 ]);
             });
         }
@@ -4056,12 +4353,16 @@
         const searchInput = document.getElementById('validation-search-input');
         const filterStatus = document.getElementById('validation-filter-status');
         const sortSelect = document.getElementById('validation-sort');
+        const filterCluster = document.getElementById('validation-filter-cluster');
+        const filterYear = document.getElementById('validation-filter-year');
 
         function reloadValidationFiltered() {
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
             const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'status';
-            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}`;
+            const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
+            const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
+            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}`;
         }
 
         if (searchInput) {
@@ -4071,6 +4372,8 @@
         }
         if (filterStatus) filterStatus.addEventListener('change', reloadValidationFiltered);
         if (sortSelect) sortSelect.addEventListener('change', reloadValidationFiltered);
+        if (filterCluster) filterCluster.addEventListener('change', reloadValidationFiltered);
+        if (filterYear) filterYear.addEventListener('change', reloadValidationFiltered);
 
         // 1. Approve (Centang / ctg) - Langsung setujui tanpa popup alert / confirm
         document.querySelectorAll('.btn-verify-record').forEach(btn => {
@@ -4468,6 +4771,7 @@
                     });
                     rows.push(headers);
                     table.querySelectorAll('tbody tr').forEach(tr => {
+                        if (tr.id === 'catalog-filter-empty-row' || tr.style.display === 'none') return;
                         const rowData = [];
                         const tds = tr.querySelectorAll('td');
                         if (tds.length > 1) {
@@ -4483,6 +4787,72 @@
                 const yr = new URLSearchParams(window.location.search).get('year') || 'semua';
                 downloadCSV(`katalog-indikator-banyuwangi-${yr}.csv`, rows);
             });
+        }
+
+        // Cluster & Search Filter logic for Catalog Indikator (Dropdown Only)
+        const catalogClusterSelect = document.getElementById('catalog-filter-cluster-select');
+        const catalogSearchInput = document.getElementById('catalog-search-input');
+        const catalogVisibleCount = document.getElementById('catalog-visible-count');
+        const catalogEmptyRow = document.getElementById('catalog-filter-empty-row');
+        const catalogTableRows = document.querySelectorAll('.result-table tbody tr:not(#catalog-filter-empty-row)');
+
+        let currentCatalogCluster = 'all';
+        if (catalogClusterSelect && catalogClusterSelect.value && catalogClusterSelect.value !== 'all') {
+            currentCatalogCluster = catalogClusterSelect.value;
+        }
+
+        function filterCatalogData(selectedCluster, searchQuery) {
+            const targetCluster = (selectedCluster !== undefined) ? selectedCluster : currentCatalogCluster;
+            currentCatalogCluster = targetCluster;
+            const q = (searchQuery !== undefined ? searchQuery : (catalogSearchInput ? catalogSearchInput.value : '')).toLowerCase().trim();
+
+            let visibleCount = 0;
+            catalogTableRows.forEach(tr => {
+                const rowCluster = tr.getAttribute('data-cluster') || '';
+                const clusterMatch = (targetCluster === 'all' || !targetCluster || rowCluster === targetCluster);
+
+                let textMatch = true;
+                if (q) {
+                    const rowText = tr.textContent.toLowerCase();
+                    textMatch = rowText.includes(q);
+                }
+
+                if (clusterMatch && textMatch) {
+                    tr.style.display = '';
+                    visibleCount++;
+                } else {
+                    tr.style.display = 'none';
+                }
+            });
+
+            if (catalogEmptyRow) {
+                catalogEmptyRow.style.display = (visibleCount === 0) ? '' : 'none';
+            }
+
+            if (catalogVisibleCount) {
+                catalogVisibleCount.textContent = visibleCount;
+            }
+
+            // Sync select
+            if (catalogClusterSelect && catalogClusterSelect.value !== targetCluster) {
+                catalogClusterSelect.value = targetCluster;
+            }
+        }
+
+        if (catalogClusterSelect) {
+            catalogClusterSelect.addEventListener('change', function () {
+                filterCatalogData(this.value);
+            });
+        }
+
+        if (catalogSearchInput) {
+            catalogSearchInput.addEventListener('input', function () {
+                filterCatalogData();
+            });
+        }
+
+        if (currentCatalogCluster && currentCatalogCluster !== 'all') {
+            filterCatalogData(currentCatalogCluster);
         }
 
         // Render Grafik Distribusi Klaster Indikator
@@ -4528,14 +4898,20 @@
             restoreBtnClass: 'btn-restore-catalog',
             hardDeleteBtnClass: 'btn-hard-delete-catalog',
             populateForm: function (item) {
-                document.getElementById('edit-catalog-id').value = item.id;
-                document.getElementById('edit-catalog-code').value = item.kode_indikator || '';
-                document.getElementById('edit-catalog-unit').value = item.satuan || '';
-                document.getElementById('edit-catalog-name').value = item.nama_indikator || '';
-                document.getElementById('edit-catalog-cluster').value = item.klaster || '';
-                document.getElementById('edit-catalog-freq').value = item.frekuensi || 'Tahunan';
-                document.getElementById('edit-catalog-source').value = item.sumber_data || '';
-                document.getElementById('edit-catalog-def').value = item.definisi_operasional || '';
+                if (document.getElementById('edit-catalog-id')) document.getElementById('edit-catalog-id').value = item.id || '';
+                if (document.getElementById('edit-catalog-code')) document.getElementById('edit-catalog-code').value = item.kode_indikator || item.code || '';
+                if (document.getElementById('edit-catalog-unit')) document.getElementById('edit-catalog-unit').value = item.satuan || item.unit || '';
+                if (document.getElementById('edit-catalog-name')) document.getElementById('edit-catalog-name').value = item.nama_indikator || item.name || item.indicator || '';
+
+                const catClusterVal = (item.klaster || item.cluster || 'Output dan pertumbuhan').trim();
+                const editCatClusterEl = document.getElementById('edit-catalog-cluster');
+                if (editCatClusterEl) {
+                    editCatClusterEl.value = catClusterVal;
+                }
+
+                if (document.getElementById('edit-catalog-freq')) document.getElementById('edit-catalog-freq').value = item.frekuensi || item.frequency || 'Tahunan';
+                if (document.getElementById('edit-catalog-source')) document.getElementById('edit-catalog-source').value = item.sumber_data || item.source || '';
+                if (document.getElementById('edit-catalog-def')) document.getElementById('edit-catalog-def').value = item.definisi_operasional || item.definition || '';
             }
         });
     }

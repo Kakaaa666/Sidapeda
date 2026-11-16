@@ -10,17 +10,20 @@ class Catalog extends MY_Controller {
         $status = $this->input->get('status');
         $raw_year = $this->input->get('year');
         $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
+        $selected_cluster = $this->input->get('cluster');
 
-        $catalog = $this->M_economy->get_indicator_catalog($status, $selected_year);
+        $catalog = $this->M_economy->get_indicator_catalog($status, $selected_year, null, null);
         $trash_count = $this->M_economy->count_trash_catalog();
         $available_years = $this->M_economy->get_catalog_years();
+        $available_clusters = $this->M_economy->get_catalog_clusters($status, $selected_year);
+        $all_clusters = $this->M_economy->get_all_distinct_clusters();
 
         $total_all_records = 0;
         foreach ($available_years as $ay) {
             $total_all_records += (int)$ay['total_records'];
         }
 
-        // Hitung total master indikator unik (semua tahun)
+        // Hitung total master indikator unik (semua tahun & semua klaster)
         $master_catalog_all = $this->M_economy->get_indicator_catalog($status, null);
         $total_master_indicators = count($master_catalog_all);
 
@@ -34,6 +37,9 @@ class Catalog extends MY_Controller {
             'trash_count' => $trash_count,
             'available_years' => $available_years,
             'selected_year' => $selected_year,
+            'available_clusters' => $available_clusters,
+            'all_clusters' => $all_clusters,
+            'selected_cluster' => $selected_cluster,
             'total_all_records' => $total_all_records,
             'total_master_indicators' => $total_master_indicators
         );
@@ -84,7 +90,7 @@ class Catalog extends MY_Controller {
     }
 
     public function update($id = null) {
-        $id = (int)($id ?: $this->input->post('id'));
+        $id = (int)($id ?: $this->input->post('id') ?: $this->input->get('id'));
         $data = $this->input->post(null, true);
         $result = $this->M_economy->update_catalog($id, $data);
 
@@ -112,7 +118,7 @@ class Catalog extends MY_Controller {
     }
 
     public function soft_delete($id = null) {
-        $id = (int)($id ?: $this->input->post('id'));
+        $id = (int)($id ?: $this->input->post('id') ?: $this->input->get('id'));
         $result = $this->M_economy->soft_delete_catalog($id);
 
         if ($this->input->is_ajax_request()) {
@@ -139,7 +145,7 @@ class Catalog extends MY_Controller {
     }
 
     public function restore($id = null) {
-        $id = (int)($id ?: $this->input->post('id'));
+        $id = (int)($id ?: $this->input->post('id') ?: $this->input->get('id'));
         $result = $this->M_economy->restore_catalog($id);
 
         if ($this->input->is_ajax_request()) {
@@ -166,7 +172,7 @@ class Catalog extends MY_Controller {
     }
 
     public function hard_delete($id = null) {
-        $id = (int)($id ?: $this->input->post('id'));
+        $id = (int)($id ?: $this->input->post('id') ?: $this->input->get('id'));
         $result = $this->M_economy->hard_delete_catalog($id);
 
         if ($this->input->is_ajax_request()) {

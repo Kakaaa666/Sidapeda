@@ -15,75 +15,31 @@
         </div>
     </section>
 
-    <!-- SLIDE / TAB TAHUN DASHBOARD (Sesuai Konsep Katalog & EWS) -->
-    <div class="year-slide-card" style="margin-top: 15px; margin-bottom: 22px;">
-        <div class="year-slide-header">
-            <div class="year-slide-title-wrap">
-                <div class="year-slide-icon-box">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <div>
-                    <strong>Pilih Periode Tahun Dashboard</strong>
-                    <small>Klik tab tahun untuk menampilkan seluruh indikator ekonomi daerah dan data capaian sesuai rekaman yang telah diinput.</small>
-                </div>
+    <!-- FILTER TAHUN DASHBOARD (DROPDOWN) -->
+    <div class="year-filter-bar" style="margin-top: 15px; margin-bottom: 22px;">
+        <div class="year-filter-info">
+            <div class="year-filter-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <div class="year-slide-meta">
-                <span>Filter Aktif: <strong><?= !empty($selected_year) ? "Tahun {$selected_year}" : "Semua Tahun (Terkini)" ?></strong></span>
+            <div class="year-filter-text">
+                <strong>Periode Tahun Dashboard</strong>
+                <small>Pilih tahun data untuk menampilkan seluruh capaian dan indikator ekonomi daerah.</small>
             </div>
         </div>
 
-        <div class="year-slide-bar-wrap" id="year-slide-track">
-            <!-- Tab: Semua Tahun -->
-            <a href="<?= site_url('beranda?year=all' . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= empty($selected_year) ? 'active' : '' ?>">
-                Semua Tahun
-            </a>
-
-            <!-- Tab per Tahun yang Tersedia (Diurutkan ASC Dari Terendah ke Terbaru) -->
-            <?php if (!empty($available_years)): ?>
-                <?php foreach ($available_years as $ay): ?>
-                    <?php $isAct = (!empty($selected_year) && $selected_year == $ay['tahun']); ?>
-                    <a href="<?= site_url('beranda?year=' . $ay['tahun'] . ($status ? '&status='.$status : '')) ?>" class="year-slide-tab <?= $isAct ? 'active' : '' ?>">
-                        Tahun <?= $ay['tahun'] ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- FILTER BAR -->
-    <div class="filterbar" style="display:none;">
-        <div class="filter-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg>
-            <div>
-                <strong>Filter Data Ekonomi</strong>
-                <small>Pilih tahun dan wilayah analisis</small>
-            </div>
-        </div>
-        <label>
-            <span>Wilayah</span>
-            <select id="filter-region">
-                <option value="Kabupaten Banyuwangi">Kabupaten Banyuwangi</option>
-                <option value="Jawa Timur">Provinsi Jawa Timur</option>
-                <option value="Nasional">Nasional</option>
+        <div class="year-filter-control">
+            <label for="filter-year">Pilih Tahun:</label>
+            <select id="filter-year" class="year-filter-select" onchange="window.location.href=this.value">
+                <option value="<?= site_url('beranda?year=all' . ($status ? '&status='.$status : '') . (!empty($selected_cluster) && $selected_cluster !== 'all' ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun (Terkini)</option>
+                <?php if (!empty($available_years)): ?>
+                    <?php foreach ($available_years as $ay): ?>
+                        <option value="<?= site_url('beranda?year=' . $ay['tahun'] . ($status ? '&status='.$status : '') . (!empty($selected_cluster) && $selected_cluster !== 'all' ? '&cluster='.urlencode($selected_cluster) : '')) ?>" <?= (!empty($selected_year) && $selected_year == $ay['tahun']) ? 'selected' : '' ?>>
+                            Tahun <?= $ay['tahun'] ?>
+                        </option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </select>
-        </label>
-        <label>
-            <span>Tahun</span>
-            <select id="filter-year">
-                <?php foreach ($years as $y): ?>
-                    <option value="<?= $y ?>" <?= $y == ($selected_year ?: (!empty($years) ? max($years) : 2024)) ? 'selected' : '' ?>><?= $y ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <label>
-            <span>Periode</span>
-            <select disabled><option>Tahunan</option></select>
-        </label>
-        <label>
-            <span>Sumber Data</span>
-            <select disabled><option>BPS & DPMPTSP</option></select>
-        </label>
-        <button class="button primary" id="btn-apply-filters">Terapkan Filter</button>
+        </div>
     </div>
 
     <?php if ($this->session->flashdata('success')): ?>
@@ -133,7 +89,7 @@
             <div>
                 <span class="eyebrow">RINGKASAN KINERJA • <?= !empty($selected_year) ? "TAHUN {$selected_year}" : "SEMUA PERIODE" ?></span>
                 <h2>Indikator Utama Ekonomi <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></h2>
-                <p>Menampilkan <?= count($display_cards) ?> indikator pembangunan daerah yang bersumber langsung dari data yang telah diinput ke dalam sistem.</p>
+                <p>Menampilkan <span id="kpi-count-display"><?= count($display_cards) ?></span> indikator pembangunan daerah yang bersumber langsung dari data yang telah diinput ke dalam sistem.</p>
             </div>
             <div>
                 <a href="<?= site_url('analisis_ekonomi') ?>" class="button ghost">
@@ -143,19 +99,39 @@
             </div>
         </div>
 
-        <!-- TABS KATEGORI / KLASTER INDIKATOR -->
-        <div class="feature-tabs" id="beranda-category-tabs" style="margin-bottom: 20px;">
-            <button type="button" class="active" data-category="all">Semua Kategori (<?= count($display_cards) ?>)</button>
-            <?php if (!empty($categories)): ?>
-                <?php foreach ($categories as $catName => $catCount): ?>
-                    <button type="button" data-category="<?= htmlspecialchars($catName) ?>">
-                        <?= htmlspecialchars($catName) ?> (<?= $catCount ?>)
-                    </button>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        <!-- FILTER KATEGORI / KLASTER INDIKATOR (DROPDOWN) -->
+        <div class="category-filter-bar">
+            <div class="category-filter-info">
+                <div class="category-filter-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </div>
+                <div class="category-filter-text">
+                    <strong>Filter Kategori / Klaster Indikator</strong>
+                    <small>Saring kartu indikator utama pembangunan daerah berdasarkan klaster tematik.</small>
+                </div>
+            </div>
+
+            <div class="category-filter-control">
+                <label for="beranda-category-select">Pilih Kategori:</label>
+                <select id="beranda-category-select" class="category-filter-select">
+                    <option value="all" <?= (empty($selected_cluster) || $selected_cluster === 'all') ? 'selected' : '' ?>>Semua Kategori (<?= count($display_cards) ?> Indikator)</option>
+                    <?php if (!empty($categories)): ?>
+                        <?php foreach ($categories as $catName => $catCount): ?>
+                            <option value="<?= htmlspecialchars($catName) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $catName) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($catName) ?> (<?= $catCount ?> Indikator)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
         </div>
 
         <div class="kpi-grid" id="kpi-container">
+            <div id="kpi-empty-message" style="display: none; grid-column: 1 / -1; padding: 36px 20px; text-align: center; color: var(--muted); background: white; border: 1px dashed var(--line); border-radius: 12px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px; color: var(--muted);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <strong style="display: block; font-size: 13px; color: var(--navy); margin-bottom: 3px;">Tidak ada indikator pada kategori ini</strong>
+                <small style="font-size: 11px;">Silakan pilih kategori lain atau kembali ke "Semua Kategori".</small>
+            </div>
             <?php
             foreach ($display_cards as $item):
                 // Decode or use series for sparkline
