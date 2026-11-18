@@ -169,6 +169,13 @@
             <?php endif; ?>
         </div>
 
+        <div style="padding: 11px 18px; background: #eff6ff; border-left: 4px solid var(--blue); border-bottom: 1px solid #bfdbfe; font-size: 11.5px; line-height: 1.5; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>
+                <strong>Standar Kamus Data Umum:</strong> Atribut <em>Kode, Nama Indikator, Klaster Pembangunan, Satuan, Frekuensi, Walidata / Sumber, dan Definisi Operasional</em> merupakan <strong>Data Umum Standar</strong> yang berlaku seragam untuk seluruh Kabupaten/Kota. Setiap daerah secara operasional hanya mengisi <strong>Nilai Realisasi</strong> pada Database Ekonomi serta <strong>Ambang Batas (Threshold)</strong> pada Early Warning System.
+            </div>
+        </div>
+
         <?php if ($status !== 'Terhapus' && !empty($catalog)): ?>
             <?php
             $clCounts = [];

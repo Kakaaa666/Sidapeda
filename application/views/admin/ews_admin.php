@@ -27,7 +27,7 @@
 
         <div class="year-filter-control">
             <label for="ews-admin-year-select">Pilih Tahun:</label>
-            <select id="ews-admin-year-select" class="year-filter-select" onchange="window.location.href=this.value">
+            <select id="ews-admin-year-select" class="year-filter-select" onchange="const cat = window._activeCategoryFilter || ''; window.location.href = this.value + (cat ? ('&category=' + encodeURIComponent(cat)) : '');">
                 <option value="<?= site_url('ews_admin?year=all') ?>" <?= empty($selected_year) ? 'selected' : '' ?>>Semua Tahun (Terkini)</option>
                 <?php if (!empty($available_years)): ?>
                     <?php foreach ($available_years as $ay): ?>
@@ -40,6 +40,161 @@
         </div>
     </div>
 
+    <?php
+    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas)
+    $sectorOrder = array('A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6, 'G' => 7, 'H' => 8, 'I' => 9, 'J' => 10, 'K' => 11, 'L' => 12, 'MN' => 13, 'O' => 14, 'P' => 15, 'Q' => 16, 'RSTU' => 17, 'TM' => 18);
+
+    // Urutan resmi prefix indikator (dimulai dari EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
+    $indicatorPrefixOrder = array(
+        'EKO' => 1,
+        'NAK' => 2,
+        'TK'  => 3,
+        'INV' => 4,
+        'HRG' => 5,
+        'KES' => 6,
+        'PAR' => 7,
+        'PRO' => 8,
+        'FIS' => 9,
+        'GEO' => 10,
+        'EWS' => 11,
+        'ANA' => 12
+    );
+
+    $grouped = [];
+    $subGrouped = [];
+
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral
+    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007'];
+    $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
+
+    foreach ($ews as $item) {
+        $code = trim($item['code']);
+        $mainCode = explode('.', $code)[0];
+        $prefix = strtoupper(explode('-', $mainCode)[0]);
+
+        if (in_array($code, $excludedCodes) || in_array($mainCode, $excludedCodes) || in_array($prefix, ['KK1'])) {
+            continue;
+        }
+
+        $isSub = (strpos($code, '.') !== false);
+        $parentCode = $isSub ? explode('.', $code)[0] : $code;
+        $subKey = $isSub ? explode('.', $code)[1] : null;
+
+        if ($isSub && in_array($parentCode, $sectoralParents)) {
+            $item['sub_key'] = $subKey;
+            $item['parent_code'] = $parentCode;
+            $subGrouped[$parentCode][$code] = $item;
+        } elseif (!$isSub) {
+            $item['sub_indicators'] = [];
+            $grouped[$code] = $item;
+        }
+    }
+
+    // Sambungkan sub-indikator HANYA ke parent yang ada di $sectoralParents
+    foreach ($subGrouped as $pCode => $subs) {
+        if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
+            continue;
+        }
+        uasort($subs, function($a, $b) use ($sectorOrder) {
+            $kA = $a['sub_key'] ?? '';
+            $kB = $b['sub_key'] ?? '';
+            $posA = $sectorOrder[$kA] ?? 99;
+            $posB = $sectorOrder[$kB] ?? 99;
+            if ($posA === $posB) return strcmp($kA, $kB);
+            return $posA - $posB;
+        });
+
+        $grouped[$pCode]['sub_indicators'] = $subs;
+    }
+
+    // Urutkan master indikator mulai dari EKO, NAK, TK, dst
+    uasort($grouped, function($itemA, $itemB) use ($indicatorPrefixOrder) {
+        $codeA = $itemA['code'] ?? '';
+        $codeB = $itemB['code'] ?? '';
+
+        $mainA = explode('.', $codeA)[0];
+        $mainB = explode('.', $codeB)[0];
+
+        $partsA = explode('-', $mainA);
+        $prefA = strtoupper($partsA[0]);
+        $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+
+        $partsB = explode('-', $mainB);
+        $prefB = strtoupper($partsB[0]);
+        $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+
+        $rankA = $indicatorPrefixOrder[$prefA] ?? 99;
+        $rankB = $indicatorPrefixOrder[$prefB] ?? 99;
+
+        if ($rankA !== $rankB) return $rankA - $rankB;
+        if ($numA !== $numB) return $numA - $numB;
+        return strcmp($codeA, $codeB);
+    });
+
+    // Hitung jumlah indikator per kategori prefix dari $grouped
+    $catPrefixCounts = [];
+    foreach ($grouped as $gCode => $gItem) {
+        $p = strtoupper(explode('-', $gCode)[0]);
+        $catPrefixCounts[$p] = ($catPrefixCounts[$p] ?? 0) + 1;
+    }
+
+    $categoryMeta = [
+        'EKO' => 'PDRB & Ekonomi',
+        'NAK' => 'Kependudukan',
+        'TK'  => 'Ketenagakerjaan',
+        'INV' => 'Investasi & Usaha',
+        'HRG' => 'Harga & Inflasi',
+        'KES' => 'Kesejahteraan Sosial',
+        'PAR' => 'Pariwisata & Ekraf',
+        'PRO' => 'Produksi Sektoral',
+        'FIS' => 'Fiskal & Keuangan',
+        'GEO' => 'Geografi & Wilayah',
+        'EWS' => 'Early Warning System',
+        'ANA' => 'Analisis Makro'
+    ];
+
+    $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
+    ?>
+
+    <!-- SLIDE FILTER KATEGORI (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA) -->
+    <div class="category-slide-container" id="category-slide-container">
+        <div class="category-slide-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span>Kategori:</span>
+        </div>
+        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-prev" title="Geser Kiri (Sebelumnya)" aria-label="Geser Kiri">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="category-slide-track" id="category-slide-track">
+            <button type="button" class="category-slide-tab <?= empty($activeCat) ? 'active' : '' ?>" data-prefix="" onclick="applyCategoryFilter('', this)">
+                <span>Semua</span>
+                <span class="cat-count-pill"><?= count($grouped) ?></span>
+            </button>
+            <?php foreach ($categoryMeta as $pref => $label): ?>
+                <?php if (isset($catPrefixCounts[$pref]) || empty($ews)): ?>
+                    <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
+                    <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
+                        <span class="cat-code-badge"><?= $pref ?></span>
+                        <span><?= $label ?></span>
+                        <span class="cat-count-pill"><?= $cnt ?></span>
+                    </button>
+                <?php endif; ?>
+            <?php endforeach; ?>
+            <?php foreach ($catPrefixCounts as $pref => $cnt): ?>
+                <?php if (!isset($categoryMeta[$pref])): ?>
+                    <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
+                        <span class="cat-code-badge"><?= $pref ?></span>
+                        <span><?= $pref ?></span>
+                        <span class="cat-count-pill"><?= $cnt ?></span>
+                    </button>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-next" title="Geser Kanan (Selanjutnya)" aria-label="Geser Kanan">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+    </div>
+
     <!-- KONFIGURASI AMBANG BATAS & DATA TERVALIDASI -->
     <article class="card threshold-admin">
         <div class="card-head">
@@ -49,8 +204,8 @@
                 <p>Data indikator &amp; nilai riil bersumber langsung dari data tervalidasi. Anda hanya perlu menetapkan <strong>Ambang Batas</strong> dan <strong>Arah Kondisi Kritis</strong>.</p>
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <span class="badge info" style="font-size:11px; padding:6px 14px; font-weight:700; border-radius:20px;">
-                    Total: <?= count($ews) ?> Indikator Tervalidasi
+                <span id="cat-filtered-count-label" class="badge info" style="font-size:11px; padding:6px 14px; font-weight:700; border-radius:20px;">
+                    Total: <?= count($grouped) ?> Indikator Tervalidasi
                 </span>
                 <button class="button primary" id="btn-save-all-thresholds">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -62,14 +217,10 @@
         <div style="padding: 12px 18px; background: #f0f7ff; border-left: 4px solid var(--blue); border-radius: 6px; margin: 12px 0 20px 0; font-size: 11px; line-height: 1.6; color: var(--navy);">
             <strong>Panduan Konfigurasi Ambang Batas EWS:</strong>
             <ul style="margin: 4px 0 0 16px; padding: 0;">
-                <li><strong>Nilai Riil Tervalidasi</strong> bersifat <em>read-only</em> dan langsung merujuk pada capaian riil yang telah diverifikasi pada menu Validasi Data.</li>
-                <li><strong>Ambang Batas</strong> adalah batas toleransi risiko yang dapat disesuaikan dengan target RPJMD atau standar makro daerah.</li>
-                <li><strong>Arah Kondisi Kritis</strong>:
-                    <ul style="margin: 2px 0 0 14px;">
-                        <li><em>Kritis jika &gt; Ambang (Beban / Risiko)</em>: Untuk indikator beban seperti Inflasi, Kemiskinan, dan Pengangguran Terbuka.</li>
-                        <li><em>Kritis jika &lt; Ambang (Target / Kinerja)</em>: Untuk indikator target capaian seperti Pertumbuhan PDRB, PAD, Investasi Daerah, dan IPM.</li>
-                    </ul>
-                </li>
+                <li><strong>Standar Kamus Data:</strong> Kode, Nama Indikator, Klaster, Satuan, dan Definisi Operasional adalah <em>Data Kamus Umum</em> yang seragam untuk semua wilayah.</li>
+                <li><strong>Nilai Riil Tervalidasi</strong> bersifat <em>read-only</em> dan langsung merujuk pada capaian riil daerah yang telah diverifikasi pada menu Validasi Data.</li>
+                <li><strong>Ambang Batas (Threshold) &amp; Arah Kondisi Kritis</strong> diisi dan disesuaikan secara manual per daerah sesuai target RPJMD atau standar toleransi risiko makro daerah.</li>
+                <li><strong>Sub-Indikator Sektoral (17 Sektor &amp; Komponen):</strong> Baris indikator yang memiliki sub-rincian dapat diklik langsung untuk membuka/menutup rincian sub-indikator.</li>
             </ul>
         </div>
 
@@ -85,7 +236,7 @@
                     </tr>
                 </thead>
                 <tbody id="threshold-admin-rows">
-                    <?php if (empty($ews)): ?>
+                    <?php if (empty($grouped)): ?>
                         <tr style="display: table-row;">
                             <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--muted); vertical-align: middle;">
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block; margin:0 auto 8px; opacity:0.5;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -93,13 +244,29 @@
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($ews as $item): ?>
+                        <?php foreach ($grouped as $code => $item): ?>
                             <?php
+                            $hasSub = (!empty($item['sub_indicators']) && in_array($item['code'], $sectoralParents));
                             $badgeCls = ($item['status'] === 'Kritis') ? 'badge danger' : (($item['status'] === 'Waspada') ? 'badge warning' : 'badge success');
                             ?>
-                            <tr class="threshold-admin-row" data-code="<?= $item['code'] ?>" style="display: table-row;">
-                                <td style="vertical-align: middle; padding: 12px 14px;">
-                                    <strong style="color: var(--navy); font-size: 13px;"><?= htmlspecialchars($item['name']) ?></strong>
+                            <tr class="threshold-admin-row matrix-row <?= $hasSub ? 'has-subcategories' : '' ?>" data-code="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" <?= $hasSub ? 'data-has-sub="true" title="Klik baris ini untuk membuka/menutup rincian sub-indikator" onclick="if(!event.target.closest(\'input, select, a, button:not(.btn-toggle-subcategories)\')) toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?> style="display: table-row;">
+                                <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="vertical-align: middle; padding: 12px 14px; cursor: <?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                        <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:2px 6px; border-radius:4px; white-space:nowrap;"><?= htmlspecialchars($item['code']) ?></code>
+                                        <strong class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>" style="color: var(--navy); font-size: 13px;"><?= htmlspecialchars($item['name']) ?></strong>
+                                        <?php if ($hasSub): ?>
+                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="Rincian Sektor (A–U)" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup rincian sektor">
+                                                <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+                                                <span class="sub-toggle-label">Rincian Sektor (A–U)</span>
+                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;">18 Sektor</span>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (!empty($item['klaster']) && $item['klaster'] !== 'Umum'): ?>
+                                        <div style="margin-top:4px;">
+                                            <span class="badge secondary" style="font-size:9.5px; padding:2px 6px;"><?= htmlspecialchars($item['klaster']) ?></span>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="vertical-align: middle; padding: 12px 14px;">
                                     <div style="display: inline-flex; align-items: center; gap: 6px;">
@@ -130,6 +297,57 @@
                                     </span>
                                 </td>
                             </tr>
+
+                            <!-- SUB-ROWS UNTUK RINCIAN SEKTORAL / KOMPONEN -->
+                            <?php if (!empty($item['sub_indicators'])): ?>
+                                <?php foreach ($item['sub_indicators'] as $subCode => $sub): ?>
+                                    <?php
+                                        $subBadgeCls = ($sub['status'] === 'Kritis') ? 'badge danger' : (($sub['status'] === 'Waspada') ? 'badge warning' : 'badge success');
+                                        $dispKey = $sub['sub_key'];
+                                        if ($dispKey === 'MN') $dispKey = 'M,N';
+                                        elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
+                                        $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name']);
+                                    ?>
+                                    <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
+                                        <td style="vertical-align: middle; padding: 9px 14px 9px 24px;">
+                                            <div style="display:flex; align-items:center; gap:6px;">
+                                                <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                                <code style="font-size:10.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
+                                                <span style="font-size:9.5px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                                <span style="color:#1e293b; font-size:12px; font-weight:600;"><?= htmlspecialchars($cleanSubName) ?></span>
+                                            </div>
+                                        </td>
+                                        <td style="vertical-align: middle; padding: 9px 14px;">
+                                            <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                                <strong style="font-size: 12px; color: var(--navy); letter-spacing: -0.2px;">
+                                                    <?= number_format($sub['value'], 2, ',', '.') ?>
+                                                </strong>
+                                                <span style="color: var(--muted); font-size: 10.5px; font-weight: 600;">
+                                                    <?= htmlspecialchars($sub['unit']) ?>
+                                                </span>
+                                            </div>
+                                            <input type="hidden" class="value-input" data-code="<?= $sub['code'] ?>" value="<?= $sub['value'] ?>">
+                                        </td>
+                                        <td style="vertical-align: middle; padding: 9px 14px;">
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <input type="number" step="any" class="threshold-input" data-code="<?= $sub['code'] ?>" value="<?= $sub['threshold'] ?>" style="width: 100px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-weight: 700; color: var(--navy); font-size: 11.5px; background: #ffffff;">
+                                                <small style="color: var(--muted); font-size: 10px; font-weight: 600;"><?= htmlspecialchars($sub['unit']) ?></small>
+                                            </div>
+                                        </td>
+                                        <td style="vertical-align: middle; padding: 9px 14px;">
+                                            <select class="direction-input" data-code="<?= $sub['code'] ?>" style="width: 100%; max-width: 250px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; font-size: 10.5px; color: var(--navy); background: #ffffff;">
+                                                <option value="above" <?= ($sub['direction'] === 'above') ? 'selected' : '' ?>>Kritis jika &gt; Ambang (Beban / Risiko)</option>
+                                                <option value="below" <?= ($sub['direction'] === 'below') ? 'selected' : '' ?>>Kritis jika &lt; Ambang (Target / Kinerja)</option>
+                                            </select>
+                                        </td>
+                                        <td style="text-align: center; vertical-align: middle; padding: 9px 14px;">
+                                            <span id="status-badge-<?= $sub['code'] ?>" class="<?= $subBadgeCls ?>" style="font-size: 9.5px; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 70px;">
+                                                <?= $sub['status'] ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>

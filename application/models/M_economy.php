@@ -475,7 +475,27 @@ class M_economy extends CI_Model {
             $this->db->group_end();
         }
 
-        if ($sort === 'indicator' || $sort === 'nama_indikator') {
+        if ($sort === 'code' || $sort === 'kode') {
+            $prefixOrderSql = "CASE
+                WHEN kode_indikator LIKE 'EKO%' THEN 1
+                WHEN kode_indikator LIKE 'NAK%' THEN 2
+                WHEN kode_indikator LIKE 'TK%' THEN 3
+                WHEN kode_indikator LIKE 'INV%' THEN 4
+                WHEN kode_indikator LIKE 'HRG%' THEN 5
+                WHEN kode_indikator LIKE 'KES%' THEN 6
+                WHEN kode_indikator LIKE 'PAR%' THEN 7
+                WHEN kode_indikator LIKE 'PRO%' THEN 8
+                WHEN kode_indikator LIKE 'FIS%' THEN 9
+                WHEN kode_indikator LIKE 'GEO%' THEN 10
+                WHEN kode_indikator LIKE 'EWS%' THEN 11
+                WHEN kode_indikator LIKE 'ANA%' THEN 12
+                ELSE 99
+            END";
+            $this->db->order_by($prefixOrderSql, 'ASC', false);
+            $this->db->order_by("CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(kode_indikator, '-', -1), '.', 1) AS UNSIGNED)", "ASC", false);
+            $this->db->order_by('kode_indikator', 'ASC');
+            $this->db->order_by('tahun', 'ASC');
+        } elseif ($sort === 'indicator' || $sort === 'nama_indikator') {
             $this->db->order_by('nama_indikator', 'ASC');
         } elseif ($sort === 'value' || $sort === 'nilai') {
             $this->db->order_by('nilai', 'DESC');
@@ -811,6 +831,40 @@ class M_economy extends CI_Model {
         return $updated;
     }
 
+    public function update_series_status($code, $status, $notes = null, $verifier = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kode)->where('is_deleted', 0);
+        $data = array('status_validasi' => $status);
+        if ($status === 'Tervalidasi' || $status === 'Perlu review') {
+            $data['catatan'] = null;
+        } elseif ($notes !== null) {
+            $noteVal = trim($notes);
+            $data['catatan'] = ($noteVal !== '') ? $noteVal : null;
+        }
+        if ($verifier !== null) {
+            $data['diverifikasi_oleh'] = $verifier;
+        }
+        $updated = $this->db->update('database_ekonomi', $data);
+
+        if ($status === 'Tervalidasi' && $updated) {
+            $this->sync_to_catalog($code, $kode);
+            $this->sync_all_validated_to_ews($kode);
+        } else {
+            $hasValid = $this->db
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->count_all_results('database_ekonomi');
+            if ($hasValid === 0) {
+                $this->remove_from_catalog($code, $kode);
+                $this->clean_unvalidated_from_ews($kode);
+            }
+        }
+
+        return $updated;
+    }
+
     public function remove_from_catalog($code, $kode_wilayah = null) {
         if (empty($code)) return false;
         $kode = $this->get_active_kode_wilayah($kode_wilayah);
@@ -976,6 +1030,385 @@ class M_economy extends CI_Model {
         }
     }
 
+    // Definisi Master Sektor Lapangan Usaha BPS & Komponen Pengeluaran
+    public function get_sectoral_definitions($parentCode = 'EKO-003') {
+        $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
+
+        // Komponen Pengeluaran (EKO-015 dan EKO-016)
+        if ($parentCode === 'EKO-015' || $parentCode === 'EKO-016') {
+            $isAdhk = ($parentCode === 'EKO-016');
+            $priceLabel = $isAdhk ? 'atas dasar harga konstan' : 'atas dasar harga berlaku';
+            $pName = $isAdhk ? 'PDRB Pengeluaran ADHK' : 'PDRB Pengeluaran ADHB';
+            return array(
+                '1' => array('code' => "{$parentCode}.1", 'cat_label' => '1', 'name' => "{$pName}: Pengeluaran Konsumsi Rumah Tangga", 'short_name' => 'Pengeluaran Konsumsi Rumah Tangga', 'def' => "Pengeluaran atas barang dan jasa yang dilakukan oleh rumah tangga {$priceLabel}."),
+                '2' => array('code' => "{$parentCode}.2", 'cat_label' => '2', 'name' => "{$pName}: Pengeluaran Konsumsi LNPRT", 'short_name' => 'Pengeluaran Konsumsi LNPRT', 'def' => "Pengeluaran konsumsi lembaga non-profit yang melayani rumah tangga {$priceLabel}."),
+                '3' => array('code' => "{$parentCode}.3", 'cat_label' => '3', 'name' => "{$pName}: Pengeluaran Konsumsi Pemerintah", 'short_name' => 'Pengeluaran Konsumsi Pemerintah', 'def' => "Pengeluaran pemerintah untuk barang dan jasa bagi kepentingan kolektif maupun individual {$priceLabel}."),
+                '4' => array('code' => "{$parentCode}.4", 'cat_label' => '4', 'name' => "{$pName}: Pembentukan Modal Tetap Bruto", 'short_name' => 'Pembentukan Modal Tetap Bruto (PMTB)', 'def' => "Pengeluaran unit produksi untuk menambah aset tetap dikurangi pelepasan aset tetap {$priceLabel}."),
+                '5' => array('code' => "{$parentCode}.5", 'cat_label' => '5', 'name' => "{$pName}: Perubahan Inventori", 'short_name' => 'Perubahan Inventori', 'def' => "Perubahan nilai stok persediaan barang pada awal dan akhir periode {$priceLabel}."),
+                '6' => array('code' => "{$parentCode}.6", 'cat_label' => '6', 'name' => "{$pName}: Net Ekspor", 'short_name' => 'Net Ekspor Antar Daerah / Luar Negeri', 'def' => "Nilai ekspor neto (selisih ekspor barang/jasa luar daerah dikurangi impor) {$priceLabel}."),
+                'TOTAL' => array('code' => $parentCode, 'cat_label' => 'TOTAL', 'name' => ($isAdhk ? 'PDRB Pengeluaran ADHK' : 'PDRB Pengeluaran ADHB'), 'short_name' => 'PRODUK DOMESTIK REGIONAL BRUTO (PENGELUARAN)', 'def' => "Total Produk Domestik Regional Bruto menurut komponen pengeluaran {$priceLabel}.")
+            );
+        }
+
+        // Lapangan Usaha (EKO-003, EKO-004, EKO-006, EKO-007)
+        $prefix = 'PDRB ADHB';
+        if ($parentCode === 'EKO-004') {
+            $prefix = 'PDRB ADHK';
+        } elseif ($parentCode === 'EKO-006') {
+            $prefix = 'Pertumbuhan';
+        } elseif ($parentCode === 'EKO-007') {
+            $prefix = 'Distribusi';
+        }
+
+        $sectors = array(
+            'A' => array('name' => 'Pertanian, Kehutanan, dan Perikanan', 'short' => 'Pertanian, Kehutanan, dan Perikanan', 'cat_label' => 'A'),
+            'B' => array('name' => 'Pertambangan dan Penggalian', 'short' => 'Pertambangan dan Penggalian', 'cat_label' => 'B'),
+            'C' => array('name' => 'Industri Pengolahan', 'short' => 'Industri Pengolahan', 'cat_label' => 'C'),
+            'D' => array('name' => 'Pengadaan Listrik dan Gas', 'short' => 'Pengadaan Listrik dan Gas', 'cat_label' => 'D'),
+            'E' => array('name' => 'Pengadaan Air, Pengelolaan Sampah, Limbah', 'short' => 'Pengadaan Air, Pengelolaan Sampah, Limbah', 'cat_label' => 'E'),
+            'F' => array('name' => 'Konstruksi', 'short' => 'Konstruksi', 'cat_label' => 'F'),
+            'G' => array('name' => 'Perdagangan Besar dan Eceran; Reparasi Mobil', 'short' => 'Perdagangan Besar dan Eceran; Reparasi Mobil', 'cat_label' => 'G'),
+            'H' => array('name' => 'Transportasi dan Pergudangan', 'short' => 'Transportasi dan Pergudangan', 'cat_label' => 'H'),
+            'I' => array('name' => 'Penyediaan Akomodasi dan Makan Minum', 'short' => 'Penyediaan Akomodasi dan Makan Minum', 'cat_label' => 'I'),
+            'J' => array('name' => 'Informasi dan Komunikasi', 'short' => 'Informasi dan Komunikasi', 'cat_label' => 'J'),
+            'K' => array('name' => 'Jasa Keuangan dan Asuransi', 'short' => 'Jasa Keuangan dan Asuransi', 'cat_label' => 'K'),
+            'L' => array('name' => 'Real Estate', 'short' => 'Real Estate', 'cat_label' => 'L'),
+            'MN' => array('name' => 'Jasa Perusahaan', 'short' => 'Jasa Perusahaan', 'cat_label' => 'M,N'),
+            'O' => array('name' => 'Adm. Pemerintah, Pertahanan & Jaminan Sosial Wajib', 'short' => 'Adm. Pemerintah, Pertahanan & Jaminan Sosial Wajib', 'cat_label' => 'O'),
+            'P' => array('name' => 'Jasa Pendidikan', 'short' => 'Jasa Pendidikan', 'cat_label' => 'P'),
+            'Q' => array('name' => 'Jasa Kesehatan dan Kegiatan Sosial', 'short' => 'Jasa Kesehatan dan Kegiatan Sosial', 'cat_label' => 'Q'),
+            'RSTU' => array('name' => 'Jasa lainnya', 'short' => 'Jasa lainnya', 'cat_label' => 'R,S,T,U')
+        );
+
+        $defs = array();
+        foreach ($sectors as $k => $sec) {
+            $defs[$k] = array(
+                'code' => "{$parentCode}.{$k}",
+                'cat_label' => $sec['cat_label'] ?? $k,
+                'name' => "{$prefix}: {$sec['name']}",
+                'short_name' => $sec['short'],
+                'def' => "Nilai capaian lapangan usaha {$sec['name']} untuk indikator {$prefix}."
+            );
+        }
+
+        $totName = 'PDRB ADHB menurut lapangan usaha';
+        $totShort = 'PRODUK DOMESTIK REGIONAL BRUTO';
+        if ($parentCode === 'EKO-004') {
+            $totName = 'PDRB ADHK menurut lapangan usaha';
+            $totShort = 'PRODUK DOMESTIK REGIONAL BRUTO';
+        } elseif ($parentCode === 'EKO-006') {
+            $totName = 'Pertumbuhan PDRB ADHK menurut lapangan usaha';
+            $totShort = 'LAJU PERTUMBUHAN EKONOMI TOTAL';
+        } elseif ($parentCode === 'EKO-007') {
+            $totName = 'Distribusi PDRB ADHB menurut lapangan usaha';
+            $totShort = 'TOTAL DISTRIBUSI SEKTOR (100%)';
+        }
+
+        $defs['TOTAL'] = array(
+            'code' => $parentCode,
+            'cat_label' => 'TOTAL',
+            'name' => $totName,
+            'short_name' => $totShort,
+            'def' => "Total agregat seluruh lapangan usaha untuk {$prefix}."
+        );
+
+        $defs['TM'] = array(
+            'code' => "{$parentCode}.TM",
+            'cat_label' => 'TM',
+            'name' => "{$prefix}: PDRB Tanpa Migas",
+            'short_name' => 'PDRB TANPA MIGAS',
+            'def' => "Total capaian seluruh lapangan usaha di luar migas untuk {$prefix}."
+        );
+
+        return $defs;
+    }
+
+    // Ambil matriks lengkap seluruh sektor/komponen untuk modal input/kelola sektoral
+    public function get_sectoral_matrix_data($kode_wilayah = null, $parentCode = 'EKO-003') {
+        $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
+        $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
+        $defs = $this->get_sectoral_definitions($parentCode);
+
+        // Ambil nama tersimpan atau baris kustom yang pernah ditambahkan dari katalog_indikator
+        $savedInds = $this->db->like('kode_indikator', $parentCode . '.', 'after')
+            ->where('is_deleted', 0)
+            ->get('katalog_indikator')
+            ->result_array();
+
+        $customDefs = array();
+        foreach ($savedInds as $si) {
+            $c = $si['kode_indikator'];
+            $suffix = substr($c, strlen($parentCode) + 1);
+            $savedName = $si['nama_indikator'];
+            $short = preg_replace('/^(PDRB ADH[BK]|Pertumbuhan|Distribusi|PDRB Pengeluaran ADH[BK])\s*(menurut lapangan usaha)?:\s*/i', '', $savedName);
+            
+            if (isset($defs[$suffix])) {
+                $defs[$suffix]['name'] = $savedName;
+                $defs[$suffix]['short_name'] = $short;
+            } else {
+                $customDefs[$suffix] = array(
+                    'code' => $c,
+                    'cat_label' => $suffix,
+                    'name' => $savedName,
+                    'short_name' => $short,
+                    'def' => $si['definisi_operasional'] ?? "Rincian {$suffix}",
+                    'is_custom' => true
+                );
+            }
+        }
+
+        // Sisipkan customDefs sebelum TOTAL
+        if (!empty($customDefs)) {
+            $mergedDefs = array();
+            $inserted = false;
+            foreach ($defs as $k => $d) {
+                if ($k === 'TOTAL' && !$inserted) {
+                    foreach ($customDefs as $ck => $cd) {
+                        $mergedDefs[$ck] = $cd;
+                    }
+                    $inserted = true;
+                }
+                $mergedDefs[$k] = $d;
+            }
+            if (!$inserted) {
+                foreach ($customDefs as $ck => $cd) {
+                    $mergedDefs[$ck] = $cd;
+                }
+            }
+            $defs = $mergedDefs;
+        }
+        
+        $codes = array();
+        foreach ($defs as $k => $d) {
+            $codes[] = $d['code'];
+        }
+
+        $records = $this->db->where_in('kode_indikator', $codes)
+            ->where('kode_wilayah', $kodeWil)
+            ->where('is_deleted', 0)
+            ->order_by('tahun', 'ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+
+        $yearsSet = array();
+        $values = array();
+        foreach ($records as $r) {
+            $c = $r['kode_indikator'];
+            $y = (int)$r['tahun'];
+            $v = (float)$r['nilai'];
+            $yearsSet[$y] = true;
+            if (!isset($values[$c])) {
+                $values[$c] = array();
+            }
+            $values[$c][$y] = $v;
+        }
+
+        $years = array_keys($yearsSet);
+        sort($years);
+        if (empty($years)) {
+            $years = array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025);
+        }
+
+        $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
+        $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
+        $cluster = $isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral';
+
+        return array(
+            'parent_code' => $parentCode,
+            'category_type' => $isExp ? 'expenditure' : 'sectoral',
+            'unit' => $unit,
+            'cluster' => $cluster,
+            'can_auto_sum' => ($parentCode !== 'EKO-006'),
+            'definitions' => $defs,
+            'years' => $years,
+            'values' => $values,
+            'kode_wilayah' => $kodeWil,
+            'nama_wilayah' => $this->get_nama_wilayah($kodeWil)
+        );
+    }
+
+    // Simpan matriks seluruh sektor/komponen sekaligus (Batch save), termasuk nama & label kategori yang diubah
+    public function save_sectoral_matrix_data($matrixValues, $years, $kode_wilayah = null, $parentCode = 'EKO-003', $customNames = array(), $customCatLabels = array()) {
+        $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
+        $namaWil = $this->get_nama_wilayah($kodeWil);
+        $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
+        $defs = $this->get_sectoral_definitions($parentCode);
+
+        $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
+        $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
+        $cluster = $isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral';
+
+        $this->db->trans_start();
+
+        foreach ($defs as $key => $def) {
+            $code = $def['code'];
+            // Jika ada nama yang diubah oleh user untuk baris ini
+            $name = $def['name'];
+            if (!empty($customNames[$key])) {
+                $trimmedInput = trim($customNames[$key]);
+                if (strpos($trimmedInput, ':') === false && $key !== 'TOTAL') {
+                    $name = "{$prefix}: {$trimmedInput}";
+                } else {
+                    $name = $trimmedInput;
+                }
+            }
+            $explanation = $def['def'];
+            $catValues = isset($matrixValues[$key]) ? $matrixValues[$key] : (isset($matrixValues[$code]) ? $matrixValues[$code] : array());
+
+            // Pastikan terdaftar dan perbarui nama di katalog_indikator
+            $catExists = $this->db->where('kode_indikator', $code)->get('katalog_indikator')->row_array();
+            if (!$catExists) {
+                $this->db->insert('katalog_indikator', array(
+                    'kode_wilayah' => $kodeWil,
+                    'kode_indikator' => $code,
+                    'nama_indikator' => $name,
+                    'klaster' => $cluster,
+                    'satuan' => $unit,
+                    'frekuensi' => 'Tahunan',
+                    'sumber_data' => 'BPS Provinsi Jawa Timur / BPS Kabupaten/Kota',
+                    'definisi_operasional' => $explanation,
+                    'is_deleted' => 0
+                ));
+            } else {
+                $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array(
+                    'nama_indikator' => $name,
+                    'is_deleted' => 0
+                ));
+            }
+
+            // Simpan setiap tahun
+            foreach ($years as $yr) {
+                $yr = (int)$yr;
+                if ($yr <= 1900 || $yr >= 2100) continue;
+
+                $valRaw = isset($catValues[$yr]) ? $catValues[$yr] : null;
+                if ($valRaw === null || $valRaw === '') continue;
+                $val = (float)$valRaw;
+
+                $existing = $this->db->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kodeWil)
+                    ->where('tahun', $yr)
+                    ->get('database_ekonomi')
+                    ->row_array();
+
+                if ($existing) {
+                    $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
+                        'nama_indikator' => $name,
+                        'nilai' => $val,
+                        'satuan' => $unit,
+                        'klaster' => $cluster,
+                        'is_deleted' => 0,
+                        'deleted_at' => null,
+                        'status_validasi' => 'Tervalidasi'
+                    ));
+                } else {
+                    $this->db->insert('database_ekonomi', array(
+                        'kode_wilayah' => $kodeWil,
+                        'kode_indikator' => $code,
+                        'nama_indikator' => $name,
+                        'klaster' => $cluster,
+                        'wilayah' => $namaWil,
+                        'periode' => 'Tahunan',
+                        'tahun' => $yr,
+                        'nilai' => $val,
+                        'satuan' => $unit,
+                        'sumber_data' => 'BPS Provinsi Jawa Timur / BPS Kabupaten/Kota',
+                        'definisi_operasional' => $explanation,
+                        'status_validasi' => 'Tervalidasi',
+                        'diverifikasi_oleh' => 'BPS Jawa Timur / Rilis Resmi',
+                        'catatan' => "Sinkronisasi Matriks Sektoral ({$parentCode})",
+                        'is_deleted' => 0,
+                        'dibuat_pada' => date('Y-m-d H:i:s')
+                    ));
+                }
+            }
+        }
+
+        // Dukungan untuk baris kategori tambahan (custom added rows)
+        if (is_array($matrixValues)) {
+            foreach ($matrixValues as $customKey => $catValues) {
+                if (isset($defs[$customKey])) continue;
+                if (empty($customKey) || !is_array($catValues)) continue;
+
+                $rawLabel = !empty($customCatLabels[$customKey]) ? trim($customCatLabels[$customKey]) : $customKey;
+                $cleanKey = preg_replace('/[^A-Za-z0-9_]/', '', $rawLabel);
+                if (empty($cleanKey)) {
+                    $cleanKey = preg_replace('/[^A-Za-z0-9_]/', '', $customKey);
+                }
+                if (empty($cleanKey)) continue;
+                $customCode = "{$parentCode}.{$cleanKey}";
+                $customName = !empty($customNames[$customKey]) ? trim($customNames[$customKey]) : "Rincian {$rawLabel}";
+                if (strpos($customName, ':') === false) {
+                    $customName = "{$prefix}: {$customName}";
+                }
+
+                $catExists = $this->db->where('kode_indikator', $customCode)->get('katalog_indikator')->row_array();
+                if (!$catExists) {
+                    $this->db->insert('katalog_indikator', array(
+                        'kode_wilayah' => $kodeWil,
+                        'kode_indikator' => $customCode,
+                        'nama_indikator' => $customName,
+                        'klaster' => $cluster,
+                        'satuan' => $unit,
+                        'frekuensi' => 'Tahunan',
+                        'sumber_data' => 'BPS Kabupaten/Kota',
+                        'definisi_operasional' => "Rincian kategori {$cleanKey}",
+                        'is_deleted' => 0
+                    ));
+                } else {
+                    $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array('nama_indikator' => $customName));
+                }
+
+                foreach ($years as $yr) {
+                    $yr = (int)$yr;
+                    if ($yr <= 1900 || $yr >= 2100) continue;
+                    $valRaw = isset($catValues[$yr]) ? $catValues[$yr] : null;
+                    if ($valRaw === null || $valRaw === '') continue;
+                    $val = (float)$valRaw;
+
+                    $existing = $this->db->where('kode_indikator', $customCode)
+                        ->where('kode_wilayah', $kodeWil)
+                        ->where('tahun', $yr)
+                        ->get('database_ekonomi')
+                        ->row_array();
+
+                    if ($existing) {
+                        $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
+                            'nama_indikator' => $customName,
+                            'nilai' => $val,
+                            'satuan' => $unit,
+                            'is_deleted' => 0,
+                            'deleted_at' => null,
+                            'status_validasi' => 'Tervalidasi'
+                        ));
+                    } else {
+                        $this->db->insert('database_ekonomi', array(
+                            'kode_wilayah' => $kodeWil,
+                            'kode_indikator' => $customCode,
+                            'nama_indikator' => $customName,
+                            'klaster' => $cluster,
+                            'wilayah' => $namaWil,
+                            'periode' => 'Tahunan',
+                            'tahun' => $yr,
+                            'nilai' => $val,
+                            'satuan' => $unit,
+                            'sumber_data' => 'BPS Kabupaten/Kota',
+                            'definisi_operasional' => "Rincian kategori {$cleanKey}",
+                            'status_validasi' => 'Tervalidasi',
+                            'diverifikasi_oleh' => 'BPS Jawa Timur / Rilis Resmi',
+                            'catatan' => "Sinkronisasi Matriks Sektoral Tambahan ({$parentCode})",
+                            'is_deleted' => 0,
+                            'dibuat_pada' => date('Y-m-d H:i:s')
+                        ));
+                    }
+                }
+            }
+        }
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
     public function clean_unvalidated_from_catalog($kode_wilayah = null) {
         $kode_wil = $this->db->escape($this->get_active_kode_wilayah($kode_wilayah));
         // Hanya bersihkan entri katalog aktif yang berasal dari database_ekonomi tetapi sudah tidak ada rekaman Tervalidasi aktif
@@ -1112,7 +1545,25 @@ class M_economy extends CI_Model {
         if (!empty($cluster) && $cluster !== 'Semua klaster' && $cluster !== 'all') {
             $this->db->where('k.klaster', $cluster);
         }
-        $res = $this->db->order_by('k.kode_indikator', 'ASC')->get();
+        $prefixOrderSql = "CASE
+            WHEN k.kode_indikator LIKE 'EKO%' THEN 1
+            WHEN k.kode_indikator LIKE 'NAK%' THEN 2
+            WHEN k.kode_indikator LIKE 'TK%' THEN 3
+            WHEN k.kode_indikator LIKE 'INV%' THEN 4
+            WHEN k.kode_indikator LIKE 'HRG%' THEN 5
+            WHEN k.kode_indikator LIKE 'KES%' THEN 6
+            WHEN k.kode_indikator LIKE 'PAR%' THEN 7
+            WHEN k.kode_indikator LIKE 'PRO%' THEN 8
+            WHEN k.kode_indikator LIKE 'FIS%' THEN 9
+            WHEN k.kode_indikator LIKE 'GEO%' THEN 10
+            WHEN k.kode_indikator LIKE 'EWS%' THEN 11
+            WHEN k.kode_indikator LIKE 'ANA%' THEN 12
+            ELSE 99
+        END";
+        $this->db->order_by($prefixOrderSql, 'ASC', false);
+        $this->db->order_by("CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(k.kode_indikator, '-', -1), '.', 1) AS UNSIGNED)", "ASC", false);
+        $this->db->order_by('k.kode_indikator', 'ASC');
+        $res = $this->db->get();
         $list = array();
         foreach ($res->result_array() as $row) {
             $code = $row['kode_indikator'];
@@ -1212,7 +1663,11 @@ class M_economy extends CI_Model {
                     // legacy compatibility
                     'INF_01', 'POV_01', 'TPT_01'
                 );
-                $dir = in_array($code, $aboveRiskIndicators) ? 'above' : 'below';
+                $isAbove = false;
+                foreach ($aboveRiskIndicators as $ari) {
+                    if (strpos($code, $ari) === 0) { $isAbove = true; break; }
+                }
+                $dir = $isAbove ? 'above' : 'below';
                 $th = round((float)$v['avg_val'], 2);
 
                 $insertData = array(
@@ -1431,14 +1886,36 @@ class M_economy extends CI_Model {
         $this->db->where('is_deleted', 0);
         $this->db->where('status_validasi !=', 'Ditolak');
         $this->db->where('kode_wilayah', $kode);
+        $this->db->where("kode_indikator NOT LIKE '%.%'");
+        $this->db->where_not_in('kode_indikator', array('kk1', 'EKO-015', 'EKO-016'));
+
+        $prefixOrderSql = "CASE
+            WHEN kode_indikator LIKE 'EKO%' THEN 1
+            WHEN kode_indikator LIKE 'NAK%' THEN 2
+            WHEN kode_indikator LIKE 'TK%' THEN 3
+            WHEN kode_indikator LIKE 'INV%' THEN 4
+            WHEN kode_indikator LIKE 'HRG%' THEN 5
+            WHEN kode_indikator LIKE 'KES%' THEN 6
+            WHEN kode_indikator LIKE 'PAR%' THEN 7
+            WHEN kode_indikator LIKE 'PRO%' THEN 8
+            WHEN kode_indikator LIKE 'FIS%' THEN 9
+            WHEN kode_indikator LIKE 'GEO%' THEN 10
+            WHEN kode_indikator LIKE 'EWS%' THEN 11
+            WHEN kode_indikator LIKE 'ANA%' THEN 12
+            ELSE 99
+        END";
 
         if ($year && is_numeric($year)) {
             $yearInt = (int)$year;
             $this->db->where('tahun', $yearInt);
+            $this->db->order_by($prefixOrderSql, 'ASC', false);
+            $this->db->order_by("CAST(SUBSTRING_INDEX(kode_indikator, '-', -1) AS UNSIGNED)", 'ASC', false);
             $this->db->order_by('id', 'ASC');
             $records = $this->db->get('database_ekonomi')->result_array();
         } else {
             // Semua Tahun / Default: Ambil seluruh data indikator yang telah diinput (rekaman terbaru per kode)
+            $this->db->order_by($prefixOrderSql, 'ASC', false);
+            $this->db->order_by("CAST(SUBSTRING_INDEX(kode_indikator, '-', -1) AS UNSIGNED)", 'ASC', false);
             $this->db->order_by('kode_indikator', 'ASC');
             $this->db->order_by('tahun', 'DESC');
             $rawRecords = $this->db->get('database_ekonomi')->result_array();
@@ -1564,6 +2041,8 @@ class M_economy extends CI_Model {
         $this->db->where('is_deleted', 0);
         $this->db->where('status_validasi !=', 'Ditolak');
         $this->db->where('kode_wilayah', $kode);
+        $this->db->where("kode_indikator NOT LIKE '%.%'");
+        $this->db->where_not_in('kode_indikator', array('kk1', 'EKO-015', 'EKO-016'));
         if ($year && is_numeric($year)) {
             $this->db->where('tahun', (int)$year);
         }

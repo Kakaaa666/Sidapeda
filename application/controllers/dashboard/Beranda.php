@@ -10,12 +10,21 @@ class Beranda extends MY_Controller {
 
         $raw_year = $this->input->get('year');
         $selected_year = ($raw_year && is_numeric($raw_year)) ? (int)$raw_year : null;
+        $selected_category = $this->input->get('category') ?: $this->input->get('prefix');
         $selected_cluster = $this->input->get('cluster') ?: $this->input->get('category');
 
         $series = $this->M_economy->get_economic_series();
         $sectors = $this->M_economy->get_sectors();
         $ews = $this->M_economy->get_ews_indicators(null, $selected_year);
         $trash_count = $this->M_economy->count_trash_beranda();
+
+        // Pada pemantauan publik EWS, tampilkan 81 master indikator resmi
+        $excludedCodes = array('kk1', 'EKO-015', 'EKO-016');
+        $ews = array_values(array_filter($ews, function($item) use ($excludedCodes) {
+            $c = $item['code'] ?? '';
+            $main = explode('.', $c)[0];
+            return strpos($c, '.') === false && !in_array($c, $excludedCodes) && !in_array($main, $excludedCodes);
+        }));
 
         $beranda_cards = $this->M_economy->get_beranda_cards($selected_year, $status);
         $categories = $this->M_economy->get_beranda_categories($selected_year);
@@ -40,6 +49,7 @@ class Beranda extends MY_Controller {
             'beranda_cards'     => $beranda_cards,
             'categories'        => $categories,
             'selected_year'     => $selected_year,
+            'selected_category' => $selected_category,
             'selected_cluster'  => $selected_cluster,
             'active_chart_year' => $active_chart_year,
             'year_idx'          => $year_idx,

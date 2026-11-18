@@ -45,6 +45,301 @@
         return formatNum(val, digits) + '%';
     }
 
+    // Global Helper: Toggle Sub-Indikator Sektoral / Komponen (A s.d. U / 1 s.d. 6)
+    let _lastIndicatorToggle = { code: '', time: 0 };
+    window.toggleIndicatorSubRows = function (parentCode, event) {
+        if (event) {
+            if (event.preventDefault) event.preventDefault();
+            if (event.stopPropagation) event.stopPropagation();
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        }
+        if (!parentCode) return;
+
+        // Debounce lock: cegah duplicate toggle dalam rentang 200ms
+        const now = Date.now();
+        if (_lastIndicatorToggle.code === parentCode && (now - _lastIndicatorToggle.time) < 200) {
+            return;
+        }
+        _lastIndicatorToggle = { code: parentCode, time: now };
+
+        const subRows = document.querySelectorAll(`tr.matrix-sub-row[data-parent="${parentCode}"], tr.sub-row-${parentCode}, div.risk-sub-row[data-parent="${parentCode}"], div.sub-row-${parentCode}`);
+        if (!subRows || subRows.length === 0) return;
+
+        const parentRows = document.querySelectorAll(`tr.matrix-row[data-code="${parentCode}"], div.risk-row[data-code="${parentCode}"]:not(.risk-sub-row)`);
+
+        let isCurrentlyExpanded = false;
+        if (parentRows.length > 0 && parentRows[0].classList.contains('is-expanded')) {
+            isCurrentlyExpanded = true;
+        } else if (subRows.length > 0 && subRows[0].classList.contains('is-open')) {
+            isCurrentlyExpanded = true;
+        } else {
+            const firstDisplay = subRows[0].style.display;
+            if (firstDisplay === 'table-row' || firstDisplay === 'grid') {
+                isCurrentlyExpanded = true;
+            }
+        }
+
+        const willExpand = !isCurrentlyExpanded;
+
+        subRows.forEach(sr => {
+            if (willExpand) {
+                sr.classList.add('is-open');
+                const isTr = (sr.tagName.toLowerCase() === 'tr');
+                sr.style.setProperty('display', isTr ? 'table-row' : 'grid', 'important');
+            } else {
+                sr.classList.remove('is-open');
+                sr.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        parentRows.forEach(pr => {
+            if (willExpand) {
+                pr.classList.add('is-expanded');
+            } else {
+                pr.classList.remove('is-expanded');
+            }
+
+            const arrows = pr.querySelectorAll('.sub-arrow-icon, .toggle-chevron-icon');
+            arrows.forEach(arr => {
+                arr.style.transform = willExpand ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+
+            const btn = pr.querySelector('.btn-toggle-subcategories');
+            const lbl = pr.querySelector('.sub-toggle-label');
+            if (btn && lbl) {
+                if (willExpand) {
+                    lbl.textContent = 'Tutup Rincian';
+                    btn.style.background = '#dcfce7';
+                    btn.style.borderColor = '#16a34a';
+                    btn.style.color = '#14532d';
+                } else {
+                    const openText = btn.getAttribute('data-label-open') || 'Rincian Sektor (A–U)';
+                    lbl.textContent = openText;
+                    btn.style.background = '#f0fdf4';
+                    btn.style.borderColor = '#86efac';
+                    btn.style.color = '#15803d';
+                }
+            }
+        });
+    };
+
+    // Global Capture-Phase Delegated Click Listener for .btn-toggle-subcategories
+    document.addEventListener('click', function (e) {
+        const toggleBtn = e.target.closest('.btn-toggle-subcategories');
+        if (toggleBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            const pCode = toggleBtn.getAttribute('data-parent') || (toggleBtn.closest('[data-code]') ? toggleBtn.closest('[data-code]').getAttribute('data-code') : '');
+            if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                window.toggleIndicatorSubRows(pCode, e);
+            }
+        }
+    }, true);
+
+    // Global Helper: Slide Filter Kategori Indikator (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
+    window._activeCategoryFilter = '';
+    window.applyCategoryFilter = function (targetPrefix, triggerEl) {
+        const cleanPrefix = (targetPrefix || '').trim().toUpperCase();
+        window._activeCategoryFilter = cleanPrefix;
+
+        // 1. Update UI tabs on category slide track
+        const tracks = document.querySelectorAll('.category-slide-track');
+        tracks.forEach(track => {
+            track.querySelectorAll('.category-slide-tab').forEach(tab => {
+                const tabPrefix = (tab.getAttribute('data-prefix') || '').trim().toUpperCase();
+                const isActive = (tabPrefix === cleanPrefix);
+                tab.classList.toggle('active', isActive);
+                if (isActive) {
+                    try {
+                        tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    } catch (e) {}
+                }
+            });
+        });
+
+        // 2. Filter rows in database table, validation table, or threshold admin table
+        const tableBodies = [
+            document.getElementById('admin-table-body'),
+            document.getElementById('validation-table-body'),
+            document.getElementById('threshold-admin-rows')
+        ].filter(Boolean);
+
+        tableBodies.forEach(tbody => {
+            let visibleCount = 0;
+            const masterRows = tbody.querySelectorAll('tr.matrix-row:not(.matrix-sub-row)');
+            masterRows.forEach(row => {
+                const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
+                const isMatch = (!cleanPrefix || rowPrefix === cleanPrefix);
+
+                if (isMatch) {
+                    row.style.setProperty('display', 'table-row', 'important');
+                    visibleCount++;
+                    // If row was expanded before, keep its sub-rows visible, otherwise keep them hidden
+                    const isExpanded = row.classList.contains('is-expanded');
+                    const pCode = row.getAttribute('data-code');
+                    if (pCode) {
+                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.sub-row-${pCode}`).forEach(sr => {
+                            if (isExpanded) {
+                                sr.classList.add('is-open');
+                                sr.style.setProperty('display', 'table-row', 'important');
+                            } else {
+                                sr.classList.remove('is-open');
+                                sr.style.setProperty('display', 'none', 'important');
+                            }
+                        });
+                    }
+                } else {
+                    row.style.setProperty('display', 'none', 'important');
+                    // Hide sub-rows of non-matching categories
+                    const pCode = row.getAttribute('data-code');
+                    if (pCode) {
+                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.sub-row-${pCode}`).forEach(sr => {
+                            sr.classList.remove('is-open');
+                            sr.style.setProperty('display', 'none', 'important');
+                        });
+                    }
+                }
+            });
+
+            // Handle empty state row for category with zero results
+            let emptyRow = tbody.querySelector('.tr-category-empty');
+            if (visibleCount === 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'tr-category-empty';
+                    const colCount = tbody.closest('table') ? tbody.closest('table').querySelectorAll('thead th').length : 15;
+                    emptyRow.innerHTML = `<td colspan="${colCount}" style="padding:36px 20px; text-align:center; color:var(--muted);"><div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><strong>Tidak ada indikator untuk kategori ${cleanPrefix}.</strong></div></td>`;
+                    tbody.appendChild(emptyRow);
+                } else {
+                    emptyRow.style.display = 'table-row';
+                    const strong = emptyRow.querySelector('strong');
+                    if (strong) strong.textContent = `Tidak ada indikator untuk kategori ${cleanPrefix}.`;
+                }
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+
+            // Update counter info
+            const countLabel = document.getElementById('cat-filtered-count-label');
+            if (countLabel) {
+                if (tbody.id === 'threshold-admin-rows') {
+                    if (cleanPrefix) {
+                        countLabel.textContent = `Total: ${visibleCount} Indikator Kategori ${cleanPrefix}`;
+                    } else {
+                        countLabel.textContent = `Total: ${visibleCount} Indikator Tervalidasi`;
+                    }
+                } else {
+                    if (cleanPrefix) {
+                        countLabel.textContent = `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}`;
+                    } else {
+                        countLabel.textContent = `Menampilkan seluruh ${visibleCount} indikator`;
+                    }
+                }
+            }
+        });
+
+        // 3. Filter KPI cards in Beranda (#kpi-container)
+        const kpiContainer = document.getElementById('kpi-container');
+        if (kpiContainer) {
+            let kpiVisibleCount = 0;
+            const cards = kpiContainer.querySelectorAll('.kpi-card');
+            cards.forEach(card => {
+                const cardPrefix = (card.getAttribute('data-prefix') || (card.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
+                const isMatch = (!cleanPrefix || cardPrefix === cleanPrefix);
+                if (isMatch) {
+                    card.style.display = '';
+                    kpiVisibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            const kpiEmpty = document.getElementById('kpi-empty-message');
+            if (kpiEmpty) {
+                kpiEmpty.style.display = (kpiVisibleCount === 0) ? 'block' : 'none';
+            }
+            const kpiCountDisp = document.getElementById('kpi-count-display');
+            if (kpiCountDisp) {
+                kpiCountDisp.textContent = kpiVisibleCount;
+            }
+        }
+
+        // 4. Filter risk rows in Early Warning (#ews-table-rows)
+        const ewsTable = document.getElementById('ews-table-rows');
+        if (ewsTable) {
+            let ewsVisibleCount = 0;
+            const masterRows = ewsTable.querySelectorAll('.risk-row:not(.risk-sub-row)');
+            masterRows.forEach(row => {
+                const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
+                const rowStatus = row.getAttribute('data-status') || '';
+                const matchPrefix = (!cleanPrefix || rowPrefix === cleanPrefix);
+                const matchStatus = (!window._activeEwsStatusFilter || window._activeEwsStatusFilter === 'Semua' || rowStatus === window._activeEwsStatusFilter);
+                const isMatch = matchPrefix && matchStatus;
+
+                const pCode = row.getAttribute('data-code');
+                const subRows = pCode ? ewsTable.querySelectorAll(`.risk-sub-row.sub-row-${pCode}`) : [];
+
+                if (isMatch) {
+                    row.style.setProperty('display', 'grid', 'important');
+                    ewsVisibleCount++;
+                    const isExpanded = row.classList.contains('is-expanded');
+                    subRows.forEach(sr => {
+                        if (isExpanded) {
+                            sr.classList.add('is-open');
+                            sr.style.setProperty('display', 'grid', 'important');
+                        } else {
+                            sr.classList.remove('is-open');
+                            sr.style.setProperty('display', 'none', 'important');
+                        }
+                    });
+                } else {
+                    row.style.setProperty('display', 'none', 'important');
+                    subRows.forEach(sr => {
+                        sr.classList.remove('is-open');
+                        sr.style.setProperty('display', 'none', 'important');
+                    });
+                }
+            });
+
+            const emptyMsg = document.getElementById('ews-empty-message');
+            if (emptyMsg) {
+                emptyMsg.style.display = (ewsVisibleCount === 0) ? 'block' : 'none';
+            }
+        }
+
+        // 5. Update URL without refreshing page
+        try {
+            const url = new URL(window.location.href);
+            if (cleanPrefix) {
+                url.searchParams.set('category', cleanPrefix);
+            } else {
+                url.searchParams.delete('category');
+                url.searchParams.delete('prefix');
+            }
+            window.history.replaceState({}, '', url.toString());
+        } catch (e) {}
+    };
+
+    // Global listener for slide navigation buttons
+    document.addEventListener('click', function (e) {
+        const prevBtn = e.target.closest('#btn-slide-cat-prev');
+        if (prevBtn) {
+            e.preventDefault();
+            const container = prevBtn.closest('.category-slide-container');
+            const track = container ? container.querySelector('.category-slide-track') : document.getElementById('category-slide-track');
+            if (track) track.scrollBy({ left: -220, behavior: 'smooth' });
+            return;
+        }
+        const nextBtn = e.target.closest('#btn-slide-cat-next');
+        if (nextBtn) {
+            e.preventDefault();
+            const container = nextBtn.closest('.category-slide-container');
+            const track = container ? container.querySelector('.category-slide-track') : document.getElementById('category-slide-track');
+            if (track) track.scrollBy({ left: 220, behavior: 'smooth' });
+            return;
+        }
+    });
+
     // Helper: Download CSV
     function downloadCSV(filename, rows) {
         const csvContent = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -464,13 +759,30 @@
     }
 
     // Initialize UI on DOM Ready (robust check against already-loaded state)
-    // Initialize UI on DOM Ready (robust check against already-loaded state)
     function runInit() {
         initNavigation();
         initGlobalCrudDelegation();
         initComboboxDelegation();
         dispatchPageLogic(); // Immediately bind all CRUD modals and interactive buttons on page load
         initDataLoad();      // Then asynchronously fetch central state / time series
+
+        // Pastikan seluruh sub-indikator tertutup secara default saat halaman dimuat
+        document.querySelectorAll('tr.matrix-sub-row, div.risk-sub-row').forEach(sr => {
+            sr.classList.remove('is-open');
+            sr.style.setProperty('display', 'none', 'important');
+        });
+        document.querySelectorAll('tr.matrix-row.has-subcategories, div.risk-row.has-subcategories').forEach(pr => {
+            pr.classList.remove('is-expanded');
+        });
+
+        // Auto-apply category filter from URL if present
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const catParam = urlParams.get('category') || urlParams.get('prefix');
+            if (catParam) {
+                applyCategoryFilter(catParam);
+            }
+        } catch (e) {}
     }
 
     if (document.readyState === 'loading') {
@@ -3102,7 +3414,15 @@
 
         function renderEWS() {
             let normalC = 0, warnC = 0, critC = 0, followedC = 0, totalMatching = 0;
-            AppState.ews.forEach(item => {
+            const currentCatFilter = window._activeCategoryFilter || '';
+
+            // Master indicators only (exclude sub-indicators with dots)
+            const masterList = (AppState.ews || []).filter(item => {
+                const code = item.code || item.kode_indikator || '';
+                return !code.includes('.');
+            });
+
+            masterList.forEach(item => {
                 const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                 const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                 const dir = item.direction || item.arah_risiko || 'above';
@@ -3110,8 +3430,10 @@
                 item.status = st;
                 item.status_risiko = st;
 
-                const cat = item.klaster || item.cluster || 'Umum';
-                if (!activeCategory || activeCategory === 'all' || cat === activeCategory) {
+                const code = item.code || item.kode_indikator || '';
+                const prefix = code.split('-')[0].trim().toUpperCase();
+
+                if (!currentCatFilter || prefix === currentCatFilter) {
                     totalMatching++;
                     if (st === 'Normal') normalC++;
                     else if (st === 'Waspada') warnC++;
@@ -3121,95 +3443,28 @@
                 }
             });
 
-            if (statsContainer) {
-                statsContainer.innerHTML = `
-                    <div class="risk-stat danger"><span>Status Kritis</span><strong>${critC}</strong><small>Memerlukan intervensi segera</small></div>
-                    <div class="risk-stat warning"><span>Status Waspada</span><strong>${warnC}</strong><small>Mendekati ambang batas</small></div>
-                    <div class="risk-stat success"><span>Status Normal</span><strong>${normalC}</strong><small>Dalam batas aman</small></div>
-                    <div class="risk-stat neutral"><span>Total Indikator</span><strong>${totalMatching}</strong><small>Dipantau sistem (${followedC} ditindaklanjuti)</small></div>`;
-            }
+            const statKritis = document.getElementById('stat-kritis-count');
+            const statWaspada = document.getElementById('stat-waspada-count');
+            const statNormal = document.getElementById('stat-normal-count');
+            const statTotal = document.getElementById('stat-total-count');
 
-            const filtered = AppState.ews.filter(item => {
-                const st = item.status || item.status_risiko || 'Normal';
-                const cat = item.klaster || item.cluster || 'Umum';
-                const matchStatus = (activeFilter === 'Semua' || st === activeFilter);
-                const matchCategory = (!activeCategory || activeCategory === 'all' || cat === activeCategory);
-                return matchStatus && matchCategory;
-            });
+            if (statKritis) statKritis.textContent = critC;
+            if (statWaspada) statWaspada.textContent = warnC;
+            if (statNormal) statNormal.textContent = normalC;
+            if (statTotal) statTotal.textContent = totalMatching;
 
-            if (tableRows) {
-                if (filtered.length === 0) {
-                    tableRows.innerHTML = `
-                        <div class="risk-table-header">
-                            <span>Indikator Pemantauan</span>
-                            <span>Nilai Riil</span>
-                            <span>Batas Ambang</span>
-                            <span style="text-align:right;">Status Risiko</span>
-                        </div>
-                        <div id="ews-empty-message" style="padding: 36px 20px; text-align: center; color: var(--muted); background: white; border: 1px dashed var(--line); border-radius: 10px; margin-top: 10px;">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px; color: var(--muted);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <strong style="display: block; font-size: 13px; color: var(--navy); margin-bottom: 3px;">Tidak ada indikator yang cocok</strong>
-                            <small style="font-size: 11px;">Silakan ubah filter kategori atau status pemantauan.</small>
-                        </div>
-                    `;
-                } else {
-                    tableRows.innerHTML = `
-                        <div class="risk-table-header">
-                            <span>Indikator Pemantauan</span>
-                            <span>Nilai Riil</span>
-                            <span>Batas Ambang</span>
-                            <span style="text-align:right;">Status Risiko</span>
-                        </div>
-                        ${filtered.map(item => {
-                            const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
-                            const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
-                            const dir = item.direction || item.arah_risiko || 'above';
-                            const st = calcEwsStatus(val, th, dir);
-                            const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
-                            const rowStateCls = (st === 'Kritis') ? 'alerted' : ((st === 'Waspada') ? 'warning-row' : 'normal-row');
-                            const unit = item.unit || item.satuan || '%';
-                            const code = item.code || item.kode_indikator || '';
-                            const name = item.name || item.nama_indikator || '';
-                            const cl = item.klaster || item.cluster || 'Umum';
-                            return `
-                            <div class="risk-row btn-alert-row ${rowStateCls}" data-code="${code}" data-status="${st}" data-category="${cl}" role="button" tabindex="0" style="cursor:pointer;" title="Klik untuk analisis & penyesuaian threshold">
-                                <div class="risk-indicator">
-                                    <span class="badge info" style="display:inline-block; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none; margin-bottom:4px;">${cl}</span>
-                                    <strong>${name}</strong>
-                                    <small>
-                                        <code style="white-space: nowrap;">${code}</code>
-                                        ${item.tahun || item.year ? `<span style="color:var(--navy); font-weight:600;">• Thn ${item.tahun || item.year}</span>` : ''}
-                                        <span style="color:var(--muted);">• ${dir === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang'}</span>
-                                    </small>
-                                </div>
-                                <div class="risk-value">
-                                    <span>Nilai Riil</span>
-                                    <strong>${formatNum(val, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
-                                </div>
-                                <div class="risk-threshold">
-                                    <span>Batas Ambang</span>
-                                    <strong>${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span></strong>
-                                </div>
-                                <div class="risk-status">
-                                    <span class="badge ${badgeCls}">${st}</span>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}`;
-
-                    tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
-                        row.addEventListener('click', function () {
-                            openAlertModal(this.getAttribute('data-code'));
-                        });
-                    });
-                }
+            // Trigger category/status filtering across table rows
+            if (typeof window.applyCategoryFilter === 'function') {
+                window.applyCategoryFilter(currentCatFilter);
             }
 
             if (distBars) {
-                const distFiltered = AppState.ews.filter(item => {
-                    const cat = item.klaster || item.cluster || 'Umum';
-                    return !activeCategory || activeCategory === 'all' || cat === activeCategory;
-                });
+                const distFiltered = masterList.filter(item => {
+                    const code = item.code || item.kode_indikator || '';
+                    const prefix = code.split('-')[0].trim().toUpperCase();
+                    return (!currentCatFilter || prefix === currentCatFilter);
+                }).slice(0, 8);
+
                 distBars.innerHTML = distFiltered.map(item => {
                     const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                     const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
@@ -3228,8 +3483,14 @@
             }
 
             const ewsChartContainer = document.getElementById('ews-comparison-chart-container');
-            if (ewsChartContainer && AppState.ews.length > 0) {
-                const ewsBars = AppState.ews.map(item => {
+            if (ewsChartContainer && masterList.length > 0) {
+                const chartFiltered = masterList.filter(item => {
+                    const code = item.code || item.kode_indikator || '';
+                    const prefix = code.split('-')[0].trim().toUpperCase();
+                    return (!currentCatFilter || prefix === currentCatFilter);
+                }).slice(0, 10);
+
+                const ewsBars = chartFiltered.map(item => {
                     const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                     const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                     const dir = item.direction || item.arah_risiko || 'above';
@@ -3252,9 +3513,9 @@
             const pBar = document.getElementById('ews-progress-bar');
             const pTxt = document.getElementById('ews-progress-text');
             const pPct = document.getElementById('ews-progress-pct');
-            const pct = AppState.ews.length ? Math.round((followedC / AppState.ews.length) * 100) : 0;
+            const pct = masterList.length ? Math.round((followedC / masterList.length) * 100) : 0;
             if (pBar) pBar.style.width = pct + '%';
-            if (pTxt) pTxt.textContent = `${followedC} dari ${AppState.ews.length} indikator ditandai`;
+            if (pTxt) pTxt.textContent = `${followedC} dari ${masterList.length} indikator ditandai`;
             if (pPct) pPct.textContent = pct + '%';
         }
 
@@ -3464,6 +3725,30 @@
                                 target.arah_risiko = dir;
                                 target.status = calcEwsStatus(finalVal, th, dir);
                                 target.status_risiko = target.status;
+
+                                const unit = target.unit || target.satuan || '%';
+                                if (tableRows) {
+                                    const row = tableRows.querySelector(`.risk-row[data-code="${selectedAlertCode}"]`);
+                                    if (row) {
+                                        const newSt = target.status;
+                                        row.setAttribute('data-status', newSt);
+                                        const badge = row.querySelector('.risk-status .badge');
+                                        if (badge) {
+                                            badge.className = 'badge ' + (newSt === 'Kritis' ? 'danger' : (newSt === 'Waspada' ? 'warning' : 'success'));
+                                            badge.textContent = newSt;
+                                        }
+                                        const valEl = row.querySelector('.risk-value strong');
+                                        if (valEl) {
+                                            valEl.innerHTML = `${formatNum(finalVal, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span>`;
+                                        }
+                                        const thEl = row.querySelector('.risk-threshold strong');
+                                        if (thEl) {
+                                            thEl.innerHTML = `${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span>`;
+                                        }
+                                        row.classList.remove('alerted', 'warning-row', 'normal-row');
+                                        row.classList.add(newSt === 'Kritis' ? 'alerted' : (newSt === 'Waspada' ? 'warning-row' : 'normal-row'));
+                                    }
+                                }
                             }
                             renderEWS();
                             closeModal();
@@ -3503,6 +3788,10 @@
                     filterTabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     activeFilter = this.getAttribute('data-status');
+                    window._activeEwsStatusFilter = activeFilter;
+                    if (typeof window.applyCategoryFilter === 'function') {
+                        window.applyCategoryFilter(window._activeCategoryFilter || '');
+                    }
                     renderEWS();
                 });
             });
@@ -3511,17 +3800,10 @@
         if (catSelect) {
             catSelect.addEventListener('change', function () {
                 activeCategory = this.value;
+                if (typeof window.applyCategoryFilter === 'function') {
+                    window.applyCategoryFilter(activeCategory === 'all' ? '' : activeCategory);
+                }
                 renderEWS();
-                try {
-                    const url = new URL(window.location.href);
-                    if (activeCategory && activeCategory !== 'all') {
-                        url.searchParams.set('cluster', activeCategory);
-                    } else {
-                        url.searchParams.delete('cluster');
-                        url.searchParams.delete('category');
-                    }
-                    window.history.replaceState({}, '', url.toString());
-                } catch (e) {}
             });
         }
 
@@ -3541,12 +3823,37 @@
             });
         }
 
-        // Bind initial click handler for server-rendered rows immediately
+        // Delegated click handler on tableRows: handles both toggle sub-indicators and alert modal
         if (tableRows) {
-            tableRows.querySelectorAll('.btn-alert-row').forEach(row => {
-                row.addEventListener('click', function () {
-                    openAlertModal(this.getAttribute('data-code'));
-                });
+            tableRows.addEventListener('click', function (e) {
+                const toggleBtn = e.target.closest('.btn-toggle-subcategories');
+                if (toggleBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const pCode = toggleBtn.getAttribute('data-parent') || (toggleBtn.closest('[data-code]') ? toggleBtn.closest('[data-code]').getAttribute('data-code') : '');
+                    if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                        window.toggleIndicatorSubRows(pCode, e);
+                    }
+                    return;
+                }
+
+                // Jika pengguna mengklik baris/sel indikator utama yang memiliki sub-kategori sektoral
+                const parentRow = e.target.closest('.risk-row[data-has-sub="true"]:not(.risk-sub-row)');
+                if (parentRow && !e.target.closest('button, a, input, select, .risk-value, .risk-threshold')) {
+                    const pCode = parentRow.getAttribute('data-code');
+                    if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                        window.toggleIndicatorSubRows(pCode, e);
+                        return;
+                    }
+                }
+
+                const alertRow = e.target.closest('.btn-alert-row');
+                if (alertRow) {
+                    const code = alertRow.getAttribute('data-code');
+                    if (code) {
+                        openAlertModal(code);
+                    }
+                }
             });
         }
 
@@ -3930,10 +4237,11 @@
         function reloadFiltered() {
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
-            const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'year';
+            const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'code';
             const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
             const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
-            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}`;
+            const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : '';
+            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
         }
 
         if (searchInput) {
@@ -3951,6 +4259,22 @@
             btnOpenModal.addEventListener('click', () => {
                 const addDefEl = document.getElementById('add-definition');
                 if (addDefEl) addDefEl.value = '';
+                const addCatFilter = document.getElementById('add-category-filter-select');
+                if (addCatFilter) addCatFilter.value = '';
+                const addMasterSelect = document.getElementById('add-indicator-master-select');
+                if (addMasterSelect) {
+                    addMasterSelect.value = '';
+                    addMasterSelect.querySelectorAll('option').forEach(opt => { opt.style.display = ''; });
+                }
+                const addSecGrp = document.getElementById('add-sectoral-category-group');
+                if (addSecGrp) addSecGrp.style.display = 'none';
+                const addSecSel = document.getElementById('add-sectoral-category-select');
+                if (addSecSel) addSecSel.innerHTML = '';
+                ['add-code', 'add-indicator', 'add-cluster', 'add-unit', 'add-source', 'add-value'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                const errBox = document.getElementById('add-modal-error');
+                if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
                 addModal.style.display = 'grid';
             });
         }
@@ -3963,6 +4287,130 @@
             });
         }
 
+        const addCategoryFilter = document.getElementById('add-category-filter-select');
+        const addMasterSelect = document.getElementById('add-indicator-master-select');
+        const addSectoralGroup = document.getElementById('add-sectoral-category-group');
+        const addSectoralSelect = document.getElementById('add-sectoral-category-select');
+        const addSectoralBadge = document.getElementById('add-sectoral-badge-label');
+        const addSectoralLabel = document.getElementById('add-sectoral-category-label');
+        const btnQuickOpenSectoral = document.getElementById('btn-quick-open-sectoral-matrix');
+
+        // 1. Ketika Kategori / Klaster dipilih: filter indikator & otomatis isi indikator pertama
+        if (addCategoryFilter && addMasterSelect) {
+            addCategoryFilter.addEventListener('change', function () {
+                const chosenCat = (this.value || '').trim();
+                const options = addMasterSelect.querySelectorAll('option');
+                let firstMatchVal = null;
+
+                options.forEach(opt => {
+                    if (!opt.value) return;
+                    const optCluster = opt.getAttribute('data-cluster') || '';
+                    const isMatch = !chosenCat || (optCluster.toLowerCase() === chosenCat.toLowerCase());
+                    opt.style.display = isMatch ? '' : 'none';
+                    if (isMatch && firstMatchVal === null) {
+                        firstMatchVal = opt.value;
+                    }
+                });
+
+                if (firstMatchVal) {
+                    addMasterSelect.value = firstMatchVal;
+                    addMasterSelect.dispatchEvent(new Event('change'));
+                } else if (!chosenCat) {
+                    addMasterSelect.value = '';
+                    addMasterSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        if (btnQuickOpenSectoral) {
+            btnQuickOpenSectoral.addEventListener('click', () => {
+                const curParent = (addMasterSelect && addMasterSelect.value) ? addMasterSelect.value.trim().toUpperCase() : 'EKO-003';
+                if (addModal) addModal.style.display = 'none';
+                openSectoralModal(curParent);
+            });
+        }
+
+        // 2. Ketika Indikator Master dipilih: otomatis mengisi sendiri seluruh kolom
+        if (addMasterSelect) {
+            addMasterSelect.addEventListener('change', function () {
+                const val = (this.value || '').trim().toUpperCase();
+                if (!val) {
+                    ['add-code', 'add-indicator', 'add-cluster', 'add-unit', 'add-source', 'add-definition'].forEach(id => {
+                        const el = document.getElementById(id); if (el) el.value = '';
+                    });
+                    if (addSectoralGroup) addSectoralGroup.style.display = 'none';
+                    return;
+                }
+
+                // Cek apakah indikator master memiliki rincian sub-kategori (misal EKO-003.A, EKO-004.A, EKO-015.1, dsb)
+                const subItems = (window.CATALOG_MASTER_LOOKUP && Array.isArray(window.CATALOG_MASTER_LOOKUP))
+                    ? window.CATALOG_MASTER_LOOKUP.filter(m => m.code && m.code.toUpperCase().startsWith(val + '.'))
+                    : [];
+
+                if (subItems.length > 0 && addSectoralGroup && addSectoralSelect) {
+                    addSectoralGroup.style.display = 'block';
+                    const isExp = (val === 'EKO-015' || val === 'EKO-016');
+                    if (addSectoralBadge) addSectoralBadge.textContent = isExp ? 'Komponen Pengeluaran' : 'Sektor Lapangan Usaha';
+                    if (addSectoralLabel) {
+                        addSectoralLabel.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg> ${isExp ? 'Rincian Komponen Pengeluaran (Komponen 1 s.d. 6)' : 'Rincian Kategori Lapangan Usaha (Kategori A s.d. U & Tanpa Migas)'}`;
+                    }
+
+                    const parentMatch = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === val);
+                    let optHtml = `<option value="${val}">[TOTAL] ${parentMatch ? parentMatch.name : 'Total ' + val} (Total Agregat)</option>`;
+                    subItems.forEach(sub => {
+                        let subKey = sub.code.substring(val.length + 1);
+                        if (subKey === 'MN') subKey = 'M,N';
+                        else if (subKey === 'RSTU') subKey = 'R,S,T,U';
+                        const cleanSubName = (sub.name || '').replace(/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i, '');
+                        optHtml += `<option value="${sub.code}">[${subKey}] ${cleanSubName}</option>`;
+                    });
+                    addSectoralSelect.innerHTML = optHtml;
+                    addSectoralSelect.value = val;
+                } else if (addSectoralGroup) {
+                    addSectoralGroup.style.display = 'none';
+                }
+
+                if (window.CATALOG_MASTER_LOOKUP && Array.isArray(window.CATALOG_MASTER_LOOKUP)) {
+                    const match = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === val);
+                    if (match) {
+                        if (document.getElementById('add-code')) document.getElementById('add-code').value = match.code;
+                        if (document.getElementById('add-indicator')) document.getElementById('add-indicator').value = match.name;
+                        if (document.getElementById('add-cluster')) document.getElementById('add-cluster').value = match.cluster;
+                        if (document.getElementById('add-unit')) document.getElementById('add-unit').value = match.unit;
+                        if (document.getElementById('add-source')) document.getElementById('add-source').value = match.source;
+                        if (document.getElementById('add-definition')) document.getElementById('add-definition').value = match.definition || '';
+
+                        // Sinkronkan dropdown kategori / klaster langkah 1 agar mengisi sendiri
+                        if (addCategoryFilter && match.cluster) {
+                            addCategoryFilter.value = match.cluster;
+                        }
+
+                        document.querySelectorAll('.add-series-unit-cell').forEach(c => { c.textContent = match.unit || '%'; });
+                        const firstVal = document.querySelector('#add-series-table-body input[name="series_values[]"]');
+                        if (firstVal) firstVal.focus();
+                    }
+                }
+            });
+        }
+
+        // 3. Ketika Kategori / Sub-Indikator dipilih: otomatis MENGISI INDIKATOR
+        if (addSectoralSelect) {
+            addSectoralSelect.addEventListener('change', function () {
+                const chosenCode = (this.value || '').trim().toUpperCase();
+                if (!chosenCode || !window.CATALOG_MASTER_LOOKUP) return;
+                const match = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === chosenCode);
+                if (match) {
+                    if (document.getElementById('add-code')) document.getElementById('add-code').value = match.code;
+                    if (document.getElementById('add-indicator')) document.getElementById('add-indicator').value = match.name;
+                    if (document.getElementById('add-cluster')) document.getElementById('add-cluster').value = match.cluster;
+                    if (document.getElementById('add-unit')) document.getElementById('add-unit').value = match.unit;
+                    if (document.getElementById('add-source')) document.getElementById('add-source').value = match.source;
+                    if (document.getElementById('add-definition')) document.getElementById('add-definition').value = match.definition || '';
+                    document.querySelectorAll('.add-series-unit-cell').forEach(c => { c.textContent = match.unit || '%'; });
+                }
+            });
+        }
+
         const addCodeInput = document.getElementById('add-code');
         if (addCodeInput) {
             const handleCodeAutocomplete = function () {
@@ -3972,15 +4420,16 @@
                 const match = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === val);
                 if (match) {
                     const indEl = document.getElementById('add-indicator');
-                    if (indEl && (!indEl.value || indEl.value === 'Pertumbuhan Ekonomi')) indEl.value = match.name;
+                    if (indEl) indEl.value = match.name;
                     const clEl = document.getElementById('add-cluster');
-                    if (clEl && !clEl.value) clEl.value = match.cluster;
+                    if (clEl) clEl.value = match.cluster;
                     const unEl = document.getElementById('add-unit');
-                    if (unEl && (!unEl.value || unEl.value === '%')) unEl.value = match.unit;
+                    if (unEl) unEl.value = match.unit;
                     const srcEl = document.getElementById('add-source');
-                    if (srcEl && (!srcEl.value || srcEl.value === 'BPS Kabupaten Banyuwangi')) srcEl.value = match.source;
+                    if (srcEl) srcEl.value = match.source;
                     const defEl = document.getElementById('add-definition');
-                    if (defEl && !defEl.value) defEl.value = match.definition || '';
+                    if (defEl) defEl.value = match.definition || '';
+                    document.querySelectorAll('.add-series-unit-cell').forEach(c => { c.textContent = match.unit || '%'; });
                 }
             };
             addCodeInput.addEventListener('input', handleCodeAutocomplete);
@@ -3990,6 +4439,29 @@
         if (formAdd) {
             formAdd.addEventListener('submit', function (e) {
                 e.preventDefault();
+
+                // Bersihkan baris yang sepenuhnya kosong sebelum submit
+                this.querySelectorAll('#add-series-table-body tr.series-table-row').forEach(tr => {
+                    const yrInput = tr.querySelector('input[name="series_years[]"]');
+                    const valInput = tr.querySelector('input[name="series_values[]"]');
+                    if ((!yrInput || !yrInput.value.trim()) && (!valInput || !valInput.value.trim())) {
+                        tr.remove();
+                    }
+                });
+
+                let hasIncomplete = false;
+                this.querySelectorAll('#add-series-table-body tr.series-table-row').forEach(tr => {
+                    const yrInput = tr.querySelector('input[name="series_years[]"]');
+                    const valInput = tr.querySelector('input[name="series_values[]"]');
+                    if ((!yrInput || !yrInput.value.trim()) && (valInput && valInput.value.trim())) {
+                        hasIncomplete = true;
+                    }
+                });
+                if (hasIncomplete) {
+                    alert('Mohon isi kolom Tahun pada baris yang telah diberi nilai.');
+                    return;
+                }
+
                 const fd = new FormData(this);
                 if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
                     fd.set('cluster', fd.get('cluster_custom').trim());
@@ -4033,16 +4505,49 @@
             formEdit._hasCrudBound = true;
             formEdit.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const id = document.getElementById('edit-id').value;
-                if (!id) return;
+
+                // Bersihkan baris yang sepenuhnya kosong sebelum submit
+                this.querySelectorAll('#edit-series-grid tr.series-table-row').forEach(tr => {
+                    const yrInput = tr.querySelector('input[name="series_years[]"]');
+                    const valInput = tr.querySelector('input[name="series_values[]"]');
+                    if ((!yrInput || !yrInput.value.trim()) && (!valInput || !valInput.value.trim())) {
+                        tr.remove();
+                    }
+                });
+
+                let hasIncomplete = false;
+                this.querySelectorAll('#edit-series-grid tr.series-table-row').forEach(tr => {
+                    const yrInput = tr.querySelector('input[name="series_years[]"]');
+                    const valInput = tr.querySelector('input[name="series_values[]"]');
+                    if ((!yrInput || !yrInput.value.trim()) && (valInput && valInput.value.trim())) {
+                        hasIncomplete = true;
+                    }
+                });
+                if (hasIncomplete) {
+                    alert('Mohon isi kolom Tahun pada baris yang telah diberi nilai.');
+                    return;
+                }
+
+                const code = (document.getElementById('edit-code') ? document.getElementById('edit-code').value : '').trim();
+                const id = document.getElementById('edit-id') ? document.getElementById('edit-id').value : '';
 
                 const fd = new FormData(this);
                 if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
                     fd.set('cluster', fd.get('cluster_custom').trim());
                 }
-                if (editErrBox) editErrBox.style.display = 'none';
+                if (editErrBox) { editErrBox.style.display = 'none'; editErrBox.textContent = ''; }
 
-                fetch(`${cleanSite}/database/update/${id}`, {
+                const btnSubmit = document.getElementById('modal-btn-submit-edit');
+                const origBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.textContent = 'Menyimpan Perubahan...';
+                }
+
+                // Jika memiliki kode indikator deret, simpan multi-tahun melalui update_series
+                const endpoint = code ? `${cleanSite}/database/update_series` : `${cleanSite}/database/update/${id}`;
+
+                fetch(endpoint, {
                     method: 'POST',
                     body: fd,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -4052,6 +4557,10 @@
                         if (data.status === 'success') {
                             location.reload();
                         } else {
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = origBtnHtml;
+                            }
                             if (editErrBox) {
                                 editErrBox.style.display = 'block';
                                 editErrBox.textContent = data.message || 'Gagal memperbarui data.';
@@ -4059,6 +4568,10 @@
                         }
                     })
                     .catch(() => {
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = origBtnHtml;
+                        }
                         if (editErrBox) {
                             editErrBox.style.display = 'block';
                             editErrBox.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
@@ -4067,10 +4580,445 @@
             });
         }
 
-        // Delegated Click Handler for Database Records (Edit, Delete, Restore, Hard Delete)
+        // Helper untuk Mengurutkan Baris Tahun secara Kronologis (Hanya jika semua tahun sudah terisi)
+        function sortSeriesRows(tbody) {
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('tr.series-table-row'));
+            // Jangan urutkan jika ada baris yang tahunnya masih kosong (sedang diketik manual oleh operator)
+            const hasEmpty = rows.some(r => {
+                const inp = r.querySelector('input[name="series_years[]"]');
+                return !inp || !inp.value.trim();
+            });
+            if (hasEmpty) return;
+
+            rows.sort((a, b) => {
+                const inpA = a.querySelector('input[name="series_years[]"]');
+                const inpB = b.querySelector('input[name="series_years[]"]');
+                const yA = inpA ? parseInt(inpA.value, 10) || 0 : 0;
+                const yB = inpB ? parseInt(inpB.value, 10) || 0 : 0;
+                return yA - yB;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        // Helper untuk Toggle Rincian Sub-Kategori Sektoral (A s.d. U)
+        function toggleSectoralSubRows(parentCode, event) {
+            if (typeof window.toggleIndicatorSubRows === 'function') {
+                window.toggleIndicatorSubRows(parentCode, event);
+            }
+        }
+
+        // Helper untuk Menambah Baris Tahun & Nilai pada Modal Tambah / Edit
+        function appendSeriesRow(tbody, year, value, unit, isEdit, position) {
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.className = 'series-table-row is-new-row';
+            
+            const yearVal = (year !== undefined && year !== null) ? year : '';
+            const numVal = (value !== undefined && value !== null) ? value : '';
+
+            if (isEdit) {
+                tr.innerHTML = `
+                    <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                        <input type="number" name="series_years[]" class="series-input-year" value="${yearVal}" placeholder="Tahun" min="1900" max="2100" style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
+                    </td>
+                    <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                        <span class="status-pill pill-empty">Baru</span>
+                    </td>
+                    <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${numVal}" placeholder="Masukkan nilai..." style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                    </td>
+                    <td class="series-unit-label-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap;">
+                        ${unit || '%'}
+                    </td>
+                    <td style="padding: 7px 8px; vertical-align: middle; text-align: center; border-bottom: 1px solid #edf2f7;">
+                        <button type="button" class="btn-remove-series-row icon-button small danger" title="Hapus Baris Ini" style="width:28px; height:28px; margin:0 auto; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                        <input type="number" name="series_years[]" class="series-input-year" value="${yearVal}" placeholder="Tahun" min="1900" max="2100" style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
+                    </td>
+                    <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${numVal}" placeholder="Masukkan nilai..." required style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                    </td>
+                    <td class="add-series-unit-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">
+                        ${unit || '%'}
+                    </td>
+                    <td style="padding: 7px 8px; vertical-align: middle; text-align: center; border-bottom: 1px solid #edf2f7;">
+                        <button type="button" class="btn-remove-series-row icon-button small danger" title="Hapus Baris Ini" style="width:28px; height:28px; margin:0 auto; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </td>
+                `;
+            }
+
+            const wrap = tbody.closest('.edit-series-table-wrap');
+
+            // Posisi penambahan: 'top' untuk Tahun Sebelumnya (di atas), 'bottom' untuk Tahun Sesudahnya (di bawah)
+            if (position === 'top') {
+                tbody.insertBefore(tr, tbody.firstChild);
+                if (wrap) wrap.scrollTop = 0;
+            } else {
+                tbody.appendChild(tr);
+                if (wrap) wrap.scrollTop = wrap.scrollHeight;
+            }
+
+            // Fokus ke kolom input tahun tanpa memblokir rendering DOM agar baris muncul seketika (tanpa lag)
+            requestAnimationFrame(() => {
+                const yrInput = tr.querySelector('.series-input-year');
+                if (yrInput) {
+                    yrInput.focus();
+                }
+            });
+
+            if (isEdit) {
+                const editCountEl = document.getElementById('edit-series-uploaded-count');
+                if (editCountEl) {
+                    editCountEl.textContent = `${tbody.querySelectorAll('tr').length} Tahun Terdaftar`;
+                }
+            }
+
+            return tr;
+        }
+
+        // Delegated Change Handler untuk Input Tahun agar Otomatis Mengurutkan Baris jika semua sudah terisi
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.classList.contains('series-input-year')) {
+                const tbody = e.target.closest('tbody');
+                if (tbody) {
+                    sortSeriesRows(tbody);
+                }
+            }
+        });
+
+        // Delegated Click Handler for Database Records (Edit Series, Delete, Restore, Hard Delete, Row Actions)
         if (!window._registeredDbDelegates) {
             window._registeredDbDelegates = true;
             document.addEventListener('click', function (e) {
+                // Toggle Rincian Sub-Kategori saat Kolom / Baris Indikator Ditekan
+                const parentRow = e.target.closest('tr.has-subcategories, tr[data-has-sub="true"]');
+                if (parentRow) {
+                    // Jangan toggle jika user mengklik tombol aksi edit/hapus, link, input, atau kolom aksi paling kanan
+                    if (!e.target.closest('button:not(.btn-toggle-subcategories), a, input, select, .matrix-sticky-col-last')) {
+                        const pCode = parentRow.getAttribute('data-code');
+                        if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                            window.toggleIndicatorSubRows(pCode, e);
+                            return;
+                        }
+                    }
+                }
+
+                // Tambah Tahun Sebelumnya (+ Tahun Sebelumnya): Tertambah TEPAT 1 BARIS di ATAS
+                const addPrevBtn = e.target.closest('.btn-add-year-prev');
+                if (addPrevBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const target = addPrevBtn.getAttribute('data-target');
+                    const isEdit = (target === 'edit');
+                    const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
+                    const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
+                    const unit = unitInput ? unitInput.value : '%';
+
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'top');
+                    return;
+                }
+
+                // Tambah Tahun Sesudahnya (+ Tahun Sesudahnya): Tertambah TEPAT 1 BARIS di BAWAH
+                const addNextBtn = e.target.closest('.btn-add-year-next');
+                if (addNextBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const target = addNextBtn.getAttribute('data-target');
+                    const isEdit = (target === 'edit');
+                    const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
+                    const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
+                    const unit = unitInput ? unitInput.value : '%';
+
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom');
+                    return;
+                }
+
+                // Fallback untuk selector lama jika terpanggil
+                const addBulkYearsBtn = e.target.closest('.btn-add-bulk-years, .btn-add-year-row, .btn-add-series-year');
+                if (addBulkYearsBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const target = addBulkYearsBtn.getAttribute('data-target');
+                    const isEdit = (target === 'edit');
+                    const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
+                    const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
+                    const unit = unitInput ? unitInput.value : '%';
+
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom');
+                    return;
+                }
+
+                // Hapus Baris Tahun Beserta Nilainya (Remove Row)
+                const removeRowBtn = e.target.closest('.btn-remove-series-row');
+                if (removeRowBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tr = removeRowBtn.closest('tr');
+                    if (!tr) return;
+
+                    const tbody = tr.closest('tbody');
+                    const isEdit = tbody && (tbody.id === 'edit-series-grid');
+                    const yearInput = tr.querySelector('input[name="series_years[]"]');
+                    const yrLabel = yearInput && yearInput.value ? yearInput.value : 'baris ini';
+
+                    if (confirm(`Hapus tahun ${yrLabel} beserta angkanya dari daftar?`)) {
+                        tr.remove();
+                        if (isEdit) {
+                            const editCountEl = document.getElementById('edit-series-uploaded-count');
+                            if (editCountEl && tbody) {
+                                editCountEl.textContent = `${tbody.querySelectorAll('tr').length} Tahun Terdaftar`;
+                            }
+                        } else {
+                            if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                const addUnitInput = document.getElementById('add-unit');
+                                appendSeriesRow(tbody, 2024, '', addUnitInput ? addUnitInput.value : '%', false);
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                // Edit Deret Indikator Sekaligus (Multi-year Series)
+                const editSeriesBtn = e.target.closest('.btn-edit-series');
+                if (editSeriesBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const code = editSeriesBtn.getAttribute('data-code');
+                    if (!code) return;
+
+                    if (editErrBox) { editErrBox.style.display = 'none'; editErrBox.textContent = ''; }
+                    const seriesGrid = document.getElementById('edit-series-grid');
+                    const uploadedCountEl = document.getElementById('edit-series-uploaded-count');
+                    if (seriesGrid) {
+                        seriesGrid.innerHTML = '<tr><td colspan="5" style="padding: 24px; text-align: center; color: #64748b;">Memuat data deret tahun...</td></tr>';
+                    }
+
+                    fetch(`${cleanSite}/database/get_series?code=${encodeURIComponent(code)}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(res => {
+                            if (!res.ok) throw new Error('Data deret indikator tidak ditemukan.');
+                            return res.json();
+                        })
+                        .then(res => {
+                            if (res.status === 'success' && res.data) {
+                                const d = res.data;
+                                if (document.getElementById('edit-code')) document.getElementById('edit-code').value = d.code;
+                                const codeDisp = document.getElementById('edit-code-display');
+                                if (codeDisp) codeDisp.value = d.code;
+                                if (document.getElementById('edit-indicator')) document.getElementById('edit-indicator').value = d.indicator || '';
+                                
+                                const editClusterEl = document.getElementById('edit-cluster');
+                                if (editClusterEl) editClusterEl.value = (d.cluster || '').trim();
+
+                                if (document.getElementById('edit-region')) document.getElementById('edit-region').value = d.region || 'Kabupaten Banyuwangi';
+                                const regionLabel = document.getElementById('edit-region-label');
+                                if (regionLabel) regionLabel.textContent = d.region || 'Kabupaten Banyuwangi';
+
+                                if (document.getElementById('edit-kode-wilayah')) {
+                                    document.getElementById('edit-kode-wilayah').value = d.kode_wilayah || '35.10';
+                                }
+                                if (document.getElementById('edit-unit')) document.getElementById('edit-unit').value = d.unit || '%';
+                                if (document.getElementById('edit-source')) document.getElementById('edit-source').value = d.source || '';
+                                const editDefEl = document.getElementById('edit-definition');
+                                if (editDefEl) {
+                                    editDefEl.value = d.definition || '';
+                                }
+
+                                if (uploadedCountEl) {
+                                    uploadedCountEl.textContent = `${d.uploaded_count || 0} dari ${d.total_years || 10} Tahun Ter-upload`;
+                                }
+
+                                // Render Tabel Input Deret Tahun (Tersusun ke Bawah dengan Input Tahun & Tombol Hapus)
+                                if (seriesGrid && Array.isArray(d.years)) {
+                                    let rowsHtml = '';
+                                    d.years.forEach(item => {
+                                        const hasData = item.has_data;
+                                        const valStr = (hasData && item.value !== null && item.value !== undefined) ? item.value : '';
+                                        const stLabel = hasData ? (item.status || 'Tervalidasi') : 'Baru';
+                                        const isWarning = item.status === 'Perlu review' || item.status === 'Ditolak';
+
+                                        rowsHtml += `
+                                            <tr class="series-table-row ${hasData ? 'has-data' : 'is-empty'}">
+                                                <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                                                    <input type="number" name="series_years[]" class="series-input-year" value="${item.year}" min="1900" max="2100" required style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
+                                                </td>
+                                                <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                                                    <span class="status-pill ${hasData ? (isWarning ? 'pill-warning' : 'pill-success') : 'pill-empty'}">
+                                                        ${stLabel}
+                                                    </span>
+                                                </td>
+                                                <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
+                                                    <div class="series-input-wrap">
+                                                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${valStr}" placeholder="Masukkan nilai..." title="Nilai realisasi ${d.indicator} tahun ${item.year}">
+                                                    </div>
+                                                </td>
+                                                <td class="series-unit-label-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap;">
+                                                    ${d.unit || '%'}
+                                                </td>
+                                                <td style="padding: 7px 8px; vertical-align: middle; text-align: center; border-bottom: 1px solid #edf2f7;">
+                                                    <button type="button" class="btn-remove-series-row icon-button small danger" title="Hapus Tahun ${item.year} Beserta Nilainya" style="width:28px; height:28px; margin:0 auto; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5;">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    });
+                                    seriesGrid.innerHTML = rowsHtml;
+                                }
+
+                                if (editModal) editModal.style.display = 'grid';
+                            } else {
+                                alert(res.message || 'Gagal memuat deret data indikator.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Gagal mengambil data indikator untuk diedit.');
+                        });
+                    return;
+                }
+
+                // Soft Delete Seluruh Data Indikator (Series)
+                const delSeriesBtn = e.target.closest('.btn-delete-series');
+                if (delSeriesBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const code = delSeriesBtn.getAttribute('data-code');
+                    const indicator = delSeriesBtn.getAttribute('data-indicator') || code;
+                    if (!code) return;
+                    if (confirm(`Pindahkan seluruh data indikator "${indicator}" (${code}) ke tempat sampah (Soft Delete)?\n\nSeluruh data tahunan indikator ini akan dipindahkan ke tempat sampah dan dapat dipulihkan sewaktu-waktu.`)) {
+                        const fd = new FormData();
+                        fd.append('code', code);
+                        fetch(`${cleanSite}/database/soft_delete_series`, {
+                            method: 'POST',
+                            body: fd,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memproses soft delete.');
+                                }
+                            })
+                            .catch(() => {
+                                location.reload();
+                            });
+                    }
+                    return;
+                }
+
+                // Restore Seluruh Data Indikator (Series)
+                const resSeriesBtn = e.target.closest('.btn-restore-series');
+                if (resSeriesBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const code = resSeriesBtn.getAttribute('data-code');
+                    const indicator = resSeriesBtn.getAttribute('data-indicator') || code;
+                    if (!code) return;
+                    if (confirm(`Pulihkan seluruh data indikator "${indicator}" (${code}) kembali ke daftar aktif?`)) {
+                        const fd = new FormData();
+                        fd.append('code', code);
+                        fetch(`${cleanSite}/database/restore_series`, {
+                            method: 'POST',
+                            body: fd,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal memulihkan data.');
+                                }
+                            })
+                            .catch(() => {
+                                location.reload();
+                            });
+                    }
+                    return;
+                }
+
+                // Hard Delete Seluruh Data Indikator (Series)
+                const hardSeriesBtn = e.target.closest('.btn-hard-delete-series');
+                if (hardSeriesBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const code = hardSeriesBtn.getAttribute('data-code');
+                    const indicator = hardSeriesBtn.getAttribute('data-indicator') || code;
+                    if (!code) return;
+                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN seluruh rekaman data "${indicator}" (${code})?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
+                        const fd = new FormData();
+                        fd.append('code', code);
+                        fetch(`${cleanSite}/database/hard_delete_series`, {
+                            method: 'POST',
+                            body: fd,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert(data.message || 'Gagal menghapus data secara permanen.');
+                                }
+                            })
+                            .catch(() => {
+                                location.reload();
+                            });
+                    }
+                    return;
+                }
+
+                // Quick Add for specific indicator code and year
+                const quickAddBtn = e.target.closest('.btn-quick-add-year');
+                if (quickAddBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const code = quickAddBtn.getAttribute('data-code');
+                    const yr = quickAddBtn.getAttribute('data-year');
+                    
+                    if (btnOpenModal) {
+                        btnOpenModal.click();
+                    }
+                    
+                    setTimeout(() => {
+                        if (code) {
+                            const addCodeEl = document.getElementById('add-code');
+                            if (addCodeEl) {
+                                addCodeEl.value = code;
+                                addCodeEl.dispatchEvent(new Event('input'));
+                                addCodeEl.dispatchEvent(new Event('change'));
+                            }
+                            const addMasterSelect = document.getElementById('add-indicator-master-select');
+                            if (addMasterSelect) {
+                                addMasterSelect.value = code;
+                                addMasterSelect.dispatchEvent(new Event('change'));
+                            }
+                        }
+                        if (yr) {
+                            const addYrEl = document.getElementById('add-year');
+                            if (addYrEl) {
+                                addYrEl.value = yr;
+                            }
+                        }
+                        const valEl = document.getElementById('add-value');
+                        if (valEl) valEl.focus();
+                    }, 120);
+                    return;
+                }
+
                 // Edit
                 const editBtn = e.target.closest('.btn-edit-record');
                 if (editBtn) {
@@ -4232,10 +5180,527 @@
 
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {
-                downloadCSV('database-ekonomi-banyuwangi.csv', [
-                    ['Kode', 'Indikator', 'Klaster', 'Definisi Operasional', 'Wilayah', 'Periode', 'Tahun', 'Nilai', 'Satuan', 'Sumber', 'Status'],
-                    ...AppState.records.map(r => [r.code, r.indicator, r.cluster, r.definition || r.definisi_operasional || '', r.region, r.period, r.year, r.value, r.unit, r.source, r.status])
-                ]);
+                const matrixTable = document.getElementById('admin-matrix-table');
+                if (matrixTable) {
+                    const rows = [];
+                    const headerRow = [];
+                    matrixTable.querySelectorAll('thead tr th').forEach((th, idx) => {
+                        // Skip last column (Aksi)
+                        if (idx < matrixTable.querySelectorAll('thead tr th').length - 1) {
+                            headerRow.push(th.textContent.trim().replace(/\s+/g, ' '));
+                        }
+                    });
+                    rows.push(headerRow);
+
+                    matrixTable.querySelectorAll('tbody tr.matrix-row').forEach(tr => {
+                        if (tr.style.display === 'none') return;
+                        const row = [];
+                        const tds = tr.querySelectorAll('td');
+                        for (let i = 0; i < tds.length - 1; i++) {
+                            const td = tds[i];
+                            const numEl = td.querySelector('.matrix-val-text');
+                            if (numEl) {
+                                row.push(numEl.textContent.trim());
+                            } else if (td.querySelector('.matrix-dash')) {
+                                row.push('');
+                            } else {
+                                const strong = td.querySelector('strong');
+                                if (strong) {
+                                    row.push(strong.textContent.trim());
+                                } else {
+                                    row.push(td.textContent.trim().replace(/\s+/g, ' '));
+                                }
+                            }
+                        }
+                        rows.push(row);
+                    });
+                    downloadCSV('database-ekonomi-tahunan.csv', rows);
+                } else {
+                    downloadCSV('database-ekonomi-banyuwangi.csv', [
+                        ['Kode', 'Indikator', 'Klaster', 'Definisi Operasional', 'Wilayah', 'Periode', 'Tahun', 'Nilai', 'Satuan', 'Sumber', 'Status'],
+                        ...AppState.records.map(r => [r.code, r.indicator, r.cluster, r.definition || r.definisi_operasional || '', r.region, r.period, r.year, r.value, r.unit, r.source, r.status])
+                    ]);
+                }
+            });
+        }
+
+        // ==========================================
+        // FITUR PDRB SEKTORAL (17 LAPANGAN USAHA BPS)
+        // ==========================================
+        const modalSectoral = document.getElementById('modal-sectoral-matrix');
+        const btnOpenSectoral = document.getElementById('btn-open-sectoral-modal');
+        const btnCloseSectoral = document.getElementById('modal-btn-close-sectoral');
+        const btnCancelSectoral = document.getElementById('modal-btn-cancel-sectoral');
+        const btnSaveSectoral = document.getElementById('modal-btn-save-sectoral');
+        const btnSecAddPrev = document.getElementById('btn-sec-add-prev-year');
+        const btnSecAddNext = document.getElementById('btn-sec-add-next-year');
+        const secThead = document.getElementById('sectoral-matrix-thead');
+        const secTbody = document.getElementById('sectoral-matrix-tbody');
+        const secMsgBox = document.getElementById('sec-modal-msg');
+
+        let sectoralState = {
+            years: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+            definitions: {},
+            values: {},
+            kode_wilayah: '35.10',
+            parent_code: 'EKO-003',
+            category_type: 'sectoral',
+            unit: 'Miliar rupiah',
+            can_auto_sum: true
+        };
+
+        function closeSectoralModal() {
+            if (modalSectoral) modalSectoral.style.display = 'none';
+        }
+
+        if (btnCloseSectoral) btnCloseSectoral.addEventListener('click', closeSectoralModal);
+        if (btnCancelSectoral) btnCancelSectoral.addEventListener('click', closeSectoralModal);
+        if (modalSectoral) {
+            modalSectoral.addEventListener('click', e => {
+                if (e.target === modalSectoral) closeSectoralModal();
+            });
+        }
+
+        // Live auto-calculation untuk kategori yang dapat dijumlahkan (Total PDRB / Total Pengeluaran)
+        function calculateSectoralTotals() {
+            if (!sectoralState.years || !Array.isArray(sectoralState.years)) return;
+            if (!sectoralState.can_auto_sum) return; // e.g. Laju pertumbuhan (EKO-006) tidak dijumlahkan langsung
+
+            const isExp = (sectoralState.category_type === 'expenditure');
+            const keysToSum = isExp
+                ? ['1', '2', '3', '4', '5', '6']
+                : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'MN', 'O', 'P', 'Q', 'RSTU'];
+
+            sectoralState.years.forEach(yr => {
+                let sum = 0;
+                let hasAnyVal = false;
+                keysToSum.forEach(k => {
+                    const input = document.querySelector(`.sec-val-input[data-cat="${k}"][data-year="${yr}"]`);
+                    if (input && input.value !== '') {
+                        const v = parseFloat(input.value);
+                        if (!isNaN(v)) {
+                            sum += v;
+                            hasAnyVal = true;
+                        }
+                    }
+                });
+
+                const totalInput = document.querySelector(`.sec-val-input[data-cat="TOTAL"][data-year="${yr}"]`);
+                if (totalInput && hasAnyVal) {
+                    totalInput.value = (Math.round(sum * 100) / 100).toFixed(2);
+                }
+            });
+        }
+
+        function renderSectoralTable() {
+            if (!secThead || !secTbody) return;
+            const years = sectoralState.years;
+            const defs = sectoralState.definitions;
+            const vals = sectoralState.values;
+            const isExp = (sectoralState.category_type === 'expenditure');
+
+            const col1Title = isExp ? 'Komponen' : 'Kategori';
+            const col2Title = isExp ? 'Komponen Pengeluaran' : 'Lapangan Usaha';
+
+            const escapeAttr = function (str) {
+                if (!str) return '';
+                return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            };
+
+            // Render Header
+            let theadHtml = `
+                <tr>
+                    <th style="min-width:65px; width:75px; position:sticky; left:0; background:#f1f5f9; z-index:11; padding:8px 10px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:4px;" title="Kode/Simbol Kategori (Dapat Diubah)">
+                            <span>${col1Title}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </div>
+                    </th>
+                    <th style="min-width:270px; max-width:320px; position:sticky; left:75px; background:#f1f5f9; z-index:11; padding:8px 12px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1.5px solid #cbd5e1; text-align:left;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;" title="Nama Lapangan Usaha / Komponen (Dapat Diubah)">
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span>${col2Title}</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </div>
+                            <span style="font-size:9.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:1px 6px; border-radius:4px;">Dapat Diubah</span>
+                        </div>
+                    </th>`;
+
+            years.forEach(yr => {
+                theadHtml += `
+                    <th style="min-width:115px; padding:8px 8px; font-weight:800; font-size:12px; color:#1e293b; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:center; background:#f8fafc;">
+                        <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                            <span>${yr}</span>
+                            <button type="button" class="btn-sec-del-year" data-year="${yr}" title="Hapus Kolom Tahun ${yr}" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:13px; line-height:1; padding:1px 3px; border-radius:3px;">&times;</button>
+                        </div>
+                    </th>`;
+            });
+            theadHtml += `</tr>`;
+            secThead.innerHTML = theadHtml;
+
+            // Render Body
+            let tbodyHtml = '';
+            const defKeys = Object.keys(defs);
+
+            defKeys.forEach(k => {
+                const item = defs[k];
+                const isTotal = (k === 'TOTAL');
+                const isTanpaMigas = (k === 'TM');
+                const rowBg = isTotal ? '#f0fdf4' : (isTanpaMigas ? '#f8fafc' : '#ffffff');
+                const codeBg = isTotal ? '#dcfce7' : (isTanpaMigas ? '#f1f5f9' : '#ffffff');
+                const rowWeight = (isTotal || isTanpaMigas) ? '800' : '600';
+                const textColor = isTotal ? '#15803d' : '#0f172a';
+
+                tbodyHtml += `<tr style="background:${rowBg};">`;
+
+                // Col 1: Kategori / Komponen (Dapat Diubah)
+                tbodyHtml += `
+                    <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:5px 6px; font-weight:800; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:center; vertical-align:middle;">
+                        ${isTotal 
+                            ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL</span>' 
+                            : `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
+                        }
+                    </td>`;
+
+                // Col 2: Nama Lapangan Usaha / Komponen (Dapat Diubah)
+                const safeName = escapeAttr(item.short_name || item.name || '');
+                tbodyHtml += `
+                    <td style="position:sticky; left:75px; background:${codeBg}; z-index:9; padding:5px 8px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:1.5px solid #cbd5e1; vertical-align:middle;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid ${isTotal ? '#86efac' : '#cbd5e1'}; border-radius:5px; background:${isTotal ? '#f0fdf4' : '#ffffff'}; color:${textColor}; outline:none;" title="Ubah Nama Lapangan Usaha / Komponen">
+                            ${item.is_custom ? `<button type="button" class="btn-sec-del-cat-row icon-button small danger" data-cat="${k}" title="Hapus Baris Kategori Ini" style="width:26px; height:26px; min-width:26px; padding:0; display:flex; align-items:center; justify-content:center; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; cursor:pointer;">&times;</button>` : ''}
+                        </div>
+                    </td>`;
+
+                // Year Input Columns
+                years.forEach(yr => {
+                    const existingVal = (vals[item.code] && vals[item.code][yr] !== undefined) ? vals[item.code][yr] : '';
+                    tbodyHtml += `
+                        <td style="padding:5px 6px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:right; vertical-align:middle; background:${rowBg};">
+                            <input type="number" step="any" class="sec-val-input" data-cat="${k}" data-code="${item.code}" data-year="${yr}" value="${existingVal}" placeholder="-" style="width:100%; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid ${isTotal ? '#86efac' : '#cbd5e1'}; border-radius:5px; text-align:right; background:#ffffff; color:${textColor};">
+                        </td>`;
+                });
+
+                tbodyHtml += `</tr>`;
+            });
+
+            secTbody.innerHTML = tbodyHtml;
+
+            // Recalculate totals
+            calculateSectoralTotals();
+        }
+
+        function loadSectoralMatrix() {
+            const pCode = sectoralState.parent_code || 'EKO-003';
+            const wil = sectoralState.kode_wilayah || '35.10';
+            if (secMsgBox) { secMsgBox.innerHTML = `<span style="color:#0284c7;">Memuat data matriks ${pCode}...</span>`; }
+
+            fetch(`${cleanSite}/database/get_sectoral_matrix?kode_wilayah=${encodeURIComponent(wil)}&parent_code=${encodeURIComponent(pCode)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success' && res.data) {
+                        sectoralState.years = res.data.years || [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+                        sectoralState.definitions = res.data.definitions || {};
+                        sectoralState.values = res.data.values || {};
+                        sectoralState.kode_wilayah = res.data.kode_wilayah || wil;
+                        sectoralState.parent_code = res.data.parent_code || pCode;
+                        sectoralState.unit = res.data.unit || 'Miliar rupiah';
+                        sectoralState.category_type = res.data.category_type || 'sectoral';
+                        sectoralState.can_auto_sum = (res.data.can_auto_sum !== false);
+
+                        // Update header badges & labels
+                        const unitBadge = document.getElementById('sec-modal-unit-badge');
+                        if (unitBadge) unitBadge.textContent = sectoralState.unit;
+
+                        const badgeEl = document.getElementById('sec-modal-badge');
+                        const titleEl = document.getElementById('sec-modal-title');
+                        const descEl = document.getElementById('sec-modal-desc');
+                        const helpEl = document.getElementById('sec-modal-help-text');
+                        const catSwitcher = document.getElementById('sec-select-indicator-category');
+                        if (catSwitcher && catSwitcher.value !== sectoralState.parent_code) {
+                            catSwitcher.value = sectoralState.parent_code;
+                        }
+
+                        const isExp = (sectoralState.category_type === 'expenditure');
+                        if (badgeEl) badgeEl.textContent = isExp ? 'PENGELUARAN PDRB • STANDAR BPS' : 'SEKTORAL PDRB • STANDAR BPS';
+                        if (titleEl) {
+                            let tText = 'Input & Kelola PDRB Sektoral (17 Lapangan Usaha)';
+                            if (pCode === 'EKO-004') tText = 'Input & Kelola PDRB ADHK Sektoral (17 Lapangan Usaha)';
+                            else if (pCode === 'EKO-006') tText = 'Input & Kelola Laju Pertumbuhan PDRB Sektoral (17 Lapangan Usaha)';
+                            else if (pCode === 'EKO-007') tText = 'Input & Kelola Distribusi / Share Sektoral (17 Lapangan Usaha)';
+                            else if (pCode === 'EKO-015') tText = 'Input & Kelola PDRB Pengeluaran ADHB (6 Komponen)';
+                            else if (pCode === 'EKO-016') tText = 'Input & Kelola PDRB Pengeluaran ADHK (6 Komponen)';
+                            titleEl.textContent = tText;
+                        }
+                        if (descEl) {
+                            descEl.textContent = isExp
+                                ? 'Kelola nilai realisasi seluruh komponen pengeluaran PDRB per tahun dalam satu tabel matriks spreadsheet.'
+                                : 'Kelola nilai realisasi seluruh 17 sektor ekonomi per tahun sekaligus dalam satu tabel matriks (Kategori A s.d. U).';
+                        }
+                        if (helpEl) {
+                            helpEl.innerHTML = sectoralState.can_auto_sum
+                                ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Total otomatis terhitung real-time saat Anda mengetik nilai`
+                                : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Pertumbuhan per sektor diinput manual dalam satuan persen (%)`;
+                        }
+
+                        renderSectoralTable();
+                        if (secMsgBox) { secMsgBox.innerHTML = `<span style="color:#16a34a;">Data matriks ${sectoralState.parent_code} siap dikelola.</span>`; }
+                    } else {
+                        if (secMsgBox) { secMsgBox.innerHTML = '<span style="color:#dc2626;">Gagal memuat data matriks.</span>'; }
+                    }
+                })
+                .catch(() => {
+                    if (secMsgBox) { secMsgBox.innerHTML = '<span style="color:#dc2626;">Koneksi gagal saat mengambil data.</span>'; }
+                });
+        }
+
+        // Switcher dropdown pilihan kategori di toolbar modal spreadsheet
+        const catSwitcher = document.getElementById('sec-select-indicator-category');
+        if (catSwitcher) {
+            catSwitcher.addEventListener('change', function () {
+                sectoralState.parent_code = this.value;
+                const pInput = document.getElementById('sec-form-parent-code');
+                if (pInput) pInput.value = this.value;
+                loadSectoralMatrix();
+            });
+        }
+
+        function openSectoralModal(parentCode) {
+            if (!modalSectoral) return;
+            if (parentCode) {
+                sectoralState.parent_code = parentCode;
+                const catSwitcher = document.getElementById('sec-select-indicator-category');
+                if (catSwitcher) catSwitcher.value = parentCode;
+                const pInput = document.getElementById('sec-form-parent-code');
+                if (pInput) pInput.value = parentCode;
+            }
+            modalSectoral.style.display = 'flex';
+            loadSectoralMatrix();
+        }
+
+        if (btnOpenSectoral) btnOpenSectoral.addEventListener('click', () => openSectoralModal('EKO-003'));
+
+        // Open from row shortcut button
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.btn-open-sectoral-from-row');
+            if (btn) {
+                e.preventDefault();
+                const pCode = btn.getAttribute('data-parent') || 'EKO-003';
+                openSectoralModal(pCode);
+            }
+        });
+
+        // Live calculation and state preservation on input change
+        if (secTbody) {
+            secTbody.addEventListener('input', e => {
+                if (e.target.classList.contains('sec-val-input')) {
+                    const code = e.target.getAttribute('data-code');
+                    const yr = parseInt(e.target.getAttribute('data-year'), 10);
+                    if (code && yr) {
+                        if (!sectoralState.values[code]) sectoralState.values[code] = {};
+                        sectoralState.values[code][yr] = e.target.value !== '' ? parseFloat(e.target.value) : '';
+                    }
+                    calculateSectoralTotals();
+                } else if (e.target.classList.contains('sec-name-input')) {
+                    const cat = e.target.getAttribute('data-cat');
+                    if (cat && sectoralState.definitions[cat]) {
+                        sectoralState.definitions[cat].name = e.target.value;
+                        sectoralState.definitions[cat].short_name = e.target.value;
+                    }
+                } else if (e.target.classList.contains('sec-cat-label-input')) {
+                    const cat = e.target.getAttribute('data-cat');
+                    if (cat && sectoralState.definitions[cat]) {
+                        sectoralState.definitions[cat].cat_label = e.target.value;
+                    }
+                }
+            });
+
+            // Hapus Baris Kategori Kustom
+            secTbody.addEventListener('click', e => {
+                const delCatBtn = e.target.closest('.btn-sec-del-cat-row');
+                if (delCatBtn) {
+                    e.preventDefault();
+                    const cat = delCatBtn.getAttribute('data-cat');
+                    if (cat && sectoralState.definitions[cat]) {
+                        if (confirm(`Hapus baris kategori ini dari tabel matriks?`)) {
+                            delete sectoralState.definitions[cat];
+                            if (sectoralState.values) {
+                                delete sectoralState.values[cat];
+                            }
+                            renderSectoralTable();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Tambah Baris Kategori Baru (Dapat Diubah)
+        const btnSecAddCatRow = document.getElementById('btn-sec-add-cat-row');
+        if (btnSecAddCatRow) {
+            btnSecAddCatRow.addEventListener('click', () => {
+                const parentCode = sectoralState.parent_code || 'EKO-003';
+                const customCount = Object.keys(sectoralState.definitions).filter(k => sectoralState.definitions[k].is_custom).length + 1;
+                const newKey = `CUSTOM_${Date.now()}`;
+                const defaultLabel = `KUST_${customCount}`;
+                const newCode = `${parentCode}.${defaultLabel}`;
+
+                const newDefs = {};
+                let inserted = false;
+                Object.keys(sectoralState.definitions).forEach(k => {
+                    if (k === 'TOTAL' && !inserted) {
+                        newDefs[newKey] = {
+                            code: newCode,
+                            cat_label: '',
+                            name: '',
+                            short_name: '',
+                            def: `Rincian Kategori Tambahan ${customCount}`,
+                            is_custom: true
+                        };
+                        inserted = true;
+                    }
+                    newDefs[k] = sectoralState.definitions[k];
+                });
+                if (!inserted) {
+                    newDefs[newKey] = {
+                        code: newCode,
+                        cat_label: '',
+                        name: '',
+                        short_name: '',
+                        def: `Rincian Kategori Tambahan ${customCount}`,
+                        is_custom: true
+                    };
+                }
+
+                sectoralState.definitions = newDefs;
+                renderSectoralTable();
+
+                // Auto fokus ke input Kategori pada baris baru
+                requestAnimationFrame(() => {
+                    const newCatInput = secTbody.querySelector(`.sec-cat-label-input[data-cat="${newKey}"]`);
+                    if (newCatInput) {
+                        newCatInput.focus();
+                    }
+                });
+            });
+        }
+
+        // Add Previous Year button (Adds column to the left)
+        if (btnSecAddPrev) {
+            btnSecAddPrev.addEventListener('click', () => {
+                const currentYears = sectoralState.years;
+                const minYear = currentYears.length > 0 ? Math.min(...currentYears) : 2018;
+                const newYear = minYear - 1;
+                if (!currentYears.includes(newYear)) {
+                    currentYears.unshift(newYear);
+                    currentYears.sort((a, b) => a - b);
+                    renderSectoralTable();
+                }
+            });
+        }
+
+        // Add Next Year button (Adds column to the right)
+        if (btnSecAddNext) {
+            btnSecAddNext.addEventListener('click', () => {
+                const currentYears = sectoralState.years;
+                const maxYear = currentYears.length > 0 ? Math.max(...currentYears) : 2025;
+                const newYear = maxYear + 1;
+                if (!currentYears.includes(newYear)) {
+                    currentYears.push(newYear);
+                    currentYears.sort((a, b) => a - b);
+                    renderSectoralTable();
+                }
+            });
+        }
+
+        // Delete Column Year button
+        if (secThead) {
+            secThead.addEventListener('click', e => {
+                const delBtn = e.target.closest('.btn-sec-del-year');
+                if (delBtn) {
+                    const yr = parseInt(delBtn.getAttribute('data-year'), 10);
+                    if (confirm(`Hapus kolom tahun ${yr} dari tabel matriks ini?`)) {
+                        sectoralState.years = sectoralState.years.filter(y => y !== yr);
+                        renderSectoralTable();
+                    }
+                }
+            });
+        }
+
+        // Save All Sectoral Data Button
+        if (btnSaveSectoral) {
+            btnSaveSectoral.addEventListener('click', () => {
+                const matrix = {};
+                const years = sectoralState.years;
+
+                document.querySelectorAll('.sec-val-input').forEach(inp => {
+                    const cat = inp.getAttribute('data-cat');
+                    const yr = parseInt(inp.getAttribute('data-year'), 10);
+                    const val = inp.value;
+                    if (!matrix[cat]) matrix[cat] = {};
+                    if (val !== '' && val !== null) {
+                        matrix[cat][yr] = parseFloat(val);
+                    }
+                });
+
+                if (secMsgBox) { secMsgBox.innerHTML = '<span style="color:#0284c7;">Menyimpan seluruh data matriks ke database...</span>'; }
+                btnSaveSectoral.disabled = true;
+
+                const formData = new FormData();
+                formData.append('kode_wilayah', sectoralState.kode_wilayah);
+                formData.append('parent_code', sectoralState.parent_code || 'EKO-003');
+                years.forEach((yr, idx) => {
+                    formData.append(`years[${idx}]`, yr);
+                });
+
+                // Kumpulkan nama Lapangan Usaha dan label Kategori yang diedit
+                const names = {};
+                const catLabels = {};
+                document.querySelectorAll('.sec-name-input').forEach(inp => {
+                    const cat = inp.getAttribute('data-cat');
+                    if (cat) names[cat] = inp.value.trim();
+                });
+                document.querySelectorAll('.sec-cat-label-input').forEach(inp => {
+                    const cat = inp.getAttribute('data-cat');
+                    if (cat) catLabels[cat] = inp.value.trim();
+                });
+
+                Object.keys(names).forEach(cat => {
+                    formData.append(`names[${cat}]`, names[cat]);
+                });
+                Object.keys(catLabels).forEach(cat => {
+                    formData.append(`cat_labels[${cat}]`, catLabels[cat]);
+                });
+
+                Object.keys(matrix).forEach(cat => {
+                    Object.keys(matrix[cat]).forEach(yr => {
+                        formData.append(`matrix[${cat}][${yr}]`, matrix[cat][yr]);
+                    });
+                });
+
+                fetch(`${cleanSite}/database/save_sectoral_matrix`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        btnSaveSectoral.disabled = false;
+                        if (data.status === 'success') {
+                            if (secMsgBox) { secMsgBox.innerHTML = `<span style="color:#16a34a;">${data.message || 'Berhasil disimpan!'}</span>`; }
+                            setTimeout(() => {
+                                closeSectoralModal();
+                                location.reload();
+                            }, 800);
+                        } else {
+                            if (secMsgBox) { secMsgBox.innerHTML = `<span style="color:#dc2626;">${data.message || 'Gagal menyimpan data.'}</span>`; }
+                        }
+                    })
+                    .catch(() => {
+                        btnSaveSectoral.disabled = false;
+                        if (secMsgBox) { secMsgBox.innerHTML = '<span style="color:#dc2626;">Koneksi gagal saat menyimpan data.</span>'; }
+                    });
             });
         }
     }
@@ -4362,7 +5827,8 @@
             const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'status';
             const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
             const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
-            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}`;
+            const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : '';
+            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
         }
 
         if (searchInput) {
@@ -4375,9 +5841,28 @@
         if (filterCluster) filterCluster.addEventListener('change', reloadValidationFiltered);
         if (filterYear) filterYear.addEventListener('change', reloadValidationFiltered);
 
+        // Toggle Rincian Sub-Indikator saat Baris Indikator di Halaman Validasi Diklik
+        const valTableBody = document.getElementById('validation-table-body');
+        if (valTableBody) {
+            valTableBody.addEventListener('click', function (e) {
+                const parentRow = e.target.closest('tr.matrix-row.has-subcategories, tr[data-has-sub="true"]');
+                if (parentRow) {
+                    // Jangan toggle jika user mengklik tombol centang/silang/setujui, link, input, atau kolom aksi paling kanan
+                    if (!e.target.closest('button:not(.btn-toggle-subcategories), a, input, select, .matrix-sticky-col-last')) {
+                        const pCode = parentRow.getAttribute('data-code');
+                        if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                            window.toggleIndicatorSubRows(pCode, e);
+                        }
+                    }
+                }
+            });
+        }
+
         // 1. Approve (Centang / ctg) - Langsung setujui tanpa popup alert / confirm
         document.querySelectorAll('.btn-verify-record').forEach(btn => {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const code = this.getAttribute('data-code');
                 const year = this.getAttribute('data-year');
                 const status = this.getAttribute('data-status') || 'Tervalidasi';
@@ -4400,6 +5885,42 @@
                             self.disabled = false;
                             self.style.opacity = '1';
                             alert(res.message || 'Gagal menyetujui validasi data.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        self.disabled = false;
+                        self.style.opacity = '1';
+                    });
+            });
+        });
+
+        // 1b. Approve Seluruh Tahun (Setujui Semua) untuk satu Indikator
+        document.querySelectorAll('.btn-verify-series').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const code = this.getAttribute('data-code');
+                const indicator = this.getAttribute('data-indicator') || code;
+                if (!code) return;
+
+                const self = this;
+                self.disabled = true;
+                self.style.opacity = '0.6';
+
+                const fd = new FormData();
+                fd.append('code', code);
+                fd.append('status', 'Tervalidasi');
+
+                fetch(`${cleanSite}/api/update_series_status`, { method: 'POST', body: fd })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            location.reload();
+                        } else {
+                            self.disabled = false;
+                            self.style.opacity = '1';
+                            alert(res.message || 'Gagal menyetujui seluruh data indikator.');
                         }
                     })
                     .catch(err => {
@@ -4439,7 +5960,9 @@
         }
 
         document.querySelectorAll('.btn-reject-record').forEach(btn => {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const code = this.getAttribute('data-code') || '';
                 const year = this.getAttribute('data-year') || '';
                 const indicator = this.getAttribute('data-indicator') || '';
@@ -4566,6 +6089,31 @@
             const badgeCls = (st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success');
             badge.className = badgeCls;
             badge.textContent = st;
+        }
+
+        // Toggle Sub-Indikator Sektoral saat Baris / Tombol Indikator di Manajemen EWS Diklik
+        const thTableBody = document.getElementById('threshold-admin-rows');
+        if (thTableBody) {
+            thTableBody.addEventListener('click', function (e) {
+                const toggleBtn = e.target.closest('.btn-toggle-subcategories');
+                if (toggleBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const pCode = toggleBtn.getAttribute('data-parent') || (toggleBtn.closest('[data-code]') ? toggleBtn.closest('[data-code]').getAttribute('data-code') : '');
+                    if (pCode && typeof window.toggleIndicatorSubRows === 'function') {
+                        window.toggleIndicatorSubRows(pCode, e);
+                    }
+                    return;
+                }
+                if (e.target.closest('input, select, a, button:not(.btn-toggle-subcategories)')) return;
+                const row = e.target.closest('tr.threshold-admin-row:not(.matrix-sub-row)');
+                if (row && row.getAttribute('data-has-sub') === 'true') {
+                    const code = row.getAttribute('data-code');
+                    if (code && typeof window.toggleIndicatorSubRows === 'function') {
+                        toggleIndicatorSubRows(code, e);
+                    }
+                }
+            });
         }
 
         document.querySelectorAll('.threshold-admin-row').forEach(row => {

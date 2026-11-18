@@ -133,6 +133,23 @@ class Api extends CI_Controller {
         $this->json_response(array('status' => 'success', 'message' => 'Status data berhasil diperbarui.'));
     }
 
+    public function update_series_status() {
+        $code = $this->input->post('code');
+        $status = $this->input->post('status') ?: 'Tervalidasi';
+        $notes = $this->input->post('notes');
+
+        if (!in_array($status, array('Tervalidasi', 'Perlu review', 'Belum lengkap', 'Ditolak'))) {
+            $this->json_response(array('status' => 'error', 'message' => 'Status tidak valid.'), 400);
+            return;
+        }
+
+        $user = $this->session->userdata('user');
+        $verifier = !empty($user['nama_lengkap']) ? $user['nama_lengkap'] : (!empty($user['name']) ? $user['name'] : 'Admin Verifikator');
+
+        $this->M_economy->update_series_status($code, $status, $notes, $verifier);
+        $this->json_response(array('status' => 'success', 'message' => 'Seluruh tahun untuk indikator ini berhasil divalidasi.'));
+    }
+
     public function import_csv() {
         // Accepts JSON payload of preview rows or raw CSV
         $rows = json_decode($this->input->raw_input_stream, true);

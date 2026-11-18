@@ -6,10 +6,12 @@ class Database extends MY_Controller {
     public function index() {
         $status = $this->input->get('status');
         $query = $this->input->get('q');
-        $sort = $this->input->get('sort') ?: 'year';
+        $sort = $this->input->get('sort') ?: 'code';
         $cluster = $this->input->get('cluster');
         $year = $this->input->get('year');
         $selected_year = ($year && is_numeric($year)) ? (int)$year : null;
+        $category = $this->input->get('category') ?: $this->input->get('prefix');
+        $selected_category = $category ? strtoupper(trim($category)) : null;
 
         $records = $this->M_economy->get_indicator_records($status, $query, $sort, $selected_year, null, $cluster);
         $trash_count = $this->M_economy->count_trash_records();
@@ -30,6 +32,8 @@ class Database extends MY_Controller {
             'sort' => $sort,
             'cluster' => $cluster,
             'selected_cluster' => $cluster,
+            'category' => $selected_category,
+            'selected_category' => $selected_category,
             'year' => $year,
             'selected_year' => $selected_year,
             'available_years' => $available_years,
@@ -56,6 +60,194 @@ class Database extends MY_Controller {
                 ->set_content_type('application/json')
                 ->set_output(json_encode(array('status' => 'error', 'message' => 'Data tidak ditemukan.')));
         }
+    }
+
+    // Mendapatkan seluruh deret data tahunan untuk 1 indikator (Multi-year series JSON)
+    public function get_series($code = null) {
+        $code = $code ?: $this->input->get('code');
+        if (empty($code)) {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Kode indikator wajib disertakan.')));
+            return;
+        }
+
+        $series = $this->M_economy->get_indicator_series($code);
+        if ($series) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'success', 'data' => $series)));
+        } else {
+            $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data indikator tidak ditemukan.')));
+        }
+    }
+
+    // Perbarui Seluruh Deret Tahun untuk 1 Indikator Sekaligus (Multi-year Series Update)
+    public function update_series() {
+        $code = $this->input->post('code', true);
+        $seriesValues = $this->input->post('series_values');
+        $seriesYears = $this->input->post('series_years');
+        $kodeWilayah = $this->input->post('kode_wilayah', true);
+
+        if (empty($code)) {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Kode indikator tidak boleh kosong.')));
+            return;
+        }
+
+        if (!empty($seriesYears) && is_array($seriesYears)) {
+            $seriesData = array(
+                'years' => $seriesYears,
+                'values' => $seriesValues
+            );
+        } elseif (is_array($seriesValues)) {
+            $seriesData = $seriesValues;
+        } else {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Format deret nilai tahunan tidak valid.')));
+            return;
+        }
+
+        $savedCount = $this->M_economy->update_indicator_series($code, $seriesData, $kodeWilayah);
+
+        if ($this->input->is_ajax_request()) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array(
+                    'status' => 'success',
+                    'message' => 'Berhasil memperbarui ' . $savedCount . ' rekaman data tahunan untuk ' . $code . '.'
+                )));
+            return;
+        }
+
+        $this->session->set_flashdata('success', 'Berhasil memperbarui data deret tahun untuk indikator ' . $code . '.');
+        redirect('database');
+    }
+
+    // Ambil data matriks sektoral / komponen pengeluaran JSON
+    public function get_sectoral_matrix() {
+        $kodeWilayah = $this->input->get('kode_wilayah') ?: null;
+        $parentCode = $this->input->get('parent_code') ?: 'EKO-003';
+        $matrix = $this->M_economy->get_sectoral_matrix_data($kodeWilayah, $parentCode);
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode(array('status' => 'success', 'data' => $matrix)));
+    }
+
+    // Simpan seluruh data matriks sektoral / komponen pengeluaran sekaligus (termasuk nama & label kategori yang diubah)
+    public function save_sectoral_matrix() {
+        $years = $this->input->post('years');
+        $matrixValues = $this->input->post('matrix');
+        $names = $this->input->post('names');
+        $catLabels = $this->input->post('cat_labels');
+        $kodeWilayah = $this->input->post('kode_wilayah', true);
+        $parentCode = $this->input->post('parent_code', true) ?: 'EKO-003';
+
+        if (empty($years) || !is_array($years) || empty($matrixValues) || !is_array($matrixValues)) {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Data matriks tidak lengkap.')));
+            return;
+        }
+
+        $res = $this->M_economy->save_sectoral_matrix_data($matrixValues, $years, $kodeWilayah, $parentCode, $names, $catLabels);
+        if ($res) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array(
+                    'status' => 'success',
+                    'message' => 'Berhasil menyimpan seluruh data rincian kategori untuk indikator ' . $parentCode . '.'
+                )));
+        } else {
+            $this->output
+                ->set_status_header(500)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'Gagal menyimpan data sektoral ke database.')));
+        }
+    }
+
+    // Soft delete seluruh data indikator
+    public function soft_delete_series($code = null) {
+        $code = $code ?: $this->input->post('code');
+        if (empty($code)) {
+            $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array('status' => 'error', 'message' => 'Kode indikator kosong.')));
+            return;
+        }
+
+        $result = $this->M_economy->soft_delete_indicator_series($code);
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode(array(
+                'status' => $result ? 'success' : 'error',
+                'message' => $result ? 'Seluruh data indikator dipindahkan ke tempat sampah.' : 'Gagal menghapus data.'
+            )));
+            return;
+        }
+
+        if ($result) {
+            $this->session->set_flashdata('success', 'Indikator ' . $code . ' dipindahkan ke tempat sampah.');
+        } else {
+            $this->session->set_flashdata('error', 'Gagal memproses soft delete.');
+        }
+        redirect('database');
+    }
+
+    // Pulihkan seluruh data indikator dari tempat sampah
+    public function restore_series($code = null) {
+        $code = $code ?: $this->input->post('code');
+        if (empty($code)) {
+            $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array('status' => 'error', 'message' => 'Kode indikator kosong.')));
+            return;
+        }
+
+        $result = $this->M_economy->restore_indicator_series($code);
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode(array(
+                'status' => $result ? 'success' : 'error',
+                'message' => $result ? 'Seluruh data indikator berhasil dipulihkan.' : 'Gagal memulihkan data.'
+            )));
+            return;
+        }
+
+        if ($result) {
+            $this->session->set_flashdata('success', 'Indikator ' . $code . ' berhasil dipulihkan.');
+        } else {
+            $this->session->set_flashdata('error', 'Gagal memulihkan data.');
+        }
+        redirect('database?status=Terhapus');
+    }
+
+    // Hapus permanen seluruh data indikator
+    public function hard_delete_series($code = null) {
+        $code = $code ?: $this->input->post('code');
+        if (empty($code)) {
+            $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(array('status' => 'error', 'message' => 'Kode indikator kosong.')));
+            return;
+        }
+
+        $result = $this->M_economy->hard_delete_indicator_series($code);
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode(array(
+                'status' => $result ? 'success' : 'error',
+                'message' => $result ? 'Seluruh data indikator berhasil dihapus permanen.' : 'Gagal menghapus data.'
+            )));
+            return;
+        }
+
+        if ($result) {
+            $this->session->set_flashdata('success', 'Indikator ' . $code . ' berhasil dihapus permanen.');
+        } else {
+            $this->session->set_flashdata('error', 'Gagal menghapus data permanen.');
+        }
+        redirect('database?status=Terhapus');
     }
 
     // Alias get_data untuk konsistensi seluruh modul

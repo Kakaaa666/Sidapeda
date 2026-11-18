@@ -83,6 +83,27 @@
     $povNow = $macroByCode['POV_01'] ?? ($series['poverty'][$idx] ?? 7.34);
     $ipmNow = $macroByCode['IPM_01'] ?? ($series['ipm'][$idx] ?? 73.79);
     $invNow = $macroByCode['INV_02'] ?? ($series['investmentGrowth'][$idx] ?? 12.42);
+
+    $catPrefixCounts = [];
+    foreach ($display_cards as $c) {
+        $p = strtoupper(explode('-', $c['kode_indikator'])[0]);
+        $catPrefixCounts[$p] = ($catPrefixCounts[$p] ?? 0) + 1;
+    }
+    $categoryMeta = [
+        'EKO' => 'PDRB & Ekonomi',
+        'NAK' => 'Kependudukan',
+        'TK'  => 'Ketenagakerjaan',
+        'INV' => 'Investasi & Usaha',
+        'HRG' => 'Harga & Inflasi',
+        'KES' => 'Kesejahteraan Sosial',
+        'PAR' => 'Pariwisata & Ekraf',
+        'PRO' => 'Produksi Sektoral',
+        'FIS' => 'Fiskal & Keuangan',
+        'GEO' => 'Geografi & Wilayah',
+        'EWS' => 'Early Warning System',
+        'ANA' => 'Analisis Makro'
+    ];
+    $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
     ?>
     <section class="section">
         <div class="section-heading">
@@ -99,31 +120,34 @@
             </div>
         </div>
 
-        <!-- FILTER KATEGORI / KLASTER INDIKATOR (DROPDOWN) -->
-        <div class="category-filter-bar">
-            <div class="category-filter-info">
-                <div class="category-filter-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                </div>
-                <div class="category-filter-text">
-                    <strong>Filter Kategori / Klaster Indikator</strong>
-                    <small>Saring kartu indikator utama pembangunan daerah berdasarkan klaster tematik.</small>
-                </div>
+        <!-- SLIDE FILTER KATEGORI (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA) -->
+        <div class="category-slide-container" id="category-slide-container" style="margin-top:14px; margin-bottom:18px;">
+            <div class="category-slide-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                <span>Kategori:</span>
             </div>
-
-            <div class="category-filter-control">
-                <label for="beranda-category-select">Pilih Kategori:</label>
-                <select id="beranda-category-select" class="category-filter-select">
-                    <option value="all" <?= (empty($selected_cluster) || $selected_cluster === 'all') ? 'selected' : '' ?>>Semua Kategori (<?= count($display_cards) ?> Indikator)</option>
-                    <?php if (!empty($categories)): ?>
-                        <?php foreach ($categories as $catName => $catCount): ?>
-                            <option value="<?= htmlspecialchars($catName) ?>" <?= (!empty($selected_cluster) && $selected_cluster === $catName) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($catName) ?> (<?= $catCount ?> Indikator)
-                            </option>
-                        <?php endforeach; ?>
+            <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-prev" title="Geser Kiri (Sebelumnya)" aria-label="Geser Kiri">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="category-slide-track" id="category-slide-track">
+                <button type="button" class="category-slide-tab <?= empty($activeCat) ? 'active' : '' ?>" data-prefix="" onclick="applyCategoryFilter('', this)">
+                    <span>Semua</span>
+                    <span class="cat-count-pill"><?= count($display_cards) ?></span>
+                </button>
+                <?php foreach ($categoryMeta as $pref => $label): ?>
+                    <?php if (isset($catPrefixCounts[$pref]) || empty($display_cards)): ?>
+                        <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
+                        <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
+                            <span class="cat-code-badge"><?= $pref ?></span>
+                            <span><?= $label ?></span>
+                            <span class="cat-count-pill"><?= $cnt ?></span>
+                        </button>
                     <?php endif; ?>
-                </select>
+                <?php endforeach; ?>
             </div>
+            <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-next" title="Geser Kanan (Selanjutnya)" aria-label="Geser Kanan">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
         </div>
 
         <div class="kpi-grid" id="kpi-container">
@@ -166,15 +190,25 @@
                 elseif (strpos($nameLower, 'investasi') !== false) $indKey = 'investmentGrowth';
             ?>
                 <div class="kpi-card" 
+                     data-code="<?= htmlspecialchars($item['kode_indikator']) ?>"
+                     data-prefix="<?= strtoupper(explode('-', $item['kode_indikator'])[0]) ?>"
                      data-category="<?= htmlspecialchars($item['klaster'] ?? 'Output & Pertumbuhan') ?>" 
                      data-indicator-key="<?= $indKey ?>" 
                      style="position:relative; cursor:pointer;" 
                      title="Klik untuk menampilkan grafik tren indikator ini">
                     <div class="kpi-top" style="align-items:flex-start;">
                         <div style="display:flex; flex-direction:column; gap:4px;">
-                            <span class="badge info" style="align-self:flex-start; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none;">
-                                <?= htmlspecialchars($item['klaster'] ?? 'Output & Pertumbuhan') ?>
-                            </span>
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span class="badge info" style="align-self:flex-start; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none;">
+                                    <?= htmlspecialchars($item['klaster'] ?? 'Output & Pertumbuhan') ?>
+                                </span>
+                                <?php if (in_array($item['kode_indikator'], array('EKO-003', 'EKO-004', 'EKO-006', 'EKO-007'))): ?>
+                                    <span style="display:inline-flex; align-items:center; gap:3px; padding:2px 6px; font-size:9px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:10px;">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                                        18 Sektor (A–U)
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <span style="font-weight:600; color:var(--navy); font-size:13px; line-height:1.3; margin-top:2px;">
                                 <?= htmlspecialchars($item['nama_indikator']) ?>
                             </span>

@@ -6,10 +6,12 @@ class Validation extends MY_Controller {
     public function index() {
         $status = $this->input->get('status');
         $query = $this->input->get('q');
-        $sort = $this->input->get('sort') ?: 'status';
+        $sort = $this->input->get('sort') ?: 'code';
         $cluster = $this->input->get('cluster');
         $year = $this->input->get('year');
         $selected_year = ($year && is_numeric($year)) ? (int)$year : null;
+        $category = $this->input->get('category') ?: $this->input->get('prefix');
+        $selected_category = $category ? strtoupper(trim($category)) : null;
         $available_years = $this->M_economy->get_catalog_years();
 
         // Tampilkan semua data aktif secara default agar data yang sudah divalidasi atau ditolak tidak hilang dari menu
@@ -51,6 +53,8 @@ class Validation extends MY_Controller {
             'sort'        => $sort,
             'cluster'     => $cluster,
             'selected_cluster' => $cluster,
+            'category'    => $selected_category,
+            'selected_category' => $selected_category,
             'year'        => $year,
             'selected_year' => $selected_year,
             'available_years' => $available_years,
