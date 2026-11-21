@@ -1104,6 +1104,97 @@
     }
 
     // ==========================================
+    // RUPIAH & NUMBER FORMATTING HELPERS (CRUD)
+    // ==========================================
+    function formatRupiahNumber(val) {
+        if (val === null || val === undefined || val === '') return '';
+        let str = String(val).trim();
+        if (!str) return '';
+        let isNeg = str.startsWith('-');
+        str = str.replace(/^-/, '');
+
+        let intPart = '';
+        let decPart = '';
+
+        if (str.indexOf(',') !== -1) {
+            let parts = str.split(',');
+            intPart = parts[0].replace(/\D/g, '');
+            decPart = parts[1] ? parts[1].replace(/\D/g, '') : '';
+        } else if (str.indexOf('.') !== -1) {
+            let parts = str.split('.');
+            if (parts.length > 2) {
+                intPart = parts.join('');
+            } else if (parts[1] && parts[1].length <= 2) {
+                intPart = parts[0].replace(/\D/g, '');
+                decPart = parts[1].replace(/\D/g, '');
+                if (decPart === '00' || decPart === '0') decPart = '';
+            } else {
+                intPart = parts.join('');
+            }
+        } else {
+            intPart = str.replace(/\D/g, '');
+        }
+
+        if (!intPart && !decPart) return '';
+        let formattedInt = (intPart || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return (isNeg ? '-' : '') + formattedInt + (decPart ? ',' + decPart : '');
+    }
+
+    function parseRupiahNumber(val) {
+        if (val === null || val === undefined || val === '') return 0;
+        let str = String(val).trim();
+        if (!str) return 0;
+        let isNeg = str.startsWith('-');
+        str = str.replace(/^-/, '').replace(/[^0-9,\.]/g, '');
+
+        let clean = '';
+        if (str.indexOf(',') !== -1) {
+            clean = str.replace(/\./g, '').replace(',', '.');
+        } else if (str.split('.').length > 2) {
+            clean = str.replace(/\./g, '');
+        } else {
+            clean = str;
+        }
+        let num = parseFloat(clean);
+        if (isNaN(num)) return 0;
+        return isNeg ? -num : num;
+    }
+
+    function handleRupiahInputMask(e) {
+        const input = e.target;
+        if (!input.classList.contains('is-rupiah-mask')) return;
+        let cursor = input.selectionStart;
+        let oldVal = input.value;
+        let oldLen = oldVal.length;
+
+        let hasComma = oldVal.includes(',');
+        let parts = oldVal.split(',');
+        let rawInt = parts[0].replace(/\D/g, '');
+        let decPart = parts.length > 1 ? parts[1].replace(/\D/g, '') : '';
+
+        if (!rawInt && !decPart) {
+            input.value = '';
+            return;
+        }
+
+        let formattedInt = rawInt ? rawInt.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '0';
+        let newVal = formattedInt + (hasComma ? ',' + decPart : '');
+        input.value = newVal;
+
+        let newLen = newVal.length;
+        let newCursor = cursor + (newLen - oldLen);
+        if (newCursor >= 0 && newCursor <= newLen) {
+            input.setSelectionRange(newCursor, newCursor);
+        }
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('is-rupiah-mask')) {
+            handleRupiahInputMask(e);
+        }
+    });
+
+    // ==========================================
     // GENERIC MODULE CRUD & SOFT DELETE HANDLER
     // ==========================================
     function setupModuleCrud(cfg) {
@@ -1493,17 +1584,1332 @@
             });
         }
 
-        // Klik kartu KPI untuk langsung menyesuaikan grafik
+        // ======================================================================
+        // MODAL DETAIL INDIKATOR BERANDA (8 INDIKATOR UTAMA EKONOMI)
+        // ======================================================================
+        const modalOverlay = document.getElementById('kpi-detail-overlay');
+        const modalBox = document.getElementById('kpi-detail-modal-box');
+
+        function downloadDetailCsv(filename, rows) {
+            let csvContent = '';
+            rows.forEach(row => {
+                const rowStr = row.map(val => {
+                    let s = (val === null || val === undefined) ? '' : String(val);
+                    if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+                        s = '"' + s.replace(/"/g, '""') + '"';
+                    }
+                    return s;
+                }).join(',');
+                csvContent += rowStr + '\r\n';
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function closeKpiDetailModal() {
+            if (modalOverlay) {
+                modalOverlay.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    closeKpiDetailModal();
+                }
+            });
+        }
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOverlay && modalOverlay.style.display !== 'none') {
+                closeKpiDetailModal();
+            }
+        });
+
+        function getKpiDetailConfig(idx) {
+            const card = document.querySelector(`.kpi-card[data-index="${idx}"]`);
+            const curVal = card ? (card.dataset.value || (card.querySelector('.kpi-value strong') ? card.querySelector('.kpi-value strong').textContent.trim() : '')) : '';
+            const curUnit = card ? (card.dataset.unit || (card.querySelector('.kpi-value span') ? card.querySelector('.kpi-value span').textContent.trim() : '')) : '';
+            const curStatus = card ? (card.dataset.status || (card.querySelector('.badge') ? card.querySelector('.badge').textContent.trim() : 'Meningkat')) : 'Meningkat';
+            const curDelta = card ? (card.dataset.delta || (card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[↗↘]/g, '').trim() : '')) : '';
+            const cardYear = card ? (card.dataset.year || (card.querySelector('.kpi-period') && card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/) ? card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/)[1] : null)) : null;
+            const curYear = cardYear || (filterYear && filterYear.value && filterYear.value !== 'all' ? filterYear.value : '2024');
+            const yearNum = parseInt(curYear, 10) || 2024;
+
+            // Gunakan data riil resmi yang dioper dari database backend jika tersedia
+            if (window.KPI_REAL_DATA && window.KPI_REAL_DATA[idx]) {
+                const real = JSON.parse(JSON.stringify(window.KPI_REAL_DATA[idx]));
+                if (curVal) real.curVal = curVal;
+                if (curUnit) real.curUnit = curUnit;
+                if (curStatus) real.curStatus = curStatus;
+                if (curDelta) real.curDelta = curDelta;
+                if (curYear) real.year = curYear;
+                return real;
+            }
+
+            const configs = [
+                // 0: Pertumbuhan Ekonomi
+                {
+                    name: 'Pertumbuhan Ekonomi',
+                    subtitle: 'Laju perubahan output ekonomi daerah berdasarkan PDRB atas dasar harga konstan',
+                    definition: 'Pertumbuhan ekonomi mengukur perubahan volume produksi barang dan jasa dari satu tahun ke tahun berikutnya. Untuk membaca kualitas pertumbuhan, nilai agregat perlu dilihat bersama dinamika lapangan usaha dan pembanding wilayah.',
+                    metrics: [
+                        { label: 'Jawa Timur', value: '4,93%', note: `Tahun ${curYear}` },
+                        { label: 'Nasional', value: '5,03%', note: `Tahun ${curYear}` },
+                        { label: 'Sektor tumbuh tertinggi', value: 'Akomodasi & Makan Minum (7,3%)', note: 'Kabupaten Banyuwangi' }
+                    ],
+                    componentTitle: 'Pertumbuhan dan struktur 7 lapangan usaha',
+                    componentDesc: 'Membaca pertumbuhan sektoral bersama pangsa sektor dalam PDRB. Pangsa dan laju pertumbuhan adalah dua ukuran yang berbeda.',
+                    components: [
+                        { name: 'Akomodasi & Makan Minum', value: 7.3, unit: '%', context: 'Pariwisata & jasa boga', share: 9.1, benchmark: 6.4 },
+                        { name: 'Perdagangan Besar & Eceran', value: 5.4, unit: '%', context: 'Pusat distribusi barang', share: 18.5, benchmark: 5.2 },
+                        { name: 'Transportasi & Pergudangan', value: 5.1, unit: '%', context: 'Logistik & konektivitas wilayah', share: 5.0, benchmark: 5.0 },
+                        { name: 'Jasa Lainnya', value: 5.0, unit: '%', context: 'Jasa kemasyarakatan & perorangan', share: 18.7, benchmark: 5.1 },
+                        { name: 'Konstruksi', value: 4.8, unit: '%', context: 'Pembangunan fisik & sarana', share: 8.0, benchmark: 5.1 },
+                        { name: 'Pertanian, Kehutanan & Perikanan', value: 4.3, unit: '%', context: 'Sektor basis utama Banyuwangi', share: 28.5, benchmark: 3.1 },
+                        { name: 'Industri Pengolahan', value: 4.1, unit: '%', context: 'Manufaktur & agroindustri hilir', share: 12.2, benchmark: 4.8 }
+                    ],
+                    comparisonTitle: 'Perbandingan pertumbuhan kabupaten/kota',
+                    comparisonDesc: 'Pembanding wilayah dalam dataset Jawa Timur; urutan berdasarkan laju pertumbuhan tahunan.',
+                    peers: [
+                        { name: 'Kota Surabaya', value: 5.76, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Gresik', value: 5.42, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 5.18, note: 'Kabupaten terpilih', current: true },
+                        { name: 'Kota Malang', value: 5.06, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Sidoarjo', value: 4.98, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Jember', value: 4.76, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Situbondo', value: 4.61, note: 'Laju pertumbuhan ekonomi tahunan', current: false },
+                        { name: 'Kab. Bondowoso', value: 4.48, note: 'Laju pertumbuhan ekonomi tahunan', current: false }
+                    ],
+                    heatTitle: 'Peta panas pertumbuhan sektoral',
+                    heatDesc: 'Perubahan laju pertumbuhan sektor selama lima tahun terakhir pada data resmi BPS.',
+                    heatRows: [
+                        { name: 'Akomodasi & Makan Minum', values: [ -8.0, 5.9, 9.2, 7.0, 7.3 ] },
+                        { name: 'Perdagangan', values: [ -4.2, 4.3, 5.0, 5.2, 5.4 ] },
+                        { name: 'Transportasi', values: [ -7.2, 4.2, 7.8, 5.3, 5.1 ] },
+                        { name: 'Konstruksi', values: [ -3.9, 3.3, 4.5, 4.6, 4.8 ] },
+                        { name: 'Pertanian', values: [ 2.1, 3.0, 3.6, 4.0, 4.3 ] },
+                        { name: 'Industri Pengolahan', values: [ -2.8, 3.1, 4.0, 4.0, 4.1 ] },
+                        { name: 'Jasa Lainnya', values: [ -1.8, 3.7, 4.8, 4.9, 5.0 ] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 5.02, change: null },
+                        { year: 2016, value: 5.15, change: '+0,13' },
+                        { year: 2017, value: 5.28, change: '+0,13' },
+                        { year: 2018, value: 5.61, change: '+0,33' },
+                        { year: 2019, value: 5.55, change: '-0,06' },
+                        { year: 2020, value: -3.58, change: '-9,13' },
+                        { year: 2021, value: 4.08, change: '+7,66' },
+                        { year: 2022, value: 4.43, change: '+0,35' },
+                        { year: 2023, value: 5.03, change: '+0,60' },
+                        { year: 2024, value: 5.18, change: '+0,15' }
+                    ]
+                },
+                // 1: PDRB per Kapita
+                {
+                    name: 'PDRB per Kapita',
+                    subtitle: 'Rata-rata nilai PDRB yang dihasilkan untuk setiap penduduk',
+                    definition: 'PDRB per kapita diperoleh dari PDRB dibagi jumlah penduduk pertengahan tahun. Indikator ini menggambarkan rata-rata output ekonomi per penduduk, bukan pendapatan yang benar-benar diterima setiap orang.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '+4,00 juta', note: 'Selisih nilai terhadap tahun sebelumnya' },
+                        { label: 'Rata-rata pertumbuhan tahunan', value: '6,58%', note: 'Rata-rata majemuk sejak 2015' },
+                        { label: 'Perubahan sejak 2015', value: '+27,20 juta', note: 'Kenaikan nilai nominal per kapita' }
+                    ],
+                    componentTitle: 'Perbandingan indikator per kapita',
+                    componentDesc: 'PDRB per kapita merupakan rasio output regional terhadap jumlah penduduk. Nilai nominal bukan pendapatan rumah tangga dan tidak otomatis menunjukkan pemerataan.',
+                    components: [
+                        { name: 'PDRB per kapita ADHB', value: parseFloat(curVal.replace(',', '.')) || 62.4, unit: 'juta rupiah', context: 'Ukuran output nominal per penduduk' },
+                        { name: 'Perubahan tahunan', value: 4.0, unit: 'juta rupiah', context: 'Selisih nilai nominal dari tahun sebelumnya' },
+                        { name: 'Rata-rata pertumbuhan nominal', value: 6.58, unit: '%', context: 'CAGR selama seri yang tersedia' },
+                        { name: 'Pertumbuhan ekonomi', value: 5.18, unit: '%', context: 'Konteks pertumbuhan output daerah' }
+                    ],
+                    comparisonTitle: 'Posisi PDRB per kapita antarwilayah',
+                    comparisonDesc: 'Perbandingan kabupaten/kota sekitar untuk melihat posisi relatif Banyuwangi.',
+                    peers: [
+                        { name: 'Nasional', value: 78.6, note: 'Pembanding nasional · Data BPS', current: false },
+                        { name: 'Jawa Timur', value: 70.8, note: 'Pembanding provinsi · Data BPS', current: false },
+                        { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 62.4, note: 'Kabupaten terpilih', current: true },
+                        { name: 'Kab. Jember', value: 48.7, note: 'PDRB per kapita nominal', current: false },
+                        { name: 'Kab. Situbondo', value: 45.2, note: 'PDRB per kapita nominal', current: false },
+                        { name: 'Kab. Bondowoso', value: 42.8, note: 'PDRB per kapita nominal', current: false }
+                    ],
+                    heatTitle: 'Peta panas tren PDRB per kapita',
+                    heatDesc: 'Tren nominal PDRB per kapita pada seri tahun yang tersedia.',
+                    heatRows: [
+                        { name: 'Kab. Banyuwangi', values: [ 43.7, 47.6, 53.2, 58.4, 62.4 ] },
+                        { name: 'Jawa Timur', values: [ 49.8, 54.2, 60.6, 66.5, 70.8 ] },
+                        { name: 'Nasional', values: [ 57.2, 62.3, 67.5, 74.2, 78.6 ] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 35.2, change: null },
+                        { year: 2016, value: 37.1, change: '+1,90' },
+                        { year: 2017, value: 39.4, change: '+2,30' },
+                        { year: 2018, value: 42.8, change: '+3,40' },
+                        { year: 2019, value: 45.9, change: '+3,10' },
+                        { year: 2020, value: 43.7, change: '-2,20' },
+                        { year: 2021, value: 47.6, change: '+3,90' },
+                        { year: 2022, value: 53.2, change: '+5,60' },
+                        { year: 2023, value: 58.4, change: '+5,20' },
+                        { year: 2024, value: 62.4, change: '+4,00' }
+                    ]
+                },
+                // 2: Tingkat Inflasi
+                {
+                    name: 'Tingkat Inflasi',
+                    subtitle: 'Perubahan tingkat harga barang dan jasa yang dikonsumsi rumah tangga',
+                    definition: 'Inflasi menunjukkan kenaikan tingkat harga secara umum dalam periode tertentu. Untuk memahami penyebabnya, angka inflasi agregat perlu dilengkapi kelompok pengeluaran dan komoditas penyumbang inflasi maupun deflasi.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '-0,40 pp', note: 'Perubahan terhadap tahun sebelumnya' },
+                        { label: 'Inflasi tertinggi', value: '6,12%', note: 'Terjadi pada tahun 2022' },
+                        { label: 'Inflasi terendah', value: '1,68%', note: 'Terjadi pada tahun 2020' }
+                    ],
+                    componentTitle: 'Inflasi menurut kelompok pengeluaran',
+                    componentDesc: 'Rincian kelompok pengeluaran menunjukkan kelompok yang mengalami tekanan harga relatif lebih tinggi.',
+                    components: [
+                        { name: 'Makanan, Minuman & Tembakau', value: 3.85, unit: '%', context: 'Kelompok pengeluaran berbobot utama' },
+                        { name: 'Penyediaan Makanan & Minuman / Restoran', value: 2.95, unit: '%', context: 'Jasa konsumsi makan di luar rumah' },
+                        { name: 'Kesehatan', value: 2.20, unit: '%', context: 'Obat-obatan dan layanan kesehatan' },
+                        { name: 'Transportasi', value: 2.12, unit: '%', context: 'Tarif angkutan dan bahan bakar' },
+                        { name: 'Pendidikan', value: 1.80, unit: '%', context: 'Biaya pendidikan dan perlengkapan' },
+                        { name: 'Perumahan, Air, Listrik & Bahan Bakar', value: 1.45, unit: '%', context: 'Beban utilitas rumah tangga' }
+                    ],
+                    comparisonTitle: 'Perbandingan inflasi wilayah',
+                    comparisonDesc: 'Pembanding daerah dan nasional untuk membaca apakah tekanan harga bersifat lokal atau lebih luas.',
+                    peers: [
+                        { name: 'Kab. Situbondo', value: 2.31, note: 'Kabupaten pembanding · Data BPS', current: false },
+                        { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 2.41, note: 'Kabupaten terpilih', current: true },
+                        { name: 'Nasional', value: 2.51, note: 'Inflasi nasional · Data BPS', current: false },
+                        { name: 'Jawa Timur', value: 2.67, note: 'Inflasi provinsi · Data BPS', current: false },
+                        { name: 'Kab. Jember', value: 2.73, note: 'Kabupaten pembanding · Data BPS', current: false }
+                    ],
+                    heatTitle: 'Peta panas inflasi bulanan per kelompok',
+                    heatDesc: 'Intensitas inflasi berdasarkan 12 bulan referensi dan kelompok pengeluaran.',
+                    heatColumns: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    heatRows: [
+                        { name: 'Makanan & Tembakau', values: [3.2, 3.4, 3.8, 4.1, 3.9, 3.7, 3.5, 3.8, 3.9, 3.7, 3.8, 3.85] },
+                        { name: 'Restoran / Jasa Boga', values: [2.5, 2.6, 2.7, 2.9, 3.0, 3.1, 3.0, 2.9, 2.8, 2.9, 2.9, 2.95] },
+                        { name: 'Kesehatan', values: [2.1, 2.1, 2.2, 2.2, 2.2, 2.2, 2.3, 2.2, 2.2, 2.2, 2.2, 2.20] },
+                        { name: 'Transportasi', values: [2.8, 2.6, 2.4, 2.3, 2.1, 2.0, 2.1, 2.2, 2.1, 2.1, 2.1, 2.12] },
+                        { name: 'Pendidikan', values: [1.5, 1.5, 1.5, 1.5, 1.6, 1.8, 2.0, 2.2, 2.0, 1.9, 1.8, 1.80] },
+                        { name: 'Perumahan & Utilitas', values: [1.6, 1.5, 1.5, 1.4, 1.4, 1.4, 1.5, 1.5, 1.5, 1.4, 1.4, 1.45] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 3.12, change: null },
+                        { year: 2016, value: 2.71, change: '-0,41' },
+                        { year: 2017, value: 3.61, change: '+0,90' },
+                        { year: 2018, value: 2.88, change: '-0,73' },
+                        { year: 2019, value: 2.94, change: '+0,06' },
+                        { year: 2020, value: 1.68, change: '-1,26' },
+                        { year: 2021, value: 1.87, change: '+0,19' },
+                        { year: 2022, value: 6.12, change: '+4,25' },
+                        { year: 2023, value: 2.81, change: '-3,31' },
+                        { year: 2024, value: 2.41, change: '-0,40' }
+                    ]
+                },
+                // 3: Pengangguran Terbuka
+                {
+                    name: 'Pengangguran Terbuka',
+                    subtitle: 'Persentase penganggur terhadap total angkatan kerja',
+                    definition: 'Tingkat Pengangguran Terbuka (TPT) menunjukkan proporsi angkatan kerja yang belum terserap dalam pekerjaan. Pembacaan pasar kerja perlu dilakukan bersama partisipasi angkatan kerja, kualitas pekerjaan, dan karakteristik penganggur.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '-0,07 pp', note: 'Penurunan TPT merupakan perbaikan indikator' },
+                        { label: 'TPT tertinggi', value: '5,50%', note: 'Terjadi pada tahun 2020' },
+                        { label: 'TPT terendah', value: '2,94%', note: 'Terjadi pada tahun 2018' }
+                    ],
+                    componentTitle: 'Struktur pasar kerja & kualitas pekerjaan',
+                    componentDesc: 'TPT harus dibaca bersama partisipasi angkatan kerja, status pekerjaan, serta kualitas pekerjaan.',
+                    components: [
+                        { name: 'Penduduk Bekerja', value: 95.97, unit: '% angkatan kerja', context: 'Proporsi angkatan kerja yang terserap kerja' },
+                        { name: 'Penganggur Terbuka (TPT)', value: parseFloat(curVal.replace(',', '.')) || 4.03, unit: '%', context: 'Proporsi penganggur terhadap angkatan kerja' },
+                        { name: 'TPAK (Partisipasi Kerja)', value: 72.8, unit: '%', context: 'Tingkat partisipasi angkatan kerja' },
+                        { name: 'Pekerja Formal', value: 38.6, unit: '%', context: 'Pangsa pekerja dengan status formal' },
+                        { name: 'Pekerja Informal', value: 61.4, unit: '%', context: 'Pangsa pekerja dengan status informal' },
+                        { name: 'Setengah Pengangguran', value: 8.2, unit: '%', context: 'Pekerja yang mencari tambahan jam kerja' }
+                    ],
+                    comparisonTitle: 'Perbandingan TPT wilayah sekitar',
+                    comparisonDesc: 'Posisi TPT kabupaten dibandingkan daerah sekitar di Jawa Timur.',
+                    peers: [
+                        { name: 'Kab. Bondowoso', value: 3.71, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Kab. Situbondo', value: 3.88, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Kab. Lumajang', value: 3.96, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 4.03, note: 'Kabupaten terpilih', current: true },
+                        { name: 'Jawa Timur', value: 4.19, note: 'Pembanding provinsi', current: false },
+                        { name: 'Kab. Jember', value: 4.21, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Kab. Probolinggo', value: 4.62, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Nasional', value: 4.91, note: 'Pembanding nasional', current: false },
+                        { name: 'Kab. Malang', value: 5.05, note: 'Tingkat Pengangguran Terbuka', current: false },
+                        { name: 'Kab. Pasuruan', value: 5.12, note: 'Tingkat Pengangguran Terbuka', current: false }
+                    ],
+                    heatTitle: 'Peta panas TPT menurut kelompok',
+                    heatDesc: 'Pola TPT menurut karakteristik angkatan kerja lima tahun terakhir.',
+                    heatRows: [
+                        { name: 'Laki-laki', values: [4.4, 4.1, 3.9, 3.8, 3.7] },
+                        { name: 'Perempuan', values: [4.9, 4.6, 4.1, 4.3, 4.4] },
+                        { name: 'Usia Muda (15–24)', values: [11.4, 10.3, 9.1, 8.9, 8.7] },
+                        { name: 'Pendidikan SMA/SMK', values: [5.1, 4.8, 4.4, 4.2, 4.0] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 3.20, change: null },
+                        { year: 2016, value: 3.12, change: '-0,08' },
+                        { year: 2017, value: 3.05, change: '-0,07' },
+                        { year: 2018, value: 2.94, change: '-0,11' },
+                        { year: 2019, value: 3.84, change: '+0,90' },
+                        { year: 2020, value: 5.50, change: '+1,66' },
+                        { year: 2021, value: 5.10, change: '-0,40' },
+                        { year: 2022, value: 4.30, change: '-0,80' },
+                        { year: 2023, value: 4.10, change: '-0,20' },
+                        { year: 2024, value: 4.03, change: '-0,07' }
+                    ]
+                },
+                // 4: Tingkat Kemiskinan
+                {
+                    name: 'Tingkat Kemiskinan',
+                    subtitle: 'Proporsi penduduk dengan pengeluaran per kapita di bawah garis kemiskinan',
+                    definition: 'Tingkat kemiskinan mengukur persentase penduduk miskin (P0). Evaluasi kemiskinan sebaiknya tidak hanya melihat persentase penduduk miskin, tetapi juga kedalaman (P1), keparahan (P2), garis kemiskinan, dan persebaran spasialnya.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '+0,00 pp', note: 'Stabil dibandingkan tahun sebelumnya' },
+                        { label: 'Perubahan sejak 2015', value: '-1,83 pp', note: 'Penurunan angka kemiskinan jangka panjang' },
+                        { label: 'Tingkat terendah', value: '7,34%', note: 'Capaian terendah tercatat 2023–2024' }
+                    ],
+                    componentTitle: 'Dimensi kemiskinan dan kerentanan',
+                    componentDesc: 'Tingkat kemiskinan (P0) perlu dibaca bersama kedalaman (P1), keparahan (P2), garis kemiskinan, dan persebaran spasial.',
+                    components: [
+                        { name: 'P0 · Tingkat Kemiskinan', value: parseFloat(curVal.replace(',', '.')) || 7.34, unit: '%', context: 'Persentase penduduk di bawah garis kemiskinan' },
+                        { name: 'P1 · Kedalaman Kemiskinan', value: 1.18, unit: 'indeks', context: 'Rata-rata jarak pengeluaran dari garis kemiskinan' },
+                        { name: 'P2 · Keparahan Kemiskinan', value: 0.26, unit: 'indeks', context: 'Ketimpangan pengeluaran di antara penduduk miskin' },
+                        { name: 'Garis Kemiskinan (GK)', value: 528450, unit: 'Rp/kapita/bulan', context: 'Standar minimum pemenuhan kebutuhan dasar' },
+                        { name: 'Kemiskinan Perkotaan', value: 6.42, unit: '%', context: 'Persentase penduduk miskin wilayah perkotaan' },
+                        { name: 'Kemiskinan Perdesaan', value: 8.12, unit: '%', context: 'Persentase penduduk miskin wilayah perdesaan' }
+                    ],
+                    comparisonTitle: 'Perbandingan kemiskinan kecamatan',
+                    comparisonDesc: 'Kecamatan dengan tingkat kemiskinan relatif rendah hingga tinggi di Banyuwangi.',
+                    peers: [
+                        { name: 'Banyuwangi (Kota)', value: 6.9, note: 'Pusat pemerintahan & komersial', current: true },
+                        { name: 'Rogojampi', value: 7.2, note: 'Kawasan perdagangan & jasa', current: false },
+                        { name: 'Glagah', value: 7.6, note: 'Kawasan pariwisata & agrowisata', current: false },
+                        { name: 'Genteng', value: 8.1, note: 'Kawasan perdagangan & pertanian', current: false },
+                        { name: 'Muncar', value: 8.4, note: 'Sentra perikanan & industri maritim', current: false },
+                        { name: 'Kalibaru', value: 8.7, note: 'Agroindustri & perkebunan kopi', current: false },
+                        { name: 'Singojuruh', value: 8.9, note: 'Pertanian tanaman pangan', current: false },
+                        { name: 'Siliragung', value: 9.1, note: 'Pertanian & perkebunan', current: false },
+                        { name: 'Glenmore', value: 9.2, note: 'Kawasan perkebunan terpadu', current: false },
+                        { name: 'Wongsorejo', value: 9.4, note: 'Pertanian lahan kering & energi', current: false },
+                        { name: 'Tegaldlimo', value: 9.8, note: 'Pertanian & pesisir pantai', current: false },
+                        { name: 'Pesanggaran', value: 10.2, note: 'Pertambangan & wisata bahari', current: false }
+                    ],
+                    heatTitle: 'Peta panas kemiskinan kecamatan',
+                    heatDesc: 'Persebaran tingkat kemiskinan per kecamatan selama lima tahun terakhir.',
+                    heatRows: [
+                        { name: 'Banyuwangi', values: [8.6, 8.2, 7.7, 7.3, 6.9] },
+                        { name: 'Rogojampi', values: [8.9, 8.5, 8.0, 7.6, 7.2] },
+                        { name: 'Glagah', values: [9.3, 8.9, 8.4, 8.0, 7.6] },
+                        { name: 'Genteng', values: [9.8, 9.4, 8.9, 8.5, 8.1] },
+                        { name: 'Muncar', values: [10.1, 9.7, 9.2, 8.8, 8.4] },
+                        { name: 'Kalibaru', values: [10.4, 10.0, 9.5, 9.1, 8.7] },
+                        { name: 'Singojuruh', values: [10.6, 10.2, 9.7, 9.3, 8.9] },
+                        { name: 'Pesanggaran', values: [11.9, 11.5, 11.0, 10.6, 10.2] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 9.17, change: null },
+                        { year: 2016, value: 8.75, change: '-0,42' },
+                        { year: 2017, value: 8.64, change: '-0,11' },
+                        { year: 2018, value: 8.32, change: '-0,32' },
+                        { year: 2019, value: 7.52, change: '-0,80' },
+                        { year: 2020, value: 8.06, change: '+0,54' },
+                        { year: 2021, value: 7.45, change: '-0,61' },
+                        { year: 2022, value: 7.51, change: '+0,06' },
+                        { year: 2023, value: 7.34, change: '-0,17' },
+                        { year: 2024, value: 7.34, change: '+0,00' }
+                    ]
+                },
+                // 5: IPM
+                {
+                    name: 'IPM (Indeks Pembangunan Manusia)',
+                    subtitle: 'Indeks komposit yang menggambarkan capaian pembangunan manusia',
+                    definition: 'Indeks Pembangunan Manusia (IPM) merangkum dimensi umur panjang dan hidup sehat, pengetahuan, serta standar hidup layak. Nilai komposit perlu dibaca bersama indikator pembentuk masing-masing dimensi.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '+0,71 poin', note: 'Kenaikan poin IPM tahun berjalan' },
+                        { label: 'Perubahan sejak 2015', value: '+5,68 poin', note: 'Akumulasi pertumbuhan IPM sejak 2015' },
+                        { label: 'Rata-rata kenaikan tahunan', value: '+0,63 poin', note: 'Rata-rata perubahan per tahun sejak 2015' }
+                    ],
+                    componentTitle: 'Tiga dimensi pembentuk IPM',
+                    componentDesc: 'IPM merupakan indeks komposit; evaluasi capaian perlu menelusuri kesehatan, pendidikan, dan standar hidup layak.',
+                    components: [
+                        { name: 'Umur Harapan Hidup (UHH)', value: 72.48, unit: 'tahun', context: 'Dimensi umur panjang dan hidup sehat' },
+                        { name: 'Harapan Lama Sekolah (HLS)', value: 13.42, unit: 'tahun', context: 'Perkiraan lama sekolah anak usia sekolah' },
+                        { name: 'Rata-rata Lama Sekolah (RLS)', value: 7.68, unit: 'tahun', context: 'Rata-rata pendidikan penduduk usia 25+ tahun' },
+                        { name: 'Pengeluaran Riil Per Kapita Disesuaikan', value: 12340, unit: 'ribu rupiah', context: 'Dimensi standar hidup layak' },
+                        { name: 'IPM Agregat', value: parseFloat(curVal.replace(',', '.')) || 73.79, unit: 'poin', context: 'Indeks komposit tiga dimensi pembangunan manusia' }
+                    ],
+                    comparisonTitle: 'Perbandingan IPM wilayah',
+                    comparisonDesc: 'Benchmarking kabupaten/kota dan provinsi untuk mengukur posisi relatif capaian pembangunan manusia.',
+                    peers: [
+                        { name: 'Kota Surabaya', value: 84.2, note: 'Kota di Jawa Timur', current: false },
+                        { name: 'Kota Malang', value: 83.1, note: 'Kota di Jawa Timur', current: false },
+                        { name: 'Jawa Timur', value: 75.3, note: 'Provinsi Jawa Timur', current: false },
+                        { name: 'Nasional', value: 75.0, note: 'Nasional', current: false },
+                        { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 73.79, note: 'Kabupaten terpilih', current: true },
+                        { name: 'Kab. Jember', value: 72.9, note: 'Kabupaten pembanding', current: false },
+                        { name: 'Kab. Situbondo', value: 71.8, note: 'Kabupaten pembanding', current: false }
+                    ],
+                    heatTitle: 'Peta panas dimensi IPM',
+                    heatDesc: 'Tren dimensi kesehatan, pendidikan, dan standar hidup selama lima tahun terakhir.',
+                    heatRows: [
+                        { name: 'UHH (tahun)', values: [72.1, 72.2, 72.3, 72.4, 72.48] },
+                        { name: 'HLS (tahun)', values: [13.1, 13.2, 13.3, 13.35, 13.42] },
+                        { name: 'RLS (tahun)', values: [7.2, 7.3, 7.5, 7.6, 7.68] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 68.11, change: null },
+                        { year: 2016, value: 68.63, change: '+0,52' },
+                        { year: 2017, value: 69.13, change: '+0,50' },
+                        { year: 2018, value: 69.64, change: '+0,51' },
+                        { year: 2019, value: 70.06, change: '+0,42' },
+                        { year: 2020, value: 70.62, change: '+0,56' },
+                        { year: 2021, value: 71.26, change: '+0,64' },
+                        { year: 2022, value: 72.45, change: '+1,19' },
+                        { year: 2023, value: 73.08, change: '+0,63' },
+                        { year: 2024, value: 73.79, change: '+0,71' }
+                    ]
+                },
+                // 6: Realisasi Investasi
+                {
+                    name: 'Realisasi Investasi',
+                    subtitle: 'Nilai realisasi penanaman modal PMA dan PMDN',
+                    definition: 'Realisasi investasi menunjukkan nilai penanaman modal yang telah direalisasikan. Nilai nominal perlu dilihat bersama pertumbuhan investasi, komposisi PMA/PMDN, sektor usaha, dan sebaran proyek.',
+                    metrics: [
+                        { label: 'Nilai realisasi nominal', value: curVal + ' Triliun', note: `Tahun ${curYear} Kabupaten Banyuwangi` },
+                        { label: 'Pertumbuhan investasi', value: '12,42%', note: `Tahun ${curYear}` },
+                        { label: 'Perubahan pertumbuhan', value: '-1,78 pp', note: 'Perubahan laju investasi terhadap tahun sebelumnya' }
+                    ],
+                    componentTitle: 'Struktur realisasi investasi',
+                    componentDesc: 'Komposisi investasi berdasarkan asal modal dan sektor tujuan penanaman modal.',
+                    components: [
+                        { name: 'PMDN (Modal Dalam Negeri)', value: 63.0, unit: '%', context: 'Pangsa penanaman modal investor domestik' },
+                        { name: 'PMA (Modal Asing)', value: 37.0, unit: '%', context: 'Pangsa penanaman modal investor asing' },
+                        { name: 'Industri Pengolahan', value: 28.4, unit: '% pangsa', context: 'Investasi manufaktur dan pabrikasi' },
+                        { name: 'Perdagangan & Reparasi', value: 19.6, unit: '% pangsa', context: 'Perdagangan besar dan ritel modern' },
+                        { name: 'Akomodasi & Makan Minum', value: 16.3, unit: '% pangsa', context: 'Hotel, resort dan kuliner pariwisata' },
+                        { name: 'Pertanian & Perikanan', value: 14.2, unit: '% pangsa', context: 'Agroindustri, cold storage & tambak' },
+                        { name: 'Konstruksi & Properti', value: 11.5, unit: '% pangsa', context: 'Bangunan fisik dan kawasan industri' },
+                        { name: 'Sektor Lainnya', value: 10.0, unit: '% pangsa', context: 'Energi terbarukan, logistik & jasa' }
+                    ],
+                    comparisonTitle: 'Pemetaan investasi kecamatan',
+                    comparisonDesc: 'Sebaran realisasi investasi dan potensi wilayah di Kabupaten Banyuwangi.',
+                    peers: [
+                        { name: 'Pesanggaran', value: 7.1, note: 'Potensi: Pertambangan & wisata bahari', current: false },
+                        { name: 'Banyuwangi (Kota)', value: 6.2, note: 'Pusat pemerintahan & komersial', current: true },
+                        { name: 'Muncar', value: 5.7, note: 'Potensi: Perikanan & agroindustri', current: false },
+                        { name: 'Rogojampi', value: 4.8, note: 'Potensi: Transportasi & perdagangan', current: false },
+                        { name: 'Glagah', value: 4.6, note: 'Potensi: Pariwisata & hospitality', current: false },
+                        { name: 'Wongsorejo', value: 4.2, note: 'Potensi: Pertanian & energi baru', current: false },
+                        { name: 'Genteng', value: 3.9, note: 'Potensi: Perdagangan & jasa logistik', current: false },
+                        { name: 'Siliragung', value: 3.7, note: 'Potensi: Pertanian & perkebunan', current: false }
+                    ],
+                    heatTitle: 'Komposisi investasi sektoral',
+                    heatDesc: 'Perbandingan pangsa indikatif sektor investasi dalam lima tahun terakhir.',
+                    heatRows: [
+                        { name: 'Industri pengolahan', values: [20.4, 22.4, 23.8, 26.4, 28.4] },
+                        { name: 'Perdagangan & reparasi', values: [14.1, 15.5, 16.4, 18.2, 19.6] },
+                        { name: 'Akomodasi & makan minum', values: [11.7, 12.9, 13.7, 15.1, 16.3] },
+                        { name: 'Pertanian & perikanan', values: [10.2, 11.2, 11.9, 13.2, 14.2] },
+                        { name: 'Konstruksi & properti', values: [8.3, 9.1, 9.7, 10.7, 11.5] },
+                        { name: 'Sektor lainnya', values: [7.2, 7.9, 8.4, 9.3, 10.0] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 1.80, change: null },
+                        { year: 2016, value: 2.10, change: '+0,30' },
+                        { year: 2017, value: 2.50, change: '+0,40' },
+                        { year: 2018, value: 2.90, change: '+0,40' },
+                        { year: 2019, value: 3.10, change: '+0,20' },
+                        { year: 2020, value: 2.80, change: '-0,30' },
+                        { year: 2021, value: 3.20, change: '+0,40' },
+                        { year: 2022, value: 3.50, change: '+0,30' },
+                        { year: 2023, value: 3.66, change: '+0,16' },
+                        { year: 2024, value: 3.82, change: '+0,16' }
+                    ]
+                },
+                // 7: Pertumbuhan Investasi
+                {
+                    name: 'Pertumbuhan Investasi',
+                    subtitle: 'Perubahan tahunan nilai investasi yang direalisasikan',
+                    definition: 'Pertumbuhan investasi menunjukkan perubahan laju realisasi penanaman modal dari tahun ke tahun. Interpretasinya perlu dilengkapi nilai nominal investasi, komposisi PMA/PMDN, sektor tujuan, dan persebaran proyek.',
+                    metrics: [
+                        { label: 'Perubahan tahunan', value: '-1,78 pp', note: 'Perubahan laju pertumbuhan investasi' },
+                        { label: 'Pertumbuhan ekonomi', value: '5,18%', note: `Tahun ${curYear}` },
+                        { label: 'Pertumbuhan tertinggi', value: '14,20%', note: 'Terjadi pada tahun 2023' }
+                    ],
+                    componentTitle: 'Pertumbuhan investasi menurut sektor',
+                    componentDesc: 'Perkembangan laju investasi sektoral memberi konteks arah alokasi modal.',
+                    components: [
+                        { name: 'Akomodasi & Makan Minum', value: 16.8, unit: '%', context: 'Aktivitas investasi sektor pariwisata' },
+                        { name: 'Industri Pengolahan', value: 14.6, unit: '%', context: 'Investasi manufaktur dan hilirisasi' },
+                        { name: 'Perdagangan', value: 12.9, unit: '%', context: 'Perdagangan besar dan eceran' },
+                        { name: 'Pertanian & Perikanan', value: 11.7, unit: '%', context: 'Agroindustri dan perikanan' },
+                        { name: 'Konstruksi', value: 9.8, unit: '%', context: 'Bangunan dan infrastruktur' },
+                        { name: 'Transportasi', value: 8.9, unit: '%', context: 'Transportasi dan pergudangan' }
+                    ],
+                    comparisonTitle: 'Pertumbuhan investasi menurut wilayah',
+                    comparisonDesc: 'Perbandingan indeks pertumbuhan realisasi investasi antarkecamatan.',
+                    peers: [
+                        { name: 'Pesanggaran', value: 14.9, note: 'Indeks pertumbuhan · Pertambangan & wisata', current: false },
+                        { name: 'Banyuwangi (Kota)', value: 13.0, note: 'Indeks pertumbuhan · Perdagangan & jasa', current: true },
+                        { name: 'Muncar', value: 12.0, note: 'Indeks pertumbuhan · Perikanan', current: false },
+                        { name: 'Rogojampi', value: 10.1, note: 'Indeks pertumbuhan · Perdagangan', current: false },
+                        { name: 'Glagah', value: 9.7, note: 'Indeks pertumbuhan · Pariwisata', current: false }
+                    ],
+                    heatTitle: 'Peta panas pertumbuhan investasi',
+                    heatDesc: 'Tren pertumbuhan investasi sektoral pada lima tahun terakhir.',
+                    heatRows: [
+                        { name: 'Akomodasi & Makan Minum', values: [7.1, 9.2, 11.1, 13.8, 16.8] },
+                        { name: 'Industri Pengolahan', values: [6.1, 8.0, 9.6, 12.0, 14.6] },
+                        { name: 'Perdagangan', values: [5.4, 7.1, 8.5, 10.6, 12.9] },
+                        { name: 'Pertanian & Perikanan', values: [4.9, 6.4, 7.7, 9.6, 11.7] },
+                        { name: 'Konstruksi', values: [4.1, 5.4, 6.5, 8.0, 9.8] },
+                        { name: 'Transportasi', values: [3.7, 4.9, 5.9, 7.3, 8.9] }
+                    ],
+                    annualSeries: [
+                        { year: 2015, value: 6.10, change: null },
+                        { year: 2016, value: 7.20, change: '+1,10' },
+                        { year: 2017, value: 8.00, change: '+0,80' },
+                        { year: 2018, value: 8.80, change: '+0,80' },
+                        { year: 2019, value: 9.40, change: '+0,60' },
+                        { year: 2020, value: -2.00, change: '-11,40' },
+                        { year: 2021, value: 4.20, change: '+6,20' },
+                        { year: 2022, value: 8.80, change: '+4,60' },
+                        { year: 2023, value: 14.20, change: '+5,40' },
+                        { year: 2024, value: 12.42, change: '-1,78' }
+                    ]
+                }
+            ];
+
+            return configs[idx] || configs[0];
+        }
+
+        function renderDetailTrendChart(series, years, unit) {
+            if (!series || !series.length || !years || !years.length) {
+                return '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:11px;">Belum ada observasi tren untuk divisualisasikan.</div>';
+            }
+            const allVals = series.flatMap(s => s.values).filter(v => typeof v === 'number' && !isNaN(v));
+            if (!allVals.length) {
+                return '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:11px;">Belum ada data numerik untuk grafik.</div>';
+            }
+            const rawMin = Math.min(...allVals);
+            const rawMax = Math.max(...allVals);
+            const padding = (rawMax - rawMin || Math.max(Math.abs(rawMax) * 0.08, 1)) * 0.16;
+            const min = rawMin - padding;
+            const max = rawMax + padding;
+            const range = (max - min) || 1;
+            const left = 52, right = 688, top = 22, bottom = 158;
+
+            const x = i => left + (years.length <= 1 ? 0 : (i / (years.length - 1)) * (right - left));
+            const y = v => bottom - ((v - min) / range) * (bottom - top);
+
+            let gridSvg = '';
+            [0, 0.33, 0.66, 1].forEach(frac => {
+                const tick = min + frac * range;
+                const py = y(tick);
+                gridSvg += `
+                    <g>
+                        <line x1="${left}" x2="${right}" y1="${py}" y2="${py}" class="detail-gridline" />
+                        <text x="44" y="${py + 3}" text-anchor="end" class="detail-axis-text">${tick.toFixed(1)}${unit}</text>
+                    </g>
+                `;
+            });
+
+            let seriesSvg = '';
+            series.forEach(item => {
+                const pts = item.values.map((pt, i) => `${x(i)},${y(pt)}`).join(' ');
+                const lastIdx = item.values.length - 1;
+                let pointsSvg = '';
+                item.values.forEach((pt, i) => {
+                    const r = (i === lastIdx) ? 4.5 : 2.5;
+                    pointsSvg += `
+                        <circle cx="${x(i)}" cy="${y(pt)}" r="${r}" class="detail-point detail-point-${item.style || 'primary'}">
+                            <title>${item.name}: ${typeof pt === 'number' ? pt.toFixed(2) : pt}${unit}</title>
+                        </circle>
+                    `;
+                });
+                seriesSvg += `
+                    <g>
+                        <polyline points="${pts}" class="detail-line detail-line-${item.style || 'primary'}" />
+                        ${pointsSvg}
+                    </g>
+                `;
+            });
+
+            const labelIndices = [...new Set([0, Math.round((years.length - 1) / 3), Math.round(((years.length - 1) * 2) / 3), years.length - 1])];
+            let xAxisSvg = '';
+            labelIndices.forEach(i => {
+                if (years[i] !== undefined) {
+                    xAxisSvg += `<text x="${x(i)}" y="184" text-anchor="middle" class="detail-axis-text">${years[i]}</text>`;
+                }
+            });
+
+            let legendHtml = '<div class="detail-chart-legend">';
+            series.forEach(item => {
+                legendHtml += `<span><i class="legend-dot ${item.style || 'primary'}"></i>${item.name}</span>`;
+            });
+            legendHtml += '</div>';
+
+            return `
+                <div class="detail-trend-wrap">
+                    <svg class="detail-trend-svg" viewBox="0 0 720 198" role="img" aria-label="Grafik tren historis indikator">
+                        ${gridSvg}
+                        ${seriesSvg}
+                        ${xAxisSvg}
+                    </svg>
+                    ${legendHtml}
+                </div>
+            `;
+        }
+
+        function openKpiDetailModal(idx) {
+            if (!modalBox || !modalOverlay) return;
+            const card = document.querySelector(`.kpi-card[data-index="${idx}"]`);
+            const cfg = getKpiDetailConfig(idx);
+            if (!cfg) return;
+
+            const curVal = (card && card.dataset.value) ? card.dataset.value : (cfg.curVal || (card && card.querySelector('.kpi-value strong') ? card.querySelector('.kpi-value strong').textContent.trim() : ''));
+            const curUnit = (card && card.dataset.unit) ? card.dataset.unit : (cfg.curUnit || (card && card.querySelector('.kpi-value span') ? card.querySelector('.kpi-value span').textContent.trim() : ''));
+            const curStatus = (card && card.dataset.status) ? card.dataset.status : (cfg.curStatus || (card && card.querySelector('.badge') ? card.querySelector('.badge').textContent.trim() : 'Meningkat'));
+            const curDelta = (card && card.dataset.delta) ? card.dataset.delta : (cfg.curDelta || (card && card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[↗↘]/g, '').trim() : ''));
+            const badgeClass = card && card.querySelector('.badge') ? card.querySelector('.badge').className.replace('badge', '').trim() : 'success';
+            const curYear = (card && card.dataset.year) ? card.dataset.year : (cfg.year || (card && card.querySelector('.kpi-period') && card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/) ? card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/)[1] : (filterYear && filterYear.value && filterYear.value !== 'all' ? filterYear.value : '2024')));
+            const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
+
+            // Calculate max for component bars
+            const maxCompVal = Math.max(...cfg.components.map(c => Math.abs(c.value)), 1);
+            const maxPeerVal = Math.max(...cfg.peers.map(p => Math.abs(p.value)), 1);
+
+            let compRowsHtml = '';
+            cfg.components.forEach(c => {
+                const pct = Math.max(2, Math.min(100, (Math.abs(c.value) / maxCompVal) * 100));
+                compRowsHtml += `
+                    <div class="detail-component-row">
+                        <div class="detail-component-name">
+                            <strong>${c.name}</strong>
+                            <small>${c.context}${c.share ? ' · Pangsa ' + c.share + '%' : ''}</small>
+                        </div>
+                        <div class="detail-component-track">
+                            <i style="width: ${pct}%"></i>
+                        </div>
+                        <b>${c.value} <small>${c.unit}</small></b>
+                    </div>
+                `;
+            });
+
+            let compTableRowsHtml = '';
+            cfg.components.forEach(c => {
+                compTableRowsHtml += `
+                    <tr class="comp-table-row" data-search="${c.name.toLowerCase()} ${c.context.toLowerCase()}">
+                        <td><strong>${c.name}</strong></td>
+                        <td class="numeric">${c.value}</td>
+                        <td>${c.unit}</td>
+                        <td class="numeric">${c.share ? c.share + '%' : '—'}</td>
+                        <td class="numeric">${c.benchmark ? c.benchmark + '%' : '—'}</td>
+                        <td>${c.context}</td>
+                    </tr>
+                `;
+            });
+
+            let peerBarsHtml = '';
+            cfg.peers.forEach((p, i) => {
+                const pct = Math.max(2, Math.min(100, (Math.abs(p.value) / maxPeerVal) * 100));
+                peerBarsHtml += `
+                    <div class="detail-rank-row ${p.current ? 'selected' : ''}">
+                        <div class="detail-rank-label">
+                            <span>${i + 1}</span>
+                            <strong>${p.name}</strong>
+                            <small>${p.note}</small>
+                        </div>
+                        <div class="detail-rank-track">
+                            <i style="width: ${pct}%"></i>
+                        </div>
+                        <b>${p.value}</b>
+                    </div>
+                `;
+            });
+
+            let peerTableRowsHtml = '';
+            cfg.peers.forEach(p => {
+                peerTableRowsHtml += `
+                    <tr class="${p.current ? 'selected-row' : ''}">
+                        <td><strong>${p.name}</strong></td>
+                        <td class="numeric">${p.value}</td>
+                        <td>${p.note}</td>
+                        <td>${p.current ? '<span class="badge info">Wilayah Dipilih</span>' : '<span class="table-muted">Pembanding</span>'}</td>
+                    </tr>
+                `;
+            });
+
+            // Heatmap columns
+            const heatCols = cfg.heatColumns || ['2020', '2021', '2022', '2023', '2024'];
+            let heatColsTh = '';
+            heatCols.forEach(col => { heatColsTh += `<th>${col}</th>`; });
+
+            // Flatten all heat values for max
+            const allHeatVals = cfg.heatRows.flatMap(r => r.values).map(Math.abs);
+            const maxHeat = Math.max(...allHeatVals, 1);
+
+            let heatRowsHtml = '';
+            cfg.heatRows.forEach(r => {
+                let tds = '';
+                r.values.forEach(v => {
+                    const ratio = Math.min(0.65, Math.max(0.08, (Math.abs(v) / maxHeat) * 0.65));
+                    tds += `<td style="background: rgba(2, 132, 199, ${ratio});">${v}</td>`;
+                });
+                heatRowsHtml += `
+                    <tr>
+                        <th>${r.name}</th>
+                        ${tds}
+                    </tr>
+                `;
+            });
+
+            let histTableRowsHtml = '';
+            cfg.annualSeries.forEach(s => {
+                histTableRowsHtml += `
+                    <tr class="hist-row">
+                        <td><strong>${s.year}</strong></td>
+                        <td class="numeric">${s.value}</td>
+                        <td>${cfg.components[0] ? cfg.components[0].unit : '%'}</td>
+                        <td class="numeric">${s.change === null ? '—' : s.change}</td>
+                    </tr>
+                `;
+            });
+
+            // 1. DETAIL TREND CHART & INSIGHT PREPARATION
+            const defaultReadings = [
+                'Bandingkan pertumbuhan antartahun dan wilayah, lalu telusuri sektor yang menjadi sumber perubahan.',
+                'Nilai rata-rata per penduduk tidak menggambarkan distribusi pendapatan dan belum memperhitungkan perubahan harga.',
+                'Inflasi yang lebih rendah berarti laju kenaikan harga melambat; bukan berarti tingkat harga turun.',
+                'TPT yang turun perlu dibaca bersama partisipasi angkatan kerja dan kualitas pekerjaan.',
+                'Penurunan persentase kemiskinan perlu diverifikasi bersama kedalaman, keparahan, dan jumlah penduduk miskin.',
+                'Kenaikan IPM perlu dilihat dari kontribusi dimensi kesehatan, pendidikan, dan standar hidup.',
+                'Bedakan perubahan nilai nominal realisasi investasi dengan laju pertumbuhan investasi.',
+                'Perbandingan pertumbuhan investasi dan ekonomi tidak dengan sendirinya membuktikan hubungan sebab-akibat.'
+            ];
+            function buildDynamicInsightText(idx, cfg, curVal, curUnit, curDelta, curStatus, curYear) {
+                const cleanCurVal = String(curVal).replace(/^Rp\s*/i, '').trim();
+                // If cfg.insight exists AND already matches curYear AND curVal, use cfg.insight
+                if (cfg.insight && cfg.insight.includes(String(curYear)) && (cfg.insight.includes(cleanCurVal) || (cfg.curVal && cfg.insight.includes(String(cfg.curVal))))) {
+                    return cfg.insight;
+                }
+
+                const isNeg = (curDelta || '').includes('-') || curStatus === 'Melambat' || curStatus === 'Menurun';
+                const hasDelta = !!curDelta;
+
+                switch (idx) {
+                    case 0: { // Pertumbuhan Ekonomi
+                        const trend = isNeg ? 'melambat' : (curStatus === 'Stabil' ? 'stabil' : 'meningkat');
+                        const topSec = (cfg.breakdown && cfg.breakdown.length > 0) ? cfg.breakdown[0] : ((cfg.components && cfg.components.length > 0) ? cfg.components[0] : null);
+                        const secPhrase = topSec ? ` Lapangan usaha ${topSec.name} mencatatkan laju pertumbuhan tertinggi sebesar ${topSec.value}%${topSec.note ? ' (' + topSec.note + ')' : ''}.` : '';
+                        const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dibandingkan periode sebelumnya` : '';
+                        return `Pertumbuhan ekonomi Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal}%${deltaPhrase}.${secPhrase}`;
+                    }
+                    case 1: { // PDRB per Kapita
+                        const trend = isNeg ? 'menurun' : 'meningkat';
+                        const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dibandingkan tahun sebelumnya` : '';
+                        const adhb = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : 'Rp 108,92 Triliun';
+                        const pop = (cfg.metrics && cfg.metrics[2]) ? cfg.metrics[2].value : '1.735.420 Jiwa';
+                        return `PDRB per kapita atas dasar harga berlaku (ADHB) Kabupaten Banyuwangi pada tahun ${curYear} tercatat mencapai Rp ${cleanCurVal} Juta${deltaPhrase}. Capaian ini didukung oleh total PDRB ADHB ${adhb} dengan jumlah penduduk tercatat sebanyak ${pop}.`;
+                    }
+                    case 2: { // Tingkat Inflasi
+                        const trend = isNeg ? 'terkendali dengan penurunan' : 'mengalami pergerakan';
+                        const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dari periode sebelumnya` : '';
+                        const mtm = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : '0,19%';
+                        return `Tingkat inflasi tahunan (yoy) Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal} ${curUnit}${deltaPhrase}. Kondisi stabilitas harga konsumen tetap berada dalam rentang sasaran target (2,5 ± 1%), didukung oleh dinamika inflasi bulanan (mtm) ${mtm}.`;
+                    }
+                    case 3: { // Pengangguran Terbuka
+                        const trend = isNeg ? 'membaik dengan penurunan' : 'mengalami pergerakan';
+                        const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dari periode sebelumnya` : '';
+                        const tpak = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : '74,91%';
+                        const work = (cfg.metrics && cfg.metrics[1]) ? cfg.metrics[1].value : '964,8 Ribu';
+                        return `Tingkat Pengangguran Terbuka (TPT) Kabupaten Banyuwangi pada tahun ${curYear} berada pada angka ${curVal}%${deltaPhrase}. Kinerja penyerapan tenaga kerja didukung oleh Tingkat Partisipasi Angkatan Kerja (TPAK) sebesar ${tpak} dengan total penduduk bekerja mencapai ${work} jiwa.`;
+                    }
+                    case 4: { // Tingkat Kemiskinan
+                        const trend = isNeg ? 'berkurang/menurun' : 'mengalami pergerakan';
+                        const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dibandingkan tahun sebelumnya` : '';
+                        const ppl = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : '106,6 Ribu';
+                        const gk = (cfg.metrics && cfg.metrics[1]) ? cfg.metrics[1].value : 'Rp 470.713';
+                        return `Persentase penduduk miskin (P0) di Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal}%${deltaPhrase}. Jumlah warga miskin tercatat sebanyak ${ppl} jiwa pada batas Garis Kemiskinan ${gk}/kapita/bulan.`;
+                    }
+                    case 5: { // IPM
+                        const deltaPhrase = hasDelta ? `, meningkat sebesar ${curDelta} dari tahun sebelumnya` : '';
+                        const numVal = parseFloat(String(cleanCurVal).replace(',', '.'));
+                        const tier = numVal >= 80 ? 'Sangat Tinggi' : (numVal >= 70 ? 'Tinggi' : 'Sedang');
+                        const uhh = (cfg.metrics && cfg.metrics[1]) ? cfg.metrics[1].value : '71,38 Tahun';
+                        const rls = (cfg.metrics && cfg.metrics[2]) ? cfg.metrics[2].value : '7,78 Tahun';
+                        return `Indeks Pembangunan Manusia (IPM) Kabupaten Banyuwangi pada tahun ${curYear} mencapai ${cleanCurVal} Poin${deltaPhrase} (status '${tier}'). Capaian ini ditopang oleh Umur Harapan Hidup (UHH) ${uhh} dan Rata-rata Lama Sekolah (RLS) ${rls}.`;
+                    }
+                    case 6: { // Realisasi Investasi
+                        const deltaPhrase = hasDelta ? ` (${curDelta} dibandingkan periode lalu)` : '';
+                        const pmdn = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : 'Rp 3.240 Miliar';
+                        const pma = (cfg.metrics && cfg.metrics[1]) ? cfg.metrics[1].value : 'Rp 110 Miliar';
+                        return `Total realisasi penanaman modal fisik di Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal.startsWith('Rp') ? curVal : 'Rp ' + curVal} ${curUnit}${deltaPhrase}. Realisasi modal didominasi oleh investasi dalam negeri (PMDN) sebesar ${pmdn} dan penanaman modal asing (PMA) sebesar ${pma}.`;
+                    }
+                    case 7: { // Pertumbuhan Investasi
+                        const numVal = parseFloat(String(cleanCurVal).replace(',', '.'));
+                        const note = numVal >= 0 
+                            ? 'mencerminkan ekspansi positif minat pemodal dan perluasan skala usaha di daerah' 
+                            : 'mencerminkan dinamika siklus penyelesaian proyek modal fisik dan evaluasi perizinan usaha di daerah';
+                        return `Laju pertumbuhan investasi tahunan Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal}% (status ${curStatus}). Pergerakan laju investasi ini ${note}.`;
+                    }
+                    default:
+                        return cfg.insight || `Capaian indikator ${cfg.name} Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal} ${curUnit}. Data ini mencerminkan stabilitas indikator makro daerah yang terverifikasi resmi.`;
+                }
+            }
+            const insightText = buildDynamicInsightText(idx, cfg, curVal, curUnit, curDelta, curStatus, curYear);
+            const readingText = cfg.reading || defaultReadings[idx] || 'Bandingkan data dengan periode sebelumnya dan wilayah pembanding.';
+            const chartTitle = cfg.chartTitle || `Tren Historis ${cfg.name}`;
+            const chartUnit = cfg.chartUnit || (cfg.components && cfg.components[0] ? cfg.components[0].unit : '%');
+            const years = (cfg.annualSeries && cfg.annualSeries.length) ? cfg.annualSeries.map(s => s.year) : [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
+            const chartSeries = (cfg.chartSeries && cfg.chartSeries.length) ? cfg.chartSeries : [
+                { name: `Kabupaten Banyuwangi (${cfg.name})`, values: cfg.annualSeries ? cfg.annualSeries.map(s => s.value) : [], style: 'primary' }
+            ];
+            const trendChartHtml = renderDetailTrendChart(chartSeries, years, chartUnit);
+
+            // 2. BREAKDOWN CARD (e.g. for Pertumbuhan Ekonomi or Investasi)
+            let breakdownCardHtml = '';
+            if (cfg.breakdown && cfg.breakdown.length > 0) {
+                const maxBreakdown = Math.max(...cfg.breakdown.map(b => Math.abs(b.value)), 1);
+                let breakdownRowsHtml = '';
+                cfg.breakdown.forEach(item => {
+                    const pct = Math.max(3, Math.min(100, (Math.abs(item.value) / maxBreakdown) * 100));
+                    breakdownRowsHtml += `
+                        <div class="detail-sector-row">
+                            <div>
+                                <strong>${item.name}</strong>
+                                <small>${item.note}</small>
+                            </div>
+                            <div class="detail-sector-track">
+                                <i style="width: ${pct}%;"></i>
+                            </div>
+                            <b>${typeof item.value === 'number' ? item.value.toFixed(2) : item.value}%</b>
+                        </div>
+                    `;
+                });
+                breakdownCardHtml = `
+                    <article class="card detail-breakdown-card">
+                        <div class="card-head">
+                            <div>
+                                <span class="eyebrow" style="font-size:10px; font-weight:700; color:#0284c7;">${idx === 6 ? 'RINCIAN PERMODALAN' : 'LAPANGAN USAHA'}</span>
+                                <h3>${idx === 6 ? 'Komposisi Modal & Realisasi Kuartal' : 'Pertumbuhan Sektor Tertinggi'}</h3>
+                                <p>${idx === 6 ? 'Komposisi modal dan laporan triwulanan tahun ' + curYear : 'Urutan berdasarkan laju pertumbuhan pada tahun ' + curYear + '; bukan kontribusi terhadap pertumbuhan PDRB.'}</p>
+                            </div>
+                        </div>
+                        <div class="detail-sector-bars">
+                            ${breakdownRowsHtml}
+                        </div>
+                    </article>
+                `;
+            }
+
+            // 3. RELATED SECTION (3 SUPPORTING INDICATORS)
+            const relatedList = (cfg.related && cfg.related.length) ? cfg.related : [
+                { label: 'Indikator Makro Terkait', value: `${curVal} ${curUnit}`, note: `Tahun referensi aktif ${curYear}`, available: true },
+                { label: 'Pembanding Wilayah Jawa Timur', value: '38 Daerah', note: 'Data pembanding kabupaten/kota', available: true },
+                { label: 'Observasi Seri Historis', value: `${years.length} Periode`, note: 'Publikasi resmi BPS / OPD terkait', available: true }
+            ];
+            let relatedCardsHtml = '';
+            relatedList.forEach(item => {
+                const isAvail = (item.available !== false);
+                relatedCardsHtml += `
+                    <article class="detail-related-card ${isAvail ? '' : 'unavailable'}">
+                        <div>
+                            <span class="related-status">
+                                <i class="${isAvail ? 'available' : ''}"></i>
+                                ${isAvail ? 'Tersedia pada basis data resmi' : 'Belum tersedia'}
+                            </span>
+                            <strong>${item.label}</strong>
+                        </div>
+                        <b>${item.value}</b>
+                        <p>${item.note}</p>
+                    </article>
+                `;
+            });
+            const relatedSectionHtml = `
+                <section class="detail-related-section">
+                    <div class="card-head">
+                        <div>
+                            <span class="eyebrow" style="font-size:10px; font-weight:700; color:#0284c7;">INDIKATOR TURUNAN &amp; TERKAIT</span>
+                            <h3>Informasi Pendukung</h3>
+                            <p>Komponen yang membantu menjelaskan dinamika indikator utama secara komprehensif.</p>
+                        </div>
+                    </div>
+                    <div class="detail-related-grid">
+                        ${relatedCardsHtml}
+                    </div>
+                </section>
+            `;
+
+            // 4. COVERAGE NOTE
+            const coverageText = cfg.coverage || 'Data bersumber dari publikasi statistik resmi BPS dan instansi terkait Pemerintah Kabupaten Banyuwangi.';
+            const coverageNoteHtml = `
+                <div class="detail-coverage-note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                    <div>
+                        <strong>Cakupan dan Keterbatasan Data</strong>
+                        <p>${coverageText}</p>
+                        <small>Sumber resmi: Publikasi BPS Kabupaten Banyuwangi / BPS Provinsi Jawa Timur / DPMPTSP Kabupaten Banyuwangi.</small>
+                    </div>
+                </div>
+            `;
+
+            modalBox.innerHTML = `
+                <header class="indicator-detail-header">
+                    <div>
+                        <span class="eyebrow" style="font-size:11px; font-weight:700; color:#0284c7; letter-spacing:0.04em;">DETAIL INDIKATOR EKONOMI</span>
+                        <h2 id="indicator-detail-title">${cfg.name}</h2>
+                        <p>${cfg.subtitle}</p>
+                    </div>
+                    <div class="detail-header-actions">
+                        <span class="badge simulation" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd; font-weight:700;">DATA RESMI DAERAH</span>
+                        <button type="button" class="icon-button" id="btn-close-detail-modal" aria-label="Tutup detail" style="width:34px; height:34px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="detail-context">
+                    <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Tahun ${cfg.year || curYear} • Tahunan</span>
+                    <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Kabupaten Banyuwangi</span>
+                    <span><i class="pulse"></i> Basis Data Resmi Terintegrasi</span>
+                </div>
+
+                <div class="detail-metric-overview">
+                    <div class="detail-primary-metric">
+                        <span>Nilai indikator utama</span>
+                        <strong>${curVal} <small>${curUnit}</small></strong>
+                        <span class="badge ${badgeClass}">${curStatus}</span>
+                        <p>${cfg.definition}</p>
+                    </div>
+                    ${cfg.metrics.map(m => `
+                        <div class="detail-secondary-metric">
+                            <span>${m.label}</span>
+                            <strong>${m.value}</strong>
+                            <small>${m.note}</small>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- BODY GRID: TREN HISTORIS SVG LINE CHART & ECONOMIC INSIGHT -->
+                <div class="detail-body-grid">
+                    <article class="card detail-chart-card">
+                        <div class="card-head">
+                            <div>
+                                <span class="eyebrow" style="font-size:10px; font-weight:700; color:#0284c7;">TREN HISTORIS</span>
+                                <h3>${chartTitle}</h3>
+                                <p>Perkembangan ${years[0] || '2015'} hingga ${curYear}</p>
+                            </div>
+                            <span class="badge info">${curYear}</span>
+                        </div>
+                        ${trendChartHtml}
+                    </article>
+
+                    <article class="card detail-insight-card">
+                        <div class="card-head">
+                            <div>
+                                <span class="eyebrow" style="font-size:10px; font-weight:700; color:#0284c7;">ECONOMIC INSIGHT</span>
+                                <h3>Sorotan Indikator</h3>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#0d9488;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        </div>
+                        <p class="detail-insight-text">${insightText}</p>
+                        <div class="detail-definition">
+                            <strong>Cara Membaca</strong>
+                            <span>${readingText}</span>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- BREAKDOWN CARD (SEKTORAL / KUARTAL) -->
+                ${breakdownCardHtml}
+
+                <!-- DEEP DIVE · DATA EXPLORER -->
+                <section class="detail-explorer">
+                    <div class="detail-explorer-heading">
+                        <div>
+                            <span class="eyebrow" style="font-size:10.5px; font-weight:700; color:#0284c7;">DEEP DIVE · DATA EXPLORER</span>
+                            <h3>Eksplorasi Lanjutan Indikator</h3>
+                            <p>Telusuri rincian komponen pembentuk, posisi relatif antarwilayah Jawa Timur, dan observasi seri historis.</p>
+                        </div>
+                        <span class="data-tag">SI-DAPEDA</span>
+                    </div>
+
+                    <div class="detail-explorer-tabs" role="tablist">
+                        <button type="button" class="active" id="btn-tab-components" role="tab">01 · Struktur &amp; Komponen</button>
+                        <button type="button" id="btn-tab-benchmark" role="tab">02 · Benchmarking Wilayah</button>
+                        <button type="button" id="btn-tab-history" role="tab">03 · Data Historis</button>
+                    </div>
+
+                    <!-- TAB 1: STRUKTUR & KOMPONEN -->
+                    <div id="tab-panel-components">
+                        <div class="detail-explorer-panel-head">
+                            <div>
+                                <span class="eyebrow">KOMPOSISI / BREAKDOWN</span>
+                                <h4>${cfg.componentTitle}</h4>
+                                <p>${cfg.componentDesc}</p>
+                            </div>
+                        </div>
+
+                        <div class="detail-component-grid">
+                            <div class="detail-component-chart">
+                                <div class="detail-subhead">
+                                    <strong>Distribusi Nilai Rincian Komponen</strong>
+                                    <small>Periode Tahun ${curYear}</small>
+                                </div>
+                                ${compRowsHtml}
+                            </div>
+                            <aside class="detail-component-aside">
+                                <span class="eyebrow">PANDUAN ANALISIS</span>
+                                <h4>Membaca Kualitas Indikator</h4>
+                                <p>Periksa komponen dengan bobot kontribusi terbesar, laju perubahan, dan arah pergerakannya terhadap agregat daerah. Perhatikan bahwa nilai pangsa, indeks, dan laju pertumbuhan memiliki interpretasi yang berbeda.</p>
+                                <div class="detail-aside-stat">
+                                    <strong>${cfg.components.length}</strong>
+                                    <span>rincian komponen utama</span>
+                                </div>
+                                <div class="detail-aside-stat">
+                                    <strong>${curYear}</strong>
+                                    <span>periode referensi aktif</span>
+                                </div>
+                            </aside>
+                        </div>
+
+                        <div class="detail-data-table-wrap">
+                            <div class="detail-table-toolbar">
+                                <div>
+                                    <strong>Tabel Rincian Komponen</strong>
+                                    <small id="comp-table-count">${cfg.components.length} baris tersedia</small>
+                                </div>
+                                <label class="detail-search">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                    <input type="text" id="input-search-comp" placeholder="Cari rincian...">
+                                </label>
+                                <button type="button" class="button small secondary" id="btn-dl-csv-comp" style="padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Ekspor CSV
+                                </button>
+                            </div>
+                            <table class="detail-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Komponen / Lapangan Usaha</th>
+                                        <th style="text-align:right;">Nilai</th>
+                                        <th>Satuan</th>
+                                        <th style="text-align:right;">Pangsa</th>
+                                        <th style="text-align:right;">Pembanding Jatim</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="comp-table-tbody">
+                                    ${compTableRowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: BENCHMARKING WILAYAH -->
+                    <div id="tab-panel-benchmark" style="display:none;">
+                        <div class="detail-explorer-panel-head">
+                            <div>
+                                <span class="eyebrow">REGIONAL BENCHMARKING</span>
+                                <h4>${cfg.comparisonTitle}</h4>
+                                <p>${cfg.comparisonDesc}</p>
+                            </div>
+                        </div>
+
+                        <div class="detail-benchmark-layout">
+                            <article class="detail-benchmark-chart">
+                                <div class="detail-subhead">
+                                    <strong>Posisi Relatif Antarwilayah</strong>
+                                    <small>Periode Tahun ${curYear}</small>
+                                </div>
+                                <div class="detail-rank-bars">
+                                    ${peerBarsHtml}
+                                </div>
+                            </article>
+                            <aside class="detail-benchmark-summary">
+                                <span class="eyebrow">RINGKASAN PEMBANDING</span>
+                                <strong>Kabupaten Banyuwangi</strong>
+                                <p>Posisi wilayah Banyuwangi ditandai latar biru. Bandingkan jarak capaian terhadap wilayah tetangga di Jawa Timur untuk merumuskan respon kebijakan yang tepat.</p>
+                                <div class="detail-benchmark-numbers">
+                                    <div>
+                                        <small>Nilai Tertinggi</small>
+                                        <b>${Math.max(...cfg.peers.map(p => p.value))}</b>
+                                    </div>
+                                    <div>
+                                        <small>Nilai Terendah</small>
+                                        <b>${Math.min(...cfg.peers.map(p => p.value))}</b>
+                                    </div>
+                                    <div>
+                                        <small>Jumlah Wilayah</small>
+                                        <b>${cfg.peers.length} wilayah</b>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+
+                        <div class="detail-data-table-wrap">
+                            <div class="detail-table-toolbar">
+                                <div>
+                                    <strong>Tabel Perbandingan Wilayah</strong>
+                                    <small>Urutan berdasarkan capaian indikator</small>
+                                </div>
+                                <button type="button" class="button small secondary" id="btn-dl-csv-peer" style="padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Ekspor CSV
+                                </button>
+                            </div>
+                            <table class="detail-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Wilayah</th>
+                                        <th style="text-align:right;">Nilai</th>
+                                        <th>Keterangan</th>
+                                        <th>Status Wilayah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${peerTableRowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: DATA HISTORIS -->
+                    <div id="tab-panel-history" style="display:none;">
+                        <div class="detail-explorer-panel-head">
+                            <div>
+                                <span class="eyebrow">HISTORICAL DATA</span>
+                                <h4>${cfg.heatTitle}</h4>
+                                <p>${cfg.heatDesc}</p>
+                            </div>
+                        </div>
+
+                        <div class="detail-heatmap-card">
+                            <div class="detail-subhead">
+                                <strong>Matriks Peta Panas Historis</strong>
+                                <small>${heatCols.length} periode referensi</small>
+                            </div>
+                            <div class="detail-heatmap-scroll">
+                                <table class="detail-heatmap">
+                                    <thead>
+                                        <tr>
+                                            <th>Komponen</th>
+                                            ${heatColsTh}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${heatRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="detail-heatmap-legend">
+                                <span>Rendah</span>
+                                <i></i><i></i><i></i><i></i>
+                                <span>Tinggi</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-data-table-wrap">
+                            <div class="detail-table-toolbar">
+                                <div>
+                                    <strong>Seri Historis Indikator Utama</strong>
+                                    <small>${cfg.annualSeries.length} observasi tahunan</small>
+                                </div>
+                                <label class="detail-history-filter">
+                                    <span>Tampilkan:</span>
+                                    <select id="select-history-period" style="font-size:11px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer;">
+                                        <option value="5">5 tahun terakhir</option>
+                                        <option value="7">7 tahun terakhir</option>
+                                        <option value="10" selected>Seluruh periode (10 tahun)</option>
+                                    </select>
+                                </label>
+                                <button type="button" class="button small secondary" id="btn-dl-csv-hist" style="padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Ekspor CSV
+                                </button>
+                            </div>
+                            <table class="detail-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tahun</th>
+                                        <th style="text-align:right;">Nilai Realisasi</th>
+                                        <th>Satuan</th>
+                                        <th style="text-align:right;">Perubahan Tahunan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hist-table-tbody">
+                                    ${histTableRowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="detail-source-method">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <div>
+                            <strong>Catatan Metodologi &amp; Sumber Data</strong>
+                            <p>Data bersumber dari publikasi resmi BPS Kabupaten Banyuwangi, BPS Provinsi Jawa Timur, dan DPMPTSP Kabupaten Banyuwangi. Analisis mengacu pada konsep statistik resmi Sistem Neraca Regional dan Survei Sosial Ekonomi Nasional.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INDIKATOR TURUNAN & TERKAIT -->
+                ${relatedSectionHtml}
+
+                <!-- CAKUPAN DAN KETERBATASAN DATA -->
+                ${coverageNoteHtml}
+
+                <footer class="detail-modal-footer">
+                    <span>Periode data: 2015–${curYear} • Frekuensi tahunan terintegrasi</span>
+                    <div>
+                        <button type="button" class="button secondary" id="btn-footer-close-modal">Tutup</button>
+                        <a href="${cleanSite}/analisis_ekonomi" class="button primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                            <span>Buka Analisis Ekonomi</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                    </div>
+                </footer>
+            `;
+
+            // Bind Event Listeners inside Modal
+            const btnCloseX = document.getElementById('btn-close-detail-modal');
+            const btnCloseFooter = document.getElementById('btn-footer-close-modal');
+            if (btnCloseX) btnCloseX.addEventListener('click', closeKpiDetailModal);
+            if (btnCloseFooter) btnCloseFooter.addEventListener('click', closeKpiDetailModal);
+
+            // Tab Buttons
+            const btnTabComp = document.getElementById('btn-tab-components');
+            const btnTabPeer = document.getElementById('btn-tab-benchmark');
+            const btnTabHist = document.getElementById('btn-tab-history');
+            const panelComp = document.getElementById('tab-panel-components');
+            const panelPeer = document.getElementById('tab-panel-benchmark');
+            const panelHist = document.getElementById('tab-panel-history');
+
+            function switchTab(target) {
+                [btnTabComp, btnTabPeer, btnTabHist].forEach(b => b && b.classList.remove('active'));
+                if (panelComp) panelComp.style.display = 'none';
+                if (panelPeer) panelPeer.style.display = 'none';
+                if (panelHist) panelHist.style.display = 'none';
+
+                if (target === 'comp') {
+                    if (btnTabComp) btnTabComp.classList.add('active');
+                    if (panelComp) panelComp.style.display = 'block';
+                } else if (target === 'peer') {
+                    if (btnTabPeer) btnTabPeer.classList.add('active');
+                    if (panelPeer) panelPeer.style.display = 'block';
+                } else if (target === 'hist') {
+                    if (btnTabHist) btnTabHist.classList.add('active');
+                    if (panelHist) panelHist.style.display = 'block';
+                }
+            }
+
+            if (btnTabComp) btnTabComp.addEventListener('click', () => switchTab('comp'));
+            if (btnTabPeer) btnTabPeer.addEventListener('click', () => switchTab('peer'));
+            if (btnTabHist) btnTabHist.addEventListener('click', () => switchTab('hist'));
+
+            // Live Search in Tab 1
+            const searchInput = document.getElementById('input-search-comp');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const q = this.value.toLowerCase().trim();
+                    const rows = modalBox.querySelectorAll('.comp-table-row');
+                    let count = 0;
+                    rows.forEach(r => {
+                        const str = r.getAttribute('data-search') || '';
+                        if (!q || str.includes(q)) {
+                            r.style.display = '';
+                            count++;
+                        } else {
+                            r.style.display = 'none';
+                        }
+                    });
+                    const countEl = document.getElementById('comp-table-count');
+                    if (countEl) countEl.textContent = count + ' baris ditemukan';
+                });
+            }
+
+            // Period Filter in Tab 3
+            const histSelect = document.getElementById('select-history-period');
+            if (histSelect) {
+                histSelect.addEventListener('change', function() {
+                    const limit = parseInt(this.value, 10) || 10;
+                    const rows = modalBox.querySelectorAll('.hist-row');
+                    const total = rows.length;
+                    rows.forEach((r, idx) => {
+                        if (idx >= total - limit) {
+                            r.style.display = '';
+                        } else {
+                            r.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // CSV Download Buttons
+            const btnCsvComp = document.getElementById('btn-dl-csv-comp');
+            if (btnCsvComp) {
+                btnCsvComp.addEventListener('click', () => {
+                    const rows = [['Komponen', 'Nilai', 'Satuan', 'Pangsa', 'Pembanding Jatim', 'Keterangan']];
+                    cfg.components.forEach(c => {
+                        rows.push([c.name, c.value, c.unit, c.share ? c.share + '%' : '', c.benchmark ? c.benchmark + '%' : '', c.context]);
+                    });
+                    downloadDetailCsv(`sidapeda-${cfg.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-komponen.csv`, rows);
+                });
+            }
+
+            const btnCsvPeer = document.getElementById('btn-dl-csv-peer');
+            if (btnCsvPeer) {
+                btnCsvPeer.addEventListener('click', () => {
+                    const rows = [['Wilayah', 'Nilai', 'Keterangan', 'Status']];
+                    cfg.peers.forEach(p => {
+                        rows.push([p.name, p.value, p.note, p.current ? 'Wilayah Terpilih' : 'Pembanding']);
+                    });
+                    downloadDetailCsv(`sidapeda-${cfg.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-benchmarking.csv`, rows);
+                });
+            }
+
+            const btnCsvHist = document.getElementById('btn-dl-csv-hist');
+            if (btnCsvHist) {
+                btnCsvHist.addEventListener('click', () => {
+                    const rows = [['Tahun', 'Nilai', 'Perubahan Tahunan']];
+                    cfg.annualSeries.forEach(s => {
+                        rows.push([s.year, s.value, s.change || '']);
+                    });
+                    downloadDetailCsv(`sidapeda-${cfg.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-historis.csv`, rows);
+                });
+            }
+
+            // Show Modal Overlay
+            modalOverlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            modalBox.scrollTop = 0;
+        }
+
+        // Global expose for inline triggers and external accessibility
+        window.openKpiDetailModal = openKpiDetailModal;
+        window.closeKpiDetailModal = closeKpiDetailModal;
+
+        // Klik kartu KPI untuk membuka modal detail dan menyesuaikan grafik
         document.querySelectorAll('.kpi-card').forEach(card => {
             card.addEventListener('click', function () {
+                const idx = parseInt(this.getAttribute('data-index'), 10);
                 const key = this.getAttribute('data-indicator-key');
                 if (key && indicatorConfigs[key]) {
                     currentIndicatorKey = key;
                     if (indSelect) indSelect.value = key;
                     updateOverviewChart();
-                    if (chartContainer) {
-                        chartContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
+                }
+                if (!isNaN(idx)) {
+                    openKpiDetailModal(idx);
                 }
             });
         });
@@ -2415,6 +3821,7 @@
     function initAnalysisPage() {
         const menuLinks = document.querySelectorAll('.analysis-link');
         const heading = document.getElementById('active-method-heading');
+        const subHeading = document.getElementById('active-method-sub');
         const container = document.getElementById('analysis-content-container');
         const btnFormula = document.getElementById('btn-toggle-formula');
         const formulaBox = document.getElementById('formula-box');
@@ -2423,6 +3830,13 @@
         let activeMethod = 'Location Quotient (LQ)';
         let corrPair = 'growth-tpt';
         let corrPeriod = '10';
+
+        const methodDescriptions = {
+            'Location Quotient (LQ)': 'Identifikasi sektor basis dan keunggulan komparatif ekonomi daerah Kabupaten Banyuwangi.',
+            'Shift Share Analysis': 'Dekomposisi pertumbuhan sektoral terhadap komponen pertumbuhan provinsi, bauran industri, dan keunggulan daya saing lokal.',
+            'Tipologi Klassen': 'Klasifikasi performa dan posisi pertumbuhan sektoral daerah relatif terhadap rata-rata pertumbuhan agregat.',
+            'Analisis Korelasi': 'Analisis kekuatan dan arah asosiasi linear Pearson antar indikator makroekonomi daerah deret 2015–2024.'
+        };
 
         const formulas = {
             'Location Quotient (LQ)': 'LQ = (Tenaga kerja sektor lokal / total lokal) ÷ (Tenaga kerja sektor provinsi / total provinsi). LQ > 1 menunjukkan sektor basis.',
@@ -2441,6 +3855,9 @@
 
         function renderAnalysis() {
             if (heading) heading.textContent = activeMethod;
+            if (subHeading && methodDescriptions[activeMethod]) {
+                subHeading.textContent = methodDescriptions[activeMethod];
+            }
             if (formulaBox) formulaBox.textContent = formulas[activeMethod] || '';
 
             if (activeMethod === 'Location Quotient (LQ)') {
@@ -2690,9 +4107,25 @@
 
                         <aside class="correlation-side">
                             <article class="card correlation-interpretation">
-                                <div class="card-head"><div><span class="eyebrow">INTERPRETASI</span><h3>${strength}</h3></div><span class="relation-icon ${r >= 0 ? 'up' : 'down'}">${r >= 0 ? '↗' : '↘'}</span></div>
-                                <p>Hubungan antara ${selectedPair.xName} dan ${selectedPair.yName} menunjukkan arah ${r >= 0 ? 'positif (bergerak searah)' : 'negatif (bergerak berlawanan)'} dengan derajat korelasi ${strength.toLowerCase()}.</p>
-                                <div class="interpretation-note">Korelasi mengukur asosiasi linear dan bukan hubungan sebab-akibat kausal.</div>
+                                <div class="card-head">
+                                    <div>
+                                        <span class="eyebrow">INTERPRETASI</span>
+                                        <h3>${strength}</h3>
+                                    </div>
+                                    <span class="relation-icon ${r >= 0 ? 'up' : 'down'}" title="${r >= 0 ? 'Arah Korelasi Positif (Searah)' : 'Arah Korelasi Negatif (Berlawanan)'}">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            ${r >= 0 
+                                                ? '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>' 
+                                                : '<line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/>'}
+                                        </svg>
+                                    </span>
+                                </div>
+                                <p class="interpretation-desc">
+                                    Hubungan antara <strong>${selectedPair.xName}</strong> dan <strong>${selectedPair.yName}</strong> menunjukkan arah <strong class="${r >= 0 ? 'positive' : 'negative'}">${r >= 0 ? 'positif (bergerak searah)' : 'negatif (bergerak berlawanan)'}</strong> dengan derajat korelasi <strong>${strength.toLowerCase()}</strong>.
+                                </p>
+                                <div class="interpretation-note">
+                                    <p>Korelasi mengukur asosiasi linear dan bukan hubungan sebab-akibat kausal.</p>
+                                </div>
                             </article>
                         </aside>
                     </section>`;
@@ -2710,9 +4143,24 @@
                 menuLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 activeMethod = this.getAttribute('data-mode');
+                try { localStorage.setItem('sidapeda_active_analysis', activeMethod); } catch (e) {}
                 renderAnalysis();
             });
         });
+
+        // Restore active method from localStorage if available
+        try {
+            const savedMethod = localStorage.getItem('sidapeda_active_analysis');
+            if (savedMethod && savedMethod !== activeMethod) {
+                const targetLink = Array.from(menuLinks).find(l => l.getAttribute('data-mode') === savedMethod);
+                if (targetLink) {
+                    menuLinks.forEach(l => l.classList.remove('active'));
+                    targetLink.classList.add('active');
+                    activeMethod = savedMethod;
+                    renderAnalysis();
+                }
+            }
+        } catch (e) {}
 
         if (btnExport) {
             btnExport.addEventListener('click', () => {
@@ -4217,7 +5665,6 @@
         const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
         const searchInput = document.getElementById('admin-search-input');
         const filterStatus = document.getElementById('admin-filter-status');
-        const sortSelect = document.getElementById('admin-sort');
         const filterCluster = document.getElementById('admin-filter-cluster');
         const filterYear = document.getElementById('admin-filter-year');
         const btnOpenModal = document.getElementById('btn-open-add-modal');
@@ -4237,11 +5684,10 @@
         function reloadFiltered() {
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
-            const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'code';
             const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
             const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
             const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : '';
-            window.location.href = `${cleanSite}/database?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
+            window.location.href = `${cleanSite}/database?q=${q}&status=${st}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
         }
 
         if (searchInput) {
@@ -4250,7 +5696,6 @@
             });
         }
         if (filterStatus) filterStatus.addEventListener('change', reloadFiltered);
-        if (sortSelect) sortSelect.addEventListener('change', reloadFiltered);
         if (filterCluster) filterCluster.addEventListener('change', reloadFiltered);
         if (filterYear) filterYear.addEventListener('change', reloadFiltered);
 
@@ -4342,28 +5787,49 @@
                     return;
                 }
 
-                // Cek apakah indikator master memiliki rincian sub-kategori (misal EKO-003.A, EKO-004.A, EKO-015.1, dsb)
+                // Cek apakah indikator master memiliki rincian sub-kategori (misal EKO-003.A, EKO-004.A, EKO-015.1, INV-001.Q1, dsb)
                 const subItems = (window.CATALOG_MASTER_LOOKUP && Array.isArray(window.CATALOG_MASTER_LOOKUP))
                     ? window.CATALOG_MASTER_LOOKUP.filter(m => m.code && m.code.toUpperCase().startsWith(val + '.'))
                     : [];
 
                 if (subItems.length > 0 && addSectoralGroup && addSectoralSelect) {
                     addSectoralGroup.style.display = 'block';
+                    const isInv = val.startsWith('INV-');
                     const isExp = (val === 'EKO-015' || val === 'EKO-016');
-                    if (addSectoralBadge) addSectoralBadge.textContent = isExp ? 'Komponen Pengeluaran' : 'Sektor Lapangan Usaha';
+                    if (addSectoralBadge) {
+                        if (isInv) addSectoralBadge.textContent = 'Kuartal Investasi';
+                        else if (isExp) addSectoralBadge.textContent = 'Komponen Pengeluaran';
+                        else addSectoralBadge.textContent = 'Sektor Lapangan Usaha';
+                    }
                     if (addSectoralLabel) {
-                        addSectoralLabel.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg> ${isExp ? 'Rincian Komponen Pengeluaran (Komponen 1 s.d. 6)' : 'Rincian Kategori Lapangan Usaha (Kategori A s.d. U & Tanpa Migas)'}`;
+                        let lblText = 'Rincian Kategori Lapangan Usaha (Kategori A s.d. U & Tanpa Migas)';
+                        if (isInv) lblText = 'Pilih Kuartal Investasi (Kuartal 1 s.d. 4)';
+                        else if (isExp) lblText = 'Rincian Komponen Pengeluaran (Komponen 1 s.d. 6)';
+                        addSectoralLabel.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg> ${lblText}`;
                     }
 
                     const parentMatch = window.CATALOG_MASTER_LOOKUP.find(m => (m.code || '').toUpperCase() === val);
                     let optHtml = `<option value="${val}">[TOTAL] ${parentMatch ? parentMatch.name : 'Total ' + val} (Total Agregat)</option>`;
-                    subItems.forEach(sub => {
-                        let subKey = sub.code.substring(val.length + 1);
-                        if (subKey === 'MN') subKey = 'M,N';
-                        else if (subKey === 'RSTU') subKey = 'R,S,T,U';
-                        const cleanSubName = (sub.name || '').replace(/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i, '');
-                        optHtml += `<option value="${sub.code}">[${subKey}] ${cleanSubName}</option>`;
-                    });
+                    if (isInv) {
+                        const qOrder = { 'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4 };
+                        subItems.sort((a, b) => {
+                            const kA = (a.code || '').substring(val.length + 1);
+                            const kB = (b.code || '').substring(val.length + 1);
+                            return (qOrder[kA] || 99) - (qOrder[kB] || 99);
+                        });
+                        subItems.forEach(sub => {
+                            const subKey = sub.code.substring(val.length + 1);
+                            optHtml += `<option value="${sub.code}">[${subKey}] ${sub.name || ('Kuartal ' + subKey)}</option>`;
+                        });
+                    } else {
+                        subItems.forEach(sub => {
+                            let subKey = sub.code.substring(val.length + 1);
+                            if (subKey === 'MN') subKey = 'M,N';
+                            else if (subKey === 'RSTU') subKey = 'R,S,T,U';
+                            const cleanSubName = (sub.name || '').replace(/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i, '');
+                            optHtml += `<option value="${sub.code}">[${subKey}] ${cleanSubName}</option>`;
+                        });
+                    }
                     addSectoralSelect.innerHTML = optHtml;
                     addSectoralSelect.value = val;
                 } else if (addSectoralGroup) {
@@ -4466,6 +5932,16 @@
                 if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
                     fd.set('cluster', fd.get('cluster_custom').trim());
                 }
+                // Bersihkan series_values[] dari format titik ribuan agar tersimpan float murni
+                fd.delete('series_values[]');
+                this.querySelectorAll('#add-series-table-body input[name="series_values[]"]').forEach(inp => {
+                    const raw = inp.value.trim();
+                    if (raw !== '') {
+                        fd.append('series_values[]', parseRupiahNumber(raw));
+                    } else {
+                        fd.append('series_values[]', '');
+                    }
+                });
                 const errBox = document.getElementById('add-modal-error');
 
                 fetch(`${cleanSite}/database/create`, {
@@ -4535,6 +6011,16 @@
                 if (fd.get('cluster') === '__custom__' && fd.get('cluster_custom')) {
                     fd.set('cluster', fd.get('cluster_custom').trim());
                 }
+                // Bersihkan series_values[] dari format titik ribuan agar tersimpan float murni
+                fd.delete('series_values[]');
+                this.querySelectorAll('#edit-series-grid input[name="series_values[]"]').forEach(inp => {
+                    const raw = inp.value.trim();
+                    if (raw !== '') {
+                        fd.append('series_values[]', parseRupiahNumber(raw));
+                    } else {
+                        fd.append('series_values[]', '');
+                    }
+                });
                 if (editErrBox) { editErrBox.style.display = 'none'; editErrBox.textContent = ''; }
 
                 const btnSubmit = document.getElementById('modal-btn-submit-edit');
@@ -4626,7 +6112,7 @@
                         <span class="status-pill pill-empty">Baru</span>
                     </td>
                     <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
-                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${numVal}" placeholder="Masukkan nilai..." style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formatRupiahNumber(numVal)}" placeholder="0" style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
                     </td>
                     <td class="series-unit-label-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap;">
                         ${unit || '%'}
@@ -4643,7 +6129,7 @@
                         <input type="number" name="series_years[]" class="series-input-year" value="${yearVal}" placeholder="Tahun" min="1900" max="2100" style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
                     </td>
                     <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
-                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${numVal}" placeholder="Masukkan nilai..." required style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formatRupiahNumber(numVal)}" placeholder="0" required style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
                     </td>
                     <td class="add-series-unit-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">
                         ${unit || '%'}
@@ -4841,11 +6327,35 @@
                                 // Render Tabel Input Deret Tahun (Tersusun ke Bawah dengan Input Tahun & Tombol Hapus)
                                 if (seriesGrid && Array.isArray(d.years)) {
                                     let rowsHtml = '';
+                                    const isParentTotal = !!d.is_parent_total;
+                                    if (isParentTotal) {
+                                        rowsHtml += `
+                                            <tr>
+                                                <td colspan="5" style="padding:10px 14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px;">
+                                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                                        <div style="font-size:12px; color:#166534; font-weight:700; display:flex; align-items:center; gap:6px;">
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            <span>Nilai Total Tahunan ini terhitung secara otomatis dari akumulasi seluruh rincian kuartal/sektoral.</span>
+                                                        </div>
+                                                        <button type="button" class="btn-open-matrix-from-edit button small secondary" data-parent="${d.code}" style="padding:4px 10px; font-size:11px; font-weight:700; background:#dcfce7; color:#15803d; border:1px solid #86efac; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                                                            <span>Buka Spreadsheet Matriks Lengkap &rarr;</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>`;
+                                    }
+
                                     d.years.forEach(item => {
                                         const hasData = item.has_data;
                                         const valStr = (hasData && item.value !== null && item.value !== undefined) ? item.value : '';
-                                        const stLabel = hasData ? (item.status || 'Tervalidasi') : 'Baru';
+                                        const stLabel = isParentTotal ? 'Otomatis' : (hasData ? (item.status || 'Tervalidasi') : 'Baru');
                                         const isWarning = item.status === 'Perlu review' || item.status === 'Ditolak';
+
+                                        const formattedVal = (hasData && item.value !== null && item.value !== undefined) ? formatRupiahNumber(item.value) : '';
+                                        const valInputHtml = isParentTotal
+                                            ? `<input type="text" readonly name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formattedVal}" style="background:#dcfce7; color:#15803d; font-weight:800; border:1.5px solid #86efac; cursor:not-allowed;" title="Total otomatis terhitung dari akumulasi seluruh rincian">`
+                                            : `<input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formattedVal}" placeholder="0" title="Nilai realisasi ${d.indicator} tahun ${item.year}">`;
 
                                         rowsHtml += `
                                             <tr class="series-table-row ${hasData ? 'has-data' : 'is-empty'}">
@@ -4853,13 +6363,13 @@
                                                     <input type="number" name="series_years[]" class="series-input-year" value="${item.year}" min="1900" max="2100" required style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
                                                 </td>
                                                 <td style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
-                                                    <span class="status-pill ${hasData ? (isWarning ? 'pill-warning' : 'pill-success') : 'pill-empty'}">
-                                                        ${stLabel}
+                                                    <span class="status-pill ${isParentTotal ? 'pill-success' : (hasData ? (isWarning ? 'pill-warning' : 'pill-success') : 'pill-empty')}">
+                                                         ${stLabel}
                                                     </span>
                                                 </td>
                                                 <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
                                                     <div class="series-input-wrap">
-                                                        <input type="number" step="any" name="series_values[]" class="series-val-input-row" value="${valStr}" placeholder="Masukkan nilai..." title="Nilai realisasi ${d.indicator} tahun ${item.year}">
+                                                        ${valInputHtml}
                                                     </div>
                                                 </td>
                                                 <td class="series-unit-label-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap;">
@@ -4867,7 +6377,7 @@
                                                 </td>
                                                 <td style="padding: 7px 8px; vertical-align: middle; text-align: center; border-bottom: 1px solid #edf2f7;">
                                                     <button type="button" class="btn-remove-series-row icon-button small danger" title="Hapus Tahun ${item.year} Beserta Nilainya" style="width:28px; height:28px; margin:0 auto; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5;">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -5261,15 +6771,29 @@
             });
         }
 
-        // Live auto-calculation untuk kategori yang dapat dijumlahkan (Total PDRB / Total Pengeluaran)
+        // Buka Modal Matriks langsung dari tombol di dalam Modal Edit
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-open-matrix-from-edit');
+            if (btn) {
+                e.preventDefault();
+                const pCode = btn.getAttribute('data-parent') || 'EKO-003';
+                if (editModal) editModal.style.display = 'none';
+                openSectoralModal(pCode);
+            }
+        });
+
+        // Live auto-calculation untuk kategori yang dapat dijumlahkan (Total PDRB / Total Pengeluaran / Total Investasi)
         function calculateSectoralTotals() {
             if (!sectoralState.years || !Array.isArray(sectoralState.years)) return;
             if (!sectoralState.can_auto_sum) return; // e.g. Laju pertumbuhan (EKO-006) tidak dijumlahkan langsung
 
+            const isInv = (sectoralState.category_type === 'quarterly' || (sectoralState.parent_code && sectoralState.parent_code.startsWith('INV-')));
             const isExp = (sectoralState.category_type === 'expenditure');
-            const keysToSum = isExp
-                ? ['1', '2', '3', '4', '5', '6']
-                : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'MN', 'O', 'P', 'Q', 'RSTU'];
+            const keysToSum = isInv
+                ? ['Q1', 'Q2', 'Q3', 'Q4']
+                : (isExp
+                    ? ['1', '2', '3', '4', '5', '6']
+                    : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'MN', 'O', 'P', 'Q', 'RSTU']);
 
             sectoralState.years.forEach(yr => {
                 let sum = 0;
@@ -5277,17 +6801,25 @@
                 keysToSum.forEach(k => {
                     const input = document.querySelector(`.sec-val-input[data-cat="${k}"][data-year="${yr}"]`);
                     if (input && input.value !== '') {
-                        const v = parseFloat(input.value);
-                        if (!isNaN(v)) {
+                        const v = parseRupiahNumber(input.value);
+                        if (!isNaN(v) && v !== 0) {
                             sum += v;
+                            hasAnyVal = true;
+                        } else if (input.value.trim() === '0') {
                             hasAnyVal = true;
                         }
                     }
                 });
 
                 const totalInput = document.querySelector(`.sec-val-input[data-cat="TOTAL"][data-year="${yr}"]`);
-                if (totalInput && hasAnyVal) {
-                    totalInput.value = (Math.round(sum * 100) / 100).toFixed(2);
+                if (totalInput) {
+                    const roundedSum = hasAnyVal ? (Math.round(sum * 100) / 100).toFixed(2) : '';
+                    totalInput.value = hasAnyVal ? formatRupiahNumber(roundedSum) : '';
+                    const parentCode = sectoralState.parent_code;
+                    if (parentCode) {
+                        if (!sectoralState.values[parentCode]) sectoralState.values[parentCode] = {};
+                        sectoralState.values[parentCode][yr] = hasAnyVal ? parseFloat(roundedSum) : '';
+                    }
                 }
             });
         }
@@ -5297,10 +6829,11 @@
             const years = sectoralState.years;
             const defs = sectoralState.definitions;
             const vals = sectoralState.values;
+            const isInv = (sectoralState.category_type === 'quarterly' || (sectoralState.parent_code && sectoralState.parent_code.startsWith('INV-')));
             const isExp = (sectoralState.category_type === 'expenditure');
 
-            const col1Title = isExp ? 'Komponen' : 'Kategori';
-            const col2Title = isExp ? 'Komponen Pengeluaran' : 'Lapangan Usaha';
+            const col1Title = isInv ? 'Kuartal' : (isExp ? 'Komponen' : 'Kategori');
+            const col2Title = isInv ? 'Rincian Periode Kuartal' : (isExp ? 'Komponen Pengeluaran' : 'Lapangan Usaha');
 
             const escapeAttr = function (str) {
                 if (!str) return '';
@@ -5310,13 +6843,13 @@
             // Render Header
             let theadHtml = `
                 <tr>
-                    <th style="min-width:65px; width:75px; position:sticky; left:0; background:#f1f5f9; z-index:11; padding:8px 10px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:left;">
+                    <th style="min-width:65px; width:85px; position:sticky; left:0; background:#f1f5f9; z-index:11; padding:8px 10px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:left;">
                         <div style="display:flex; align-items:center; gap:4px;" title="Kode/Simbol Kategori (Dapat Diubah)">
                             <span>${col1Title}</span>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </div>
                     </th>
-                    <th style="min-width:270px; max-width:320px; position:sticky; left:75px; background:#f1f5f9; z-index:11; padding:8px 12px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1.5px solid #cbd5e1; text-align:left;">
+                    <th style="min-width:270px; max-width:320px; position:sticky; left:85px; background:#f1f5f9; z-index:11; padding:8px 12px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1.5px solid #cbd5e1; text-align:left;">
                         <div style="display:flex; align-items:center; justify-content:space-between;" title="Nama Lapangan Usaha / Komponen (Dapat Diubah)">
                             <div style="display:flex; align-items:center; gap:4px;">
                                 <span>${col2Title}</span>
@@ -5355,9 +6888,9 @@
 
                 // Col 1: Kategori / Komponen (Dapat Diubah)
                 tbodyHtml += `
-                    <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:5px 6px; font-weight:800; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:center; vertical-align:middle;">
+                    <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:5px 6px; font-weight:800; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; text-align:center; vertical-align:middle;">
                         ${isTotal 
-                            ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL</span>' 
+                            ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL (OTOMATIS)</span>' 
                             : `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
                         }
                     </td>`;
@@ -5365,9 +6898,12 @@
                 // Col 2: Nama Lapangan Usaha / Komponen (Dapat Diubah)
                 const safeName = escapeAttr(item.short_name || item.name || '');
                 tbodyHtml += `
-                    <td style="position:sticky; left:75px; background:${codeBg}; z-index:9; padding:5px 8px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:1.5px solid #cbd5e1; vertical-align:middle;">
+                    <td style="position:sticky; left:85px; background:${codeBg}; z-index:9; padding:5px 8px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1.5px solid ${isTotal ? '#86efac' : '#cbd5e1'}; vertical-align:middle;">
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid ${isTotal ? '#86efac' : '#cbd5e1'}; border-radius:5px; background:${isTotal ? '#f0fdf4' : '#ffffff'}; color:${textColor}; outline:none;" title="Ubah Nama Lapangan Usaha / Komponen">
+                            ${isTotal 
+                                ? `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" readonly style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:800; font-size:12px; border:1.5px solid #86efac; border-radius:5px; background:#f0fdf4; color:#15803d; outline:none; cursor:not-allowed;" title="Total Akumulasi Otomatis (Read-Only)">`
+                                : `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; background:#ffffff; color:${textColor}; outline:none;" title="Ubah Nama Lapangan Usaha / Komponen">`
+                            }
                             ${item.is_custom ? `<button type="button" class="btn-sec-del-cat-row icon-button small danger" data-cat="${k}" title="Hapus Baris Kategori Ini" style="width:26px; height:26px; min-width:26px; padding:0; display:flex; align-items:center; justify-content:center; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; cursor:pointer;">&times;</button>` : ''}
                         </div>
                     </td>`;
@@ -5375,10 +6911,21 @@
                 // Year Input Columns
                 years.forEach(yr => {
                     const existingVal = (vals[item.code] && vals[item.code][yr] !== undefined) ? vals[item.code][yr] : '';
-                    tbodyHtml += `
-                        <td style="padding:5px 6px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:right; vertical-align:middle; background:${rowBg};">
-                            <input type="number" step="any" class="sec-val-input" data-cat="${k}" data-code="${item.code}" data-year="${yr}" value="${existingVal}" placeholder="-" style="width:100%; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid ${isTotal ? '#86efac' : '#cbd5e1'}; border-radius:5px; text-align:right; background:#ffffff; color:${textColor};">
-                        </td>`;
+                    const formattedExisting = (existingVal !== '' && existingVal !== null) ? formatRupiahNumber(existingVal) : '';
+                    if (isTotal) {
+                        tbodyHtml += `
+                            <td style="padding:5px 6px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                                <div style="position:relative; display:flex; align-items:center;">
+                                    <input type="text" readonly class="sec-val-input total-auto-input is-rupiah-mask" data-cat="TOTAL" data-code="${item.code}" data-year="${yr}" value="${formattedExisting}" placeholder="0" title="Total otomatis terhitung dari akumulasi seluruh rincian" style="width:100%; height:32px; padding:0 24px 0 8px; font-weight:800; font-size:12.5px; border:1.5px solid #86efac; border-radius:5px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
+                                    <span style="position:absolute; right:7px; font-size:10px; color:#16a34a; font-weight:800; pointer-events:none;" title="Otomatis">∑</span>
+                                </div>
+                            </td>`;
+                    } else {
+                        tbodyHtml += `
+                            <td style="padding:5px 6px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:right; vertical-align:middle; background:${rowBg};">
+                                <input type="text" inputmode="decimal" class="sec-val-input is-rupiah-mask" data-cat="${k}" data-code="${item.code}" data-year="${yr}" value="${formattedExisting}" placeholder="-" style="width:100%; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; text-align:right; background:#ffffff; color:${textColor};">
+                            </td>`;
+                    }
                 });
 
                 tbodyHtml += `</tr>`;
@@ -5423,11 +6970,19 @@
                             catSwitcher.value = sectoralState.parent_code;
                         }
 
+                        const isInv = (sectoralState.category_type === 'quarterly' || (pCode && pCode.startsWith('INV-')));
                         const isExp = (sectoralState.category_type === 'expenditure');
-                        if (badgeEl) badgeEl.textContent = isExp ? 'PENGELUARAN PDRB • STANDAR BPS' : 'SEKTORAL PDRB • STANDAR BPS';
+                        if (badgeEl) {
+                            if (isInv) badgeEl.textContent = 'KUARTAL INVESTASI • BKPM / DPMPTSP';
+                            else if (isExp) badgeEl.textContent = 'PENGELUARAN PDRB • STANDAR BPS';
+                            else badgeEl.textContent = 'SEKTORAL PDRB • STANDAR BPS';
+                        }
                         if (titleEl) {
                             let tText = 'Input & Kelola PDRB Sektoral (17 Lapangan Usaha)';
-                            if (pCode === 'EKO-004') tText = 'Input & Kelola PDRB ADHK Sektoral (17 Lapangan Usaha)';
+                            if (pCode === 'INV-001') tText = 'Input & Kelola Realisasi Investasi Total PMA & PMDN (4 Kuartal)';
+                            else if (pCode === 'INV-002') tText = 'Input & Kelola Realisasi Investasi PMA (4 Kuartal)';
+                            else if (pCode === 'INV-003') tText = 'Input & Kelola Realisasi Investasi PMDN (4 Kuartal)';
+                            else if (pCode === 'EKO-004') tText = 'Input & Kelola PDRB ADHK Sektoral (17 Lapangan Usaha)';
                             else if (pCode === 'EKO-006') tText = 'Input & Kelola Laju Pertumbuhan PDRB Sektoral (17 Lapangan Usaha)';
                             else if (pCode === 'EKO-007') tText = 'Input & Kelola Distribusi / Share Sektoral (17 Lapangan Usaha)';
                             else if (pCode === 'EKO-015') tText = 'Input & Kelola PDRB Pengeluaran ADHB (6 Komponen)';
@@ -5435,9 +6990,13 @@
                             titleEl.textContent = tText;
                         }
                         if (descEl) {
-                            descEl.textContent = isExp
-                                ? 'Kelola nilai realisasi seluruh komponen pengeluaran PDRB per tahun dalam satu tabel matriks spreadsheet.'
-                                : 'Kelola nilai realisasi seluruh 17 sektor ekonomi per tahun sekaligus dalam satu tabel matriks (Kategori A s.d. U).';
+                            if (isInv) {
+                                descEl.textContent = 'Kelola nilai realisasi seluruh 4 kuartal (Q1 s.d. Q4) per tahun dalam satu tabel matriks spreadsheet. Nilai total tahunan otomatis terhitung.';
+                            } else if (isExp) {
+                                descEl.textContent = 'Kelola nilai realisasi seluruh komponen pengeluaran PDRB per tahun dalam satu tabel matriks spreadsheet.';
+                            } else {
+                                descEl.textContent = 'Kelola nilai realisasi seluruh 17 sektor ekonomi per tahun sekaligus dalam satu tabel matriks (Kategori A s.d. U).';
+                            }
                         }
                         if (helpEl) {
                             helpEl.innerHTML = sectoralState.can_auto_sum
@@ -5500,7 +7059,7 @@
                     const yr = parseInt(e.target.getAttribute('data-year'), 10);
                     if (code && yr) {
                         if (!sectoralState.values[code]) sectoralState.values[code] = {};
-                        sectoralState.values[code][yr] = e.target.value !== '' ? parseFloat(e.target.value) : '';
+                        sectoralState.values[code][yr] = e.target.value !== '' ? parseRupiahNumber(e.target.value) : '';
                     }
                     calculateSectoralTotals();
                 } else if (e.target.classList.contains('sec-name-input')) {
@@ -5640,7 +7199,7 @@
                     const val = inp.value;
                     if (!matrix[cat]) matrix[cat] = {};
                     if (val !== '' && val !== null) {
-                        matrix[cat][yr] = parseFloat(val);
+                        matrix[cat][yr] = parseRupiahNumber(val);
                     }
                 });
 
@@ -5817,18 +7376,16 @@
         // Search, Filter & Sort
         const searchInput = document.getElementById('validation-search-input');
         const filterStatus = document.getElementById('validation-filter-status');
-        const sortSelect = document.getElementById('validation-sort');
         const filterCluster = document.getElementById('validation-filter-cluster');
         const filterYear = document.getElementById('validation-filter-year');
 
         function reloadValidationFiltered() {
             const q = searchInput ? encodeURIComponent(searchInput.value) : '';
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
-            const srt = sortSelect ? encodeURIComponent(sortSelect.value) : 'status';
             const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
             const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
             const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : '';
-            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}&sort=${srt}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
+            window.location.href = `${cleanSite}/validation?q=${q}&status=${st}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
         }
 
         if (searchInput) {
@@ -5837,7 +7394,6 @@
             });
         }
         if (filterStatus) filterStatus.addEventListener('change', reloadValidationFiltered);
-        if (sortSelect) sortSelect.addEventListener('change', reloadValidationFiltered);
         if (filterCluster) filterCluster.addEventListener('change', reloadValidationFiltered);
         if (filterYear) filterYear.addEventListener('change', reloadValidationFiltered);
 
@@ -6071,8 +7627,8 @@
 
             if (!thInput || !valInput || !dirSelect || !badge) return;
 
-            const val = parseFloat(valInput.value);
-            const th = parseFloat(thInput.value);
+            const val = typeof parseRupiahNumber === 'function' ? parseRupiahNumber(valInput.value) : parseFloat(valInput.value);
+            const th = typeof parseRupiahNumber === 'function' ? parseRupiahNumber(thInput.value) : parseFloat(thInput.value);
             const dir = dirSelect.value || 'above';
 
             if (!Number.isFinite(th)) return;
@@ -6144,7 +7700,7 @@
 
                 inputs.forEach(input => {
                     const code = input.getAttribute('data-code');
-                    const th = parseFloat(input.value);
+                    const th = typeof parseRupiahNumber === 'function' ? parseRupiahNumber(input.value) : parseFloat(input.value);
                     const valEl = document.querySelector(`.value-input[data-code="${code}"]`);
                     const val = valEl ? parseFloat(valEl.value) : null;
                     const dirEl = document.querySelector(`.direction-input[data-code="${code}"]`);

@@ -79,13 +79,6 @@
             <option value="Tervalidasi" <?= $status === 'Tervalidasi' ? 'selected' : '' ?>>Tervalidasi (<?= $stats['tervalidasi'] ?>)</option>
             <option value="Belum lengkap" <?= ($status === 'Belum lengkap' || $status === 'Ditolak') ? 'selected' : '' ?>>Ditolak / Belum Lengkap (<?= $stats['ditolak'] ?>)</option>
         </select>
-        <select id="validation-sort">
-            <option value="code" <?= ($sort === 'code' || empty($sort)) ? 'selected' : '' ?>>Urut kode (EKO-001 dst)</option>
-            <option value="status" <?= $sort === 'status' ? 'selected' : '' ?>>Urut: Status (Perlu Review Dahulu)</option>
-            <option value="year" <?= $sort === 'year' ? 'selected' : '' ?>>Urut tahun terbaru</option>
-            <option value="indicator" <?= $sort === 'indicator' ? 'selected' : '' ?>>Nama indikator</option>
-            <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>Nilai terbesar</option>
-        </select>
     </div>
 
     <?php
@@ -94,8 +87,8 @@
     $subGrouped = [];
     $yearSet = [];
 
-    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral
-    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007'];
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral & kuartal
+    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003'];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
     foreach ($records as $r) {
@@ -179,19 +172,26 @@
         }
     }
 
-    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas)
+    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas) & kuartal investasi
     $sectorOrder = array('A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6, 'G' => 7, 'H' => 8, 'I' => 9, 'J' => 10, 'K' => 11, 'L' => 12, 'MN' => 13, 'O' => 14, 'P' => 15, 'Q' => 16, 'RSTU' => 17, 'TM' => 18);
+    $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
 
     // Sambungkan sub_indicators HANYA ke parent yang ada di $sectoralParents
     foreach ($subGrouped as $pCode => $subs) {
         if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
             continue;
         }
-        uasort($subs, function($a, $b) use ($sectorOrder) {
+        $isInv = (strpos($pCode, 'INV-') === 0);
+        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
             $kA = $a['sub_key'] ?? '';
             $kB = $b['sub_key'] ?? '';
-            $posA = $sectorOrder[$kA] ?? 99;
-            $posB = $sectorOrder[$kB] ?? 99;
+            if ($isInv) {
+                $posA = $quarterOrder[$kA] ?? 99;
+                $posB = $quarterOrder[$kB] ?? 99;
+            } else {
+                $posA = $sectorOrder[$kA] ?? 99;
+                $posB = $sectorOrder[$kB] ?? 99;
+            }
             if ($posA === $posB) return strcmp($kA, $kB);
             return $posA - $posB;
         });
@@ -403,10 +403,15 @@
                                     <div style="font-size:12.5px; font-weight:700; color:#1e293b; line-height:1.4; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                         <span class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>"><?= htmlspecialchars($item['indicator']) ?></span>
                                         <?php if ($hasSub): ?>
-                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="Rincian Sektor (A–U)" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup rincian sektor">
+                                            <?php 
+                                                $isInv = (strpos($item['code'], 'INV-') === 0);
+                                                $openLabel = $isInv ? 'Rincian Kuartal (Q1–Q4)' : 'Rincian Sektor (A–U)';
+                                                $badgeLabel = $isInv ? '4 Kuartal' : '18 Sektor';
+                                            ?>
+                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-                                                <span class="sub-toggle-label">Rincian Sektor (A–U)</span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;">18 Sektor</span>
+                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -437,6 +442,8 @@
                                         <?php if (isset($item['years'][$yr])): ?>
                                             <?php
                                                 $rec = $item['years'][$yr];
+                                                $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $item['unit'] ?? '');
+                                                $prefixRp = $isRupiah ? 'Rp ' : '';
                                                 $st = $rec['status'] ?? 'Perlu review';
                                                 $isValid = ($st === 'Tervalidasi');
                                                 $isRejected = ($st === 'Belum lengkap' || $st === 'Ditolak');
@@ -446,7 +453,7 @@
                                             ?>
                                             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
                                                 <span class="matrix-val-text" style="font-weight:700; font-size:12px; color:#0f172a;">
-                                                    <?= number_format($rec['value'], 2, ',', '.') ?>
+                                                    <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?>
                                                 </span>
                                                 <div style="display:flex; align-items:center; gap:3px;">
                                                     <span style="font-size:9.5px; font-weight:700; color:<?= $bColor ?>; background:<?= $bBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
@@ -456,7 +463,7 @@
                                                         <button type="button" class="btn-verify-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $isValid ? '#16a34a' : '#fff' ?>; color:<?= $isValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-status="Tervalidasi">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                         </button>
-                                                        <button type="button" class="btn-reject-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $isRejected ? '#dc2626' : '#fff' ?>; color:<?= $isRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-val="<?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?>" data-period="<?= htmlspecialchars($rec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($rec['notes'] ?? '') ?>">
+                                                        <button type="button" class="btn-reject-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $isRejected ? '#dc2626' : '#fff' ?>; color:<?= $isRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-val="<?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?>" data-period="<?= htmlspecialchars($rec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($rec['notes'] ?? '') ?>">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                         </button>
                                                     </div>
@@ -494,9 +501,14 @@
                                 <?php foreach ($item['sub_indicators'] as $subCode => $sub): ?>
                                     <?php
                                         $dispKey = $sub['sub_key'];
+                                        $isSubInv = (strpos($item['code'], 'INV-') === 0);
                                         if ($dispKey === 'MN') $dispKey = 'M,N';
                                         elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
-                                        $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['indicator']);
+                                        if ($isSubInv) {
+                                            $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
+                                        } else {
+                                            $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['indicator']);
+                                        }
 
                                         $sUnverified = 0; $sRejected = 0; $sValid = 0;
                                         foreach ($sub['years'] as $syRec) {
@@ -519,7 +531,7 @@
                                                 <?= htmlspecialchars($sub['indicator']) ?>
                                             </div>
                                             <div style="font-size:11px; color:#475569; margin-top:2px;">
-                                                <span style="color:#0284c7; font-weight:600;">Kategori:</span> <?= htmlspecialchars($cleanSubName) ?>
+                                                <span style="color:#0284c7; font-weight:600;"><?= $isSubInv ? 'Periode:' : 'Kategori:' ?></span> <?= htmlspecialchars($cleanSubName) ?>
                                             </div>
                                             <small style="font-size:10px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
                                         </td>
@@ -534,6 +546,8 @@
                                                 <?php if (isset($sub['years'][$yr])): ?>
                                                     <?php
                                                         $sRec = $sub['years'][$yr];
+                                                        $sIsRupiah = (bool)preg_match('/rupiah|rp\b/i', $sub['unit'] ?? '');
+                                                        $sPrefixRp = $sIsRupiah ? 'Rp ' : '';
                                                         $sSt = $sRec['status'] ?? 'Perlu review';
                                                         $sIsValid = ($sSt === 'Tervalidasi');
                                                         $sIsRejected = ($sSt === 'Belum lengkap' || $sSt === 'Ditolak');
@@ -542,7 +556,7 @@
                                                     ?>
                                                     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
                                                         <span style="font-weight:600; font-size:12px; color:#0f172a;">
-                                                            <?= number_format($sRec['value'], 2, ',', '.') ?>
+                                                            <?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?>
                                                         </span>
                                                         <div style="display:flex; align-items:center; gap:3px;">
                                                             <span style="font-size:9px; font-weight:700; color:<?= $sbColor ?>; background:<?= $sbBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
@@ -552,7 +566,7 @@
                                                                 <button type="button" class="btn-verify-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $sIsValid ? '#16a34a' : '#fff' ?>; color:<?= $sIsValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-status="Tervalidasi">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                                 </button>
-                                                                <button type="button" class="btn-reject-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $sIsRejected ? '#dc2626' : '#fff' ?>; color:<?= $sIsRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-val="<?= number_format($sRec['value'], 2, ',', '.') ?> <?= htmlspecialchars($sub['unit']) ?>" data-period="<?= htmlspecialchars($sRec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($sRec['notes'] ?? '') ?>">
+                                                                <button type="button" class="btn-reject-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $sIsRejected ? '#dc2626' : '#fff' ?>; color:<?= $sIsRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-val="<?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?> <?= htmlspecialchars($sub['unit']) ?>" data-period="<?= htmlspecialchars($sRec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($sRec['notes'] ?? '') ?>">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                                 </button>
                                                             </div>

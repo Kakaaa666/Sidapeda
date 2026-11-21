@@ -77,10 +77,20 @@
         <!-- MAIN ANALYSIS WORKSPACE -->
         <main class="correlation-workspace">
             <div class="correlation-toolbar">
-                <div>
-                    <span class="eyebrow">METODE ANALISIS</span>
+                <div class="correlation-toolbar-content">
+                    <div class="correlation-eyebrow-row">
+                        <span class="eyebrow">METODE ANALISIS</span>
+                        <span class="correlation-tag">EKONOMI REGIONAL</span>
+                    </div>
                     <h2 id="active-method-heading">Location Quotient (LQ)</h2>
-                    <p id="active-method-sub">Perhitungan ekonomi regional berbasis database SI-DAPEDA Banyuwangi.</p>
+                    <p id="active-method-sub">Identifikasi sektor basis dan keunggulan komparatif ekonomi daerah Kabupaten Banyuwangi.</p>
+                </div>
+                <div class="correlation-toolbar-meta">
+                    <span class="badge simulation">DATA TERVERIFIKASI BPS</span>
+                    <div class="correlation-meta-info">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span>Seri Berkala 2015–2024</span>
+                    </div>
                 </div>
             </div>
 

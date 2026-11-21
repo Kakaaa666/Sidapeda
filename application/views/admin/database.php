@@ -6,9 +6,9 @@
             <p><?= $subtitle ?></p>
         </div>
         <div class="intro-actions" style="display:flex; gap:10px; align-items:center;">
-            <button type="button" class="button secondary" id="btn-open-sectoral-modal" style="font-weight:700; background:#f0fdf4; color:#15803d; border:1.5px solid #86efac; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <button type="button" class="button secondary" id="btn-open-sectoral-modal" style="font-weight:700; background:#f0fdf4; color:#15803d; border:1.5px solid #86efac; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Input & Kelola Rincian Sektoral PDRB atau Kuartal Investasi Sekaligus">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                <span>Input 17 Sektor PDRB</span>
+                <span>Input Matriks Sektoral &amp; Kuartal</span>
             </button>
             <button class="button primary" id="btn-open-add-modal">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
@@ -74,12 +74,6 @@
             <option value="Belum lengkap" <?= ($status === 'Belum lengkap' || $status === 'Ditolak') ? 'selected' : '' ?>>Belum lengkap / Ditolak</option>
             <option value="Terhapus" <?= $status === 'Terhapus' ? 'selected' : '' ?>>🗑️ Sampah / Terhapus (<?= (int)$trash_count ?>)</option>
         </select>
-        <select id="admin-sort">
-            <option value="code" <?= ($sort === 'code' || empty($sort)) ? 'selected' : '' ?>>Urut kode (EKO-001 dst)</option>
-            <option value="year" <?= $sort === 'year' ? 'selected' : '' ?>>Urut tahun terbaru</option>
-            <option value="indicator" <?= $sort === 'indicator' ? 'selected' : '' ?>>Nama indikator</option>
-            <option value="value" <?= $sort === 'value' ? 'selected' : '' ?>>Nilai terbesar</option>
-        </select>
         <button class="button secondary" id="btn-export-database-csv">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
             <span>Ekspor CSV</span>
@@ -95,8 +89,8 @@
     $subGrouped = []; // sub-indikator berinduk (misal EKO-003.A berinduk ke EKO-003)
     $yearSet = [];
 
-    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral
-    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007'];
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral & kuartal
+    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003'];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
     foreach ($records as $r) {
@@ -180,19 +174,26 @@
         }
     }
 
-    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas)
+    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas) & kuartal investasi
     $sectorOrder = array('A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6, 'G' => 7, 'H' => 8, 'I' => 9, 'J' => 10, 'K' => 11, 'L' => 12, 'MN' => 13, 'O' => 14, 'P' => 15, 'Q' => 16, 'RSTU' => 17, 'TM' => 18);
+    $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
 
     // Sambungkan sub_indicators HANYA ke parent yang ada di $sectoralParents
     foreach ($subGrouped as $pCode => $subs) {
         if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
             continue;
         }
-        uasort($subs, function($a, $b) use ($sectorOrder) {
+        $isInv = (strpos($pCode, 'INV-') === 0);
+        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
             $kA = $a['sub_key'] ?? '';
             $kB = $b['sub_key'] ?? '';
-            $posA = $sectorOrder[$kA] ?? 99;
-            $posB = $sectorOrder[$kB] ?? 99;
+            if ($isInv) {
+                $posA = $quarterOrder[$kA] ?? 99;
+                $posB = $quarterOrder[$kB] ?? 99;
+            } else {
+                $posA = $sectorOrder[$kA] ?? 99;
+                $posB = $sectorOrder[$kB] ?? 99;
+            }
             if ($posA === $posB) return strcmp($kA, $kB);
             return $posA - $posB;
         });
@@ -434,10 +435,15 @@
                                     <div style="font-size:12.5px; font-weight:700; color:#1e293b; line-height:1.4; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                         <span class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>"><?= htmlspecialchars($item['indicator']) ?></span>
                                         <?php if ($hasSub): ?>
-                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="Rincian Sektor (A–U)" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup rincian sektor">
+                                            <?php 
+                                                $isInv = (strpos($item['code'], 'INV-') === 0);
+                                                $openLabel = $isInv ? 'Rincian Kuartal (Q1–Q4)' : 'Rincian Sektor (A–U)';
+                                                $badgeLabel = $isInv ? '4 Kuartal' : '18 Sektor';
+                                            ?>
+                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-                                                <span class="sub-toggle-label">Rincian Sektor (A–U)</span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;">18 Sektor</span>
+                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -466,10 +472,14 @@
                                 <?php foreach ($display_years as $yr): ?>
                                     <td class="matrix-cell-td <?= (!empty($selected_year) && $selected_year == $yr) ? 'active-year-cell' : '' ?>" style="padding:9px 12px; border-bottom:1px solid #edf0f4; border-left:1px solid #f1f5f9; text-align:right; font-variant-numeric:tabular-nums; vertical-align:middle; <?= ($yr == 2024 || $yr == $selected_year) ? 'background:#f8fbff;' : '' ?>">
                                         <?php if (isset($item['years'][$yr])): ?>
-                                            <?php $rec = $item['years'][$yr]; ?>
-                                            <div class="matrix-val-pill" title="<?= htmlspecialchars($item['indicator']) ?> (<?= $yr ?>): <?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?> [<?= $rec['status'] ?>]">
+                                            <?php 
+                                                $rec = $item['years'][$yr]; 
+                                                $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $item['unit'] ?? '');
+                                                $prefixRp = $isRupiah ? 'Rp ' : '';
+                                            ?>
+                                            <div class="matrix-val-pill" title="<?= htmlspecialchars($item['indicator']) ?> (<?= $yr ?>): <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?> [<?= $rec['status'] ?>]">
                                                 <span class="matrix-val-text <?= $rec['status'] === 'Perlu review' ? 'val-warning' : ($rec['status'] === 'Ditolak' ? 'val-danger' : '') ?>" style="font-weight:600; font-size:12px; color:#0f172a;">
-                                                    <?= number_format($rec['value'], 2, ',', '.') ?>
+                                                    <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?>
                                                 </span>
                                             </div>
                                         <?php else: ?>
@@ -493,9 +503,18 @@
                                         <div style="display:inline-flex; align-items:center; gap:6px;">
                                             <?php if (!empty($item['sub_indicators'])): ?>
                                                 <?php
+                                                    $isInv = (strpos($item['code'], 'INV-') === 0);
                                                     $isExp = in_array($item['code'], ['EKO-015', 'EKO-016']);
-                                                    $matrixBtnLabel = $isExp ? '6 Komponen' : '17 Sektor';
-                                                    $matrixBtnTitle = $isExp ? 'Input & Kelola Seluruh Komponen Pengeluaran Sekaligus' : 'Input & Kelola Seluruh 17 Sektor Lapangan Usaha Sekaligus';
+                                                    if ($isInv) {
+                                                        $matrixBtnLabel = '4 Kuartal';
+                                                        $matrixBtnTitle = 'Input & Kelola Seluruh 4 Kuartal Sekaligus (Q1–Q4)';
+                                                    } elseif ($isExp) {
+                                                        $matrixBtnLabel = '6 Komponen';
+                                                        $matrixBtnTitle = 'Input & Kelola Seluruh Komponen Pengeluaran Sekaligus';
+                                                    } else {
+                                                        $matrixBtnLabel = '17 Sektor';
+                                                        $matrixBtnTitle = 'Input & Kelola Seluruh 17 Sektor Lapangan Usaha Sekaligus';
+                                                    }
                                                 ?>
                                                 <button type="button" class="button small secondary btn-open-sectoral-from-row" data-parent="<?= htmlspecialchars($item['code']) ?>" title="<?= $matrixBtnTitle ?>" style="padding:4px 9px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:6px; display:inline-flex; align-items:center; gap:4px; margin-right:2px; cursor:pointer;">
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
@@ -518,9 +537,14 @@
                                 <?php foreach ($item['sub_indicators'] as $subCode => $sub): ?>
                                     <?php
                                         $dispKey = $sub['sub_key'];
+                                        $isSubInv = (strpos($item['code'], 'INV-') === 0);
                                         if ($dispKey === 'MN') $dispKey = 'M,N';
                                         elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
-                                        $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['indicator']);
+                                        if ($isSubInv) {
+                                            $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
+                                        } else {
+                                            $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['indicator']);
+                                        }
                                     ?>
                                     <tr class="matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
                                         <td class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:2; padding:8px 12px 8px 16px; border-bottom:1px solid #edf0f4; box-shadow:2px 0 5px rgba(0,0,0,0.03); white-space:nowrap;">
@@ -535,7 +559,7 @@
                                                 <?= htmlspecialchars($sub['indicator']) ?>
                                             </div>
                                             <div style="font-size:11px; color:#475569; margin-top:2px;">
-                                                <span style="color:#0284c7; font-weight:600;">Kategori:</span> <?= htmlspecialchars($cleanSubName) ?>
+                                                <span style="color:#0284c7; font-weight:600;"><?= $isSubInv ? 'Periode:' : 'Kategori:' ?></span> <?= htmlspecialchars($cleanSubName) ?>
                                             </div>
                                             <small style="font-size:10px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
                                         </td>
@@ -548,9 +572,13 @@
                                         <?php foreach ($display_years as $yr): ?>
                                             <td class="matrix-cell-td" style="padding:7px 12px; border-bottom:1px solid #edf0f4; border-left:1px solid #f1f5f9; text-align:right; font-variant-numeric:tabular-nums; vertical-align:middle; background:#f8fafc;">
                                                 <?php if (isset($sub['years'][$yr])): ?>
-                                                    <?php $sRec = $sub['years'][$yr]; ?>
+                                                    <?php 
+                                                        $sRec = $sub['years'][$yr]; 
+                                                        $sIsRupiah = (bool)preg_match('/rupiah|rp\b/i', $sub['unit'] ?? '');
+                                                        $sPrefixRp = $sIsRupiah ? 'Rp ' : '';
+                                                    ?>
                                                     <span style="font-weight:600; font-size:12px; color:#0f172a;">
-                                                        <?= number_format($sRec['value'], 2, ',', '.') ?>
+                                                        <?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?>
                                                     </span>
                                                 <?php else: ?>
                                                     <span style="color:#cbd5e1; font-size:12px;">-</span>
@@ -915,12 +943,21 @@
                     <div style="display:flex; align-items:center; gap:6px;">
                         <label for="sec-select-indicator-category" style="font-size:11.5px; font-weight:700; color:#334155; margin:0;">Pilih Kategori Indikator:</label>
                         <select id="sec-select-indicator-category" style="height:32px; font-size:11.5px; font-weight:700; padding:0 10px; border-radius:6px; border:1.5px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;">
-                            <option value="EKO-003">[EKO-003] PDRB ADHB Menurut Lapangan Usaha (17 Sektor A–U) &bull; Miliar Rp</option>
-                            <option value="EKO-004">[EKO-004] PDRB ADHK Menurut Lapangan Usaha (17 Sektor A–U) &bull; Miliar Rp</option>
-                            <option value="EKO-006">[EKO-006] Laju Pertumbuhan PDRB Menurut Lapangan Usaha (17 Sektor A–U) &bull; %</option>
-                            <option value="EKO-007">[EKO-007] Distribusi / Share PDRB Menurut Lapangan Usaha (17 Sektor A–U) &bull; %</option>
-                            <option value="EKO-015">[EKO-015] PDRB Pengeluaran ADHB Menurut Komponen (6 Komponen) &bull; Miliar Rp</option>
-                            <option value="EKO-016">[EKO-016] PDRB Pengeluaran ADHK Menurut Komponen (6 Komponen) &bull; Miliar Rp</option>
+                            <optgroup label="Sektoral Lapangan Usaha (PDRB)">
+                                <option value="EKO-003">[EKO-003] PDRB ADHB Menurut Lapangan Usaha (17 Sektor A–U) &bull; Miliar Rp</option>
+                                <option value="EKO-004">[EKO-004] PDRB ADHK Menurut Lapangan Usaha (17 Sektor A–U) &bull; Miliar Rp</option>
+                                <option value="EKO-006">[EKO-006] Laju Pertumbuhan PDRB Menurut Lapangan Usaha (17 Sektor A–U) &bull; %</option>
+                                <option value="EKO-007">[EKO-007] Distribusi / Share PDRB Menurut Lapangan Usaha (17 Sektor A–U) &bull; %</option>
+                            </optgroup>
+                            <optgroup label="Komponen Pengeluaran (PDRB)">
+                                <option value="EKO-015">[EKO-015] PDRB Pengeluaran ADHB Menurut Komponen (6 Komponen) &bull; Miliar Rp</option>
+                                <option value="EKO-016">[EKO-016] PDRB Pengeluaran ADHK Menurut Komponen (6 Komponen) &bull; Miliar Rp</option>
+                            </optgroup>
+                            <optgroup label="Kuartal Investasi (Q1 – Q4)">
+                                <option value="INV-001">[INV-001] Realisasi Investasi Total PMA &amp; PMDN (Q1–Q4) &bull; Miliar Rp</option>
+                                <option value="INV-002">[INV-002] Realisasi Investasi PMA (Q1–Q4) &bull; Miliar Rp</option>
+                                <option value="INV-003">[INV-003] Realisasi Investasi PMDN (Q1–Q4) &bull; Miliar Rp</option>
+                            </optgroup>
                         </select>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px;">

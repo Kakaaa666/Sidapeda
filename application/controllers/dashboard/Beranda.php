@@ -27,6 +27,8 @@ class Beranda extends MY_Controller {
         }));
 
         $beranda_cards = $this->M_economy->get_beranda_cards($selected_year, $status);
+        $core_kpis = $this->M_economy->get_beranda_kpis_8($selected_year);
+        $kpi_details = $this->M_economy->get_kpi_detail_configs_8($selected_year);
         $categories = $this->M_economy->get_beranda_categories($selected_year);
 
         $active_chart_year = $selected_year ?: (!empty($years) ? max($years) : 2024);
@@ -46,6 +48,8 @@ class Beranda extends MY_Controller {
             'series'            => $series,
             'sectors'           => $sectors,
             'ews'               => $ews,
+            'core_kpis'         => $core_kpis,
+            'kpi_details'       => $kpi_details,
             'beranda_cards'     => $beranda_cards,
             'categories'        => $categories,
             'selected_year'     => $selected_year,

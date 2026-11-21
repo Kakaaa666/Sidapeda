@@ -63,8 +63,8 @@
     $grouped = [];
     $subGrouped = [];
 
-    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral
-    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007'];
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral & kuartal
+    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003'];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
     foreach ($ews as $item) {
@@ -90,16 +90,24 @@
         }
     }
 
+    $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
+
     // Sambungkan sub-indikator HANYA ke parent yang ada di $sectoralParents
     foreach ($subGrouped as $pCode => $subs) {
         if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
             continue;
         }
-        uasort($subs, function($a, $b) use ($sectorOrder) {
+        $isInv = (strpos($pCode, 'INV-') === 0);
+        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
             $kA = $a['sub_key'] ?? '';
             $kB = $b['sub_key'] ?? '';
-            $posA = $sectorOrder[$kA] ?? 99;
-            $posB = $sectorOrder[$kB] ?? 99;
+            if ($isInv) {
+                $posA = $quarterOrder[$kA] ?? 99;
+                $posB = $quarterOrder[$kB] ?? 99;
+            } else {
+                $posA = $sectorOrder[$kA] ?? 99;
+                $posB = $sectorOrder[$kB] ?? 99;
+            }
             if ($posA === $posB) return strcmp($kA, $kB);
             return $posA - $posB;
         });
@@ -122,6 +130,7 @@
         $partsB = explode('-', $mainB);
         $prefB = strtoupper($partsB[0]);
         $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+
 
         $rankA = $indicatorPrefixOrder[$prefA] ?? 99;
         $rankB = $indicatorPrefixOrder[$prefB] ?? 99;
@@ -220,7 +229,7 @@
                 <li><strong>Standar Kamus Data:</strong> Kode, Nama Indikator, Klaster, Satuan, dan Definisi Operasional adalah <em>Data Kamus Umum</em> yang seragam untuk semua wilayah.</li>
                 <li><strong>Nilai Riil Tervalidasi</strong> bersifat <em>read-only</em> dan langsung merujuk pada capaian riil daerah yang telah diverifikasi pada menu Validasi Data.</li>
                 <li><strong>Ambang Batas (Threshold) &amp; Arah Kondisi Kritis</strong> diisi dan disesuaikan secara manual per daerah sesuai target RPJMD atau standar toleransi risiko makro daerah.</li>
-                <li><strong>Sub-Indikator Sektoral (17 Sektor &amp; Komponen):</strong> Baris indikator yang memiliki sub-rincian dapat diklik langsung untuk membuka/menutup rincian sub-indikator.</li>
+                <li><strong>Sub-Indikator Sektoral &amp; Kuartal:</strong> Baris indikator yang memiliki sub-rincian (17 Sektor PDRB atau Kuartal Investasi Q1–Q4) dapat diklik langsung untuk membuka/menutup rincian sub-indikator.</li>
             </ul>
         </div>
 
@@ -255,10 +264,15 @@
                                         <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:2px 6px; border-radius:4px; white-space:nowrap;"><?= htmlspecialchars($item['code']) ?></code>
                                         <strong class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>" style="color: var(--navy); font-size: 13px;"><?= htmlspecialchars($item['name']) ?></strong>
                                         <?php if ($hasSub): ?>
-                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="Rincian Sektor (A–U)" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup rincian sektor">
+                                            <?php 
+                                                $isInv = (strpos($item['code'], 'INV-') === 0);
+                                                $openLabel = $isInv ? 'Rincian Kuartal (Q1–Q4)' : 'Rincian Sektor (A–U)';
+                                                $badgeLabel = $isInv ? '4 Kuartal' : '18 Sektor';
+                                            ?>
+                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-                                                <span class="sub-toggle-label">Rincian Sektor (A–U)</span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;">18 Sektor</span>
+                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -269,9 +283,13 @@
                                     <?php endif; ?>
                                 </td>
                                 <td style="vertical-align: middle; padding: 12px 14px;">
+                                    <?php
+                                        $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $item['unit'] ?? '');
+                                        $prefixRp = $isRupiah ? 'Rp ' : '';
+                                    ?>
                                     <div style="display: inline-flex; align-items: center; gap: 6px;">
                                         <strong style="font-size: 13px; color: var(--navy); letter-spacing: -0.2px;">
-                                            <?= number_format($item['value'], 2, ',', '.') ?>
+                                            <?= $prefixRp ?><?= number_format($item['value'], 2, ',', '.') ?>
                                         </strong>
                                         <span style="color: var(--muted); font-size: 11px; font-weight: 600;">
                                             <?= htmlspecialchars($item['unit']) ?>
@@ -280,8 +298,11 @@
                                     <input type="hidden" class="value-input" data-code="<?= $item['code'] ?>" value="<?= $item['value'] ?>">
                                 </td>
                                 <td style="vertical-align: middle; padding: 12px 14px;">
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <input type="number" step="any" class="threshold-input" data-code="<?= $item['code'] ?>" value="<?= $item['threshold'] ?>" style="width: 100px; height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; font-weight: 700; color: var(--navy); font-size: 12px; background: #ffffff;">
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <?php if ($isRupiah): ?>
+                                            <span style="font-size:11.5px; font-weight:700; color:#475569;">Rp</span>
+                                        <?php endif; ?>
+                                        <input type="text" inputmode="decimal" class="threshold-input is-rupiah-mask" data-code="<?= $item['code'] ?>" value="<?= number_format($item['threshold'], 2, ',', '.') ?>" style="width: 120px; height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; font-weight: 700; color: var(--navy); font-size: 12px; background: #ffffff; text-align: right;">
                                         <small style="color: var(--muted); font-size: 10px; font-weight: 600;"><?= htmlspecialchars($item['unit']) ?></small>
                                     </div>
                                 </td>
@@ -304,9 +325,14 @@
                                     <?php
                                         $subBadgeCls = ($sub['status'] === 'Kritis') ? 'badge danger' : (($sub['status'] === 'Waspada') ? 'badge warning' : 'badge success');
                                         $dispKey = $sub['sub_key'];
+                                        $isSubInv = (strpos($item['code'], 'INV-') === 0);
                                         if ($dispKey === 'MN') $dispKey = 'M,N';
                                         elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
-                                        $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name']);
+                                        if ($isSubInv) {
+                                            $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
+                                        } else {
+                                            $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name']);
+                                        }
                                     ?>
                                     <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
                                         <td style="vertical-align: middle; padding: 9px 14px 9px 24px;">
@@ -318,9 +344,13 @@
                                             </div>
                                         </td>
                                         <td style="vertical-align: middle; padding: 9px 14px;">
+                                            <?php
+                                                $subIsRupiah = (bool)preg_match('/rupiah|rp\b/i', $sub['unit'] ?? '');
+                                                $subPrefixRp = $subIsRupiah ? 'Rp ' : '';
+                                            ?>
                                             <div style="display: inline-flex; align-items: center; gap: 6px;">
                                                 <strong style="font-size: 12px; color: var(--navy); letter-spacing: -0.2px;">
-                                                    <?= number_format($sub['value'], 2, ',', '.') ?>
+                                                    <?= $subPrefixRp ?><?= number_format($sub['value'], 2, ',', '.') ?>
                                                 </strong>
                                                 <span style="color: var(--muted); font-size: 10.5px; font-weight: 600;">
                                                     <?= htmlspecialchars($sub['unit']) ?>
@@ -329,8 +359,11 @@
                                             <input type="hidden" class="value-input" data-code="<?= $sub['code'] ?>" value="<?= $sub['value'] ?>">
                                         </td>
                                         <td style="vertical-align: middle; padding: 9px 14px;">
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <input type="number" step="any" class="threshold-input" data-code="<?= $sub['code'] ?>" value="<?= $sub['threshold'] ?>" style="width: 100px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-weight: 700; color: var(--navy); font-size: 11.5px; background: #ffffff;">
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <?php if ($subIsRupiah): ?>
+                                                    <span style="font-size:10.5px; font-weight:700; color:#475569;">Rp</span>
+                                                <?php endif; ?>
+                                                <input type="text" inputmode="decimal" class="threshold-input is-rupiah-mask" data-code="<?= $sub['code'] ?>" value="<?= number_format($sub['threshold'], 2, ',', '.') ?>" style="width: 120px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-weight: 700; color: var(--navy); font-size: 11.5px; background: #ffffff; text-align: right;">
                                                 <small style="color: var(--muted); font-size: 10px; font-weight: 600;"><?= htmlspecialchars($sub['unit']) ?></small>
                                             </div>
                                         </td>

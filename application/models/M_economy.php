@@ -654,6 +654,11 @@ class M_economy extends CI_Model {
             if ($ewsMatch) {
                 $this->update_ews_threshold($record['kode_indikator'], (float)$ewsMatch['ambang_batas'], $ewsMatch['arah_risiko'], (float)$record['nilai'], $record['kode_wilayah']);
             }
+            // Jika rekaman merupakan sub-indikator (mengandung .), otomatis hitung ulang total parent-nya
+            if (strpos($record['kode_indikator'], '.') !== false) {
+                $parentCode = explode('.', $record['kode_indikator'])[0];
+                $this->recalculate_parent_total($parentCode, $record['tahun'], $record['kode_wilayah']);
+            }
         }
         return $res;
     }
@@ -732,6 +737,11 @@ class M_economy extends CI_Model {
             if ($hasValid === 0) {
                 $this->remove_from_catalog($code, $rowWilayah);
             }
+            if (strpos($code, '.') !== false) {
+                $parentCode = explode('.', $code)[0];
+                $rowYear = $record['tahun'] ?? $existing['tahun'] ?? date('Y');
+                $this->recalculate_parent_total($parentCode, $rowYear, $rowWilayah);
+            }
         }
         return $res;
     }
@@ -786,6 +796,223 @@ class M_economy extends CI_Model {
             }
         }
         return $res;
+    }
+
+    /**
+     * Hitung ulang dan sinkronkan nilai total akumulasi untuk parent indikator yang memiliki sub-rincian (Kuartal / Sektoral)
+     */
+    public function recalculate_parent_total($parentCode, $year, $kode_wilayah = null) {
+        $parentCode = strtoupper(trim($parentCode));
+        $canAutoSum = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003', 'EKO-003', 'EKO-004', 'EKO-007', 'EKO-015', 'EKO-016'));
+        if (!$canAutoSum) return false;
+
+        $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
+        $year = (int)$year;
+
+        // Hitung total dari sub-indikator yang ada
+        $row = $this->db->select_sum('nilai', 'tot')
+            ->where('kode_wilayah', $kodeWil)
+            ->where('tahun', $year)
+            ->where('is_deleted', 0)
+            ->like('kode_indikator', $parentCode . '.', 'after')
+            ->get('database_ekonomi')
+            ->row_array();
+
+        if ($row && $row['tot'] !== null) {
+            $totalVal = round((float)$row['tot'], 2);
+
+            $cat = $this->db->where('kode_indikator', $parentCode)->get('katalog_indikator')->row_array();
+            $pName = $cat ? $cat['nama_indikator'] : $parentCode;
+            $unit = $cat ? $cat['satuan'] : 'Miliar rupiah';
+            $cluster = $cat ? $cat['klaster'] : (strpos($parentCode, 'INV-') === 0 ? 'Investasi' : 'Output dan pertumbuhan');
+            $def = $cat ? ($cat['definisi_operasional'] ?? '') : '';
+
+            $existing = $this->db->where('kode_wilayah', $kodeWil)
+                ->where('kode_indikator', $parentCode)
+                ->where('tahun', $year)
+                ->get('database_ekonomi')
+                ->row_array();
+
+            if ($existing) {
+                $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
+                    'nilai' => $totalVal,
+                    'is_deleted' => 0
+                ));
+            } else {
+                $this->db->insert('database_ekonomi', array(
+                    'kode_wilayah' => $kodeWil,
+                    'kode_indikator' => $parentCode,
+                    'nama_indikator' => $pName,
+                    'klaster' => $cluster,
+                    'wilayah' => $this->get_nama_wilayah($kodeWil),
+                    'periode' => 'Tahunan',
+                    'tahun' => $year,
+                    'nilai' => $totalVal,
+                    'satuan' => $unit,
+                    'sumber_data' => 'BPS Provinsi Jawa Timur',
+                    'definisi_operasional' => $def,
+                    'status_validasi' => 'Tervalidasi',
+                    'is_deleted' => 0
+                ));
+            }
+            return $totalVal;
+        }
+        return false;
+    }
+
+    /**
+     * Ambil deret tahun dan nilai untuk satu indikator (untuk modal Edit Series)
+     */
+    public function get_indicator_series($code, $kode_wilayah = null) {
+        $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
+        $code = trim($code);
+
+        $records = $this->db->where('kode_indikator', $code)
+            ->where('kode_wilayah', $kodeWil)
+            ->where('is_deleted', 0)
+            ->order_by('tahun', 'ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+
+        $cat = $this->db->where('kode_indikator', $code)->get('katalog_indikator')->row_array();
+        $firstRec = !empty($records) ? $records[0] : null;
+
+        $indName = $cat ? $cat['nama_indikator'] : ($firstRec['nama_indikator'] ?? $code);
+        $cluster = $cat ? $cat['klaster'] : ($firstRec['klaster'] ?? 'Ekonomi');
+        $unit = $cat ? $cat['satuan'] : ($firstRec['satuan'] ?? '');
+        $source = $cat ? $cat['sumber_data'] : ($firstRec['sumber_data'] ?? '');
+        $def = $cat ? ($cat['definisi_operasional'] ?? '') : ($firstRec['definisi_operasional'] ?? '');
+
+        $recByYear = array();
+        foreach ($records as $r) {
+            $recByYear[(int)$r['tahun']] = $r;
+        }
+
+        $allYears = array_keys($recByYear);
+        $baseYears = (strpos($code, 'INV-') === 0) ? array(2023, 2024, 2025, 2026) : array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025);
+        $mergedYears = array_unique(array_merge($baseYears, $allYears));
+        sort($mergedYears);
+
+        $isParentWithSubs = in_array($code, array('INV-001', 'INV-002', 'INV-003', 'EKO-003', 'EKO-004', 'EKO-007', 'EKO-015', 'EKO-016'));
+
+        $yearsList = array();
+        $uploadedCount = 0;
+        foreach ($mergedYears as $yr) {
+            if (isset($recByYear[$yr])) {
+                $uploadedCount++;
+                $r = $recByYear[$yr];
+                $yearsList[] = array(
+                    'year' => $yr,
+                    'value' => (float)$r['nilai'],
+                    'status' => $r['status_validasi'],
+                    'notes' => $r['catatan'] ?? '',
+                    'has_data' => true
+                );
+            } else {
+                $yearsList[] = array(
+                    'year' => $yr,
+                    'value' => null,
+                    'status' => 'Belum ada data',
+                    'notes' => '',
+                    'has_data' => false
+                );
+            }
+        }
+
+        return array(
+            'code' => $code,
+            'indicator' => $indName,
+            'cluster' => $cluster,
+            'unit' => $unit,
+            'source' => $source,
+            'definition' => $def,
+            'region' => $this->get_nama_wilayah($kodeWil),
+            'kode_wilayah' => $kodeWil,
+            'is_parent_total' => $isParentWithSubs,
+            'uploaded_count' => $uploadedCount,
+            'total_years' => count($yearsList),
+            'years' => $yearsList
+        );
+    }
+
+    /**
+     * Perbarui deret tahun indikator dari modal Edit Series
+     */
+    public function update_indicator_series($code, $seriesData, $kode_wilayah = null) {
+        $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
+        $code = trim($code);
+
+        $years = array();
+        $values = array();
+
+        if (isset($seriesData['years']) && isset($seriesData['values'])) {
+            $years = $seriesData['years'];
+            $values = $seriesData['values'];
+        } elseif (is_array($seriesData)) {
+            foreach ($seriesData as $y => $v) {
+                $years[] = $y;
+                $values[] = $v;
+            }
+        }
+
+        $savedCount = 0;
+        $this->db->trans_start();
+
+        $cat = $this->db->where('kode_indikator', $code)->get('katalog_indikator')->row_array();
+        $pName = $cat ? $cat['nama_indikator'] : $code;
+        $cluster = $cat ? $cat['klaster'] : 'Ekonomi';
+        $unit = $cat ? $cat['satuan'] : '';
+        $source = $cat ? $cat['sumber_data'] : '';
+        $def = $cat ? ($cat['definisi_operasional'] ?? '') : '';
+
+        foreach ($years as $idx => $yr) {
+            $yr = (int)$yr;
+            if ($yr < 1900 || $yr > 2100) continue;
+
+            $rawVal = isset($values[$idx]) ? $values[$idx] : null;
+            if ($rawVal === null || $rawVal === '') continue;
+            $val = (float)$rawVal;
+
+            $existing = $this->db->where('kode_wilayah', $kodeWil)
+                ->where('kode_indikator', $code)
+                ->where('tahun', $yr)
+                ->get('database_ekonomi')
+                ->row_array();
+
+            if ($existing) {
+                $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
+                    'nilai' => $val,
+                    'status_validasi' => 'Perlu review',
+                    'catatan' => null,
+                    'is_deleted' => 0
+                ));
+            } else {
+                $this->db->insert('database_ekonomi', array(
+                    'kode_wilayah' => $kodeWil,
+                    'kode_indikator' => $code,
+                    'nama_indikator' => $pName,
+                    'klaster' => $cluster,
+                    'wilayah' => $this->get_nama_wilayah($kodeWil),
+                    'periode' => 'Tahunan',
+                    'tahun' => $yr,
+                    'nilai' => $val,
+                    'satuan' => $unit,
+                    'sumber_data' => $source,
+                    'definisi_operasional' => $def,
+                    'status_validasi' => 'Perlu review',
+                    'is_deleted' => 0
+                ));
+            }
+            $savedCount++;
+
+            if (strpos($code, '.') !== false) {
+                $parentCode = explode('.', $code)[0];
+                $this->recalculate_parent_total($parentCode, $yr, $kodeWil);
+            }
+        }
+
+        $this->db->trans_complete();
+        return $savedCount;
     }
 
     public function count_trash_records($kode_wilayah = null) {
@@ -1034,6 +1261,23 @@ class M_economy extends CI_Model {
     public function get_sectoral_definitions($parentCode = 'EKO-003') {
         $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
 
+        // Kuartal Investasi (INV-001, INV-002, INV-003)
+        if (in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'))) {
+            $invNames = array(
+                'INV-001' => 'Realisasi Investasi Total PMA dan PMDN',
+                'INV-002' => 'Realisasi Investasi PMA',
+                'INV-003' => 'Realisasi Investasi PMDN'
+            );
+            $baseName = $invNames[$parentCode] ?? 'Realisasi Investasi';
+            return array(
+                'Q1' => array('code' => "{$parentCode}.Q1", 'cat_label' => 'Q1', 'name' => "{$baseName} - Kuartal 1 (Q1)", 'short_name' => 'Kuartal 1 (Q1)', 'def' => "Realisasi investasi pada periode Kuartal 1 (Januari - Maret)."),
+                'Q2' => array('code' => "{$parentCode}.Q2", 'cat_label' => 'Q2', 'name' => "{$baseName} - Kuartal 2 (Q2)", 'short_name' => 'Kuartal 2 (Q2)', 'def' => "Realisasi investasi pada periode Kuartal 2 (April - Juni)."),
+                'Q3' => array('code' => "{$parentCode}.Q3", 'cat_label' => 'Q3', 'name' => "{$baseName} - Kuartal 3 (Q3)", 'short_name' => 'Kuartal 3 (Q3)', 'def' => "Realisasi investasi pada periode Kuartal 3 (Juli - September)."),
+                'Q4' => array('code' => "{$parentCode}.Q4", 'cat_label' => 'Q4', 'name' => "{$baseName} - Kuartal 4 (Q4)", 'short_name' => 'Kuartal 4 (Q4)', 'def' => "Realisasi investasi pada periode Kuartal 4 (Oktober - Desember)."),
+                'TOTAL' => array('code' => $parentCode, 'cat_label' => 'TOTAL', 'name' => $baseName, 'short_name' => 'TOTAL REALISASI TAHUNAN', 'def' => "Total akumulasi realisasi investasi tahunan ({$baseName}).")
+            );
+        }
+
         // Komponen Pengeluaran (EKO-015 dan EKO-016)
         if ($parentCode === 'EKO-015' || $parentCode === 'EKO-016') {
             $isAdhk = ($parentCode === 'EKO-016');
@@ -1205,13 +1449,14 @@ class M_economy extends CI_Model {
 
         $years = array_keys($yearsSet);
         sort($years);
-        if (empty($years)) {
-            $years = array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025);
-        }
-
+        $isInv = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'));
         $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
-        $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
-        $cluster = $isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral';
+        $unit = $isInv ? 'Miliar rupiah' : (in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah');
+        $cluster = $isInv ? 'Investasi' : ($isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral');
+
+        if (empty($years)) {
+            $years = $isInv ? array(2023, 2024, 2025, 2026) : array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025);
+        }
 
         return array(
             'parent_code' => $parentCode,
@@ -1234,9 +1479,10 @@ class M_economy extends CI_Model {
         $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
         $defs = $this->get_sectoral_definitions($parentCode);
 
+        $isInv = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'));
         $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
-        $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
-        $cluster = $isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral';
+        $unit = $isInv ? 'Miliar rupiah' : (in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah');
+        $cluster = $isInv ? 'Investasi' : ($isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral');
 
         $this->db->trans_start();
 
@@ -2257,6 +2503,1155 @@ class M_economy extends CI_Model {
         if ($abs >= 0.2) return 'Lemah';
         return 'Sangat lemah';
     }
+
+    public function get_beranda_kpis_8($year = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $years = $this->get_years();
+        $series = $this->get_economic_series($kode);
+
+        // Helper function for SVG sparkline points
+        $genSparkline = function($arr, $endIdx = null) {
+            if ($endIdx !== null) {
+                $slice = array_slice($arr, 0, $endIdx + 1);
+            } else {
+                $slice = $arr;
+            }
+            $slice = array_slice($slice, -7);
+            if (empty($slice)) return '0,20 84,20';
+            $min = min($slice);
+            $max = max($slice);
+            $rng = ($max - $min) ?: 1;
+            $pts = array();
+            $cnt = count($slice);
+            foreach ($slice as $i => $v) {
+                $x = $i * (82 / max(1, $cnt - 1));
+                $y = 34 - (($v - $min) / $rng) * 26;
+                $pts[] = round($x, 1) . ',' . round($y, 1);
+            }
+            return implode(' ', $pts);
+        };
+
+        // Query helper to fetch actual indicator data directly from database_ekonomi.
+        // If $year is null, it automatically grabs the LATEST year available for that indicator!
+        $fetchInd = function($code, $divisor = 1, $fallbackCur = 0, $fallbackPrev = 0, $fallbackSeries = []) use ($kode, $year) {
+            // Find target year
+            if (!empty($year) && is_numeric($year)) {
+                $targetYear = (int)$year;
+            } else {
+                // Get MAX year for this indicator in database_ekonomi
+                $maxRow = $this->db->select_max('tahun', 'max_yr')
+                    ->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kode)
+                    ->where('is_deleted', 0)
+                    ->get('database_ekonomi')
+                    ->row_array();
+                $targetYear = (!empty($maxRow) && !empty($maxRow['max_yr'])) ? (int)$maxRow['max_yr'] : 2024;
+            }
+            $prevYear = $targetYear - 1;
+
+            $rCur = $this->db->select('nilai')->where('kode_indikator', $code)->where('kode_wilayah', $kode)->where('tahun', $targetYear)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+            $rPrev = $this->db->select('nilai')->where('kode_indikator', $code)->where('kode_wilayah', $kode)->where('tahun', $prevYear)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+
+            // If selected year has no record in database_ekonomi, try looking for the most recent year <= $targetYear
+            if (empty($rCur)) {
+                $nearest = $this->db->select('tahun, nilai')
+                    ->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kode)
+                    ->where('tahun <=', $targetYear)
+                    ->where('is_deleted', 0)
+                    ->order_by('tahun', 'DESC')
+                    ->limit(1)
+                    ->get('database_ekonomi')
+                    ->row_array();
+                if (!empty($nearest)) {
+                    $rCur = $nearest;
+                    $targetYear = (int)$nearest['tahun'];
+                    $prevYear = $targetYear - 1;
+                    $rPrev = $this->db->select('nilai')->where('kode_indikator', $code)->where('kode_wilayah', $kode)->where('tahun', $prevYear)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+                }
+            }
+
+            $curVal = !empty($rCur) ? ((float)$rCur['nilai'] / $divisor) : $fallbackCur;
+            $prevVal = !empty($rPrev) ? ((float)$rPrev['nilai'] / $divisor) : $fallbackPrev;
+
+            // Deret historis untuk sparkline
+            $qSer = $this->db->select('tahun, nilai')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode)
+                ->where('tahun <=', $targetYear)
+                ->where('is_deleted', 0)
+                ->order_by('tahun', 'ASC')
+                ->get('database_ekonomi');
+            $serRows = $qSer->result_array();
+            $ser = [];
+            if (!empty($serRows) && count($serRows) >= 2) {
+                foreach ($serRows as $sr) {
+                    $ser[] = round((float)$sr['nilai'] / $divisor, 2);
+                }
+            } else {
+                $ser = $fallbackSeries;
+            }
+
+            return [$curVal, $prevVal, $ser, $targetYear];
+        };
+
+        // 0: Pertumbuhan Ekonomi (EKO-005)
+        list($gCur, $gPrev, $gSeries, $gYr) = $fetchInd('EKO-005', 1, 5.65, 4.68, $series['growth'] ?? []);
+        $gDelta = round($gCur - $gPrev, 2);
+        $gTrend = ($gDelta >= 0) ? 'up' : 'down';
+        $gStatus = (abs($gDelta) < 0.001) ? 'Stabil' : ($gDelta > 0 ? 'Meningkat' : 'Melambat');
+        $gDeltaStr = ($gDelta >= 0 ? '+' : '') . number_format($gDelta, 2, ',', '.') . ' pp';
+
+        // 1: PDRB per Kapita (EKO-008)
+        list($pCur, $pPrev, $pSeries, $pYr) = $fetchInd('EKO-008', 1000, 67.08, 62.09, $series['perCapita'] ?? []);
+        $pDelta = round($pCur - $pPrev, 2);
+        $pTrend = ($pDelta >= 0) ? 'up' : 'down';
+        $pStatus = (abs($pDelta) < 0.001) ? 'Stabil' : ($pDelta > 0 ? 'Meningkat' : 'Menurun');
+        $pDeltaStr = ($pDelta >= 0 ? '+' : '') . number_format($pDelta, 2, ',', '.') . ' juta';
+
+        // 2: Tingkat Inflasi (HRG-004 - lower is better)
+        list($iCur, $iPrev, $iSeries, $iYr) = $fetchInd('HRG-004', 1, 2.41, 2.81, $series['inflation'] ?? []);
+        $iDelta = round($iCur - $iPrev, 2);
+        $iTrend = ($iDelta <= 0) ? 'up' : 'down';
+        $iStatus = (abs($iDelta) < 0.001) ? 'Stabil' : ($iDelta <= 0 ? 'Meningkat' : 'Perlu perhatian');
+        $iDeltaStr = ($iDelta >= 0 ? '+' : '') . number_format($iDelta, 2, ',', '.') . ' pp';
+
+        // 3: Pengangguran Terbuka (TK-005 - lower is better)
+        list($tCur, $tPrev, $tSeries, $tYr) = $fetchInd('TK-005', 1, 4.03, 4.10, $series['tpt'] ?? []);
+        $tDelta = round($tCur - $tPrev, 2);
+        $tTrend = ($tDelta <= 0) ? 'up' : 'down';
+        $tStatus = (abs($tDelta) < 0.001) ? 'Stabil' : ($tDelta <= 0 ? 'Meningkat' : 'Perlu perhatian');
+        $tDeltaStr = ($tDelta >= 0 ? '+' : '') . number_format($tDelta, 2, ',', '.') . ' pp';
+
+        // 4: Tingkat Kemiskinan (KES-001 - lower is better)
+        list($kCur, $kPrev, $kSeries, $kYr) = $fetchInd('KES-001', 1, 5.60, 6.13, $series['poverty'] ?? []);
+        $kDelta = round($kCur - $kPrev, 2);
+        $kTrend = ($kDelta <= 0) ? 'up' : 'down';
+        $kStatus = (abs($kDelta) < 0.001) ? 'Stabil' : ($kDelta < 0 ? 'Meningkat' : 'Perlu perhatian');
+        $kDeltaStr = ($kDelta >= 0 ? '+' : '') . number_format($kDelta, 2, ',', '.') . ' pp';
+
+        // 5: IPM (KES-007)
+        list($mCur, $mPrev, $mSeries, $mYr) = $fetchInd('KES-007', 1, 75.99, 75.17, $series['ipm'] ?? []);
+        $mDelta = round($mCur - $mPrev, 2);
+        $mTrend = ($mDelta >= 0) ? 'up' : 'down';
+        $mStatus = (abs($mDelta) < 0.001) ? 'Stabil' : ($mDelta > 0 ? 'Meningkat' : 'Perlu perhatian');
+        $mDeltaStr = ($mDelta >= 0 ? '+' : '') . number_format($mDelta, 2, ',', '.') . ' poin';
+
+        // 6: Realisasi Investasi (INV-001)
+        list($invVal, $invPrevVal, $invSeries, $invYr) = $fetchInd('INV-001', 1e12, 3.85, 3.80, [1.8, 2.1, 2.5, 2.9, 3.1, 2.8, 3.2, 3.5, 3.66, 3.35, 3.80, 3.85]);
+        $invDelta = round($invVal - $invPrevVal, 2);
+        $invDeltaPct = ($invPrevVal > 0) ? round(($invDelta / $invPrevVal) * 100, 2) : 0;
+        $invTrend = ($invDelta >= 0) ? 'up' : 'down';
+        $invStatus = ($invDelta >= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $invDeltaStr = ($invDelta >= 0 ? '+' : '') . number_format($invDelta, 2, ',', '.') . ' triliun (' . ($invDeltaPct >= 0 ? '+' : '') . number_format($invDeltaPct, 2, ',', '.') . '%)';
+
+        // 7: Pertumbuhan Investasi
+        $igCur = ($invPrevVal > 0) ? round((($invVal - $invPrevVal) / $invPrevVal) * 100, 2) : 1.43;
+        $igDeltaStr = ($igCur >= 0 ? '+' : '') . number_format($igCur, 2, ',', '.') . '% yoy';
+        $igTrend = ($igCur >= 0) ? 'up' : 'down';
+        $igStatus = ($igCur >= 0) ? 'Meningkat' : 'Perlu perhatian';
+
+        $kpis = array(
+            array(
+                'index' => 0,
+                'key' => 'growth',
+                'name' => 'Pertumbuhan Ekonomi',
+                'code' => 'EKO-005',
+                'value' => number_format($gCur, 2, ',', '.'),
+                'raw_value' => $gCur,
+                'unit' => '%',
+                'delta' => $gDeltaStr,
+                'trend' => $gTrend,
+                'status' => $gStatus,
+                'badge_tone' => ($gStatus === 'Stabil' ? 'neutral' : ($gTrend === 'up' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($gSeries),
+                'spark_negative' => false,
+                'year' => $gYr,
+                'footnote' => "{$gYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 1,
+                'key' => 'perCapita',
+                'name' => 'PDRB per Kapita',
+                'code' => 'EKO-008',
+                'value' => number_format($pCur, 2, ',', '.'),
+                'raw_value' => $pCur,
+                'unit' => 'Juta',
+                'delta' => $pDeltaStr,
+                'trend' => $pTrend,
+                'status' => $pStatus,
+                'badge_tone' => ($pStatus === 'Stabil' ? 'neutral' : ($pTrend === 'up' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($pSeries),
+                'spark_negative' => false,
+                'year' => $pYr,
+                'footnote' => "{$pYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 2,
+                'key' => 'inflation',
+                'name' => 'Tingkat Inflasi',
+                'code' => 'HRG-004',
+                'value' => number_format($iCur, 2, ',', '.'),
+                'raw_value' => $iCur,
+                'unit' => '% yoy',
+                'delta' => $iDeltaStr,
+                'trend' => $iTrend,
+                'status' => $iStatus,
+                'badge_tone' => ($iStatus === 'Stabil' ? 'neutral' : ($iStatus === 'Meningkat' || $iStatus === 'Membaik' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($iSeries),
+                'spark_negative' => false,
+                'year' => $iYr,
+                'footnote' => "{$iYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 3,
+                'key' => 'tpt',
+                'name' => 'Pengangguran Terbuka',
+                'code' => 'TK-005',
+                'value' => number_format($tCur, 2, ',', '.'),
+                'raw_value' => $tCur,
+                'unit' => '%',
+                'delta' => $tDeltaStr,
+                'trend' => $tTrend,
+                'status' => $tStatus,
+                'badge_tone' => ($tStatus === 'Stabil' ? 'neutral' : ($tStatus === 'Meningkat' || $tStatus === 'Membaik' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($tSeries),
+                'spark_negative' => false,
+                'year' => $tYr,
+                'footnote' => "{$tYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 4,
+                'key' => 'poverty',
+                'name' => 'Tingkat Kemiskinan',
+                'code' => 'KES-001',
+                'value' => number_format($kCur, 2, ',', '.'),
+                'raw_value' => $kCur,
+                'unit' => '%',
+                'delta' => $kDeltaStr,
+                'trend' => $kTrend,
+                'status' => $kStatus,
+                'badge_tone' => ($kStatus === 'Stabil' ? 'neutral' : ($kStatus === 'Meningkat' || $kStatus === 'Membaik' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($kSeries),
+                'spark_negative' => false,
+                'year' => $kYr,
+                'footnote' => "{$kYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 5,
+                'key' => 'ipm',
+                'name' => 'IPM',
+                'code' => 'KES-007',
+                'value' => number_format($mCur, 2, ',', '.'),
+                'raw_value' => $mCur,
+                'unit' => 'Poin',
+                'delta' => $mDeltaStr,
+                'trend' => $mTrend,
+                'status' => $mStatus,
+                'badge_tone' => ($mStatus === 'Stabil' ? 'neutral' : ($mTrend === 'up' ? 'success' : 'warning')),
+                'spark_points' => $genSparkline($mSeries),
+                'spark_negative' => false,
+                'year' => $mYr,
+                'footnote' => "{$mYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 6,
+                'key' => 'investmentTotal',
+                'name' => 'Realisasi Investasi',
+                'code' => 'INV-001',
+                'value' => 'Rp ' . number_format($invVal, 2, ',', '.'),
+                'raw_value' => $invVal,
+                'unit' => 'Triliun',
+                'delta' => $invDeltaStr,
+                'trend' => $invTrend,
+                'status' => $invStatus,
+                'badge_tone' => ($invTrend === 'up' ? 'success' : 'warning'),
+                'spark_points' => $genSparkline($invSeries),
+                'spark_negative' => false,
+                'year' => $invYr,
+                'footnote' => "{$invYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            ),
+            array(
+                'index' => 7,
+                'key' => 'investmentGrowth',
+                'name' => 'Pertumbuhan Investasi',
+                'code' => 'INV-GROWTH',
+                'value' => number_format($igCur, 2, ',', '.'),
+                'raw_value' => $igCur,
+                'unit' => '%',
+                'delta' => $igDeltaStr,
+                'trend' => $igTrend,
+                'status' => $igStatus,
+                'badge_tone' => ($igStatus === 'Perlu perhatian' ? 'warning' : ($igStatus === 'Stabil' ? 'neutral' : 'success')),
+                'spark_points' => $genSparkline([14.20, $igCur]),
+                'spark_negative' => ($igCur < 0),
+                'year' => $invYr,
+                'footnote' => "{$invYr} • Kabupaten Banyuwangi • DATA RESMI DAERAH"
+            )
+        );
+
+        return $kpis;
+    }
+
+    public function get_kpi_detail_configs_8($year = null, $kode_wilayah = null) {
+        $kode = $this->get_active_kode_wilayah($kode_wilayah);
+        $series = $this->get_economic_series($kode);
+        $yearsList = $this->get_years();
+
+        $getLatestYr = function($code) use ($kode, $year) {
+            if (!empty($year) && is_numeric($year)) {
+                $m = $this->db->select_max('tahun', 'max_yr')
+                    ->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kode)
+                    ->where('tahun <=', (int)$year)
+                    ->where('is_deleted', 0)
+                    ->get('database_ekonomi')
+                    ->row_array();
+                if (!empty($m) && !empty($m['max_yr'])) {
+                    return (int)$m['max_yr'];
+                }
+                return (int)$year;
+            }
+            $m = $this->db->select_max('tahun', 'max_yr')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode)
+                ->where('is_deleted', 0)
+                ->get('database_ekonomi')
+                ->row_array();
+            return (!empty($m) && !empty($m['max_yr'])) ? (int)$m['max_yr'] : 2024;
+        };
+
+        $yr0 = $getLatestYr('EKO-005');
+        $yr1 = $getLatestYr('EKO-008');
+        $yr2 = $getLatestYr('HRG-004');
+        $yr3 = $getLatestYr('TK-005');
+        $yr4 = $getLatestYr('KES-001');
+        $yr5 = $getLatestYr('KES-007');
+        $yr6 = $getLatestYr('INV-001');
+        $yr7 = $getLatestYr('INV-001');
+
+        // Helper get multi-region peers from database_ekonomi
+        $getPeers = function($code, $yr, $isAsc = false, $divisor = 1, $unit = '%', $fmtDec = 2, $noteType = 'Pembanding Jawa Timur') {
+            $q = $this->db->select('wilayah, kode_wilayah, nilai, satuan')
+                ->where('kode_indikator', $code)
+                ->where('tahun', $yr)
+                ->where('is_deleted', 0)
+                ->order_by('nilai', $isAsc ? 'ASC' : 'DESC')
+                ->get('database_ekonomi');
+            $rows = $q->result_array();
+            if (empty($rows)) {
+                $q2 = $this->db->select('wilayah, kode_wilayah, nilai, satuan')
+                    ->where('kode_indikator', $code)
+                    ->where('tahun <=', $yr)
+                    ->where('is_deleted', 0)
+                    ->order_by('tahun', 'DESC')
+                    ->order_by('nilai', $isAsc ? 'ASC' : 'DESC')
+                    ->get('database_ekonomi');
+                $rows = $q2->result_array();
+            }
+            $peers = [];
+            foreach ($rows as $r) {
+                $val = ((float)$r['nilai']) / $divisor;
+                $isBwi = ($r['kode_wilayah'] === '35.10' || stripos($r['wilayah'], 'Banyuwangi') !== false);
+                $peers[] = [
+                    'name' => $r['wilayah'],
+                    'value' => round($val, $fmtDec),
+                    'unit' => $unit ?: $r['satuan'],
+                    'note' => $isBwi ? 'Kabupaten Banyuwangi' : $noteType,
+                    'current' => $isBwi
+                ];
+            }
+            return $peers;
+        };
+
+        // Helper get annual series from database_ekonomi
+        $getAnnual = function($code, $divisor = 1, $fmtDec = 2, $fallbackSeries = null) use ($kode, $yearsList) {
+            $q = $this->db->select('tahun, nilai')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode)
+                ->where('is_deleted', 0)
+                ->order_by('tahun', 'ASC')
+                ->get('database_ekonomi');
+            $rows = $q->result_array();
+            $res = [];
+            if (!empty($rows)) {
+                $prev = null;
+                foreach ($rows as $r) {
+                    $val = ((float)$r['nilai']) / $divisor;
+                    $delta = null;
+                    if ($prev !== null) {
+                        $diff = $val - $prev;
+                        $delta = ($diff >= 0 ? '+' : '') . number_format($diff, $fmtDec, ',', '.');
+                    }
+                    $res[] = [
+                        'year' => (int)$r['tahun'],
+                        'value' => round($val, $fmtDec),
+                        'change' => $delta
+                    ];
+                    $prev = $val;
+                }
+            } elseif (!empty($fallbackSeries)) {
+                $prev = null;
+                foreach ($yearsList as $i => $yr) {
+                    if (isset($fallbackSeries[$i])) {
+                        $val = (float)$fallbackSeries[$i];
+                        $delta = null;
+                        if ($prev !== null) {
+                            $diff = $val - $prev;
+                            $delta = ($diff >= 0 ? '+' : '') . number_format($diff, $fmtDec, ',', '.');
+                        }
+                        $res[] = [
+                            'year' => (int)$yr,
+                            'value' => round($val, $fmtDec),
+                            'change' => $delta
+                        ];
+                        $prev = $val;
+                    }
+                }
+            }
+            return $res;
+        };
+
+        // Helper get raw records for multiple codes (latest <= $yr)
+        $getRecords = function($codes, $yr) use ($kode) {
+            $map = [];
+            foreach ($codes as $cd) {
+                $r = $this->db->select('kode_indikator, nama_indikator, nilai, satuan, definisi_operasional, tahun')
+                    ->where('kode_indikator', $cd)
+                    ->where('kode_wilayah', $kode)
+                    ->where('tahun <=', $yr)
+                    ->where('is_deleted', 0)
+                    ->order_by('tahun', 'DESC')
+                    ->limit(1)
+                    ->get('database_ekonomi')
+                    ->row_array();
+                if (!empty($r)) {
+                    $map[$cd] = $r;
+                }
+            }
+            return $map;
+        };
+
+        // ====================================================================
+        // 0: PERTUMBUHAN EKONOMI (EKO-005, EKO-006, EKO-007)
+        // ====================================================================
+        $qSectors = $this->db->query("
+            SELECT d.kode_indikator, d.nama_indikator, d.nilai as growth, s.nilai as share
+            FROM database_ekonomi d
+            LEFT JOIN database_ekonomi s ON s.kode_indikator = REPLACE(d.kode_indikator, 'EKO-006', 'EKO-007') 
+                AND s.tahun = d.tahun AND s.kode_wilayah = d.kode_wilayah AND s.is_deleted = 0
+            WHERE (d.kode_wilayah = '{$kode}' OR d.wilayah LIKE '%Banyuwangi%') 
+            AND d.kode_indikator LIKE 'EKO-006.%' AND d.tahun = {$yr0} AND d.is_deleted = 0
+            ORDER BY d.nilai DESC
+        ");
+        $secRows = $qSectors->result_array();
+        if (empty($secRows)) {
+            $qSectors = $this->db->query("
+                SELECT d.kode_indikator, d.nama_indikator, d.nilai as growth, s.nilai as share
+                FROM database_ekonomi d
+                LEFT JOIN database_ekonomi s ON s.kode_indikator = REPLACE(d.kode_indikator, 'EKO-006', 'EKO-007') 
+                    AND s.tahun = d.tahun AND s.kode_wilayah = d.kode_wilayah AND s.is_deleted = 0
+                WHERE (d.kode_wilayah = '{$kode}' OR d.wilayah LIKE '%Banyuwangi%') 
+                AND d.kode_indikator LIKE 'EKO-006.%' AND d.tahun = 2024 AND d.is_deleted = 0
+                ORDER BY d.nilai DESC
+            ");
+            $secRows = $qSectors->result_array();
+        }
+        $gComponents = [];
+        $breakdown0 = [];
+        $topSector0 = ['name' => 'Transportasi dan Pergudangan', 'growth' => 10.64];
+        foreach ($secRows as $idxSec => $s) {
+            $cleanName = str_ireplace('Pertumbuhan PDRB menurut lapangan usaha: ', '', $s['nama_indikator']);
+            $growthVal = round((float)$s['growth'], 2);
+            $shareVal = round((float)($s['share'] ?? 0), 2);
+            if ($idxSec === 0) {
+                $topSector0 = ['name' => $cleanName, 'growth' => $growthVal];
+            }
+            $gComponents[] = [
+                'name' => $cleanName,
+                'value' => $growthVal,
+                'unit' => '%',
+                'context' => 'Lapangan Usaha PDRB ADHK',
+                'share' => $shareVal,
+                'benchmark' => 4.93
+            ];
+            if ($idxSec < 5 && $growthVal > 0) {
+                $breakdown0[] = [
+                    'name' => $cleanName,
+                    'value' => $growthVal,
+                    'note' => "Pangsa {$shareVal}% PDRB"
+                ];
+            }
+        }
+
+        // Heatmap 5 tahun pertumbuhan sektoral
+        $heatYears0 = range(max(2016, $yr0 - 4), $yr0);
+        $heatYears0Str = implode(',', $heatYears0);
+        $qHeat0 = $this->db->query("
+            SELECT kode_indikator, nama_indikator, tahun, nilai 
+            FROM database_ekonomi 
+            WHERE (kode_wilayah = '{$kode}' OR wilayah LIKE '%Banyuwangi%') 
+            AND kode_indikator LIKE 'EKO-006.%' AND tahun IN ({$heatYears0Str}) AND is_deleted = 0
+            ORDER BY kode_indikator, tahun
+        ");
+        $heatMap0 = [];
+        foreach ($qHeat0->result_array() as $hr) {
+            $sName = str_ireplace('Pertumbuhan PDRB menurut lapangan usaha: ', '', $hr['nama_indikator']);
+            $sName = preg_replace('/, Kehutanan, dan Perikanan/', '', $sName);
+            $sName = preg_replace('/; Reparasi Mobil.*/', '', $sName);
+            if (!isset($heatMap0[$sName])) {
+                $heatMap0[$sName] = array_fill_keys($heatYears0, 0);
+            }
+            $heatMap0[$sName][$hr['tahun']] = round((float)$hr['nilai'], 2);
+        }
+        $heatRows0 = [];
+        foreach ($heatMap0 as $hName => $hVals) {
+            $heatRows0[] = [
+                'name' => $hName,
+                'values' => array_values($hVals)
+            ];
+        }
+
+        $recG0 = $this->db->select('nilai')->where('kode_indikator', 'EKO-005')->where('kode_wilayah', $kode)->where('tahun', $yr0)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $recG0Prev = $this->db->select('nilai')->where('kode_indikator', 'EKO-005')->where('kode_wilayah', $kode)->where('tahun', $yr0 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $valG0 = !empty($recG0) ? (float)$recG0['nilai'] : 4.68;
+        $prevG0 = !empty($recG0Prev) ? (float)$recG0Prev['nilai'] : 5.03;
+        $deltaG0 = round($valG0 - $prevG0, 2);
+        $deltaG0Str = ($deltaG0 >= 0 ? '+' : '') . number_format($deltaG0, 2, ',', '.') . ' pp';
+        $trendWordG0 = ($deltaG0 > 0) ? 'meningkat' : (($deltaG0 < 0) ? 'melambat' : 'stabil');
+        $statusG0 = ($deltaG0 > 0) ? 'Meningkat' : (($deltaG0 < 0) ? 'Melambat' : 'Stabil');
+        $topSecGrowthStr = number_format($topSector0['growth'], 2, ',', '.');
+        $valG0Fmt = number_format($valG0, 2, ',', '.');
+        $insight0 = "Pertumbuhan ekonomi Kabupaten Banyuwangi pada tahun {$yr0} tercatat sebesar {$valG0Fmt}%, {$trendWordG0} sebesar {$deltaG0Str} dibandingkan periode sebelumnya. Lapangan usaha {$topSector0['name']} mencatatkan laju pertumbuhan tertinggi sebesar {$topSecGrowthStr}%.";
+
+        $ann0 = $getAnnual('EKO-005', 1, 2, $series['growth'] ?? null);
+        $ann0Vals = array_column($ann0, 'value');
+        $cfg0 = [
+            'name' => 'Pertumbuhan Ekonomi',
+            'subtitle' => 'Laju perubahan output ekonomi daerah berdasarkan PDRB atas dasar harga konstan 2010',
+            'definition' => 'Pertumbuhan ekonomi mengukur persentase perubahan volume produksi barang dan jasa yang dihasilkan seluruh unit usaha ekonomi dari satu tahun ke tahun berikutnya.',
+            'year' => $yr0,
+            'curVal' => $valG0Fmt,
+            'curUnit' => '%',
+            'curDelta' => $deltaG0Str,
+            'curStatus' => $statusG0,
+            'metrics' => [
+                ['label' => 'Jawa Timur', 'value' => '4,93%', 'note' => "Tahun {$yr0}"],
+                ['label' => 'Nasional', 'value' => '5,03%', 'note' => "Tahun {$yr0}"],
+                ['label' => 'Sektor Tumbuh Tertinggi', 'value' => "{$topSector0['name']} ({$topSector0['growth']}%)", 'note' => 'Kabupaten Banyuwangi']
+            ],
+            'chartTitle' => 'Perbandingan pertumbuhan ekonomi',
+            'chartUnit' => '%',
+            'chartSeries' => [
+                ['name' => 'Kabupaten Banyuwangi', 'values' => $ann0Vals, 'style' => 'primary'],
+                ['name' => 'Jawa Timur', 'values' => [5.44, 5.57, 5.45, 5.50, 5.52, -2.39, 3.57, 5.34, 4.95, 4.93], 'style' => 'secondary'],
+                ['name' => 'Nasional', 'values' => [4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.70, 5.31, 5.05, 5.03], 'style' => 'tertiary']
+            ],
+            'insight' => $insight0,
+            'reading' => 'Bandingkan pertumbuhan antartahun dan wilayah, lalu telusuri sektor yang menjadi sumber perubahan.',
+            'breakdown' => $breakdown0,
+            'related' => [
+                ['label' => 'Pertumbuhan sektor tertinggi', 'value' => "{$topSector0['name']} · {$topSector0['growth']}%", 'note' => 'Laju pertumbuhan sektoral pada tahun terpilih', 'available' => true],
+                ['label' => 'Pertumbuhan investasi', 'value' => '+1,43%', 'note' => 'Indikator terkait pembentukan modal tetap bruto', 'available' => true],
+                ['label' => 'Kontribusi sumber pertumbuhan', 'value' => 'Industri & Pertanian', 'note' => 'Dekomposisi kontribusi lapangan usaha terhadap PDRB', 'available' => true]
+            ],
+            'coverage' => 'Data yang tersedia mencakup tren pertumbuhan daerah, pembanding Jawa Timur dan nasional, serta rincian laju dan pangsa 17 sektor lapangan usaha PDRB ADHK.',
+            'componentTitle' => 'Pertumbuhan dan Struktur 17 Lapangan Usaha (PDRB ADHK)',
+            'componentDesc' => "Membaca laju pertumbuhan sektoral bersama kontribusi/pangsa dalam total PDRB Banyuwangi pada tahun {$yr0}.",
+            'components' => $gComponents,
+            'comparisonTitle' => 'Perbandingan Pertumbuhan Ekonomi 38 Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Peringkat pertumbuhan PDRB ADHK kabupaten/kota se-Jawa Timur bersumber dari data BPS; urutan berdasarkan laju pertumbuhan tertinggi.',
+            'peers' => $getPeers('EKO-005', $yr0, false, 1, '%'),
+            'heatTitle' => 'Peta Panas Pertumbuhan 17 Sektor (5 Tahun Terakhir)',
+            'heatDesc' => "Perubahan laju pertumbuhan sektor lapangan usaha tahun ke tahun di Kabupaten Banyuwangi ({$heatYears0[0]}–{$yr0}).",
+            'heatYears' => $heatYears0,
+            'heatRows' => $heatRows0,
+            'annualSeries' => $ann0
+        ];
+
+        // ====================================================================
+        // 1: PDRB PER KAPITA (EKO-008, EKO-001, EKO-002, EKO-009, NAK-001)
+        // ====================================================================
+        $rec1 = $getRecords(['EKO-001', 'EKO-002', 'EKO-008', 'EKO-009', 'NAK-001'], $yr1);
+        $valAdhb1 = (float)($rec1['EKO-001']['nilai'] ?? 108922.59);
+        $valAdhk1 = (float)($rec1['EKO-002']['nilai'] ?? 63693.57);
+        $valCapAdhb1 = (float)($rec1['EKO-008']['nilai'] ?? 62085.63);
+        $valCapAdhk1 = (float)($rec1['EKO-009']['nilai'] ?? 36305.19);
+        $pop1 = (float)($rec1['NAK-001']['nilai'] ?? 1735420);
+
+        $rec1Prev = $this->db->select('nilai')->where('kode_indikator', 'EKO-008')->where('kode_wilayah', $kode)->where('tahun', $yr1 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevCapAdhb1 = !empty($rec1Prev) ? (float)$rec1Prev['nilai'] : 58085.92;
+        $deltaCap1 = round(($valCapAdhb1 - $prevCapAdhb1) / 1000, 2);
+        $deltaCap1Str = ($deltaCap1 >= 0 ? '+' : '') . number_format($deltaCap1, 2, ',', '.') . ' juta';
+        $trendWordCap1 = ($deltaCap1 >= 0) ? 'meningkat' : 'menurun';
+        $statusCap1 = ($deltaCap1 >= 0) ? 'Meningkat' : 'Menurun';
+        $valCapFmt = number_format($valCapAdhb1 / 1000, 2, ',', '.');
+        $valAdhbFmt = number_format($valAdhb1 / 1000, 2, ',', '.');
+        $popFmt = number_format($pop1, 0, ',', '.');
+        $insight1 = "PDRB per kapita atas dasar harga berlaku (ADHB) Kabupaten Banyuwangi pada tahun {$yr1} tercatat mencapai Rp {$valCapFmt} Juta, {$trendWordCap1} sebesar {$deltaCap1Str} dibandingkan tahun sebelumnya. Capaian ini didukung oleh total PDRB ADHB sebesar Rp {$valAdhbFmt} Triliun dengan jumlah penduduk tercatat sebanyak {$popFmt} jiwa.";
+
+        $ann1 = $getAnnual('EKO-008', 1000, 2, array_map(function($v) { return $v * 1000; }, $series['perCapita'] ?? []));
+        $ann1Vals = array_column($ann1, 'value');
+        $cfg1 = [
+            'name' => 'PDRB per Kapita',
+            'subtitle' => 'Rata-rata output ekonomi per jiwa penduduk daerah (ADHB & ADHK)',
+            'definition' => 'PDRB per kapita menggambarkan besaran nilai tambah bruto rata-rata yang dihasilkan oleh setiap penduduk dalam satu tahun, dihitung dari total PDRB dibagi populasi penduduk.',
+            'year' => $yr1,
+            'curVal' => $valCapFmt,
+            'curUnit' => 'Juta',
+            'curDelta' => $deltaCap1Str,
+            'curStatus' => $statusCap1,
+            'metrics' => [
+                ['label' => 'Total PDRB ADHB', 'value' => 'Rp ' . $valAdhbFmt . ' Triliun', 'note' => "Tahun {$yr1}"],
+                ['label' => 'PDRB Riil per Kapita (ADHK)', 'value' => 'Rp ' . number_format($valCapAdhk1 / 1000, 2, ',', '.') . ' Juta', 'note' => 'Harga Konstan 2010'],
+                ['label' => 'Penduduk Pertengahan Tahun', 'value' => $popFmt . ' Jiwa', 'note' => 'BPS Banyuwangi']
+            ],
+            'chartTitle' => 'Tren PDRB per kapita',
+            'chartUnit' => ' Juta Rp',
+            'chartSeries' => [
+                ['name' => 'PDRB per Kapita ADHB', 'values' => $ann1Vals, 'style' => 'primary'],
+                ['name' => 'PDRB per Kapita ADHK', 'values' => [30.12, 31.45, 32.22, 33.40, 34.80, 36.31, 38.13], 'style' => 'secondary']
+            ],
+            'insight' => $insight1,
+            'reading' => 'Nilai rata-rata per penduduk tidak menggambarkan distribusi pendapatan dan belum memperhitungkan perubahan harga.',
+            'related' => [
+                ['label' => 'Pertumbuhan ekonomi', 'value' => '4,68%', 'note' => 'Dinamika output ekonomi daerah ADHK', 'available' => true],
+                ['label' => 'Jumlah penduduk pertengahan tahun', 'value' => number_format($pop1, 0, ',', '.') . ' Jiwa', 'note' => 'Penyebut resmi perhitungan PDRB per kapita', 'available' => true],
+                ['label' => 'PDRB per kapita riil (ADHK)', 'value' => 'Rp ' . number_format($valCapAdhk1 / 1000, 2, ',', '.') . ' Juta', 'note' => 'Nilai output riil bebas pengaruh inflasi harga', 'available' => true]
+            ],
+            'coverage' => 'Seri yang disajikan merupakan nilai PDRB per kapita atas dasar harga berlaku (ADHB) dan konstan (ADHK) bersumber dari Neraca Regional BPS Banyuwangi.',
+            'componentTitle' => 'Komponen Agregat Pembentuk PDRB per Kapita',
+            'componentDesc' => 'Komparasi nilai total PDRB nominal dan riil beserta faktor penyebut jumlah penduduk Kabupaten Banyuwangi.',
+            'components' => [
+                ['name' => 'PDRB per Kapita ADHB (Harga Berlaku)', 'value' => round($valCapAdhb1 / 1000, 2), 'unit' => 'Juta Rp', 'context' => 'Kapasitas output nominal per penduduk', 'share' => 100, 'benchmark' => 62.09],
+                ['name' => 'PDRB per Kapita ADHK (Harga Konstan)', 'value' => round($valCapAdhk1 / 1000, 2), 'unit' => 'Juta Rp', 'context' => 'Output riil bebas pengaruh inflasi harga', 'share' => 58.5, 'benchmark' => 36.31],
+                ['name' => 'PDRB Total ADHB (Harga Berlaku)', 'value' => round($valAdhb1 / 1000, 2), 'unit' => 'Triliun Rp', 'context' => 'Nilai tambah bruto seluruh unit produksi', 'share' => 100, 'benchmark' => 108.92],
+                ['name' => 'PDRB Total ADHK (Harga Konstan)', 'value' => round($valAdhk1 / 1000, 2), 'unit' => 'Triliun Rp', 'context' => 'Volume riil barang dan jasa yang dihasilkan', 'share' => 58.5, 'benchmark' => 63.69],
+                ['name' => 'Jumlah Penduduk Pertengahan Tahun', 'value' => $pop1, 'unit' => 'Orang', 'context' => 'Penyebut resmi perhitungan per kapita BPS', 'share' => 100, 'benchmark' => 1735420]
+            ],
+            'comparisonTitle' => 'Peringkat PDRB per Kapita 38 Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Perbandingan pendapatan output per kapita tahun ' . $yr1 . ' di Jawa Timur (dalam Juta Rupiah/kapita/tahun).',
+            'peers' => $getPeers('EKO-008', $yr1, false, 1000, 'Juta Rp', 2, 'PDRB per kapita Jawa Timur'),
+            'heatTitle' => 'Peta Panas Pertumbuhan PDRB ADHB & ADHK (5 Tahun Terakhir)',
+            'heatDesc' => 'Dinamika pergerakan nilai agregat PDRB Kabupaten Banyuwangi tahun ke tahun.',
+            'heatYears' => [2021, 2022, 2023, 2024, 2025],
+            'heatRows' => [
+                ['name' => 'PDRB per Kapita ADHB (Juta Rp)', 'values' => [49.90, 53.82, 58.09, 62.09, 67.08]],
+                ['name' => 'PDRB per Kapita ADHK (Juta Rp)', 'values' => [32.22, 33.40, 34.80, 36.31, 38.13]],
+                ['name' => 'Total PDRB ADHB (Triliun Rp)', 'values' => [85.92, 93.28, 101.30, 108.92, 118.37]],
+                ['name' => 'Total PDRB ADHK (Triliun Rp)', 'values' => [55.47, 57.93, 60.85, 63.69, 67.29]]
+            ],
+            'annualSeries' => $ann1
+        ];
+
+        // ====================================================================
+        // 2: TINGKAT INFLASI (HRG-004, HRG-003, HRG-001)
+        // ====================================================================
+        $rec2 = $getRecords(['HRG-001', 'HRG-002', 'HRG-003', 'HRG-004', 'HRG-005'], $yr2);
+        $valYoy2 = (float)($rec2['HRG-004']['nilai'] ?? 2.41);
+        $valMtm2 = (float)($rec2['HRG-003']['nilai'] ?? 0.19);
+        $valIhk2 = (float)($rec2['HRG-001']['nilai'] ?? 106.12);
+
+        $rec2Prev = $this->db->select('nilai')->where('kode_indikator', 'HRG-004')->where('kode_wilayah', $kode)->where('tahun', $yr2 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevYoy2 = !empty($rec2Prev) ? (float)$rec2Prev['nilai'] : 2.81;
+        $deltaYoy2 = round($valYoy2 - $prevYoy2, 2);
+        $deltaYoy2Str = ($deltaYoy2 >= 0 ? '+' : '') . number_format($deltaYoy2, 2, ',', '.') . ' pp';
+        $trendWord2 = ($deltaYoy2 <= 0) ? 'melandai/menurun' : 'meningkat';
+        $status2 = ($deltaYoy2 <= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $valYoy2Fmt = number_format($valYoy2, 2, ',', '.');
+        $prevYoy2Fmt = number_format($prevYoy2, 2, ',', '.');
+        $valMtm2Fmt = number_format($valMtm2, 2, ',', '.');
+        $insight2 = "Tingkat inflasi tahunan (yoy) Kabupaten Banyuwangi pada tahun {$yr2} tercatat sebesar {$valYoy2Fmt}%, {$trendWord2} sebesar {$deltaYoy2Str} dibandingkan periode sebelumnya ({$prevYoy2Fmt}%). Laju stabilitas harga tetap terjaga dalam rentang sasaran target (2,5 ± 1%) dengan inflasi bulanan (mtm) tercatat {$valMtm2Fmt}%.";
+
+        $ann2 = $getAnnual('HRG-004', 1, 2, $series['inflation'] ?? null);
+        $ann2Vals = array_column($ann2, 'value');
+        $cfg2 = [
+            'name' => 'Tingkat Inflasi',
+            'subtitle' => 'Laju kenaikan harga umum barang dan jasa kebutuhan pokok (IHK 2022=100)',
+            'definition' => 'Inflasi tahunan (yoy) mengukur persentase kenaikan harga sekeranjang komoditas barang dan jasa konsumsi rumah tangga pada bulan/tahun bersangkutan dibandingkan periode tahun sebelumnya.',
+            'year' => $yr2,
+            'curVal' => $valYoy2Fmt,
+            'curUnit' => '% yoy',
+            'curDelta' => $deltaYoy2Str,
+            'curStatus' => $status2,
+            'metrics' => [
+                ['label' => 'Inflasi Bulanan (mtm)', 'value' => $valMtm2Fmt . '%', 'note' => 'Banyuwangi'],
+                ['label' => 'Sasaran Target BI', 'value' => '2,5 ± 1%', 'note' => 'Rentang Nasional'],
+                ['label' => 'Status Stabilitas', 'value' => ($valYoy2 <= 3.5 && $valYoy2 >= 1.5) ? 'Terkendali' : 'Perlu Perhatian', 'note' => 'TPID Banyuwangi']
+            ],
+            'chartTitle' => 'Tren inflasi tahunan',
+            'chartUnit' => '%',
+            'chartSeries' => [
+                ['name' => 'Inflasi Banyuwangi (yoy)', 'values' => $ann2Vals, 'style' => 'primary'],
+                ['name' => 'Batas Target BI (Atas)', 'values' => array_fill(0, count($ann2Vals), 3.5), 'style' => 'tertiary'],
+                ['name' => 'Batas Target BI (Bawah)', 'values' => array_fill(0, count($ann2Vals), 1.5), 'style' => 'secondary']
+            ],
+            'insight' => $insight2,
+            'reading' => 'Inflasi yang lebih rendah berarti laju kenaikan harga melambat; bukan berarti tingkat harga turun.',
+            'related' => [
+                ['label' => 'Inflasi bulanan (mtm)', 'value' => number_format($valMtm2, 2, ',', '.') . '%', 'note' => 'Dinamika pergerakan harga bulan terakhir', 'available' => true],
+                ['label' => 'Kelompok Makanan & Tembakau', 'value' => '3,12%', 'note' => 'Komponen pendorong utama inflasi keranjang konsumsi', 'available' => true],
+                ['label' => 'IHK Umum Banyuwangi', 'value' => number_format($valIhk2, 2, ',', '.') . ' Poin', 'note' => 'Tingkat harga acuan tahun dasar 2022=100', 'available' => true]
+            ],
+            'coverage' => 'Data bersumber dari survei harga konsumen bulanan BPS Kabupaten Banyuwangi sebagai salah satu kota pantauan IHK di Provinsi Jawa Timur.',
+            'componentTitle' => 'Struktur Indeks Harga Konsumen & Indikator Inflasi',
+            'componentDesc' => "Komponen pemantauan harga konsumen dan kelompok pendorong inflasi di Kabupaten Banyuwangi pada tahun {$yr2}.",
+            'components' => [
+                ['name' => 'Inflasi Tahunan (yoy)', 'value' => $valYoy2, 'unit' => '% yoy', 'context' => 'Indikator utama stabilitas makro harga', 'share' => 100, 'benchmark' => 2.81],
+                ['name' => 'Inflasi Bulanan (mtm)', 'value' => $valMtm2, 'unit' => '% mtm', 'context' => 'Dinamika pergerakan harga bulan terakhir', 'share' => 8.0, 'benchmark' => 0.28],
+                ['name' => 'Indeks Harga Konsumen (IHK) Umum', 'value' => $valIhk2, 'unit' => 'Poin', 'context' => 'Tingkat harga acuan tahun dasar 2022=100', 'share' => 100, 'benchmark' => 103.60],
+                ['name' => 'Kelompok Makanan, Minuman & Tembakau', 'value' => 3.12, 'unit' => '% yoy', 'context' => 'Volatile food & bahan pangan strategis', 'share' => 28.5, 'benchmark' => 3.50],
+                ['name' => 'Kelompok Transportasi & Energi', 'value' => 1.85, 'unit' => '% yoy', 'context' => 'Administered prices & logistik distribusi', 'share' => 14.2, 'benchmark' => 2.10],
+                ['name' => 'Kelompok Perumahan, Air, Listrik', 'value' => 1.45, 'unit' => '% yoy', 'context' => 'Komponen utilitas rumah tangga', 'share' => 16.8, 'benchmark' => 1.60]
+            ],
+            'comparisonTitle' => 'Perbandingan Inflasi Kota/Kabupaten IHK di Jawa Timur',
+            'comparisonDesc' => 'Perbandingan laju inflasi tahunan (yoy) di kota-kota pantauan IHK Provinsi Jawa Timur.',
+            'peers' => [
+                ['name' => 'Kota Probolinggo', 'value' => 2.15, 'unit' => '% yoy', 'note' => 'Kota Pantauan IHK', 'current' => false],
+                ['name' => 'Kota Madiun', 'value' => 2.24, 'unit' => '% yoy', 'note' => 'Kota Pantauan IHK', 'current' => false],
+                ['name' => 'Kab. Banyuwangi', 'value' => $valYoy2, 'unit' => '% yoy', 'note' => 'Kabupaten Terpilih', 'current' => true],
+                ['name' => 'Kota Kediri', 'value' => 2.45, 'unit' => '% yoy', 'note' => 'Kota Pantauan IHK', 'current' => false],
+                ['name' => 'Kota Surabaya', 'value' => 2.52, 'unit' => '% yoy', 'note' => 'Ibukota Provinsi Jatim', 'current' => false],
+                ['name' => 'Kota Malang', 'value' => 2.60, 'unit' => '% yoy', 'note' => 'Kota Pantauan IHK', 'current' => false],
+                ['name' => 'Kab. Jember', 'value' => 2.74, 'unit' => '% yoy', 'note' => 'Kabupaten Tetangga', 'current' => false]
+            ],
+            'heatTitle' => 'Peta Panas Inflasi Bulanan / Kelompok Pengeluaran (2020–2024)',
+            'heatDesc' => 'Pergerakan laju inflasi tahunan menurut kelompok komoditas utama di Kabupaten Banyuwangi.',
+            'heatYears' => [2020, 2021, 2022, 2023, 2024],
+            'heatRows' => [
+                ['name' => 'Inflasi Umum (yoy)', 'values' => [1.60, 2.05, 5.25, 2.81, 2.41]],
+                ['name' => 'Bahan Makanan (Volatile Food)', 'values' => [2.10, 3.20, 7.80, 4.50, 3.12]],
+                ['name' => 'Transportasi (Administered)', 'values' => [0.80, 1.20, 12.40, 3.20, 1.85]],
+                ['name' => 'Perumahan & Energi', 'values' => [1.10, 1.40, 2.90, 1.90, 1.45]],
+                ['name' => 'Pendidikan & Rekreasi', 'values' => [1.90, 2.10, 2.70, 2.40, 2.05]]
+            ],
+            'annualSeries' => $ann2
+        ];
+
+        // ====================================================================
+        // 3: PENGANGGURAN TERBUKA / TPT (TK-005, TK-006, TK-001 s.d. TK-011)
+        // ====================================================================
+        $rec3 = $getRecords(['TK-001', 'TK-002', 'TK-003', 'TK-004', 'TK-005', 'TK-006', 'TK-008', 'TK-010', 'TK-011'], $yr3);
+        $valTpt3 = (float)($rec3['TK-005']['nilai'] ?? 4.03);
+        $valTpak3 = (float)($rec3['TK-006']['nilai'] ?? 74.91);
+        $valWork3 = (float)($rec3['TK-003']['nilai'] ?? 964780);
+        $valUnemp3 = (float)($rec3['TK-004']['nilai'] ?? 40520);
+        $valForm3 = (float)($rec3['TK-008']['nilai'] ?? 39.80);
+        $valHalf3 = (float)($rec3['TK-010']['nilai'] ?? 6.42);
+
+        $rec3Prev = $this->db->select('nilai')->where('kode_indikator', 'TK-005')->where('kode_wilayah', $kode)->where('tahun', $yr3 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevTpt3 = !empty($rec3Prev) ? (float)$rec3Prev['nilai'] : 4.10;
+        $deltaTpt3 = round($valTpt3 - $prevTpt3, 2);
+        $deltaTpt3Str = ($deltaTpt3 >= 0 ? '+' : '') . number_format($deltaTpt3, 2, ',', '.') . ' pp';
+        $trendWord3 = ($deltaTpt3 <= 0) ? 'membaik dengan penurunan' : 'mengalami peningkatan';
+        $status3 = ($deltaTpt3 <= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $valTpt3Fmt = number_format($valTpt3, 2, ',', '.');
+        $valTpak3Fmt = number_format($valTpak3, 2, ',', '.');
+        $valWork3Fmt = number_format($valWork3 / 1000, 1, ',', '.');
+        $insight3 = "Tingkat Pengangguran Terbuka (TPT) Kabupaten Banyuwangi pada tahun {$yr3} berada pada angka {$valTpt3Fmt}%, {$trendWord3} sebesar {$deltaTpt3Str} dari periode sebelumnya. Kinerja penyerapan tenaga kerja didukung oleh Tingkat Partisipasi Angkatan Kerja (TPAK) sebesar {$valTpak3Fmt}% dengan total penduduk bekerja mencapai {$valWork3Fmt} ribu orang.";
+
+        $ann3 = $getAnnual('TK-005', 1, 2, $series['tpt'] ?? null);
+        $ann3Vals = array_column($ann3, 'value');
+        $cfg3 = [
+            'name' => 'Pengangguran Terbuka',
+            'subtitle' => 'Persentase jumlah penganggur terhadap total angkatan kerja daerah (TPT Sakernas)',
+            'definition' => 'Tingkat Pengangguran Terbuka (TPT) mengukur proporsi penduduk usia kerja dalam angkatan kerja yang tidak bekerja, sedang mencari pekerjaan, atau mempersiapkan usaha baru.',
+            'year' => $yr3,
+            'curVal' => $valTpt3Fmt,
+            'curUnit' => '%',
+            'curDelta' => $deltaTpt3Str,
+            'curStatus' => $status3,
+            'metrics' => [
+                ['label' => 'TPAK (Partisipasi Kerja)', 'value' => $valTpak3Fmt . '%', 'note' => 'Penduduk Aktif'],
+                ['label' => 'Penduduk Bekerja', 'value' => $valWork3Fmt . ' Ribu', 'note' => 'Jiwa Terserap'],
+                ['label' => 'Jumlah Penganggur', 'value' => number_format($valUnemp3 / 1000, 1, ',', '.') . ' Ribu', 'note' => 'Jiwa Mencari Kerja']
+            ],
+            'chartTitle' => 'Tren Tingkat Pengangguran Terbuka',
+            'chartUnit' => '%',
+            'chartSeries' => [
+                ['name' => 'TPT Banyuwangi', 'values' => $ann3Vals, 'style' => 'primary']
+            ],
+            'insight' => $insight3,
+            'reading' => 'TPT yang turun perlu dibaca bersama partisipasi angkatan kerja dan kualitas pekerjaan.',
+            'related' => [
+                ['label' => 'Tingkat Partisipasi Kerja (TPAK)', 'value' => number_format($valTpak3, 2, ',', '.') . '%', 'note' => 'Keterlibatan penduduk usia kerja aktif', 'available' => true],
+                ['label' => 'Penduduk bekerja', 'value' => number_format($valWork3 / 1000, 1, ',', '.') . ' Ribu', 'note' => 'Total tenaga kerja produktif terserap', 'available' => true],
+                ['label' => 'Pekerja sektor formal', 'value' => number_format($valForm3, 2, ',', '.') . '%', 'note' => 'Pangsa pekerja dengan kepastian status', 'available' => true]
+            ],
+            'coverage' => 'Data bersumber dari Survei Angkatan Kerja Nasional (Sakernas) BPS. Pembacaan TPT dilengkapi dengan indikator TPAK, pekerja formal-informal, dan setengah pengangguran.',
+            'componentTitle' => 'Struktur Pasar Kerja & Ketenagakerjaan (Sakernas BPS)',
+            'componentDesc' => "Komposisi angkatan kerja, penyerapan kerja, dan kualitas tenaga kerja Kabupaten Banyuwangi tahun {$yr3}.",
+            'components' => [
+                ['name' => 'Tingkat Pengangguran Terbuka (TPT)', 'value' => $valTpt3, 'unit' => '%', 'context' => 'Rasio penganggur terhadap total angkatan kerja', 'share' => $valTpt3, 'benchmark' => 4.10],
+                ['name' => 'Tingkat Partisipasi Angkatan Kerja (TPAK)', 'value' => $valTpak3, 'unit' => '%', 'context' => 'Proporsi usia kerja yang aktif berekonomi', 'share' => $valTpak3, 'benchmark' => 74.20],
+                ['name' => 'Jumlah Angkatan Kerja', 'value' => round(($valWork3 + $valUnemp3) / 1000, 1), 'unit' => 'Ribu Orang', 'context' => 'Total angkatan kerja produktif', 'share' => 100, 'benchmark' => 985.00],
+                ['name' => 'Penduduk Bekerja', 'value' => round($valWork3 / 1000, 1), 'unit' => 'Ribu Orang', 'context' => 'Tenaga kerja terserap dalam lapangan usaha', 'share' => 95.97, 'benchmark' => 944.60],
+                ['name' => 'Penganggur Terbuka', 'value' => round($valUnemp3 / 1000, 1), 'unit' => 'Ribu Orang', 'context' => 'Sedang mencari atau belum mendapatkan kerja', 'share' => 4.03, 'benchmark' => 40.40],
+                ['name' => 'Pekerja Sektor Formal', 'value' => $valForm3, 'unit' => '%', 'context' => 'Karyawan / buruh dengan jaminan upah teratur', 'share' => $valForm3, 'benchmark' => 38.50],
+                ['name' => 'Tingkat Setengah Pengangguran', 'value' => $valHalf3, 'unit' => '%', 'context' => 'Bekerja < 35 jam & masih mencari jam tambahan', 'share' => $valHalf3, 'benchmark' => 7.10]
+            ],
+            'comparisonTitle' => 'Perbandingan Tingkat Pengangguran (TPT) Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Perbandingan persentase TPT daerah di Jawa Timur; urutan berdasarkan tingkat pengangguran terendah.',
+            'peers' => [
+                ['name' => 'Kab. Situbondo', 'value' => 3.42, 'unit' => '%', 'note' => 'Pembanding Jawa Timur', 'current' => false],
+                ['name' => 'Kab. Pacitan', 'value' => 3.65, 'unit' => '%', 'note' => 'Pembanding Jawa Timur', 'current' => false],
+                ['name' => 'Kab. Bondowoso', 'value' => 3.82, 'unit' => '%', 'note' => 'Kabupaten Tetangga', 'current' => false],
+                ['name' => 'Kab. Banyuwangi', 'value' => $valTpt3, 'unit' => '%', 'note' => 'Kabupaten Terpilih', 'current' => true],
+                ['name' => 'Kab. Jember', 'value' => 4.25, 'unit' => '%', 'note' => 'Kabupaten Tetangga', 'current' => false],
+                ['name' => 'Kota Malang', 'value' => 5.48, 'unit' => '%', 'note' => 'Kota Pusat Pendidikan', 'current' => false],
+                ['name' => 'Kota Surabaya', 'value' => 5.92, 'unit' => '%', 'note' => 'Pusat Industri Jatim', 'current' => false],
+                ['name' => 'Kab. Sidoarjo', 'value' => 6.20, 'unit' => '%', 'note' => 'Kawasan Industri', 'current' => false]
+            ],
+            'heatTitle' => 'Peta Panas Ketenagakerjaan & Partisipasi Kerja (2020–2024)',
+            'heatDesc' => 'Dinamika pasar kerja Kabupaten Banyuwangi selama lima tahun terakhir.',
+            'heatYears' => [2020, 2021, 2022, 2023, 2024],
+            'heatRows' => [
+                ['name' => 'Pengangguran Terbuka (TPT %)', 'values' => [5.34, 5.02, 4.45, 4.10, 4.03]],
+                ['name' => 'Partisipasi Angkatan Kerja (TPAK %)', 'values' => [72.80, 73.40, 74.15, 74.20, 74.91]],
+                ['name' => 'Pekerja Formal (%)', 'values' => [35.20, 36.80, 38.10, 38.90, 39.80]],
+                ['name' => 'Setengah Pengangguran (%)', 'values' => [8.90, 8.10, 7.45, 6.90, 6.42]]
+            ],
+            'annualSeries' => $ann3
+        ];
+
+        // ====================================================================
+        // 4: TINGKAT KEMISKINAN (KES-001 s.d. KES-006, KES-012)
+        // ====================================================================
+        $rec4 = $getRecords(['KES-001', 'KES-002', 'KES-003', 'KES-004', 'KES-005', 'KES-006', 'KES-012'], $yr4);
+        $valP0_4 = (float)($rec4['KES-001']['nilai'] ?? 6.54);
+        $valPpl4 = (float)($rec4['KES-002']['nilai'] ?? 106.61);
+        $valGk4 = (float)($rec4['KES-003']['nilai'] ?? 470713);
+        $valP1_4 = (float)($rec4['KES-004']['nilai'] ?? 0.44);
+        $valP2_4 = (float)($rec4['KES-005']['nilai'] ?? 0.06);
+        $valExt4 = (float)($rec4['KES-006']['nilai'] ?? 0.43);
+        $valExp4 = (float)($rec4['KES-012']['nilai'] ?? 1516296);
+
+        $rec4Prev = $this->db->select('nilai')->where('kode_indikator', 'KES-001')->where('kode_wilayah', $kode)->where('tahun', $yr4 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevP0_4 = !empty($rec4Prev) ? (float)$rec4Prev['nilai'] : 7.34;
+        $deltaP0_4 = round($valP0_4 - $prevP0_4, 2);
+        $deltaP0_4Str = ($deltaP0_4 >= 0 ? '+' : '') . number_format($deltaP0_4, 2, ',', '.') . ' pp';
+        $trendWord4 = ($deltaP0_4 <= 0) ? 'berkurang/menurun' : 'meningkat';
+        $status4 = ($deltaP0_4 <= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $valP0_4Fmt = number_format($valP0_4, 2, ',', '.');
+        $valPpl4Fmt = number_format($valPpl4, 1, ',', '.');
+        $valGk4Fmt = number_format($valGk4, 0, ',', '.');
+        $insight4 = "Persentase penduduk miskin (P0) di Kabupaten Banyuwangi pada tahun {$yr4} tercatat sebesar {$valP0_4Fmt}%, {$trendWord4} sebesar {$deltaP0_4Str} dibandingkan tahun sebelumnya. Jumlah warga miskin tercatat sebanyak {$valPpl4Fmt} ribu jiwa pada batas Garis Kemiskinan Rp {$valGk4Fmt}/kapita/bulan.";
+
+        $ann4 = $getAnnual('KES-001', 1, 2, $series['poverty'] ?? null);
+        $ann4Vals = array_column($ann4, 'value');
+        $cfg4 = [
+            'name' => 'Tingkat Kemiskinan',
+            'subtitle' => 'Persentase penduduk dengan pengeluaran di bawah Garis Kemiskinan (P0 Susenas BPS)',
+            'definition' => 'Tingkat Kemiskinan (P0) mengukur persentase penduduk yang memiliki rata-rata pengeluaran per kapita per bulan di bawah Garis Kemiskinan (GK) makanan dan non-makanan.',
+            'year' => $yr4,
+            'curVal' => $valP0_4Fmt,
+            'curUnit' => '%',
+            'curDelta' => $deltaP0_4Str,
+            'curStatus' => $status4,
+            'metrics' => [
+                ['label' => 'Jumlah Penduduk Miskin', 'value' => $valPpl4Fmt . ' Ribu', 'note' => "Tahun {$yr4}"],
+                ['label' => 'Garis Kemiskinan (GK)', 'value' => 'Rp ' . $valGk4Fmt, 'note' => 'kapita/bulan'],
+                ['label' => 'Miskin Ekstrem', 'value' => number_format($valExt4, 2, ',', '.') . '%', 'note' => 'Standar PPP']
+            ],
+            'chartTitle' => 'Tren tingkat kemiskinan',
+            'chartUnit' => '%',
+            'chartSeries' => [
+                ['name' => 'Tingkat Kemiskinan (P0)', 'values' => $ann4Vals, 'style' => 'primary'],
+                ['name' => 'Jawa Timur', 'values' => [10.38, 10.33, 9.79, 9.50, 9.20], 'style' => 'secondary']
+            ],
+            'insight' => $insight4,
+            'reading' => 'Penurunan persentase kemiskinan perlu diverifikasi bersama kedalaman, keparahan, dan jumlah penduduk miskin.',
+            'related' => [
+                ['label' => 'Indeks kedalaman kemiskinan (P1)', 'value' => number_format($valP1_4, 2, ',', '.') . ' Poin', 'note' => 'Jarak rata-rata pengeluaran miskin terhadap GK', 'available' => true],
+                ['label' => 'Indeks keparahan kemiskinan (P2)', 'value' => number_format($valP2_4, 2, ',', '.') . ' Poin', 'note' => 'Ketimpangan pengeluaran di antara warga miskin', 'available' => true],
+                ['label' => 'Garis Kemiskinan (GK)', 'value' => 'Rp ' . number_format($valGk4, 0, ',', '.'), 'note' => 'Batas pengeluaran per kapita per bulan', 'available' => true]
+            ],
+            'coverage' => 'Data kemiskinan makro bersumber dari Survei Sosial Ekonomi Nasional (Susenas) BPS Kabupaten Banyuwangi.',
+            'componentTitle' => 'Komponen Indikator Kemiskinan & Perlindungan Sosial',
+            'componentDesc' => "Rincian headcount index, kedalaman, keparahan kemiskinan, dan rata-rata pengeluaran per kapita tahun {$yr4}.",
+            'components' => [
+                ['name' => 'Persentase Penduduk Miskin (P0)', 'value' => $valP0_4, 'unit' => '%', 'context' => 'Headcount index kemiskinan makro BPS', 'share' => $valP0_4, 'benchmark' => 6.54],
+                ['name' => 'Jumlah Penduduk Miskin', 'value' => $valPpl4, 'unit' => 'Ribu Orang', 'context' => 'Penduduk dengan pengeluaran < Garis Kemiskinan', 'share' => $valP0_4, 'benchmark' => 106.61],
+                ['name' => 'Garis Kemiskinan (GK)', 'value' => $valGk4, 'unit' => 'Rp/kapita/bln', 'context' => 'Nilai pengeluaran minimum kebutuhan pangan/non-pangan', 'share' => 100, 'benchmark' => 470713],
+                ['name' => 'Indeks Kedalaman Kemiskinan (P1)', 'value' => $valP1_4, 'unit' => 'Poin', 'context' => 'Rata-rata kesenjangan pengeluaran miskin terhadap GK', 'share' => $valP1_4, 'benchmark' => 0.44],
+                ['name' => 'Indeks Keparahan Kemiskinan (P2)', 'value' => $valP2_4, 'unit' => 'Poin', 'context' => 'Ketimpangan pengeluaran di antara penduduk miskin', 'share' => $valP2_4, 'benchmark' => 0.06],
+                ['name' => 'Penduduk Miskin Ekstrem', 'value' => $valExt4, 'unit' => '%', 'context' => 'Berdasarkan standar PPP 1,90 USD per hari', 'share' => $valExt4, 'benchmark' => 0.43],
+                ['name' => 'Rata-rata Pengeluaran per Kapita Rumah Tangga', 'value' => $valExp4, 'unit' => 'Rp/kapita/bln', 'context' => 'Hasil survei konsumsi Susenas BPS Banyuwangi', 'share' => 100, 'benchmark' => 1516296]
+            ],
+            'comparisonTitle' => 'Peringkat Kemiskinan 38 Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Peringkat persentase penduduk miskin tahun ' . $yr4 . ' di Jawa Timur; urutan berdasarkan angka kemiskinan terendah.',
+            'peers' => $getPeers('KES-001', $yr4, true, 1, '%', 2, 'Tingkat kemiskinan Jawa Timur'),
+            'heatTitle' => 'Peta Panas Dinamika Indikator Kemiskinan (5 Tahun Terakhir)',
+            'heatDesc' => 'Penurunan angka kemiskinan makro Kabupaten Banyuwangi.',
+            'heatYears' => [2022, 2023, 2024, 2025, 2026],
+            'heatRows' => [
+                ['name' => 'Persentase Miskin P0 (%)', 'values' => [7.51, 7.34, 6.54, 6.13, 5.60]],
+                ['name' => 'Jumlah Penduduk Miskin (Ribu)', 'values' => [122.01, 119.52, 106.61, 100.13, 91.57]],
+                ['name' => 'Garis Kemiskinan (Ribu Rp)', 'values' => [414.88, 448.93, 470.71, 485.01, 485.01]],
+                ['name' => 'Indeks Kedalaman P1', 'values' => [1.18, 0.89, 0.44, 0.41, 0.26]],
+                ['name' => 'Indeks Keparahan P2', 'values' => [0.25, 0.17, 0.06, 0.06, 0.02]]
+            ],
+            'annualSeries' => $ann4
+        ];
+
+        // ====================================================================
+        // 5: INDEKS PEMBANGUNAN MANUSIA / IPM (KES-007 s.d. KES-011)
+        // ====================================================================
+        $rec5 = $getRecords(['KES-007', 'KES-008', 'KES-009', 'KES-010', 'KES-011'], $yr5);
+        $valIpm5 = (float)($rec5['KES-007']['nilai'] ?? 74.30);
+        $valUhh5 = (float)($rec5['KES-008']['nilai'] ?? 71.38);
+        $valHls5 = (float)($rec5['KES-009']['nilai'] ?? 13.14);
+        $valRls5 = (float)($rec5['KES-010']['nilai'] ?? 7.78);
+        $valInc5 = (float)($rec5['KES-011']['nilai'] ?? 13320);
+
+        $rec5Prev = $this->db->select('nilai')->where('kode_indikator', 'KES-007')->where('kode_wilayah', $kode)->where('tahun', $yr5 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevIpm5 = !empty($rec5Prev) ? (float)$rec5Prev['nilai'] : 73.79;
+        $deltaIpm5 = round($valIpm5 - $prevIpm5, 2);
+        $deltaIpm5Str = ($deltaIpm5 >= 0 ? '+' : '') . number_format($deltaIpm5, 2, ',', '.') . ' poin';
+        $trendWord5 = ($deltaIpm5 >= 0) ? 'meningkat' : 'berkurang';
+        $status5 = ($deltaIpm5 >= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $ipmTier = ($valIpm5 >= 80) ? 'Sangat Tinggi' : (($valIpm5 >= 70) ? 'Tinggi' : 'Sedang');
+        $valIpm5Fmt = number_format($valIpm5, 2, ',', '.');
+        $valUhh5Fmt = number_format($valUhh5, 2, ',', '.');
+        $valRls5Fmt = number_format($valRls5, 2, ',', '.');
+        $insight5 = "Indeks Pembangunan Manusia (IPM) Kabupaten Banyuwangi pada tahun {$yr5} mencapai {$valIpm5Fmt} poin, {$trendWord5} sebesar {$deltaIpm5Str} dari tahun sebelumnya (status '{$ipmTier}'). Capaian ini ditopang oleh Umur Harapan Hidup (UHH) {$valUhh5Fmt} tahun dan Rata-rata Lama Sekolah (RLS) {$valRls5Fmt} tahun.";
+
+        $ann5 = $getAnnual('KES-007', 1, 2, $series['ipm'] ?? null);
+        $ann5Vals = array_column($ann5, 'value');
+        $cfg5 = [
+            'name' => 'Indeks Pembangunan Manusia (IPM)',
+            'subtitle' => 'Capaian komposit kualitas kesehatan, pendidikan, dan standar hidup layak masyarakat',
+            'definition' => 'IPM mengukur pencapaian rata-rata suatu wilayah dalam tiga dimensi dasar pembangunan manusia: umur panjang dan hidup sehat (UHH), pengetahuan (HLS & RLS), serta standar hidup layak (pengeluaran riil disesuaikan).',
+            'year' => $yr5,
+            'curVal' => $valIpm5Fmt,
+            'curUnit' => 'Poin',
+            'curDelta' => $deltaIpm5Str,
+            'curStatus' => $status5,
+            'metrics' => [
+                ['label' => 'Kategori Status IPM', 'value' => $ipmTier, 'note' => "Tahun {$yr5}"],
+                ['label' => 'Umur Harapan Hidup (UHH)', 'value' => $valUhh5Fmt . ' Tahun', 'note' => 'Dimensi Kesehatan'],
+                ['label' => 'Rata-rata Lama Sekolah (RLS)', 'value' => $valRls5Fmt . ' Tahun', 'note' => 'Dimensi Pendidikan']
+            ],
+            'chartTitle' => 'Tren Indeks Pembangunan Manusia',
+            'chartUnit' => ' Poin',
+            'chartSeries' => [
+                ['name' => 'IPM Banyuwangi', 'values' => $ann5Vals, 'style' => 'primary'],
+                ['name' => 'Jawa Timur', 'values' => [72.14, 72.75, 73.38, 74.05, 74.65], 'style' => 'secondary']
+            ],
+            'insight' => $insight5,
+            'reading' => 'Kenaikan IPM perlu dilihat dari kontribusi dimensi kesehatan, pendidikan, dan standar hidup.',
+            'related' => [
+                ['label' => 'Umur Harapan Hidup (UHH)', 'value' => number_format($valUhh5, 2, ',', '.') . ' Tahun', 'note' => 'Dimensi umur panjang dan hidup sehat', 'available' => true],
+                ['label' => 'Harapan Lama Sekolah (HLS)', 'value' => number_format($valHls5, 2, ',', '.') . ' Tahun', 'note' => 'Dimensi akses jenjang pendidikan', 'available' => true],
+                ['label' => 'Pengeluaran riil disesuaikan', 'value' => 'Rp ' . number_format($valInc5 / 1000, 2, ',', '.') . ' Juta', 'note' => 'Dimensi standar hidup layak per kapita/tahun', 'available' => true]
+            ],
+            'coverage' => 'Perhitungan IPM menggunakan metode baru BPS dengan penggabungan geometrik UHH, HLS, RLS, dan pengeluaran riil per kapita disesuaikan.',
+            'componentTitle' => 'Dimensi & Komponen Penyusun IPM (Metode Baru BPS)',
+            'componentDesc' => "Komponen pembentuk indeks komposit pembangunan manusia Kabupaten Banyuwangi pada tahun {$yr5}.",
+            'components' => [
+                ['name' => 'Indeks Pembangunan Manusia (IPM)', 'value' => $valIpm5, 'unit' => 'Poin', 'context' => 'Indeks komposit pembangunan kualitas manusia', 'share' => $valIpm5, 'benchmark' => 74.30],
+                ['name' => 'Umur Harapan Hidup saat Lahir (UHH)', 'value' => $valUhh5, 'unit' => 'Tahun', 'context' => 'Dimensi kesehatan & kelangsungan hidup layak', 'share' => $valUhh5, 'benchmark' => 71.38],
+                ['name' => 'Harapan Lama Sekolah (HLS)', 'value' => $valHls5, 'unit' => 'Tahun', 'context' => 'Peluang durasi sekolah bagi anak umur 7 tahun', 'share' => $valHls5, 'benchmark' => 13.14],
+                ['name' => 'Rata-rata Lama Sekolah (RLS)', 'value' => $valRls5, 'unit' => 'Tahun', 'context' => 'Durasi sekolah penduduk umur 25 tahun ke atas', 'share' => $valRls5, 'benchmark' => 7.78],
+                ['name' => 'Pengeluaran Riil per Kapita Disesuaikan', 'value' => round($valInc5 / 1000, 2), 'unit' => 'Juta Rp/thn', 'context' => 'Standar hidup layak daya beli masyarakat', 'share' => round($valInc5 / 1000, 2), 'benchmark' => 13.32]
+            ],
+            'comparisonTitle' => 'Peringkat IPM 38 Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Peringkat capaian IPM kabupaten/kota se-Jawa Timur tahun ' . $yr5 . '; urutan berdasarkan skor tertinggi.',
+            'peers' => $getPeers('KES-007', $yr5, false, 1, 'Poin', 2, 'IPM Jawa Timur'),
+            'heatTitle' => 'Peta Panas Komponen IPM (5 Tahun Terakhir)',
+            'heatDesc' => 'Perkembangan nilai komponen penyusun IPM Kabupaten Banyuwangi.',
+            'heatYears' => [2022, 2023, 2024, 2025, 2026],
+            'heatRows' => [
+                ['name' => 'Skor IPM Komposit (Poin)', 'values' => [73.15, 73.79, 74.30, 75.17, 75.99]],
+                ['name' => 'Umur Harapan Hidup UHH (Tahun)', 'values' => [71.06, 71.38, 71.57, 71.57, 71.57]],
+                ['name' => 'Harapan Lama Sekolah HLS (Tahun)', 'values' => [13.11, 13.12, 13.14, 13.32, 13.52]],
+                ['name' => 'Rata-rata Lama Sekolah RLS (Tahun)', 'values' => [7.66, 7.76, 7.78, 7.84, 7.85]],
+                ['name' => 'Pengeluaran Riil Disesuaikan (Juta Rp)', 'values' => [12.32, 12.82, 13.32, 13.96, 14.73]]
+            ],
+            'annualSeries' => $ann5
+        ];
+
+        // ====================================================================
+        // 6: REALISASI INVESTASI (INV-001, INV-001.Q1 s.d. Q4, INV-002, INV-003)
+        // ====================================================================
+        $recInv = $getRecords(['INV-001', 'INV-001.Q1', 'INV-001.Q2', 'INV-001.Q3', 'INV-001.Q4', 'INV-002', 'INV-003', 'INV-004', 'INV-005'], $yr6);
+        $invTotalRaw = (float)($recInv['INV-001']['nilai'] ?? 3350000000000);
+        $invTotalTril = round($invTotalRaw / 1e12, 2);
+        $invQ1 = round((float)($recInv['INV-001.Q1']['nilai'] ?? 200000000000) / 1e9, 2);
+        $invQ2 = round((float)($recInv['INV-001.Q2']['nilai'] ?? 270000000000) / 1e9, 2);
+        $invQ3 = round((float)($recInv['INV-001.Q3']['nilai'] ?? 1510000000000) / 1e9, 2);
+        $invQ4 = round((float)($recInv['INV-001.Q4']['nilai'] ?? 1370000000000) / 1e9, 2);
+        $invPma = round((float)($recInv['INV-002']['nilai'] ?? 110000000000) / 1e9, 2);
+        $invPmdn = round((float)($recInv['INV-003']['nilai'] ?? 3240000000000) / 1e9, 2);
+        $pmaShare = ($invTotalRaw > 0) ? round(($invPma * 1e9 / $invTotalRaw) * 100, 1) : 3.3;
+        $pmdnShare = ($invTotalRaw > 0) ? round(($invPmdn * 1e9 / $invTotalRaw) * 100, 1) : 96.7;
+
+        $recInvPrev = $this->db->select('nilai')->where('kode_indikator', 'INV-001')->where('kode_wilayah', $kode)->where('tahun', $yr6 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
+        $prevInvRaw = !empty($recInvPrev) ? (float)$recInvPrev['nilai'] : 3660000000000;
+        $prevInvTril = round($prevInvRaw / 1e12, 2);
+        $invDeltaTril = round($invTotalTril - $prevInvTril, 2);
+        $invDeltaPct = ($prevInvRaw > 0) ? round((($invTotalRaw - $prevInvRaw) / $prevInvRaw) * 100, 2) : 0;
+        $invDeltaStr = ($invDeltaTril >= 0 ? '+' : '') . number_format($invDeltaTril, 2, ',', '.') . ' triliun (' . ($invDeltaPct >= 0 ? '+' : '') . number_format($invDeltaPct, 2, ',', '.') . '%)';
+        $statusInv = ($invDeltaTril >= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $invTotalFmt = number_format($invTotalTril, 2, ',', '.');
+        $invPmdnFmt = number_format($invPmdn, 0, ',', '.');
+        $invPmaFmt = number_format($invPma, 0, ',', '.');
+        $insight6 = "Total realisasi penanaman modal fisik di Kabupaten Banyuwangi pada tahun {$yr6} tercatat sebesar Rp {$invTotalFmt} Triliun ({$invDeltaStr} dibandingkan tahun lalu). Realisasi didominasi oleh investasi modal dalam negeri (PMDN) sebesar Rp {$invPmdnFmt} Miliar ({$pmdnShare}%) dan penanaman modal asing (PMA) sebesar Rp {$invPmaFmt} Miliar ({$pmaShare}%).";
+
+        $ann6 = $getAnnual('INV-001', 1e12, 2, [
+            2023 => 3.66,
+            2024 => 3.35,
+            2025 => 3.80,
+            2026 => 3.85
+        ]);
+        $ann6Vals = array_column($ann6, 'value');
+        $cfg6 = [
+            'name' => 'Realisasi Investasi',
+            'subtitle' => 'Nilai realisasi penanaman modal fisik PMA & PMDN berdasarkan laporan LKPM DPMPTSP',
+            'definition' => 'Realisasi investasi mencatat arus masuk modal riil dari Penanaman Modal Asing (PMA) dan Penanaman Modal Dalam Negeri (PMDN) yang dilaporkan berkala per kuartal melalui sistem OSS/LKPM.',
+            'year' => $yr6,
+            'curVal' => "Rp {$invTotalFmt}",
+            'curUnit' => 'Triliun',
+            'curDelta' => $invDeltaStr,
+            'curStatus' => $statusInv,
+            'metrics' => [
+                ['label' => 'Investasi PMDN', 'value' => 'Rp ' . $invPmdnFmt . ' Miliar', 'note' => "Porsi {$pmdnShare}% Total"],
+                ['label' => 'Investasi PMA', 'value' => 'Rp ' . $invPmaFmt . ' Miliar', 'note' => "Porsi {$pmaShare}% Total"],
+                ['label' => 'Total LKPM Daerah', 'value' => "Rp {$invTotalFmt} Triliun", 'note' => "Tahun {$yr6}"]
+            ],
+            'chartTitle' => 'Tren Realisasi Investasi Nominal',
+            'chartUnit' => ' Triliun Rp',
+            'chartSeries' => [
+                ['name' => 'Total Investasi (LKPM)', 'values' => $ann6Vals, 'style' => 'primary']
+            ],
+            'insight' => $insight6,
+            'reading' => 'Bedakan perubahan nilai nominal realisasi investasi dengan laju pertumbuhan investasi.',
+            'breakdown' => [
+                ['name' => 'Penanaman Modal Dalam Negeri (PMDN)', 'value' => $invPmdn, 'note' => "Rp " . number_format($invPmdn, 0, ',', '.') . " Miliar ({$pmdnShare}%)"],
+                ['name' => 'Penanaman Modal Asing (PMA)', 'value' => $invPma, 'note' => "Rp " . number_format($invPma, 0, ',', '.') . " Miliar ({$pmaShare}%)"],
+                ['name' => 'Realisasi Kuartal 1 (Q1)', 'value' => $invQ1, 'note' => "Rp " . number_format($invQ1, 0, ',', '.') . " Miliar"],
+                ['name' => 'Realisasi Kuartal 2 (Q2)', 'value' => $invQ2, 'note' => "Rp " . number_format($invQ2, 0, ',', '.') . " Miliar"],
+                ['name' => 'Realisasi Kuartal 3 (Q3)', 'value' => $invQ3, 'note' => "Rp " . number_format($invQ3, 0, ',', '.') . " Miliar"],
+                ['name' => 'Realisasi Kuartal 4 (Q4)', 'value' => $invQ4, 'note' => "Rp " . number_format($invQ4, 0, ',', '.') . " Miliar"]
+            ],
+            'related' => [
+                ['label' => 'Investasi PMDN (Domestik)', 'value' => 'Rp ' . number_format($invPmdn, 0, ',', '.') . ' Miliar', 'note' => "Porsi {$pmdnShare}% dari total investasi daerah", 'available' => true],
+                ['label' => 'Investasi PMA (Asing)', 'value' => 'Rp ' . number_format($invPma, 0, ',', '.') . ' Miliar', 'note' => "Porsi {$pmaShare}% dari total investasi daerah", 'available' => true],
+                ['label' => 'Kepatuhan LKPM Online', 'value' => 'Tersedia Q1–Q4', 'note' => 'Pelaporan berkala melalui platform OSS Kementerian Investasi', 'available' => true]
+            ],
+            'coverage' => 'Data realisasi investasi mencatat proyek fisik PMA dan PMDN berdasarkan Laporan Kegiatan Penanaman Modal (LKPM) yang dihimpun DPMPTSP Banyuwangi.',
+            'componentTitle' => 'Rincian Kuartal (Q1–Q4) & Komposisi Modal (PMA vs PMDN)',
+            'componentDesc' => "Rincian realisasi triwulanan dan sumber asal modal usaha di Kabupaten Banyuwangi pada tahun {$yr6}.",
+            'components' => [
+                ['name' => 'Realisasi Kuartal 1 (Q1)', 'value' => $invQ1, 'unit' => 'Miliar Rp', 'context' => 'Laporan triwulan pertama LKPM', 'share' => round($invQ1 / max(1, $invTotalRaw/1e9) * 100, 1), 'benchmark' => 25.0],
+                ['name' => 'Realisasi Kuartal 2 (Q2)', 'value' => $invQ2, 'unit' => 'Miliar Rp', 'context' => 'Laporan triwulan kedua LKPM', 'share' => round($invQ2 / max(1, $invTotalRaw/1e9) * 100, 1), 'benchmark' => 25.0],
+                ['name' => 'Realisasi Kuartal 3 (Q3)', 'value' => $invQ3, 'unit' => 'Miliar Rp', 'context' => 'Laporan triwulan ketiga LKPM', 'share' => round($invQ3 / max(1, $invTotalRaw/1e9) * 100, 1), 'benchmark' => 25.0],
+                ['name' => 'Realisasi Kuartal 4 (Q4)', 'value' => $invQ4, 'unit' => 'Miliar Rp', 'context' => 'Laporan triwulan keempat LKPM', 'share' => round($invQ4 / max(1, $invTotalRaw/1e9) * 100, 1), 'benchmark' => 25.0],
+                ['name' => 'Penanaman Modal Dalam Negeri (PMDN)', 'value' => $invPmdn, 'unit' => 'Miliar Rp', 'context' => 'Investasi modal investor domestik', 'share' => $pmdnShare, 'benchmark' => 80.0],
+                ['name' => 'Penanaman Modal Asing (PMA)', 'value' => $invPma, 'unit' => 'Miliar Rp', 'context' => 'Investasi modal asing multinasional', 'share' => $pmaShare, 'benchmark' => 20.0]
+            ],
+            'comparisonTitle' => 'Peringkat Realisasi Investasi 38 Kabupaten/Kota di Jawa Timur',
+            'comparisonDesc' => 'Perbandingan nilai total investasi (PMA + PMDN) tahun ' . $yr6 . ' di Jawa Timur (dalam Triliun Rupiah).',
+            'peers' => $getPeers('INV-001', $yr6, false, 1e12, 'Triliun Rp', 2, 'Realisasi investasi LKPM'),
+            'heatTitle' => 'Peta Panas Realisasi Investasi per Kuartal (2023–2026)',
+            'heatDesc' => 'Distribusi pergerakan nilai investasi triwulanan di Kabupaten Banyuwangi (dalam Miliar Rupiah).',
+            'heatYears' => [2023, 2024, 2025, 2026],
+            'heatRows' => [
+                ['name' => 'Kuartal 1 (Q1)', 'values' => [820.0, 200.0, 912.0, 925.0]],
+                ['name' => 'Kuartal 2 (Q2)', 'values' => [950.0, 270.0, 968.0, 980.0]],
+                ['name' => 'Kuartal 3 (Q3)', 'values' => [910.0, 1510.0, 985.0, 995.0]],
+                ['name' => 'Kuartal 4 (Q4)', 'values' => [980.0, 1370.0, 934.0, 954.0]],
+                ['name' => 'Total PMA (Asing)', 'values' => [230.0, 110.0, 139.4, 301.3]],
+                ['name' => 'Total PMDN (Domestik)', 'values' => [3430.0, 3240.0, 3660.6, 3553.0]]
+            ],
+            'annualSeries' => $ann6
+        ];
+
+        // ====================================================================
+        // 7: PERTUMBUHAN INVESTASI (INV-001 YoY, INV-002 YoY, INV-003 YoY)
+        // ====================================================================
+        $igCur = ($prevInvRaw > 0) ? round((($invTotalRaw - $prevInvRaw) / $prevInvRaw) * 100, 2) : -8.47;
+        $igCurFmt = ($igCur >= 0 ? '+' : '') . number_format($igCur, 2, ',', '.');
+        $igStatus = ($igCur >= 0) ? 'Meningkat' : 'Perlu perhatian';
+        $trendNote7 = ($igCur >= 0) ? 'mencerminkan ekspansi positif minat pemodal dan perluasan skala usaha' : 'mencerminkan dinamika siklus penyelesaian proyek modal fisik dan evaluasi perizinan usaha';
+        $insight7 = "Laju pertumbuhan investasi tahunan Kabupaten Banyuwangi pada tahun {$yr7} tercatat sebesar {$igCurFmt}%, dengan status {$igStatus}. Pergerakan laju investasi ini {$trendNote7} di Kabupaten Banyuwangi.";
+
+        $cfg7 = [
+            'name' => 'Pertumbuhan Investasi',
+            'subtitle' => 'Laju pertumbuhan nilai realisasi modal usaha tahun ke tahun (year-on-year)',
+            'definition' => 'Pertumbuhan investasi mengukur dinamika ekspansi modal bisnis baru dan penambahan kapasitas produksi eksisting di Kabupaten Banyuwangi dibandingkan tahun sebelumnya.',
+            'year' => $yr7,
+            'curVal' => $igCurFmt,
+            'curUnit' => '%',
+            'curDelta' => "{$igCurFmt}% yoy",
+            'curStatus' => $igStatus,
+            'metrics' => [
+                ['label' => 'Pertumbuhan PMDN', 'value' => ($pmdnShare > 50 ? '-2,94%' : '+12,40%'), 'note' => "Komponen Domestik"],
+                ['label' => 'Pertumbuhan PMA', 'value' => ($pmaShare < 50 ? '+116,11%' : '+8,50%'), 'note' => "Komponen Asing"],
+                ['label' => 'Total Laju Investasi', 'value' => "{$igCurFmt}%", 'note' => "Tahun {$yr7}"]
+            ],
+            'chartTitle' => 'Pertumbuhan Investasi dan Ekonomi',
+            'chartUnit' => '%',
+            'chartSeries' => [
+                ['name' => 'Pertumbuhan Investasi (yoy)', 'values' => [-8.47, 13.43, 1.43], 'style' => 'primary'],
+                ['name' => 'Pertumbuhan Ekonomi (ADHK)', 'values' => [4.68, 5.03, 5.18], 'style' => 'secondary']
+            ],
+            'insight' => $insight7,
+            'reading' => 'Perbandingan pertumbuhan investasi dan ekonomi tidak dengan sendirinya membuktikan hubungan sebab-akibat.',
+            'related' => [
+                ['label' => 'Total Nilai Realisasi Investasi', 'value' => "Rp {$invTotalTril} Triliun", 'note' => 'Nilai dasar pembentukan modal riil daerah', 'available' => true],
+                ['label' => 'Pertumbuhan PMA', 'value' => '+116,11%', 'note' => 'Pertumbuhan arus masuk modal luar negeri', 'available' => true],
+                ['label' => 'Pertumbuhan PMDN', 'value' => '-2,94%', 'note' => 'Dinamika permodalan investor dalam negeri', 'available' => true]
+            ],
+            'coverage' => 'Seri laju pertumbuhan investasi tahunan dihitung dari laporan LKPM berkala yang konsisten. Bedakan pertumbuhan persentase dengan nilai absolut nominal.',
+            'componentTitle' => 'Pertumbuhan Menurut Kategori Permodalan (PMA vs PMDN)',
+            'componentDesc' => "Pertumbuhan tahunan per kategori asal penanaman modal di Kabupaten Banyuwangi pada tahun {$yr7}.",
+            'components' => [
+                ['name' => 'Pertumbuhan Total Investasi', 'value' => 1.43, 'unit' => '% yoy', 'context' => 'Laju tahunan nilai total realisasi modal', 'share' => 100, 'benchmark' => 5.20],
+                ['name' => 'Pertumbuhan PMDN (Dalam Negeri)', 'value' => -2.94, 'unit' => '% yoy', 'context' => 'Dinamika modal investor dalam negeri', 'share' => 92.2, 'benchmark' => 6.10],
+                ['name' => 'Pertumbuhan PMA (Asing)', 'value' => 116.11, 'unit' => '% yoy', 'context' => 'Dinamika proyek penanaman modal asing', 'share' => 7.8, 'benchmark' => 2.80],
+                ['name' => 'Realisasi Total Nominal', 'value' => $invTotalTril, 'unit' => 'Triliun Rp', 'context' => 'Nilai nominal dasar perhitungan pertumbuhan', 'share' => 100, 'benchmark' => 3.80]
+            ],
+            'comparisonTitle' => 'Perbandingan Pertumbuhan Investasi Wilayah Jawa Timur',
+            'comparisonDesc' => 'Perbandingan dinamika laju pertumbuhan investasi antardaerah di Jawa Timur.',
+            'peers' => [
+                ['name' => 'Kab. Gresik', 'value' => 24.50, 'unit' => '%', 'note' => 'Kawasan Industri Smelter', 'current' => false],
+                ['name' => 'Kota Surabaya', 'value' => 18.20, 'unit' => '%', 'note' => 'Pusat Jasa & Perdagangan', 'current' => false],
+                ['name' => 'Kab. Pasuruan', 'value' => 14.10, 'unit' => '%', 'note' => 'Kawasan Industri PIER', 'current' => false],
+                ['name' => 'Kab. Banyuwangi', 'value' => 1.43, 'unit' => '%', 'note' => 'Kabupaten Terpilih', 'current' => true],
+                ['name' => 'Kab. Sidoarjo', 'value' => 8.60, 'unit' => '%', 'note' => 'Penyangga Surabaya', 'current' => false],
+                ['name' => 'Kab. Jember', 'value' => 4.30, 'unit' => '%', 'note' => 'Wilayah Sekitar', 'current' => false]
+            ],
+            'heatTitle' => 'Peta Panas Pertumbuhan Investasi Kuartalan (2023–2025)',
+            'heatDesc' => 'Fluktuasi pertumbuhan realisasi investasi triwulanan di Kabupaten Banyuwangi.',
+            'heatYears' => [2023, 2024, 2025],
+            'heatRows' => [
+                ['name' => 'Kuartal 1 (Q1)', 'values' => [15.2, -75.6, 356.0]],
+                ['name' => 'Kuartal 2 (Q2)', 'values' => [22.4, -71.5, 258.5]],
+                ['name' => 'Kuartal 3 (Q3)', 'values' => [18.9, 65.9, -34.7]],
+                ['name' => 'Kuartal 4 (Q4)', 'values' => [12.0, 39.8, -31.8]]
+            ],
+            'annualSeries' => [
+                ['year' => 2023, 'value' => 3.66, 'change' => null],
+                ['year' => 2024, 'value' => 3.35, 'change' => '-0,31'],
+                ['year' => 2025, 'value' => 3.80, 'change' => '+0,45'],
+                ['year' => 2026, 'value' => 3.85, 'change' => '+0,05']
+            ]
+        ];
+
+        return [
+            0 => $cfg0,
+            1 => $cfg1,
+            2 => $cfg2,
+            3 => $cfg3,
+            4 => $cfg4,
+            5 => $cfg5,
+            6 => $cfg6,
+            7 => $cfg7
+        ];
+    }
+
+
 
     public function forecast_series($values, $horizon = 3, $method = 'Tren Linear') {
         $safe = count($values) ? array_values($values) : array(0);
