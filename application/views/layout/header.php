@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? htmlspecialchars($title) . ' — ' : '' ?>SI-DAPEDA <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></title>
+    <title><?= isset($title) ? htmlspecialchars($title) . ' — ' : '' ?>Dashboard Ekonomi Daerah <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('assets/img/favicon-32.png') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
+    <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
     <script>
         const BASE_URL = '<?= rtrim(base_url(), '/') ?>';
@@ -17,13 +20,11 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-head">
-            <a href="<?= site_url() ?>" class="logo" title="SI-DAPEDA Economic Intelligence">
-                <div class="logo-mark">
-                    <span></span><span></span><span></span>
-                </div>
+            <a href="<?= site_url() ?>" class="logo" title="Dashboard Ekonomi Daerah">
+                <img src="<?= base_url('assets/img/logo_white.png') ?>" alt="Dashboard Ekonomi Daerah" class="logo-icon">
                 <div class="logo-text">
-                    <strong>SI-DAPEDA</strong>
-                    <small>Economic Intelligence</small>
+                    <strong>Dashboard</strong>
+                    <small>Ekonomi Daerah</small>
                 </div>
             </a>
         </div>
@@ -90,26 +91,26 @@
             <?php endif; ?>
 
             <!-- TOMBOL AKUN / LOGOUT -->
-            <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div class="sidebar-auth-group">
                 <?php if (!empty($user)): ?>
                     <?php if (empty($is_admin)): ?>
-                        <a href="<?= site_url('admin') ?>" class="nav-item" title="Pengelolaan Sistem" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                        <a href="<?= site_url('admin') ?>" class="nav-item nav-switch-item" title="Pengelolaan Sistem">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                             <span>Pengelolaan Sistem</span>
                         </a>
                     <?php else: ?>
-                        <a href="<?= site_url('beranda') ?>" class="nav-item" title="Dashboard Publik" style="color: #60a5fa; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); margin-bottom: 8px;">
+                        <a href="<?= site_url('beranda') ?>" class="nav-item nav-switch-item" title="Dashboard Publik">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                             <span>Dashboard Publik</span>
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" title="Keluar (Logout)" style="color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
+                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" title="Keluar (Logout)" onclick="return confirm('Apakah Anda yakin ingin keluar dari Dashboard Ekonomi Daerah?')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         <span>Keluar (Logout)</span>
                     </a>
                 <?php else: ?>
-                    <a href="<?= site_url('akun') ?>" class="nav-item login-nav-item" title="Masuk (Login)" style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                    <a href="<?= site_url('akun') ?>" class="nav-item login-nav-item" title="Masuk (Login)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Masuk (Login)</span>
                     </a>
@@ -121,8 +122,8 @@
             <div class="data-status">
                 <span class="pulse"></span>
                 <div>
-                    <strong>SI-DAPEDA</strong>
-                    <small>Sistem Informasi Daerah</small>
+                    <strong>Dashboard</strong>
+                    <small>Ekonomi Daerah</small>
                 </div>
             </div>
         </div>
@@ -169,12 +170,12 @@
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= site_url('logout') ?>" class="button secondary" title="Keluar dari Sistem" style="height:36px; padding:0 12px; gap:6px; color:#ef4444; border-color:#fca5a5; background:#ffffff;" onclick="return confirm('Apakah Anda yakin ingin keluar dari sistem SI-DAPEDA?')">
+                    <a href="<?= site_url('logout') ?>" class="button button-danger-outline" title="Keluar dari Sistem" onclick="return confirm('Apakah Anda yakin ingin keluar dari Dashboard Ekonomi Daerah?')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         <span>Keluar</span>
                     </a>
                 <?php else: ?>
-                    <a href="<?= site_url('akun') ?>" class="button primary" style="height:36px; gap:6px;">
+                    <a href="<?= site_url('akun') ?>" class="button primary" title="Masuk ke Akun">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Masuk (Login)</span>
                     </a>

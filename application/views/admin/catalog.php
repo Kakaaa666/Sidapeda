@@ -191,24 +191,24 @@
             ?>
             <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Indikator per Klaster Pembangunan <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></strong>
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Indikator per Klaster Pembangunan <?= !empty($selected_year) ? "(Tahun {$selected_year})" : "(Semua Periode)" ?></strong>
                     <div style="display:grid; gap:5px;">
                         <?php foreach ($clCounts as $cName => $cCnt): ?>
-                            <div style="display:grid; grid-template-columns: 140px 1fr 45px; align-items:center; gap:6px; font-size:8px;">
+                            <div style="display:grid; grid-template-columns: 140px 1fr 45px; align-items:center; gap:6px; font-size: 11.5px;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?= htmlspecialchars($cName) ?></span>
                                 <div style="height:6px; border-radius:3px; background:#e2e8f0; overflow:hidden;">
                                     <div style="width:<?= round(($cCnt/$maxCl)*100) ?>%; height:100%; background:var(--teal);"></div>
                                 </div>
-                                <strong style="text-align:right; font-size:8px;"><?= $cCnt ?> <small style="color:var(--muted); font-size:7px;">(<?= round(($cCnt/$totCat)*100) ?>%)</small></strong>
+                                <strong style="text-align:right; font-size: 11.5px;"><?= $cCnt ?> <small style="color:var(--muted); font-size: 11px;">(<?= round(($cCnt/$totCat)*100) ?>%)</small></strong>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Frekuensi Pembaruan Data</strong>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:8px;">
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:6px;">Frekuensi Pembaruan Data</strong>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; font-size: 11.5px;">
                         <?php foreach ($freqCounts as $fName => $fCnt): ?>
-                            <span class="badge info" style="font-size:8px; padding:4px 8px;">
+                            <span class="badge info" style="font-size: 11.5px; padding:4px 8px;">
                                 <strong><?= htmlspecialchars($fName) ?></strong>: <?= $fCnt ?> indikator
                             </span>
                         <?php endforeach; ?>
@@ -303,7 +303,7 @@
                                 <td>
                                     <strong><?= htmlspecialchars($item['name']) ?></strong>
                                     <?php if (empty($selected_year) && !empty($item['total_records'])): ?>
-                                        <small style="display:block; font-size:10.5px; color:var(--teal); font-weight:600; margin-top:3px;">
+                                        <small style="display:block; font-size: 12.5px; color:var(--teal); font-weight:600; margin-top:3px;">
                                             <?= $item['total_records'] ?> rekaman tahunan (<?= htmlspecialchars($item['period_span']) ?>)
                                         </small>
                                     <?php endif; ?>
@@ -316,7 +316,7 @@
                                             <strong style="color:var(--navy); font-size:12.5px; font-variant-numeric:tabular-nums;">
                                                 <?= number_format($item['selected_year_value'], 2, ',', '.') ?>
                                             </strong>
-                                            <span class="badge info" style="font-size:9px; margin-left:4px; padding:1px 5px;"><?= htmlspecialchars($item['unit']) ?></span>
+                                            <span class="badge info" style="font-size: 12px; margin-left:4px; padding:1px 5px;"><?= htmlspecialchars($item['unit']) ?></span>
                                         <?php else: ?>
                                             <span style="color:var(--muted); font-size:11px;">-</span>
                                         <?php endif; ?>

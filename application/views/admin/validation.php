@@ -411,26 +411,26 @@
                                             <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
                                                 <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
-                                    <small style="font-size:10.5px; color:#64748b; display:block; margin-top:2px;">
+                                    <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;">
                                         <?= htmlspecialchars($item['source']) ?>
                                     </small>
                                     <?php if (!empty($item['definition'])): ?>
-                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size:10px; color:#94a3b8; margin-top:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:320px;">
+                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size: 12.5px; color:#94a3b8; margin-top:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:320px;">
                                             <span style="color:#64748b; font-weight:600;">Definisi:</span> <?= htmlspecialchars($item['definition']) ?>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
-                                        <div style="margin-top:4px; font-size:10px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
+                                        <div style="margin-top:4px; font-size: 12.5px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
                                             <span><strong>Catatan:</strong> <?= htmlspecialchars($item['notes']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td style="padding:11px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle;">
-                                    <span class="badge secondary" style="font-size:10px; padding:3px 7px; white-space:nowrap;">
+                                    <span class="badge secondary" style="font-size: 12.5px; padding:3px 7px; white-space:nowrap;">
                                         <?= htmlspecialchars($item['cluster']) ?>
                                     </span>
                                 </td>
@@ -456,7 +456,7 @@
                                                     <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?>
                                                 </span>
                                                 <div style="display:flex; align-items:center; gap:3px;">
-                                                    <span style="font-size:9.5px; font-weight:700; color:<?= $bColor ?>; background:<?= $bBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
+                                                    <span style="font-size: 12px; font-weight:700; color:<?= $bColor ?>; background:<?= $bBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
                                                         <?= $isValid ? '✓ Valid' : ($isRejected ? '✕ Ditolak' : '⏱ Review') ?>
                                                     </span>
                                                     <div style="display:inline-flex; align-items:center; gap:2px;">
@@ -469,7 +469,7 @@
                                                     </div>
                                                 </div>
                                                 <?php if (!empty($rec['notes']) && !$isValid): ?>
-                                                    <div style="font-size:9px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:3px; padding:1px 4px; max-width:105px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Catatan: <?= htmlspecialchars($rec['notes']) ?>">
+                                                    <div style="font-size: 12px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:3px; padding:1px 4px; max-width:105px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Catatan: <?= htmlspecialchars($rec['notes']) ?>">
                                                         <?= htmlspecialchars($rec['notes']) ?>
                                                     </div>
                                                 <?php endif; ?>
@@ -488,7 +488,7 @@
                                             <span>Setujui Semua</span>
                                         </button>
                                     <?php else: ?>
-                                        <span class="badge success" style="font-size:10px; padding:3px 8px; display:inline-flex; align-items:center; gap:3px;">
+                                        <span class="badge success" style="font-size: 12.5px; padding:3px 8px; display:inline-flex; align-items:center; gap:3px;">
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                             <span>Semua Valid</span>
                                         </span>
@@ -522,8 +522,8 @@
                                         <td class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:2; padding:8px 12px 8px 16px; border-bottom:1px solid #edf0f4; box-shadow:2px 0 5px rgba(0,0,0,0.03); white-space:nowrap;">
                                             <div style="display:flex; align-items:center; gap:5px;">
                                                 <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
-                                                <code style="font-size:10.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
-                                                <span style="font-size:9.5px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                                <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
+                                                <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                             </div>
                                         </td>
                                         <td style="padding:8px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle; background:#f8fafc;">
@@ -533,10 +533,10 @@
                                             <div style="font-size:11px; color:#475569; margin-top:2px;">
                                                 <span style="color:#0284c7; font-weight:600;"><?= $isSubInv ? 'Periode:' : 'Kategori:' ?></span> <?= htmlspecialchars($cleanSubName) ?>
                                             </div>
-                                            <small style="font-size:10px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
+                                            <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
                                         </td>
                                         <td style="padding:7px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle; background:#f8fafc;">
-                                            <span class="badge secondary" style="font-size:9.5px; padding:2px 6px;"><?= htmlspecialchars($sub['cluster']) ?></span>
+                                            <span class="badge secondary" style="font-size: 12px; padding:2px 6px;"><?= htmlspecialchars($sub['cluster']) ?></span>
                                         </td>
                                         <td style="padding:7px 14px; border-bottom:1px solid #edf0f4; font-size:11px; color:#475569; vertical-align:middle; white-space:nowrap; background:#f8fafc;">
                                             <?= htmlspecialchars($sub['unit']) ?>
@@ -559,7 +559,7 @@
                                                             <?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?>
                                                         </span>
                                                         <div style="display:flex; align-items:center; gap:3px;">
-                                                            <span style="font-size:9px; font-weight:700; color:<?= $sbColor ?>; background:<?= $sbBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
+                                                            <span style="font-size: 12px; font-weight:700; color:<?= $sbColor ?>; background:<?= $sbBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
                                                                 <?= $sIsValid ? '✓ Valid' : ($sIsRejected ? '✕ Ditolak' : '⏱ Review') ?>
                                                             </span>
                                                             <div style="display:inline-flex; align-items:center; gap:2px;">
@@ -572,7 +572,7 @@
                                                             </div>
                                                         </div>
                                                         <?php if (!empty($sRec['notes']) && !$sIsValid): ?>
-                                                            <div style="font-size:9px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:3px; padding:1px 4px; max-width:105px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Catatan: <?= htmlspecialchars($sRec['notes']) ?>">
+                                                            <div style="font-size: 12px; color:#b91c1c; background:#fff; border:1px solid #fecaca; border-radius:3px; padding:1px 4px; max-width:105px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Catatan: <?= htmlspecialchars($sRec['notes']) ?>">
                                                                 <?= htmlspecialchars($sRec['notes']) ?>
                                                             </div>
                                                         <?php endif; ?>
@@ -584,12 +584,12 @@
                                         <?php endforeach; ?>
                                         <td class="matrix-sticky-col-last" style="position:sticky; right:0; background:#f8fafc; z-index:2; padding:7px 12px; border-bottom:1px solid #edf0f4; text-align:center; vertical-align:middle; white-space:nowrap;">
                                             <?php if ($sUnverified > 0 || $sRejected > 0): ?>
-                                                <button type="button" class="btn-verify-series button small success" data-code="<?= $sub['code'] ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" title="Setujui seluruh tahun yang belum tervalidasi untuk sub-indikator ini" style="padding:3px 7px; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:3px; white-space:nowrap; cursor:pointer;">
+                                                <button type="button" class="btn-verify-series button small success" data-code="<?= $sub['code'] ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" title="Setujui seluruh tahun yang belum tervalidasi untuk sub-indikator ini" style="padding:3px 7px; font-size: 12.5px; font-weight:700; display:inline-flex; align-items:center; gap:3px; white-space:nowrap; cursor:pointer;">
                                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                     <span>Setujui</span>
                                                 </button>
                                             <?php else: ?>
-                                                <span class="badge success" style="font-size:9.5px; padding:2px 6px;">✓ Valid</span>
+                                                <span class="badge success" style="font-size: 12px; padding:2px 6px;">✓ Valid</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>

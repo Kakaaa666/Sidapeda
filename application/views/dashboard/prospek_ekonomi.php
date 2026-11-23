@@ -268,7 +268,7 @@
                 <div style="margin-top:18px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <span class="eyebrow">LINTASAN PROYEKSI PERTUMBUHAN (2024–2027)</span>
-                        <div class="legend" style="font-size:8px;">
+                        <div class="legend" style="font-size: 11.5px;">
                             <i style="background:var(--blue)"></i> Baseline
                             <i style="background:var(--teal)"></i> Skenario
                         </div>

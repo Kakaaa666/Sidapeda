@@ -272,13 +272,13 @@
                                             <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
                                                 <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
                                     <?php if (!empty($item['klaster']) && $item['klaster'] !== 'Umum'): ?>
                                         <div style="margin-top:4px;">
-                                            <span class="badge secondary" style="font-size:9.5px; padding:2px 6px;"><?= htmlspecialchars($item['klaster']) ?></span>
+                                            <span class="badge secondary" style="font-size: 12px; padding:2px 6px;"><?= htmlspecialchars($item['klaster']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -303,7 +303,7 @@
                                             <span style="font-size:11.5px; font-weight:700; color:#475569;">Rp</span>
                                         <?php endif; ?>
                                         <input type="text" inputmode="decimal" class="threshold-input is-rupiah-mask" data-code="<?= $item['code'] ?>" value="<?= number_format($item['threshold'], 2, ',', '.') ?>" style="width: 120px; height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; font-weight: 700; color: var(--navy); font-size: 12px; background: #ffffff; text-align: right;">
-                                        <small style="color: var(--muted); font-size: 10px; font-weight: 600;"><?= htmlspecialchars($item['unit']) ?></small>
+                                        <small style="color: var(--muted); font-size: 12.5px; font-weight: 600;"><?= htmlspecialchars($item['unit']) ?></small>
                                     </div>
                                 </td>
                                 <td style="vertical-align: middle; padding: 12px 14px;">
@@ -313,7 +313,7 @@
                                     </select>
                                 </td>
                                 <td style="text-align: center; vertical-align: middle; padding: 12px 14px;">
-                                    <span id="status-badge-<?= $item['code'] ?>" class="<?= $badgeCls ?>" style="font-size: 10px; font-weight: 700; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 75px;">
+                                    <span id="status-badge-<?= $item['code'] ?>" class="<?= $badgeCls ?>" style="font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 75px;">
                                         <?= $item['status'] ?>
                                     </span>
                                 </td>
@@ -338,8 +338,8 @@
                                         <td style="vertical-align: middle; padding: 9px 14px 9px 24px;">
                                             <div style="display:flex; align-items:center; gap:6px;">
                                                 <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
-                                                <code style="font-size:10.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
-                                                <span style="font-size:9.5px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                                <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
+                                                <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                                 <span style="color:#1e293b; font-size:12px; font-weight:600;"><?= htmlspecialchars($cleanSubName) ?></span>
                                             </div>
                                         </td>
@@ -352,7 +352,7 @@
                                                 <strong style="font-size: 12px; color: var(--navy); letter-spacing: -0.2px;">
                                                     <?= $subPrefixRp ?><?= number_format($sub['value'], 2, ',', '.') ?>
                                                 </strong>
-                                                <span style="color: var(--muted); font-size: 10.5px; font-weight: 600;">
+                                                <span style="color: var(--muted); font-size: 12.5px; font-weight: 600;">
                                                     <?= htmlspecialchars($sub['unit']) ?>
                                                 </span>
                                             </div>
@@ -361,20 +361,20 @@
                                         <td style="vertical-align: middle; padding: 9px 14px;">
                                             <div style="display: flex; align-items: center; gap: 4px;">
                                                 <?php if ($subIsRupiah): ?>
-                                                    <span style="font-size:10.5px; font-weight:700; color:#475569;">Rp</span>
+                                                    <span style="font-size: 12.5px; font-weight:700; color:#475569;">Rp</span>
                                                 <?php endif; ?>
                                                 <input type="text" inputmode="decimal" class="threshold-input is-rupiah-mask" data-code="<?= $sub['code'] ?>" value="<?= number_format($sub['threshold'], 2, ',', '.') ?>" style="width: 120px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-weight: 700; color: var(--navy); font-size: 11.5px; background: #ffffff; text-align: right;">
-                                                <small style="color: var(--muted); font-size: 10px; font-weight: 600;"><?= htmlspecialchars($sub['unit']) ?></small>
+                                                <small style="color: var(--muted); font-size: 12.5px; font-weight: 600;"><?= htmlspecialchars($sub['unit']) ?></small>
                                             </div>
                                         </td>
                                         <td style="vertical-align: middle; padding: 9px 14px;">
-                                            <select class="direction-input" data-code="<?= $sub['code'] ?>" style="width: 100%; max-width: 250px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; font-size: 10.5px; color: var(--navy); background: #ffffff;">
+                                            <select class="direction-input" data-code="<?= $sub['code'] ?>" style="width: 100%; max-width: 250px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; font-size: 12.5px; color: var(--navy); background: #ffffff;">
                                                 <option value="above" <?= ($sub['direction'] === 'above') ? 'selected' : '' ?>>Kritis jika &gt; Ambang (Beban / Risiko)</option>
                                                 <option value="below" <?= ($sub['direction'] === 'below') ? 'selected' : '' ?>>Kritis jika &lt; Ambang (Target / Kinerja)</option>
                                             </select>
                                         </td>
                                         <td style="text-align: center; vertical-align: middle; padding: 9px 14px;">
-                                            <span id="status-badge-<?= $sub['code'] ?>" class="<?= $subBadgeCls ?>" style="font-size: 9.5px; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 70px;">
+                                            <span id="status-badge-<?= $sub['code'] ?>" class="<?= $subBadgeCls ?>" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 70px;">
                                                 <?= $sub['status'] ?>
                                             </span>
                                         </td>

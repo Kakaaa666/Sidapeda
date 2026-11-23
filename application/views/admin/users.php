@@ -174,26 +174,26 @@
             ?>
             <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:8px;">Komposisi Pengguna per Level Hak Akses</strong>
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:8px;">Komposisi Pengguna per Level Hak Akses</strong>
                     <div style="display:grid; gap:6px;">
                         <?php foreach ($lvlLabels as $lNum => $lInfo): ?>
-                            <div style="display:grid; grid-template-columns: 130px 1fr 50px; align-items:center; gap:8px; font-size:8px;">
+                            <div style="display:grid; grid-template-columns: 130px 1fr 50px; align-items:center; gap:8px; font-size: 11.5px;">
                                 <span><strong>Level <?= $lNum ?>:</strong> <?= $lInfo[0] ?></span>
                                 <div style="height:7px; border-radius:4px; background:#e2e8f0; overflow:hidden;">
                                     <div style="width:<?= round(($lvlCounts[$lNum]/$maxLvl)*100) ?>%; height:100%; background:<?= $lInfo[1] ?>;"></div>
                                 </div>
-                                <strong style="text-align:right; font-size:8px;"><?= $lvlCounts[$lNum] ?> akun</strong>
+                                <strong style="text-align:right; font-size: 11.5px;"><?= $lvlCounts[$lNum] ?> akun</strong>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:8px;">Status Keaktifan Akun</strong>
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:8px;">Status Keaktifan Akun</strong>
                     <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; background:#e2e8f0; margin-bottom:8px;">
                         <div style="width:<?= round(($activeCnt/$totUsr)*100) ?>%; background:var(--green);" title="Aktif: <?= $activeCnt ?>"></div>
                         <div style="width:<?= round(($inactiveCnt/$totUsr)*100) ?>%; background:var(--red);" title="Nonaktif: <?= $inactiveCnt ?>"></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--muted);">
+                    <div style="display:flex; justify-content:space-between; font-size: 11.5px; color:var(--muted);">
                         <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:3px;"></i>Aktif: <strong><?= $activeCnt ?></strong></span>
                         <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--red); margin-right:3px;"></i>Nonaktif: <strong><?= $inactiveCnt ?></strong></span>
                     </div>
@@ -285,11 +285,11 @@
                 <?php foreach ($logs as $log): ?>
                     <div style="padding: 10px 0; border-bottom: 1px solid #edf0f4; font-size: 11px; display: flex; justify-content: space-between; align-items:center;">
                         <div>
-                            <span class="badge <?= $log['status'] === 'Success' ? 'success' : 'danger' ?>" style="font-size:9px; margin-right:8px;"><?= $log['status'] ?></span>
+                            <span class="badge <?= $log['status'] === 'Success' ? 'success' : 'danger' ?>" style="font-size: 12px; margin-right:8px;"><?= $log['status'] ?></span>
                             <strong><?= htmlspecialchars($log['nama_pengguna']) ?></strong> &bull; <?= htmlspecialchars($log['pesan']) ?>
-                            <span style="color:#94a3b8; font-size:10px; margin-left:6px;">IP: <?= htmlspecialchars($log['alamat_ip']) ?></span>
+                            <span style="color:#94a3b8; font-size: 12.5px; margin-left:6px;">IP: <?= htmlspecialchars($log['alamat_ip']) ?></span>
                         </div>
-                        <small style="color:var(--muted); font-size:10px;"><?= date('d M Y H:i:s', strtotime($log['waktu_masuk'])) ?></small>
+                        <small style="color:var(--muted); font-size: 12.5px;"><?= date('d M Y H:i:s', strtotime($log['waktu_masuk'])) ?></small>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
