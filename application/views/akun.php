@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akun Sistem — SI-DAPEDA Kabupaten Banyuwangi</title>
+    <title>Akun Sistem — Dashboard Ekonomi Daerah Kabupaten Banyuwangi</title>
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('assets/img/favicon-32.png') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
+    <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css') ?>">
     <style>
         :root {
@@ -75,6 +78,17 @@
             border-bottom: 1px solid #edf2f7;
         }
 
+        .brand-header .brand-logo-img {
+            width: auto;
+            height: 46px;
+            max-height: 48px;
+            object-fit: contain;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 5px rgba(21, 53, 92, 0.15));
+        }
         .brand-header .logo-box {
             width: 48px;
             height: 48px;
@@ -324,7 +338,7 @@
         }
 
         .gov-seal {
-            font-size: 10.5px;
+            font-size: 12.5px;
             color: rgba(255, 255, 255, 0.55);
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -341,12 +355,10 @@
         <div class="login-card">
             
             <div class="brand-header">
-                <div class="logo-box">
-                    <span></span><span></span><span></span>
-                </div>
+                <img src="<?= base_url('assets/img/logo_navy.png') ?>" alt="Logo Dashboard Ekonomi Daerah" class="brand-logo-img">
                 <div class="brand-text">
-                    <strong>SI-DAPEDA</strong>
-                    <small>Kabupaten Banyuwangi</small>
+                    <strong>Dashboard</strong>
+                    <small>Ekonomi Daerah</small>
                 </div>
             </div>
 

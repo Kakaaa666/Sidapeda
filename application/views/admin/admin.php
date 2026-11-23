@@ -148,10 +148,10 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
                             </span>
                             <div style="flex:1;">
-                                <strong style="font-size:10px; display:block; color:var(--navy);"><?= htmlspecialchars($item['indicator']) ?> (<?= $item['year'] ?>)</strong>
-                                <small style="font-size:9px; color:var(--muted);"><?= htmlspecialchars($item['code']) ?> • <?= htmlspecialchars($item['source']) ?></small>
+                                <strong style="font-size: 12.5px; display:block; color:var(--navy);"><?= htmlspecialchars($item['indicator']) ?> (<?= $item['year'] ?>)</strong>
+                                <small style="font-size: 12px; color:var(--muted);"><?= htmlspecialchars($item['code']) ?> • <?= htmlspecialchars($item['source']) ?></small>
                                 <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
-                                    <small style="font-size:8.5px; color:#b91c1c; display:block; margin-top:2px;">Catatan: <?= htmlspecialchars($item['notes']) ?></small>
+                                    <small style="font-size: 11.5px; color:#b91c1c; display:block; margin-top:2px;">Catatan: <?= htmlspecialchars($item['notes']) ?></small>
                                 <?php endif; ?>
                             </div>
                             <span class="badge warning"><?= $item['status'] ?></span>

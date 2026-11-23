@@ -278,7 +278,7 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                          title="<?= $hasSub ? 'Klik baris ini untuk membuka/menutup rincian sub-indikator atau sesuaikan threshold' : 'Klik untuk analisis & penyesuaian threshold' ?>">
                         <div class="risk-indicator">
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
-                                <span class="badge info" style="display:inline-block; font-size:9.5px; padding:2px 8px; font-weight:600; text-transform:none;">
+                                <span class="badge info" style="display:inline-block; font-size: 12px; padding:2px 8px; font-weight:600; text-transform:none;">
                                     <?= htmlspecialchars($cl) ?>
                                 </span>
                                 <?php if ($hasSub): ?>
@@ -290,7 +290,7 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                     <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                         <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
                                         <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                        <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
+                                        <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -352,8 +352,8 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                 <div class="risk-indicator" style="padding-left:14px;">
                                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">
                                         <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
-                                        <code style="font-size:10.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($subCode) ?></code>
-                                        <span style="font-size:9.5px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                        <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($subCode) ?></code>
+                                        <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                     </div>
                                     <strong style="font-size:12px; color:#1e293b;"><?= htmlspecialchars($cleanSubName) ?></strong>
                                     <small style="color:var(--muted);"><?= $subTypeDesc ?> • <?= ($sub['direction'] ?? 'above') === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></small>
@@ -386,9 +386,9 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
 
             <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line); line-height:1.6;">
                 <strong>Kriteria Penentuan Status Risiko:</strong><br>
-                • <strong>Indikator Beban/Risiko</strong> (Inflasi, Kemiskinan Ekstrem, Pengangguran): Nilai &lt; Ambang = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>, Nilai &gt; Ambang = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.<br>
-                • <strong>Indikator Kinerja/Target</strong> (Belanja Modal, Pertumbuhan Kredit): Nilai &gt; Ambang = <span class="badge success" style="font-size:9px; padding:2px 6px;">Normal</span>, Nilai &lt; Ambang = <span class="badge danger" style="font-size:9px; padding:2px 6px;">Kritis</span>.<br>
-                • Nilai sama persis dengan ambang batas = <span class="badge warning" style="font-size:9px; padding:2px 6px;">Waspada</span>.
+                • <strong>Indikator Beban/Risiko</strong> (Inflasi, Kemiskinan Ekstrem, Pengangguran): Nilai &lt; Ambang = <span class="badge success" style="font-size: 12px; padding:2px 6px;">Normal</span>, Nilai &gt; Ambang = <span class="badge danger" style="font-size: 12px; padding:2px 6px;">Kritis</span>.<br>
+                • <strong>Indikator Kinerja/Target</strong> (Belanja Modal, Pertumbuhan Kredit): Nilai &gt; Ambang = <span class="badge success" style="font-size: 12px; padding:2px 6px;">Normal</span>, Nilai &lt; Ambang = <span class="badge danger" style="font-size: 12px; padding:2px 6px;">Kritis</span>.<br>
+                • Nilai sama persis dengan ambang batas = <span class="badge warning" style="font-size: 12px; padding:2px 6px;">Waspada</span>.
             </div>
         </article>
 
@@ -457,7 +457,7 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         Penyesuaian Nilai Riil & Ambang Batas
                     </h3>
-                    <span id="modal-live-preview-badge" class="badge danger" style="font-size:10px;">Status: KRITIS</span>
+                    <span id="modal-live-preview-badge" class="badge danger" style="font-size: 12.5px;">Status: KRITIS</span>
                 </div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr; gap:10px; margin-bottom:8px;">
@@ -484,7 +484,7 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                     </div>
                 </div>
 
-                <small style="display:block; color:var(--muted); font-size:10px; line-height:1.4;">
+                <small style="display:block; color:var(--muted); font-size: 12.5px; line-height:1.4;">
                     Sesuaikan nilai riil atau ambang batas indikator di atas. Status risiko akan disimulasikan secara realtime dan tersimpan ke sistem.
                 </small>
             </div>

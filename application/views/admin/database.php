@@ -19,25 +19,25 @@
 
     <!-- FLASH MESSAGES -->
     <?php if ($this->session->flashdata('success')): ?>
-        <div class="alert alert-success" style="background:#eaf7ee; border:1px solid #95d5a6; color:#1e6a38; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size:9px;">
+        <div class="alert alert-success" style="background:#eaf7ee; border:1px solid #95d5a6; color:#1e6a38; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size: 12px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
             <span><?= $this->session->flashdata('success') ?></span>
         </div>
     <?php endif; ?>
     <?php if ($this->session->flashdata('error')): ?>
-        <div class="alert alert-error" style="background:#fdf2f2; border:1px solid #f8b4b4; color:#9b1c1c; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size:9px;">
+        <div class="alert alert-error" style="background:#fdf2f2; border:1px solid #f8b4b4; color:#9b1c1c; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size: 12px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
             <span><?= $this->session->flashdata('error') ?></span>
         </div>
     <?php endif; ?>
 
     <?php if ($status === 'Terhapus'): ?>
-        <div class="alert alert-info" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; font-size:9px;">
+        <div class="alert alert-info" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; font-size: 12px;">
             <div style="display:flex; align-items:center; gap:8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 <span><strong>Tempat Sampah (Soft Delete):</strong> Menampilkan data yang dihapus sementara. Anda dapat memulihkan (Restore) kembali ke daftar aktif.</span>
             </div>
-            <a href="<?= site_url('database') ?>" class="button secondary small" style="height:28px; padding:0 10px; font-size:8px;">Kembali ke Data Aktif</a>
+            <a href="<?= site_url('database') ?>" class="button secondary small" style="height:28px; padding:0 10px; font-size: 11.5px;">Kembali ke Data Aktif</a>
         </div>
     <?php endif; ?>
 
@@ -360,26 +360,26 @@
             ?>
             <div style="display:grid; grid-template-columns: 1fr 1.3fr; gap:16px; padding:14px 18px; background:#f8fafc; border-bottom:1px solid var(--line);">
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Status Validasi Data</strong>
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:6px;">Status Validasi Data</strong>
                     <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; background:#e2e8f0; margin-bottom:6px;">
                         <div style="width:<?= round(($valCount/$totRec)*100) ?>%; background:var(--green);" title="Tervalidasi: <?= $valCount ?>"></div>
                         <div style="width:<?= round(($reviewCount/$totRec)*100) ?>%; background:var(--yellow);" title="Perlu Review: <?= $reviewCount ?>"></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-size:8px; color:var(--muted);">
+                    <div style="display:flex; justify-content:space-between; font-size: 11.5px; color:var(--muted);">
                         <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:3px;"></i>Tervalidasi: <strong><?= $valCount ?></strong> (<?= round(($valCount/$totRec)*100) ?>%)</span>
                         <span><i style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--yellow); margin-right:3px;"></i>Perlu Review: <strong><?= $reviewCount ?></strong></span>
                     </div>
                 </div>
                 <div>
-                    <strong style="font-size:9px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Rekaman per Klaster</strong>
+                    <strong style="font-size: 12px; color:var(--navy); display:block; margin-bottom:6px;">Distribusi Rekaman per Klaster</strong>
                     <div style="display:grid; gap:5px;">
                         <?php foreach (array_slice($clusterCounts, 0, 4) as $cName => $cCnt): ?>
-                            <div style="display:grid; grid-template-columns: 120px 1fr 35px; align-items:center; gap:6px; font-size:8px;">
+                            <div style="display:grid; grid-template-columns: 120px 1fr 35px; align-items:center; gap:6px; font-size: 11.5px;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?= htmlspecialchars($cName) ?></span>
                                 <div style="height:6px; border-radius:3px; background:#e2e8f0; overflow:hidden;">
                                     <div style="width:<?= round(($cCnt/$maxCl)*100) ?>%; height:100%; background:var(--blue);"></div>
                                 </div>
-                                <strong style="text-align:right; font-size:8px;"><?= $cCnt ?></strong>
+                                <strong style="text-align:right; font-size: 11.5px;"><?= $cCnt ?></strong>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -443,26 +443,26 @@
                                             <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
                                                 <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
                                                 <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                                <span style="background:#dcfce7; color:#166534; font-size:9.5px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
+                                                <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                             </button>
                                         <?php endif; ?>
                                     </div>
-                                    <small style="font-size:10.5px; color:#64748b; display:block; margin-top:2px;">
+                                    <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;">
                                         <?= htmlspecialchars($item['source']) ?>
                                     </small>
                                     <?php if (!empty($item['definition'])): ?>
-                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size:10px; color:#94a3b8; margin-top:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:320px;">
+                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size: 12.5px; color:#94a3b8; margin-top:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:320px;">
                                             <span style="color:#64748b; font-weight:600;">Definisi:</span> <?= htmlspecialchars($item['definition']) ?>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
-                                        <div style="margin-top:4px; font-size:10px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
+                                        <div style="margin-top:4px; font-size: 12.5px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
                                             <span><strong>Catatan:</strong> <?= htmlspecialchars($item['notes']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td style="padding:11px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle;">
-                                    <span class="badge secondary" style="font-size:10px; padding:3px 7px; white-space:nowrap;">
+                                    <span class="badge secondary" style="font-size: 12.5px; padding:3px 7px; white-space:nowrap;">
                                         <?= htmlspecialchars($item['cluster']) ?>
                                     </span>
                                 </td>
@@ -550,8 +550,8 @@
                                         <td class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:2; padding:8px 12px 8px 16px; border-bottom:1px solid #edf0f4; box-shadow:2px 0 5px rgba(0,0,0,0.03); white-space:nowrap;">
                                             <div style="display:flex; align-items:center; gap:5px;">
                                                 <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
-                                                <code style="font-size:10.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
-                                                <span style="font-size:9.5px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                                <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
+                                                <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                             </div>
                                         </td>
                                         <td style="padding:8px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle; background:#f8fafc;">
@@ -561,10 +561,10 @@
                                             <div style="font-size:11px; color:#475569; margin-top:2px;">
                                                 <span style="color:#0284c7; font-weight:600;"><?= $isSubInv ? 'Periode:' : 'Kategori:' ?></span> <?= htmlspecialchars($cleanSubName) ?>
                                             </div>
-                                            <small style="font-size:10px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
+                                            <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
                                         </td>
                                         <td style="padding:7px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle; background:#f8fafc;">
-                                            <span class="badge secondary" style="font-size:9.5px; padding:2px 6px;"><?= htmlspecialchars($sub['cluster']) ?></span>
+                                            <span class="badge secondary" style="font-size: 12px; padding:2px 6px;"><?= htmlspecialchars($sub['cluster']) ?></span>
                                         </td>
                                         <td style="padding:7px 14px; border-bottom:1px solid #edf0f4; font-size:11px; color:#475569; vertical-align:middle; white-space:nowrap; background:#f8fafc;">
                                             <?= htmlspecialchars($sub['unit']) ?>
@@ -648,7 +648,7 @@
                         <div>
                             <label for="add-indicator-master-select" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:11.5px; font-weight:700; color:#1e293b;">
                                 <span>2. Pilih Indikator Master (Data Umum)</span>
-                                <span style="font-size:10px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:10px;">Auto-Fill</span>
+                                <span style="font-size: 12.5px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:10px;">Auto-Fill</span>
                             </label>
                             <select id="add-indicator-master-select" style="width:100%; height:38px; font-size:12px; font-weight:600; padding:0 12px; border-radius:8px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
                                 <option value="">-- Pilih Indikator Master untuk Mengisi Otomatis --</option>
@@ -664,7 +664,7 @@
                         </div>
                     </div>
 
-                    <div style="font-size:10.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:4px;">
+                    <div style="font-size: 12.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:4px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                         Memilih kategori atau indikator master akan otomatis mengisi sendiri seluruh atribut data umum di bawah ini.
                     </div>
@@ -676,14 +676,14 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
                                 Rincian Kategori Sub-Indikator
                             </span>
-                            <span id="add-sectoral-badge-label" style="font-size:9.5px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px;">Pilih Rincian</span>
+                            <span id="add-sectoral-badge-label" style="font-size: 12px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px;">Pilih Rincian</span>
                         </label>
                         <select id="add-sectoral-category-select" style="width:100%; height:36px; font-size:12px; font-weight:700; padding:0 10px; border-radius:6px; border:1.5px solid #86efac; background:#fff; color:#0f172a; cursor:pointer;">
                             <!-- Di-generate dinamis oleh JS -->
                         </select>
-                        <div style="font-size:10px; color:#15803d; margin-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <div style="font-size: 12.5px; color:#15803d; margin-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                             <span>Pilih salah satu kategori/rincian di atas untuk otomatis mengisi data indikator tersebut.</span>
-                            <button type="button" id="btn-quick-open-sectoral-matrix" style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                            <button type="button" id="btn-quick-open-sectoral-matrix" style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:3px 9px; font-size: 12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                                 Buka Spreadsheet Matriks Lengkap &rarr;
                             </button>
@@ -877,7 +877,7 @@
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                                 Tahun Sesudahnya
                             </button>
-                            <span id="edit-series-uploaded-count" style="font-size:10.5px; font-weight:700; color:#166534; background:#dcfce7; padding:3px 10px; border-radius:12px; border:1px solid #bbf7d0;">
+                            <span id="edit-series-uploaded-count" style="font-size: 12.5px; font-weight:700; color:#166534; background:#dcfce7; padding:3px 10px; border-radius:12px; border:1px solid #bbf7d0;">
                                 Memuat data tahun...
                             </span>
                         </div>
@@ -923,7 +923,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <div>
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                            <span class="badge info" id="sec-modal-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:10px;">SEKTORAL PDRB &bull; STANDAR BPS</span>
+                            <span class="badge info" id="sec-modal-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size: 12.5px;">SEKTORAL PDRB &bull; STANDAR BPS</span>
                             <span style="font-size:11px; color:#15803d; font-weight:700; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 8px; border-radius:12px;">
                                 <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>
                             </span>

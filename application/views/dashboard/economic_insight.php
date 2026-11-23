@@ -55,7 +55,7 @@
                 <h3>Grafik Pemetaan Rekomendasi Kebijakan per Kategori & Tingkat Urgensi</h3>
                 <p>Distribusi temuan intelijen ekonomi berdasarkan klaster kategori tematik dan skala prioritas urgensi.</p>
             </div>
-            <div class="legend" style="font-size:8px;">
+            <div class="legend" style="font-size: 11.5px;">
                 <i style="background:var(--red)"></i> Urgensi Tinggi
                 <i style="background:var(--yellow)"></i> Urgensi Sedang
                 <i style="background:var(--green)"></i> Urgensi Rendah
@@ -90,11 +90,11 @@
                 <?php foreach ($catCounts as $catName => $cnt): ?>
                     <?php $pctWidth = round(($cnt / $maxCat) * 100); ?>
                     <div class="bar-row" style="grid-template-columns: 140px 1fr 65px; margin: 8px 0;">
-                        <span style="font-size:9px; font-weight:600; color:var(--ink);"><?= htmlspecialchars($catName) ?></span>
+                        <span style="font-size: 12px; font-weight:600; color:var(--ink);"><?= htmlspecialchars($catName) ?></span>
                         <div class="bar-track" style="height:9px;">
                             <i style="width:<?= $pctWidth ?>%; background:var(--blue);"></i>
                         </div>
-                        <strong style="font-size:9px;"><?= $cnt ?> isu <small style="color:var(--muted); font-size:7px;">(<?= round(($cnt / $totalIns) * 100) ?>%)</small></strong>
+                        <strong style="font-size: 12px;"><?= $cnt ?> isu <small style="color:var(--muted); font-size: 11px;">(<?= round(($cnt / $totalIns) * 100) ?>%)</small></strong>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -120,28 +120,28 @@
                 $maxUrg = max(array_values($urgCounts)) ?: 1;
                 ?>
                 <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
-                    <span style="font-size:9px; font-weight:600; color:var(--red);">Urgensi Tinggi</span>
+                    <span style="font-size: 12px; font-weight:600; color:var(--red);">Urgensi Tinggi</span>
                     <div class="bar-track" style="height:9px;">
                         <i style="width:<?= round(($urgCounts['Tinggi'] / $maxUrg) * 100) ?>%; background:var(--red);"></i>
                     </div>
-                    <strong style="color:var(--red); font-size:9px;"><?= $urgCounts['Tinggi'] ?> isu</strong>
+                    <strong style="color:var(--red); font-size: 12px;"><?= $urgCounts['Tinggi'] ?> isu</strong>
                 </div>
                 <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
-                    <span style="font-size:9px; font-weight:600; color:var(--yellow);">Urgensi Sedang</span>
+                    <span style="font-size: 12px; font-weight:600; color:var(--yellow);">Urgensi Sedang</span>
                     <div class="bar-track" style="height:9px;">
                         <i style="width:<?= round(($urgCounts['Sedang'] / $maxUrg) * 100) ?>%; background:var(--yellow);"></i>
                     </div>
-                    <strong style="color:var(--yellow); font-size:9px;"><?= $urgCounts['Sedang'] ?> isu</strong>
+                    <strong style="color:var(--yellow); font-size: 12px;"><?= $urgCounts['Sedang'] ?> isu</strong>
                 </div>
                 <div class="bar-row" style="grid-template-columns: 100px 1fr 65px; margin: 8px 0;">
-                    <span style="font-size:9px; font-weight:600; color:var(--green);">Urgensi Rendah</span>
+                    <span style="font-size: 12px; font-weight:600; color:var(--green);">Urgensi Rendah</span>
                     <div class="bar-track" style="height:9px;">
                         <i style="width:<?= round(($urgCounts['Rendah'] / $maxUrg) * 100) ?>%; background:var(--green);"></i>
                     </div>
-                    <strong style="color:var(--green); font-size:9px;"><?= $urgCounts['Rendah'] ?> isu</strong>
+                    <strong style="color:var(--green); font-size: 12px;"><?= $urgCounts['Rendah'] ?> isu</strong>
                 </div>
             </div>
-            <div style="margin-top:12px; font-size:8px; color:var(--muted); border-top:1px solid var(--line); padding-top:8px;">
+            <div style="margin-top:12px; font-size: 11.5px; color:var(--muted); border-top:1px solid var(--line); padding-top:8px;">
                 Total <strong><?= count($insights) ?></strong> rekomendasi kebijakan aktif tercatat di database intelijen.
             </div>
         </article>

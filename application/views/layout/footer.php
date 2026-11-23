@@ -1,7 +1,7 @@
         </main>
 
         <footer>
-            <span>© <?= date('Y') ?> SI-DAPEDA Kabupaten Banyuwangi</span>
+            <span>© <?= date('Y') ?> Dashboard Ekonomi Daerah <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></span>
             <span>Platform Intelijen Ekonomi & Data Pembangunan Daerah</span>
         </footer>
     </div>
