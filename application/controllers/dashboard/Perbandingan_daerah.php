@@ -15,7 +15,7 @@ class Perbandingan_daerah extends MY_Controller {
         $data = array(
             'active_page' => 'perbandingan_daerah',
             'title' => 'Perbandingan Antar Daerah',
-            'eyebrow' => 'REGIONAL BENCHMARKING • CRUD & SOFT DELETE',
+            'eyebrow' => 'REGIONAL BENCHMARKING',
             'subtitle' => 'Bandingkan posisi dan daya saing ekonomi antar-wilayah kabupaten/kota di Jawa Timur.',
             'years' => $years,
             'regional' => $regional,

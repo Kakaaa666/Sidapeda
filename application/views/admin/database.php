@@ -35,7 +35,7 @@
         <div class="alert alert-info" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 16px; border-radius:9px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; font-size:9px;">
             <div style="display:flex; align-items:center; gap:8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                <span><strong>Tempat Sampah (Soft Delete):</strong> Menampilkan data yang dihapus sementara. Anda dapat memulihkan (Restore) kembali ke daftar aktif.</span>
+                <span><strong>Tempat Sampah:</strong> Menampilkan data yang dihapus sementara. Anda dapat memulihkan (Restore) kembali ke daftar aktif.</span>
             </div>
             <a href="<?= site_url('database') ?>" class="button secondary small" style="height:28px; padding:0 10px; font-size:8px;">Kembali ke Data Aktif</a>
         </div>
@@ -329,7 +329,7 @@
     <article class="card data-card">
         <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div>
-                <span class="eyebrow"><?= ($status === 'Terhapus') ? 'TEMPAT SAMPAH (SOFT DELETED)' : 'DATABASE REPOSITORI & DERET WAKTU' ?></span>
+                <span class="eyebrow"><?= ($status === 'Terhapus') ? 'TEMPAT SAMPAH' : 'DATABASE REPOSITORI & DERET WAKTU' ?></span>
                 <h3><?= ($status === 'Terhapus') ? 'Data Indikator Terhapus' : 'Database Indikator Ekonomi' ?></h3>
                 <p><span id="cat-filtered-count-label">Menampilkan <?= count($grouped) ?> indikator</span> (<?= count($records) ?> data realisasi tahunan) <?= ($status === 'Terhapus') ? 'di tempat sampah' : 'tersimpan dalam repositori daerah' ?></p>
             </div>
@@ -524,7 +524,7 @@
                                             <button type="button" class="btn-edit-series icon-button small" data-code="<?= $item['code'] ?>" title="Edit Seluruh Data <?= $item['code'] ?> (Mencakup Seluruh Tahun)" style="width:28px; height:28px; color:var(--blue); background:#eff6ff; border:1px solid #bfdbfe;">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                             </button>
-                                            <button type="button" class="btn-delete-series icon-button small danger" data-code="<?= $item['code'] ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" title="Hapus Indikator Ini (Soft Delete)" style="width:28px; height:28px;">
+                                            <button type="button" class="btn-delete-series icon-button small danger" data-code="<?= $item['code'] ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" title="Hapus Indikator Ini" style="width:28px; height:28px;">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                             </button>
                                         </div>

@@ -18,7 +18,7 @@ class Analisis_ekonomi extends MY_Controller {
         $data = array(
             'active_page' => 'analisis_ekonomi',
             'title' => 'Eksplorasi & Analisis Ekonomi',
-            'eyebrow' => 'BUSINESS INTELLIGENCE WORKSPACE • CRUD & SOFT DELETE',
+            'eyebrow' => 'BUSINESS INTELLIGENCE WORKSPACE',
             'subtitle' => 'Jalankan analisis sektoral, korelasi, dan kelola dataset lapangan usaha Kabupaten Banyuwangi.',
             'years' => $years,
             'series' => $series,

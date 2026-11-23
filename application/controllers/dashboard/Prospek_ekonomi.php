@@ -14,7 +14,7 @@ class Prospek_ekonomi extends MY_Controller {
         $data = array(
             'active_page' => 'prospek_ekonomi',
             'title' => 'Prospek Perekonomian',
-            'eyebrow' => 'FORECASTING & SCENARIO • CRUD & SOFT DELETE',
+            'eyebrow' => 'FORECASTING & SCENARIO',
             'subtitle' => 'Uji tren historis, skenario ekonomi, dan kelola dataset proyeksi tahunan Kabupaten Banyuwangi.',
             'years' => $years,
             'series' => $series,

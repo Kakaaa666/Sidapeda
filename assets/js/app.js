@@ -1382,7 +1382,7 @@
                         const id = btn.getAttribute('data-id');
                         const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
-                        if (confirm(`Pindahkan "${name}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
+                        if (confirm(`Pindahkan "${name}" ke tempat sampah?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
                             fetch(`${cleanSite}/${cfg.controller}/soft_delete/${id}`, {
                                 method: 'POST',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -6406,7 +6406,7 @@
                     const code = delSeriesBtn.getAttribute('data-code');
                     const indicator = delSeriesBtn.getAttribute('data-indicator') || code;
                     if (!code) return;
-                    if (confirm(`Pindahkan seluruh data indikator "${indicator}" (${code}) ke tempat sampah (Soft Delete)?\n\nSeluruh data tahunan indikator ini akan dipindahkan ke tempat sampah dan dapat dipulihkan sewaktu-waktu.`)) {
+                    if (confirm(`Pindahkan seluruh data indikator "${indicator}" (${code}) ke tempat sampah?\n\nSeluruh data tahunan indikator ini akan dipindahkan ke tempat sampah dan dapat dipulihkan sewaktu-waktu.`)) {
                         const fd = new FormData();
                         fd.append('code', code);
                         fetch(`${cleanSite}/database/soft_delete_series`, {
@@ -6610,7 +6610,7 @@
                     const id = delBtn.getAttribute('data-id');
                     const indicator = delBtn.getAttribute('data-indicator') || 'data ini';
                     if (!id) return;
-                    if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah (Soft Delete)?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
+                    if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
                         fetch(`${cleanSite}/database/soft_delete/${id}`, {
                             method: 'POST',
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
