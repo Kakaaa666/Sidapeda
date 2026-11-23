@@ -71,7 +71,6 @@
                 <?php
                 $publicNav = array(
                     array('beranda', 'Beranda', '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>', 'beranda'),
-                    array('perbandingan_daerah', 'Perbandingan Daerah', '<path d="M4 7h12M13 4l3 3-3 3M20 17H8M11 14l-3 3 3 3"/>', 'perbandingan_daerah'),
                     array('analisis_ekonomi', 'Analisis Ekonomi', '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>', 'analisis_ekonomi'),
                     array('peta_ekonomi', 'Peta Ekonomi', '<path d="m3 6 5-3 8 3 5-3v15l-5 3-8-3-5 3V6Z"/><path d="M8 3v15M16 6v15"/>', 'peta_ekonomi'),
                     array('prospek_ekonomi', 'Prospek Ekonomi', '<path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/>', 'prospek_ekonomi'),
@@ -80,7 +79,7 @@
                     array('laporan_ekonomi', 'Laporan Ekonomi', '<path d="M6 2h9l5 5v15H6V2Z"/><path d="M14 2v6h6M9 13h8M9 17h8"/>', 'laporan_ekonomi')
                 );
                 foreach ($publicNav as $item):
-                    $isActive = ($active_page === $item[3]);
+                    $isActive = ($active_page === $item[3] || ($item[3] === 'analisis_ekonomi' && ($active_page === 'perbandingan_daerah' || $this->uri->segment(1) === 'perbandingan_daerah')));
                 ?>
                     <a href="<?= site_url($item[0]) ?>" class="nav-item <?= $isActive ? 'active' : '' ?>" title="<?= htmlspecialchars($item[1]) ?>">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><?= $item[2] ?></svg>

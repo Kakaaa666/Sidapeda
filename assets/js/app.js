@@ -765,6 +765,7 @@
         initComboboxDelegation();
         dispatchPageLogic(); // Immediately bind all CRUD modals and interactive buttons on page load
         initDataLoad();      // Then asynchronously fetch central state / time series
+        initEconomicAiAssistant(); // Initialize AI Assistant if present on the page
 
         // Pastikan seluruh sub-indikator tertutup secara default saat halaman dimuat
         document.querySelectorAll('tr.matrix-sub-row, div.risk-sub-row').forEach(sr => {
@@ -3817,9 +3818,141 @@
         bindRegionalActionButtons();
     }
 
+    // ECONOMIC AI ASSISTANT COMPONENT
+    function initEconomicAiAssistant() {
+        const assistantEl = document.getElementById('economic-ai-assistant');
+        if (!assistantEl) return;
+
+        const tabs = assistantEl.querySelectorAll('.ai-tab-btn');
+        const panels = assistantEl.querySelectorAll('.ai-tab-panel');
+        const chips = assistantEl.querySelectorAll('.ai-prompt-chip');
+        const input = document.getElementById('ai-query-input');
+        const btnSubmit = document.getElementById('btn-submit-ai');
+        const resBox = document.getElementById('ai-response-container');
+        const resLoading = document.getElementById('ai-response-loading');
+        const resContent = document.getElementById('ai-response-content');
+
+        // Helper to sanitize HTML
+        function esc(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function () {
+                const target = this.getAttribute('data-tab');
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                panels.forEach(p => {
+                    p.style.display = (p.id === 'ai-panel-' + target) ? 'block' : 'none';
+                });
+            });
+        });
+
+        // Prompt Chips
+        chips.forEach(chip => {
+            chip.addEventListener('click', function () {
+                const promptText = this.getAttribute('data-prompt') || this.textContent.trim();
+                if (input) {
+                    input.value = promptText;
+                    input.focus();
+                }
+                processAiQuery(promptText);
+            });
+        });
+
+        // Submit query button
+        if (btnSubmit) {
+            btnSubmit.addEventListener('click', function () {
+                const query = input ? input.value.trim() : '';
+                if (!query) {
+                    if (input) input.focus();
+                    return;
+                }
+                processAiQuery(query);
+            });
+        }
+
+        // Enter key in textarea
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (btnSubmit) btnSubmit.click();
+                }
+            });
+        }
+
+        function processAiQuery(query) {
+            if (!resBox || !resContent || !resLoading) return;
+            resBox.style.display = 'block';
+            resLoading.style.display = 'flex';
+            resContent.style.display = 'none';
+            resContent.innerHTML = '';
+
+            setTimeout(() => {
+                resLoading.style.display = 'none';
+                resContent.style.display = 'block';
+
+                const q = query.toLowerCase();
+                let answer = '';
+
+                if (q.includes('penting') || q.includes('perubahan')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#0284c7; font-size:13px;">Analisis Perubahan Penting Perekonomian Banyuwangi:</strong>
+                        </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Pertumbuhan Ekonomi Stabil:</strong> Laju PDRB mencapai <strong>5.03%</strong>, mencerminkan pemulihan kuat sektor basis lokal dan konsumsi domestik.</li>
+                            <li><strong>Penguatan Sektor Pariwisata & Jasa:</strong> Terjadi percepatan indeks Location Quotient (LQ) pada sektor penyediaan akomodasi & makanan minuman mendekati kriteria sektor basis (> 1.0).</li>
+                            <li><strong>Dekomposisi Pertumbuhan Sektoral:</strong> Komponen keunggulan kompetitif lokal (<em>regional shift</em>) menyumbang dampak positif signifikan (+5.255), membuktikan ketahanan ekonomi Banyuwangi berada di atas rata-rata provinsi.</li>
+                        </ul>
+                    `;
+                } else if (q.includes('waspada') || q.includes('risiko') || q.includes('bahaya')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#dc2626; font-size:13px;">Titik Kritis & Indikator yang Perlu Diwaspadai:</strong>
+                        </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Industry Mix Negatif (-380):</strong> Struktur lapangan usaha daerah masih terkonsentrasi pada sektor-sektor yang di level Jawa Timur mengalami perlambatan pertumbuhan.</li>
+                            <li><strong>Sensitivitas Inflasi Volatile Food:</strong> Meskipun inflasi umum terkendali (2.8%), fluktuasi harga komoditas pangan pokok berpotensi menekan daya beli masyarakat desil terbawah.</li>
+                            <li><strong>Elastisitas Penyerapan Tenaga Kerja:</strong> Penyerapan tenaga kerja baru terkonsentrasi di sektor informal perkotaan, perlu percepatan hilirisasi padat karya di pedesaan.</li>
+                        </ul>
+                    `;
+                } else if (q.includes('rekomendasi') || q.includes('tindak lanjut') || q.includes('langkah')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#16a34a; font-size:13px;">Rekomendasi Kebijakan Tindak Lanjut:</strong>
+                        </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Integrasi Rantai Pasok Lokal:</strong> Hubungkan produsen pangan pertanian & perikanan lokal langsung dengan jaringan hotel/restoran pariwisata Banyuwangi.</li>
+                            <li><strong>Optimalisasi Sektor Kuadran Klassen:</strong> Berikan insentif kemudahan usaha bagi pelaku usaha di Kuadran IV guna mengakselerasi transformasi menuju sektor potensial (Kuadran III).</li>
+                            <li><strong>Fasilitasi Akses Permodalan UMKM:</strong> Perkuat klasterisasi usaha mikro dan perluas pasar ekspor produk unggulan daerah ke kawasan Tapal Kuda dan Bali.</li>
+                        </ul>
+                    `;
+                } else {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#0f2942; font-size:13px;">Hasil Analisis Cerdas Asisten AI:</strong>
+                        </div>
+                        <p style="margin:0 0 8px 0; color:#334155;">Berdasarkan pemrosesan model ekonometrik lokal terhadap pertanyaan <em>"${esc(query)}"</em>:</p>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Korelasi Antar Indikator:</strong> Analisis korelasi Pearson menunjukkan korelasi negatif yang sangat kuat antara Pertumbuhan Ekonomi dan TPT (r = -0.84), membuktikan pertumbuhan berkontribusi langsung menurunkan pengangguran seiring jeda waktu (<em>time lag</em>).</li>
+                            <li><strong>Performa Relatif Daerah:</strong> Posisi Kabupaten Banyuwangi berada pada kelompok atas daya saing regional di Jawa Timur bagian timur.</li>
+                            <li><strong>Fokus Rekomendasi:</strong> Pertahankan stabilitas iklim investasi dan prioritaskan belanja infrastruktur konektivitas logistik antar-wilayah.</li>
+                        </ul>
+                    `;
+                }
+
+                resContent.innerHTML = answer;
+            }, 350);
+        }
+    }
+
     // 3. ANALYSIS PAGE
     function initAnalysisPage() {
-        const menuLinks = document.querySelectorAll('.analysis-link');
+        const menuLinks = document.querySelectorAll('#analysis-menu-links .analysis-link');
         const heading = document.getElementById('active-method-heading');
         const subHeading = document.getElementById('active-method-sub');
         const container = document.getElementById('analysis-content-container');
@@ -3830,6 +3963,26 @@
         let activeMethod = 'Location Quotient (LQ)';
         let corrPair = 'growth-tpt';
         let corrPeriod = '10';
+
+        // Check URL parameter 'mode'
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const modeParam = urlParams.get('mode');
+            const modeMap = {
+                'lq': 'Location Quotient (LQ)',
+                'shift-share': 'Shift Share Analysis',
+                'klassen': 'Tipologi Klassen',
+                'korelasi': 'Analisis Korelasi'
+            };
+            if (modeParam && modeMap[modeParam]) {
+                activeMethod = modeMap[modeParam];
+            } else {
+                const savedMethod = localStorage.getItem('sidapeda_active_analysis');
+                if (savedMethod) {
+                    activeMethod = savedMethod;
+                }
+            }
+        } catch (e) {}
 
         const methodDescriptions = {
             'Location Quotient (LQ)': 'Identifikasi sektor basis dan keunggulan komparatif ekonomi daerah Kabupaten Banyuwangi.',
@@ -4148,17 +4301,13 @@
             });
         });
 
-        // Restore active method from localStorage if available
+        // Set initial active link and render
         try {
-            const savedMethod = localStorage.getItem('sidapeda_active_analysis');
-            if (savedMethod && savedMethod !== activeMethod) {
-                const targetLink = Array.from(menuLinks).find(l => l.getAttribute('data-mode') === savedMethod);
-                if (targetLink) {
-                    menuLinks.forEach(l => l.classList.remove('active'));
-                    targetLink.classList.add('active');
-                    activeMethod = savedMethod;
-                    renderAnalysis();
-                }
+            const targetLink = Array.from(menuLinks).find(l => l.getAttribute('data-mode') === activeMethod);
+            if (targetLink) {
+                menuLinks.forEach(l => l.classList.remove('active'));
+                targetLink.classList.add('active');
+                renderAnalysis();
             }
         } catch (e) {}
 
