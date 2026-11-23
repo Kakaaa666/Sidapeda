@@ -30,7 +30,7 @@ class Catalog extends MY_Controller {
         $data = array(
             'active_page' => 'catalog',
             'title' => 'Katalog Indikator',
-            'eyebrow' => 'DATA GOVERNANCE & CATALOG • CRUD & SOFT DELETE',
+            'eyebrow' => 'DATA GOVERNANCE & CATALOG',
             'subtitle' => 'Kamus data, metadata indikator pembangunan daerah, dan manajemen master indikator.',
             'catalog' => $catalog,
             'status' => $status,

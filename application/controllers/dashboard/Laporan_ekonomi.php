@@ -14,7 +14,7 @@ class Laporan_ekonomi extends MY_Controller {
         $data = array(
             'active_page' => 'laporan_ekonomi',
             'title' => 'Generator Laporan Ekonomi',
-            'eyebrow' => 'AUTOMATED REPORTING • CRUD & SOFT DELETE',
+            'eyebrow' => 'AUTOMATED REPORTING',
             'subtitle' => 'Susun laporan analitis terstandardisasi, kelola arsip dokumen laporan, dan ekspor ringkasan ekonomi daerah.',
             'years' => $years,
             'series' => $series,

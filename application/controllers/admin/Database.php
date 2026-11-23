@@ -24,8 +24,8 @@ class Database extends MY_Controller {
         $data = array(
             'active_page' => 'database',
             'title' => 'Database Ekonomi',
-            'eyebrow' => 'DATA MANAGEMENT • CRUD & SOFT DELETE',
-            'subtitle' => 'Kelola seluruh rekaman indikator ekonomi daerah dengan form CRUD dan pemulihan data terhapus.',
+            'eyebrow' => 'DATA MANAGEMENT',
+            'subtitle' => 'Kelola seluruh rekaman indikator ekonomi daerah dan pemulihan data terhapus.',
             'records' => $records,
             'status' => $status,
             'query' => $query,

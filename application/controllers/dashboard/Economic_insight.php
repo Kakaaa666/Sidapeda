@@ -14,7 +14,7 @@ class Economic_insight extends MY_Controller {
         $data = array(
             'active_page' => 'economic_insight',
             'title' => 'Economic Insight',
-            'eyebrow' => 'POLICY INTELLIGENCE • CRUD & SOFT DELETE',
+            'eyebrow' => 'POLICY INTELLIGENCE',
             'subtitle' => 'Temuan strategis, rekomendasi kebijakan, dan kelola dataset intelijen kebijakan ekonomi daerah.',
             'years' => $years,
             'series' => $series,

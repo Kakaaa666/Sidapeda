@@ -14,7 +14,7 @@ class Users extends MY_Controller {
         $data = array(
             'active_page' => 'users',
             'title' => 'Pengguna & Level Akun',
-            'eyebrow' => 'USER LEVEL & ACCESS CONTROL • CRUD & SOFT DELETE',
+            'eyebrow' => 'USER LEVEL & ACCESS CONTROL',
             'subtitle' => 'Daftar akun terdaftar, hierarki level akses (Level 1–4), audit riwayat autentikasi, dan manajemen akun.',
             'users' => $users,
             'levels' => $levels,

@@ -12,7 +12,7 @@ class Peta_ekonomi extends MY_Controller {
         $data = array(
             'active_page' => 'peta_ekonomi',
             'title' => 'Peta Ekonomi Daerah',
-            'eyebrow' => 'GEOSPATIAL ECONOMIC INTELLIGENCE • CRUD & SOFT DELETE',
+            'eyebrow' => 'GEOSPATIAL ECONOMIC INTELLIGENCE',
             'subtitle' => 'Temukan pola, potensi, kesenjangan ekonomi, dan kelola dataset spasial kecamatan se-Kabupaten Banyuwangi.',
             'districts' => $districts,
             'all_active_districts' => $all_active_districts,

@@ -29,7 +29,55 @@
 
 
 
-    <!-- COMPARISON BUILDER -->
+    <!-- WORKSPACE WITH ANALYSIS PANEL -->
+    <div class="workspace analysis-workspace">
+        <!-- SIDEBAR PANEL -->
+        <aside class="analysis-panel">
+            <div class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg>
+                <strong>Menu Analisa Ekonomi</strong>
+            </div>
+
+            <div class="analysis-menu-group" style="margin-top: 14px;">
+                <span class="eyebrow" style="display:block; font-size:10.5px; font-weight:700; color:#64748b; letter-spacing:0.06em; margin-bottom:8px; padding-left:4px;">FUNGSI PEMBANDING</span>
+                <a href="<?= site_url('perbandingan_daerah') ?>" class="analysis-link active" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Perbandingan Antar Daerah</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+            </div>
+
+            <div class="divider" style="margin: 14px 0;"></div>
+
+            <div class="analysis-menu-group">
+                <span class="eyebrow" style="display:block; font-size:10.5px; font-weight:700; color:#64748b; letter-spacing:0.06em; margin-bottom:8px; padding-left:4px;">METODE ANALISIS REGIONAL</span>
+                <div id="analysis-menu-links">
+                    <a href="<?= site_url('analisis_ekonomi?mode=lq') ?>" class="analysis-link" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                        <span>Location Quotient (LQ)</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="<?= site_url('analisis_ekonomi?mode=shift-share') ?>" class="analysis-link" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                        <span>Shift Share Analysis</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="<?= site_url('analisis_ekonomi?mode=klassen') ?>" class="analysis-link" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                        <span>Tipologi Klassen</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="<?= site_url('analisis_ekonomi?mode=korelasi') ?>" class="analysis-link" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                        <span>Analisis Korelasi</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="divider" style="margin: 14px 0;"></div>
+            <span class="eyebrow">DATASET DIGUNAKAN</span>
+            <p class="panel-help">Dataset pertumbuhan ekonomi Jawa Timur dan perbandingan Kabupaten/Kota 2015–2024.</p>
+        </aside>
+
+        <!-- MAIN COMPARISON CONTENT -->
+        <div class="comparison-main-column" style="min-width: 0;">
+            <!-- COMPARISON BUILDER -->
     <section class="comparison-builder">
         <div class="builder-heading">
             <div>
@@ -198,6 +246,11 @@
         </article>
     </section>
 
+    <!-- ECONOMIC AI ASSISTANT COMPONENT -->
+    <?php $this->load->view('dashboard/ai_assistant'); ?>
+
+        </div><!-- /.comparison-main-column -->
+    </div><!-- /.analysis-workspace -->
 
 </div>
 

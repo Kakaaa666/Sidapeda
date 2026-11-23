@@ -13,9 +13,9 @@ class Perbandingan_daerah extends MY_Controller {
         $trash_count = $this->M_economy->count_trash_regional();
 
         $data = array(
-            'active_page' => 'perbandingan_daerah',
+            'active_page' => 'analisis_ekonomi',
             'title' => 'Perbandingan Antar Daerah',
-            'eyebrow' => 'REGIONAL BENCHMARKING • CRUD & SOFT DELETE',
+            'eyebrow' => 'REGIONAL BENCHMARKING',
             'subtitle' => 'Bandingkan posisi dan daya saing ekonomi antar-wilayah kabupaten/kota di Jawa Timur.',
             'years' => $years,
             'regional' => $regional,

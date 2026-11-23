@@ -38,26 +38,39 @@
         <aside class="analysis-panel">
             <div class="panel-title">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg>
-                <strong>Metode Analisis Ekonomi Regional</strong>
+                <strong>Menu Analisa Ekonomi</strong>
             </div>
 
-            <div id="analysis-menu-links">
-                <button class="analysis-link active" data-mode="Location Quotient (LQ)">
-                    <span>Location Quotient (LQ)</span>
+            <div class="analysis-menu-group" style="margin-top: 14px;">
+                <span class="eyebrow" style="display:block; font-size:10.5px; font-weight:700; color:#64748b; letter-spacing:0.06em; margin-bottom:8px; padding-left:4px;">FUNGSI PEMBANDING</span>
+                <a href="<?= site_url('perbandingan_daerah') ?>" class="analysis-link" style="text-decoration:none; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Perbandingan Antar Daerah</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-                <button class="analysis-link" data-mode="Shift Share Analysis">
-                    <span>Shift Share Analysis</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-                <button class="analysis-link" data-mode="Tipologi Klassen">
-                    <span>Tipologi Klassen</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-                <button class="analysis-link" data-mode="Analisis Korelasi">
-                    <span>Analisis Korelasi</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
+                </a>
+            </div>
+
+            <div class="divider" style="margin: 14px 0;"></div>
+
+            <div class="analysis-menu-group">
+                <span class="eyebrow" style="display:block; font-size:10.5px; font-weight:700; color:#64748b; letter-spacing:0.06em; margin-bottom:8px; padding-left:4px;">METODE ANALISIS REGIONAL</span>
+                <div id="analysis-menu-links">
+                    <button class="analysis-link active" data-mode="Location Quotient (LQ)">
+                        <span>Location Quotient (LQ)</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="analysis-link" data-mode="Shift Share Analysis">
+                        <span>Shift Share Analysis</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="analysis-link" data-mode="Tipologi Klassen">
+                        <span>Tipologi Klassen</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button class="analysis-link" data-mode="Analisis Korelasi">
+                        <span>Analisis Korelasi</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="divider"></div>
@@ -169,6 +182,9 @@
                     </div>
                 </article>
             </div>
+
+            <!-- ECONOMIC AI ASSISTANT COMPONENT -->
+            <?php $this->load->view('dashboard/ai_assistant'); ?>
         </main>
     </div>
 
