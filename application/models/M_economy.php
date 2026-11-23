@@ -906,15 +906,22 @@ class M_economy extends CI_Model {
 
         $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
         $year = (int)$year;
+        $isInv = (strpos($parentCode, 'INV-') === 0);
+        $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
 
         // Hitung total dari sub-indikator yang ada
-        $row = $this->db->select_sum('nilai', 'tot')
+        $this->db->select_sum('nilai', 'tot')
             ->where('kode_wilayah', $kodeWil)
             ->where('tahun', $year)
             ->where('is_deleted', 0)
-            ->like('kode_indikator', $parentCode . '.', 'after')
-            ->get('database_ekonomi')
-            ->row_array();
+            ->like('kode_indikator', $parentCode . '.', 'after');
+
+        // Hindari duplikasi TM (Tanpa Migas) pada sektoral
+        if (!$isInv && !$isExp) {
+            $this->db->where('kode_indikator !=', $parentCode . '.TM');
+        }
+
+        $row = $this->db->get('database_ekonomi')->row_array();
 
         if ($row && $row['tot'] !== null) {
             $totalVal = round((float)$row['tot'], 2);
@@ -993,10 +1000,39 @@ class M_economy extends CI_Model {
 
         $isParentWithSubs = in_array($code, array('INV-001', 'INV-002', 'INV-003', 'EKO-003', 'EKO-004', 'EKO-007', 'EKO-015', 'EKO-016'));
 
+        $subTotalsByYear = array();
+        if ($isParentWithSubs) {
+            $isInv = (strpos($code, 'INV-') === 0);
+            $isExp = in_array($code, array('EKO-015', 'EKO-016'));
+            $this->db->select('tahun, SUM(nilai) as tot, COUNT(*) as cnt')
+                ->where('kode_wilayah', $kodeWil)
+                ->where('is_deleted', 0)
+                ->like('kode_indikator', $code . '.', 'after')
+                ->group_by('tahun');
+            if (!$isInv && !$isExp) {
+                $this->db->where('kode_indikator !=', $code . '.TM');
+            }
+            $subSumRows = $this->db->get('database_ekonomi')->result_array();
+            foreach ($subSumRows as $ssr) {
+                $subTotalsByYear[(int)$ssr['tahun']] = round((float)$ssr['tot'], 2);
+            }
+            $mergedYears = array_unique(array_merge($mergedYears, array_keys($subTotalsByYear)));
+            sort($mergedYears);
+        }
+
         $yearsList = array();
         $uploadedCount = 0;
         foreach ($mergedYears as $yr) {
-            if (isset($recByYear[$yr])) {
+            if ($isParentWithSubs && isset($subTotalsByYear[$yr])) {
+                $uploadedCount++;
+                $yearsList[] = array(
+                    'year' => $yr,
+                    'value' => $subTotalsByYear[$yr],
+                    'status' => isset($recByYear[$yr]) ? $recByYear[$yr]['status_validasi'] : 'Tervalidasi',
+                    'notes' => isset($recByYear[$yr]) ? ($recByYear[$yr]['catatan'] ?? '') : 'Total otomatis akumulasi rincian',
+                    'has_data' => true
+                );
+            } elseif (isset($recByYear[$yr])) {
                 $uploadedCount++;
                 $r = $recByYear[$yr];
                 $yearsList[] = array(
@@ -1630,6 +1666,19 @@ class M_economy extends CI_Model {
         $unit = $isInv ? 'Miliar rupiah' : (in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah');
         $cluster = $isInv ? 'Investasi' : ($isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral');
 
+        $prefix = 'PDRB ADHB';
+        if ($parentCode === 'EKO-004') {
+            $prefix = 'PDRB ADHK';
+        } elseif ($parentCode === 'EKO-006') {
+            $prefix = 'Pertumbuhan';
+        } elseif ($parentCode === 'EKO-007') {
+            $prefix = 'Distribusi';
+        } elseif ($isInv) {
+            $prefix = 'Investasi';
+        } elseif ($isExp) {
+            $prefix = ($parentCode === 'EKO-016') ? 'PDRB Pengeluaran ADHK' : 'PDRB Pengeluaran ADHB';
+        }
+
         $this->db->trans_start();
 
         foreach ($defs as $key => $def) {
@@ -1794,6 +1843,13 @@ class M_economy extends CI_Model {
                         ));
                     }
                 }
+            }
+        }
+
+        // Otomatis sinkronkan dan perbarui nilai total akumulasi parent untuk setiap tahun yang diubah
+        if (in_array($parentCode, array('INV-001', 'INV-002', 'INV-003', 'EKO-003', 'EKO-004', 'EKO-007', 'EKO-015', 'EKO-016'))) {
+            foreach ($years as $yr) {
+                $this->recalculate_parent_total($parentCode, (int)$yr, $kodeWil);
             }
         }
 

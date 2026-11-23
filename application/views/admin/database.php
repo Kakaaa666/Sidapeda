@@ -199,6 +199,69 @@
         });
 
         $grouped[$pCode]['sub_indicators'] = $subs;
+
+        // Auto-akumulasi nilai TOTAL pada baris parent untuk indikator sektoral / kuartal
+        // Memastikan nilai yang tampil di baris utama parent SELALU merupakan TOTAL hasil akumulasi seluruh sub-indikatornya
+        $canAutoSum = in_array($pCode, ['EKO-003', 'EKO-004', 'EKO-007', 'INV-001', 'INV-002', 'INV-003']);
+        if ($canAutoSum) {
+            $subYears = [];
+            foreach ($subs as $sCode => $sData) {
+                // Hindari duplikasi TM (Tanpa Migas) pada penghitungan total PDRB
+                if ($sCode === $pCode . '.TM') continue;
+
+                if (!empty($sData['years'])) {
+                    foreach ($sData['years'] as $sYr => $sRec) {
+                        $sYr = (int)$sYr;
+                        if (!isset($subYears[$sYr])) {
+                            $subYears[$sYr] = [
+                                'total' => 0,
+                                'count' => 0,
+                                'status' => $sRec['status'] ?? 'Tervalidasi',
+                                'id' => $sRec['id'] ?? 0
+                            ];
+                        }
+                        $subYears[$sYr]['total'] += (float)($sRec['value'] ?? 0);
+                        $subYears[$sYr]['count']++;
+                    }
+                }
+            }
+
+            foreach ($subYears as $sYr => $syData) {
+                $yearSet[$sYr] = true;
+                $totVal = round($syData['total'], 2);
+
+                if (!isset($grouped[$pCode]['years'][$sYr])) {
+                    $grouped[$pCode]['years'][$sYr] = [
+                        'id' => $syData['id'],
+                        'code' => $pCode,
+                        'indicator' => $grouped[$pCode]['indicator'],
+                        'cluster' => $grouped[$pCode]['cluster'],
+                        'region' => $grouped[$pCode]['region'],
+                        'unit' => $grouped[$pCode]['unit'],
+                        'source' => $grouped[$pCode]['source'],
+                        'definition' => $grouped[$pCode]['definition'] ?? '',
+                        'period' => $grouped[$pCode]['period'],
+                        'status' => $syData['status'],
+                        'verified_by' => 'Sistem (Total Otomatis)',
+                        'notes' => 'Total otomatis akumulasi rincian ' . ($isInv ? 'kuartal' : 'sektoral'),
+                        'is_deleted' => 0,
+                        'deleted_at' => null,
+                        'year' => $sYr,
+                        'value' => $totVal,
+                        'is_total' => true
+                    ];
+                } else {
+                    // Update dengan total akurat hasil akumulasi seluruh sub-indikator
+                    $grouped[$pCode]['years'][$sYr]['value'] = $totVal;
+                    $grouped[$pCode]['years'][$sYr]['is_total'] = true;
+                }
+
+                if ($sYr >= $grouped[$pCode]['latest_year']) {
+                    $grouped[$pCode]['latest_year'] = $sYr;
+                    $grouped[$pCode]['status'] = $syData['status'];
+                }
+            }
+        }
     }
 
     // Urutan resmi prefix indikator (dimulai dari EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
@@ -476,9 +539,10 @@
                                                 $rec = $item['years'][$yr]; 
                                                 $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $item['unit'] ?? '');
                                                 $prefixRp = $isRupiah ? 'Rp ' : '';
+                                                $isTotal = !empty($rec['is_total']) || ($hasSub && in_array($item['code'], ['EKO-003', 'EKO-004', 'EKO-007', 'INV-001', 'INV-002', 'INV-003']));
                                             ?>
-                                            <div class="matrix-val-pill" title="<?= htmlspecialchars($item['indicator']) ?> (<?= $yr ?>): <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?> [<?= $rec['status'] ?>]">
-                                                <span class="matrix-val-text <?= $rec['status'] === 'Perlu review' ? 'val-warning' : ($rec['status'] === 'Ditolak' ? 'val-danger' : '') ?>" style="font-weight:600; font-size:12px; color:#0f172a;">
+                                            <div class="matrix-val-pill" title="<?= $isTotal ? '[TOTAL] ' : '' ?><?= htmlspecialchars($item['indicator']) ?> (<?= $yr ?>): <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?> [<?= $rec['status'] ?>]">
+                                                <span class="matrix-val-text <?= $rec['status'] === 'Perlu review' ? 'val-warning' : ($rec['status'] === 'Ditolak' ? 'val-danger' : '') ?>" style="font-weight:<?= $isTotal ? '700' : '600' ?>; font-size:12px; color:<?= $isTotal ? '#0369a1' : '#0f172a' ?>;">
                                                     <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?>
                                                 </span>
                                             </div>
