@@ -383,30 +383,18 @@
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <div class="combobox-wrap">
-                            <input type="text" name="klaster" id="add-catalog-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
-                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                            </button>
-                            <div class="combobox-menu">
-                                <?php if (!empty($all_clusters)): ?>
-                                    <?php foreach ($all_clusters as $clName): ?>
-                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
-                                            <?= htmlspecialchars($clName) ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <select name="klaster" id="add-catalog-cluster" required style="width:100%; height:40px; font-size:12.5px; padding:0 10px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
+                            <option value="">-- Pilih Klaster Pembangunan --</option>
+                            <?php if (!empty($all_clusters)): ?>
+                                <?php foreach ($all_clusters as $clName): ?>
+                                    <option value="<?= htmlspecialchars($clName) ?>"><?= htmlspecialchars($clName) ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
                     </label>
                     <label>
                         Frekuensi Rilis
-                        <select name="frekuensi" id="add-catalog-freq">
-                            <option value="Tahunan">Tahunan</option>
-                            <option value="Semesteran">Semesteran</option>
-                            <option value="Triwulanan">Triwulanan</option>
-                            <option value="Bulanan">Bulanan</option>
-                        </select>
+                        <input type="text" name="frekuensi" id="add-catalog-freq" placeholder="Contoh: Tahunan / Semesteran / Triwulanan" value="Tahunan" required>
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Sumber Data / Walidata
@@ -459,30 +447,18 @@
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <div class="combobox-wrap">
-                            <input type="text" name="klaster" id="edit-catalog-cluster" class="cluster-combobox-input" placeholder="Pilih dari daftar atau ketik manual..." autocomplete="off" required>
-                            <button type="button" class="combobox-toggle-btn" tabindex="-1" title="Lihat daftar klaster yang sudah di-input">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                            </button>
-                            <div class="combobox-menu">
-                                <?php if (!empty($all_clusters)): ?>
-                                    <?php foreach ($all_clusters as $clName): ?>
-                                        <div class="combobox-item" data-value="<?= htmlspecialchars($clName) ?>">
-                                            <?= htmlspecialchars($clName) ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <select name="klaster" id="edit-catalog-cluster" required style="width:100%; height:40px; font-size:12.5px; padding:0 10px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
+                            <option value="">-- Pilih Klaster Pembangunan --</option>
+                            <?php if (!empty($all_clusters)): ?>
+                                <?php foreach ($all_clusters as $clName): ?>
+                                    <option value="<?= htmlspecialchars($clName) ?>"><?= htmlspecialchars($clName) ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
                     </label>
                     <label>
                         Frekuensi Rilis
-                        <select name="frekuensi" id="edit-catalog-freq">
-                            <option value="Tahunan">Tahunan</option>
-                            <option value="Semesteran">Semesteran</option>
-                            <option value="Triwulanan">Triwulanan</option>
-                            <option value="Bulanan">Bulanan</option>
-                        </select>
+                        <input type="text" name="frekuensi" id="edit-catalog-freq" placeholder="Contoh: Tahunan" required>
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Sumber Data / Walidata

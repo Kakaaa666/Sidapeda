@@ -612,7 +612,7 @@
                 <div>
                     <span class="badge info">TAMBAH DATA BARU</span>
                     <h2>Tambah Data Indikator Ekonomi</h2>
-                    <p>Pilih indikator dari kamus master, lalu tentukan tahun dan nilai realisasi capaian daerah.</p>
+                    <p>Masukkan indikator secara manual dan tentukan tahun serta nilai realisasi capaian daerah.</p>
                 </div>
                 <button class="icon-button" id="modal-btn-close-add" title="Tutup Modal">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg>
@@ -620,112 +620,58 @@
             </div>
 
             <form id="form-manual-add" method="POST" action="<?= site_url('database/create') ?>">
-                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:11px 14px; margin-bottom:14px; font-size:11.5px; color:#1e40af; line-height:1.5; display:flex; align-items:flex-start; gap:10px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:2px; color:#2563eb;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    <div>
-                        <strong>Standar Kamus Data Terintegrasi:</strong> Kode, Nama, Klaster, Satuan, Sumber, dan Definisi Operasional merupakan <strong>Data Umum Kamus</strong> yang berlaku seragam untuk seluruh wilayah. Di tingkat daerah, operator hanya mengisikan <strong>Tahun</strong> dan <strong>Nilai Realisasi</strong>.
-                    </div>
-                </div>
-
-                <!-- LANGKAH 1: PILIH KATEGORI & INDIKATOR MASTER -->
-                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1.6fr; gap:12px; margin-bottom:10px;">
-                        <div>
-                            <label for="add-category-filter-select" style="display:block; margin-bottom:5px; font-size:11.5px; font-weight:700; color:#1e293b;">
-                                1. Pilih Kategori / Klaster
-                            </label>
-                            <select id="add-category-filter-select" style="width:100%; height:38px; font-size:12px; font-weight:600; padding:0 10px; border-radius:8px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
-                                <option value="">-- Semua Kategori / Klaster --</option>
-                                <?php if (!empty($clusters)): ?>
-                                    <?php foreach ($clusters as $c): ?>
-                                        <option value="<?= htmlspecialchars($c['klaster']) ?>">
-                                            <?= htmlspecialchars($c['klaster']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="add-indicator-master-select" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:11.5px; font-weight:700; color:#1e293b;">
-                                <span>2. Pilih Indikator Master (Data Umum)</span>
-                                <span style="font-size:10px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:10px;">Auto-Fill</span>
-                            </label>
-                            <select id="add-indicator-master-select" style="width:100%; height:38px; font-size:12px; font-weight:600; padding:0 12px; border-radius:8px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
-                                <option value="">-- Pilih Indikator Master untuk Mengisi Otomatis --</option>
-                                <?php if (!empty($catalog_indicators)): ?>
-                                    <?php foreach ($catalog_indicators as $catItem): ?>
-                                        <?php if (strpos($catItem['code'], '.') !== false) continue; // Jangan tampilkan sub-kode di dropdown master utama ?>
-                                        <option value="<?= htmlspecialchars($catItem['code']) ?>" data-cluster="<?= htmlspecialchars($catItem['cluster']) ?>">
-                                            [<?= htmlspecialchars($catItem['code']) ?>] <?= htmlspecialchars($catItem['name']) ?> &bull; <?= htmlspecialchars($catItem['cluster']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="font-size:10.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:4px;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        Memilih kategori atau indikator master akan otomatis mengisi sendiri seluruh atribut data umum di bawah ini.
-                    </div>
-
-                    <!-- PILIH RINCIAN KATEGORI JIKA INDIKATOR MEMILIKI SUB-KATEGORI (MISAL EKO-003, EKO-004, EKO-006, EKO-007, EKO-015, EKO-016) -->
-                    <div id="add-sectoral-category-group" style="display:none; margin-top:12px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:10px 14px;">
-                        <label for="add-sectoral-category-select" style="font-size:11.5px; font-weight:700; color:#166534; display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <span id="add-sectoral-category-label" style="display:flex; align-items:center; gap:6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-                                Rincian Kategori Sub-Indikator
-                            </span>
-                            <span id="add-sectoral-badge-label" style="font-size:9.5px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px;">Pilih Rincian</span>
-                        </label>
-                        <select id="add-sectoral-category-select" style="width:100%; height:36px; font-size:12px; font-weight:700; padding:0 10px; border-radius:6px; border:1.5px solid #86efac; background:#fff; color:#0f172a; cursor:pointer;">
-                            <!-- Di-generate dinamis oleh JS -->
-                        </select>
-                        <div style="font-size:10px; color:#15803d; margin-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                            <span>Pilih salah satu kategori/rincian di atas untuk otomatis mengisi data indikator tersebut.</span>
-                            <button type="button" id="btn-quick-open-sectoral-matrix" style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                                Buka Spreadsheet Matriks Lengkap &rarr;
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="manual-form">
                     <label>
                         Kode Indikator
-                        <input type="text" name="code" id="add-code" placeholder="Pilih dari master..." list="catalog-code-list" autocomplete="off" readonly required>
+                        <input type="text" name="code" id="add-code" placeholder="Contoh: ind_pdrb_kapita" autocomplete="off" required>
                     </label>
                     <label>
                         Satuan Ukuran
-                        <input type="text" name="unit" id="add-unit" placeholder="Satuan..." readonly required>
+                        <input type="text" name="unit" id="add-unit" placeholder="Contoh: % / Poin / Juta Rp / Orang" required>
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Nama Indikator
-                        <input type="text" name="indicator" id="add-indicator" placeholder="Otomatis dari master..." readonly required>
+                        <input type="text" name="indicator" id="add-indicator" placeholder="Contoh: PDRB per Kapita ADHB" required>
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <input type="text" name="cluster" id="add-cluster" placeholder="Klaster..." readonly required>
+                        <select name="cluster" id="add-cluster" required style="width:100%; height:40px; font-size:12.5px; padding:0 10px; border-radius:8px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
+                            <option value="">-- Pilih Klaster Pembangunan --</option>
+                            <?php 
+                            $clusterList = [];
+                            $clusterSource = !empty($clusters) ? $clusters : (!empty($all_clusters) ? $all_clusters : []);
+                            foreach ($clusterSource as $c) {
+                                $cName = is_array($c) ? ($c['klaster'] ?? $c['cluster'] ?? '') : $c;
+                                if ($cName && !in_array($cName, $clusterList)) {
+                                    $clusterList[] = $cName;
+                                }
+                            }
+                            if (empty($clusterList)) {
+                                $clusterList = ['Pertumbuhan Ekonomi', 'Kemiskinan & Kesejahteraan', 'Ketenagakerjaan', 'Inflasi & Harga', 'Pemerintahan & Fiskal', 'Investasi & Penanaman Modal', 'Pariwisata & Jasa'];
+                            }
+                            foreach ($clusterList as $cl): ?>
+                                <option value="<?= htmlspecialchars($cl) ?>"><?= htmlspecialchars($cl) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
                     <label>
                         Sumber Data / Walidata
-                        <input type="text" name="source" id="add-source" placeholder="Otomatis dari master..." readonly required>
+                        <input type="text" name="source" id="add-source" placeholder="Contoh: BPS Kabupaten Banyuwangi" required>
                     </label>
                     <input type="hidden" name="region" id="add-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>">
                     <input type="hidden" name="kode_wilayah" id="add-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
                     <label style="grid-column: 1 / 3;">
                         Definisi Operasional
-                        <textarea name="definition" id="add-definition" rows="2" readonly placeholder="Definisi operasional terstandarisasi dari katalog..."></textarea>
+                        <textarea name="definition" id="add-definition" rows="2" placeholder="Uraikan konsep dan batasan penghitungan indikator..."></textarea>
                     </label>
 
-                    <!-- LANGKAH 2: INPUT REALISASI DAERAH (BISA SATU ATAU BANYAK TAHUN SEKALIGUS) -->
+                    <!-- INPUT REALISASI DAERAH (BISA SATU ATAU BANYAK TAHUN SEKALIGUS) -->
                     <div style="grid-column: 1 / 3; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 16px; margin-top: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                             <div>
                                 <span style="font-size:11.5px; font-weight:700; color:#166534; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:6px;">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Langkah 2 &bull; Input Realisasi Daerah (<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>)
+                                    Input Realisasi Daerah (<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>)
                                 </span>
                                 <small style="font-size:11px; color:#15803d; display:block; margin-top:2px;">
                                     Masukkan angka dan tahunnya. Anda dapat menghapus baris atau menambah tahun (sebelumnya / berikutnya) dengan tombol di samping kanan.
@@ -818,41 +764,51 @@
 
             <form id="form-manual-edit" method="POST" action="<?= site_url('database/update_series') ?>">
                 <input type="hidden" name="id" id="edit-id">
-                <input type="hidden" name="code" id="edit-code">
+                <input type="hidden" name="old_code" id="edit-code">
                 <input type="hidden" name="region" id="edit-region" value="<?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>">
                 <input type="hidden" name="kode_wilayah" id="edit-kode-wilayah" value="<?= htmlspecialchars($active_kode_wilayah ?? '35.10') ?>">
 
-                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:11px 14px; margin-top:14px; margin-bottom:14px; font-size:11.5px; color:#1e40af; line-height:1.5; display:flex; align-items:flex-start; gap:10px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:2px; color:#2563eb;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    <div>
-                        <strong>Standar Kamus Data Umum:</strong> Kode, Nama, Klaster, Satuan, Sumber, dan Definisi Operasional merupakan <strong>Data Umum Kamus</strong> (standar seluruh wilayah). Anda dapat memperbarui <strong>seluruh nilai realisasi tahunan yang telah di-upload</strong> pada deret waktu di bawah ini.
-                    </div>
-                </div>
-
-                <div class="manual-form" style="margin-bottom:14px;">
+                <div class="manual-form" style="margin-top:14px; margin-bottom:14px;">
                     <label>
                         Kode Indikator
-                        <input type="text" id="edit-code-display" readonly style="background:#f8fafc; font-weight:700; color:var(--blue);">
+                        <input type="text" name="code" id="edit-code-display" placeholder="Contoh: ind_pdrb_kapita" required style="font-weight:700; color:var(--blue);">
                     </label>
                     <label>
                         Satuan Ukuran
-                        <input type="text" name="unit" id="edit-unit" readonly style="background:#f8fafc; font-weight:600;">
+                        <input type="text" name="unit" id="edit-unit" placeholder="Contoh: % / Poin / Juta Rp" required style="font-weight:600;">
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Nama Indikator
-                        <input type="text" name="indicator" id="edit-indicator" readonly style="background:#f8fafc; font-weight:600;">
+                        <input type="text" name="indicator" id="edit-indicator" placeholder="Contoh: PDRB per Kapita ADHB" required style="font-weight:600;">
                     </label>
                     <label>
                         Klaster Pembangunan
-                        <input type="text" name="cluster" id="edit-cluster" readonly style="background:#f8fafc;">
+                        <select name="cluster" id="edit-cluster" required style="width:100%; height:40px; font-size:12.5px; padding:0 10px; border-radius:8px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; cursor:pointer;">
+                            <option value="">-- Pilih Klaster Pembangunan --</option>
+                            <?php 
+                            $clusterList = [];
+                            $clusterSource = !empty($clusters) ? $clusters : (!empty($all_clusters) ? $all_clusters : []);
+                            foreach ($clusterSource as $c) {
+                                $cName = is_array($c) ? ($c['klaster'] ?? $c['cluster'] ?? '') : $c;
+                                if ($cName && !in_array($cName, $clusterList)) {
+                                    $clusterList[] = $cName;
+                                }
+                            }
+                            if (empty($clusterList)) {
+                                $clusterList = ['Pertumbuhan Ekonomi', 'Kemiskinan & Kesejahteraan', 'Ketenagakerjaan', 'Inflasi & Harga', 'Pemerintahan & Fiskal', 'Investasi & Penanaman Modal', 'Pariwisata & Jasa'];
+                            }
+                            foreach ($clusterList as $cl): ?>
+                                <option value="<?= htmlspecialchars($cl) ?>"><?= htmlspecialchars($cl) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
                     <label>
                         Sumber Data / Walidata
-                        <input type="text" name="source" id="edit-source" readonly style="background:#f8fafc;">
+                        <input type="text" name="source" id="edit-source" placeholder="Contoh: BPS Kabupaten Banyuwangi" required>
                     </label>
                     <label style="grid-column: 1 / 3;">
                         Definisi Operasional
-                        <textarea name="definition" id="edit-definition" rows="2" readonly placeholder="Definisi operasional..." style="background:#f8fafc; font-size:11px;"></textarea>
+                        <textarea name="definition" id="edit-definition" rows="2" placeholder="Uraikan konsep dan batasan penghitungan indikator..."></textarea>
                     </label>
                 </div>
 

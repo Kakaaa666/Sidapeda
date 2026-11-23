@@ -5867,9 +5867,12 @@
                 ['add-code', 'add-indicator', 'add-cluster', 'add-unit', 'add-source', 'add-value'].forEach(id => {
                     const el = document.getElementById(id); if (el) el.value = '';
                 });
+                document.querySelectorAll('.add-series-unit-cell').forEach(c => { c.textContent = '%'; });
                 const errBox = document.getElementById('add-modal-error');
                 if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
                 addModal.style.display = 'grid';
+                const addCodeEl = document.getElementById('add-code');
+                if (addCodeEl) setTimeout(() => addCodeEl.focus(), 80);
             });
         }
         const closeAddModal = () => { if (addModal) addModal.style.display = 'none'; };
@@ -5878,6 +5881,22 @@
         if (addModal) {
             addModal.addEventListener('click', e => {
                 if (e.target === addModal) closeAddModal();
+            });
+        }
+
+        const addUnitInput = document.getElementById('add-unit');
+        if (addUnitInput) {
+            addUnitInput.addEventListener('input', function () {
+                const u = this.value.trim() || '%';
+                document.querySelectorAll('.add-series-unit-cell').forEach(c => { c.textContent = u; });
+            });
+        }
+
+        const editUnitInput = document.getElementById('edit-unit');
+        if (editUnitInput) {
+            editUnitInput.addEventListener('input', function () {
+                const u = this.value.trim() || '%';
+                document.querySelectorAll('#edit-series-grid .series-unit-label-cell').forEach(c => { c.textContent = u; });
             });
         }
 
@@ -6453,7 +6472,17 @@
                                 if (document.getElementById('edit-indicator')) document.getElementById('edit-indicator').value = d.indicator || '';
                                 
                                 const editClusterEl = document.getElementById('edit-cluster');
-                                if (editClusterEl) editClusterEl.value = (d.cluster || '').trim();
+                                if (editClusterEl) {
+                                    const cVal = (d.cluster || '').trim();
+                                    editClusterEl.value = cVal;
+                                    if (cVal && editClusterEl.value !== cVal) {
+                                        const newOpt = document.createElement('option');
+                                        newOpt.value = cVal;
+                                        newOpt.textContent = cVal;
+                                        newOpt.selected = true;
+                                        editClusterEl.appendChild(newOpt);
+                                    }
+                                }
 
                                 if (document.getElementById('edit-region')) document.getElementById('edit-region').value = d.region || 'Kabupaten Banyuwangi';
                                 const regionLabel = document.getElementById('edit-region-label');
@@ -8160,6 +8189,13 @@
                 const editCatClusterEl = document.getElementById('edit-catalog-cluster');
                 if (editCatClusterEl) {
                     editCatClusterEl.value = catClusterVal;
+                    if (catClusterVal && editCatClusterEl.value !== catClusterVal) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = catClusterVal;
+                        newOpt.textContent = catClusterVal;
+                        newOpt.selected = true;
+                        editCatClusterEl.appendChild(newOpt);
+                    }
                 }
 
                 if (document.getElementById('edit-catalog-freq')) document.getElementById('edit-catalog-freq').value = item.frekuensi || item.frequency || 'Tahunan';

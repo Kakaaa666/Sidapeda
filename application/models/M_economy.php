@@ -600,9 +600,14 @@ class M_economy extends CI_Model {
             $clusterVal = 'Output dan pertumbuhan';
         }
 
+        $codeVal = trim($data['code'] ?? $data['kode_indikator'] ?? '');
+        $nameVal = trim($data['indicator'] ?? $data['nama_indikator'] ?? '');
+        $unitVal = trim($data['unit'] ?? $data['satuan'] ?? '%');
+        $sourceVal = trim($data['source'] ?? $data['sumber_data'] ?? 'Input Manual');
         $defVal = trim($data['definition'] ?? $data['definisi_operasional'] ?? '');
+
         if (empty($defVal)) {
-            $catRow = $this->db->where('kode_indikator', trim($data['code'] ?? $data['kode_indikator'] ?? ''))
+            $catRow = $this->db->where('kode_indikator', $codeVal)
                 ->where('kode_wilayah', $kodeWilayah)
                 ->get('katalog_indikator')
                 ->row_array();
@@ -611,17 +616,116 @@ class M_economy extends CI_Model {
             }
         }
 
+        // Pastikan indikator terdaftar di katalog_indikator
+        if (!empty($codeVal)) {
+            $catExists = $this->db->where('kode_indikator', $codeVal)
+                ->where('kode_wilayah', $kodeWilayah)
+                ->get('katalog_indikator')
+                ->row_array();
+            if (!$catExists) {
+                $this->db->insert('katalog_indikator', array(
+                    'kode_indikator'       => $codeVal,
+                    'nama_indikator'       => $nameVal ?: $codeVal,
+                    'klaster'              => $clusterVal,
+                    'satuan'               => $unitVal,
+                    'frekuensi'            => 'Tahunan',
+                    'sumber_data'          => $sourceVal,
+                    'definisi_operasional' => $defVal,
+                    'kode_wilayah'         => $kodeWilayah,
+                    'status_validasi'      => 'Perlu review',
+                    'is_deleted'           => 0
+                ));
+            } else if (!empty($defVal) && empty($catExists['definisi_operasional'])) {
+                $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array('definisi_operasional' => $defVal));
+            }
+        }
+
+        // Cek jika multi-year series dikirimkan (series_years[] & series_values[])
+        $seriesYears = !empty($data['series_years']) && is_array($data['series_years']) ? $data['series_years'] : null;
+        $seriesValues = !empty($data['series_values']) && is_array($data['series_values']) ? $data['series_values'] : null;
+
+        if (!empty($seriesYears) && !empty($seriesValues)) {
+            $savedAny = false;
+            for ($i = 0; $i < count($seriesYears); $i++) {
+                $yr = (int)($seriesYears[$i] ?? 0);
+                $valRaw = $seriesValues[$i] ?? '';
+                if ($yr < 1900 || $valRaw === '' || $valRaw === null) {
+                    continue;
+                }
+                $val = (float)$valRaw;
+
+                $existing = $this->db->where('kode_indikator', $codeVal)
+                    ->where('tahun', $yr)
+                    ->where('kode_wilayah', $kodeWilayah)
+                    ->where('is_deleted', 0)
+                    ->get('database_ekonomi')
+                    ->row_array();
+
+                if ($existing) {
+                    $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
+                        'nilai'                => $val,
+                        'nama_indikator'       => $nameVal ?: $existing['nama_indikator'],
+                        'klaster'              => $clusterVal,
+                        'satuan'               => $unitVal,
+                        'sumber_data'          => $sourceVal,
+                        'definisi_operasional' => $defVal,
+                        'status_validasi'      => 'Perlu review',
+                        'catatan'              => null,
+                        'is_deleted'           => 0
+                    ));
+                    $savedAny = true;
+                } else {
+                    $rec = array(
+                        'kode_indikator'       => $codeVal,
+                        'nama_indikator'       => $nameVal ?: $codeVal,
+                        'klaster'              => $clusterVal,
+                        'wilayah'              => trim($data['region'] ?? $data['wilayah'] ?? $namaWilayah),
+                        'kode_wilayah'         => $kodeWilayah,
+                        'periode'              => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
+                        'tahun'                => $yr,
+                        'nilai'                => $val,
+                        'satuan'               => $unitVal,
+                        'sumber_data'          => $sourceVal,
+                        'definisi_operasional' => $defVal,
+                        'status_validasi'      => 'Perlu review',
+                        'diverifikasi_oleh'    => null,
+                        'catatan'              => null,
+                        'is_deleted'           => 0,
+                        'deleted_at'           => null,
+                        'dibuat_pada'          => date('Y-m-d H:i:s')
+                    );
+                    $ins = $this->db->insert('database_ekonomi', $rec);
+                    if ($ins) {
+                        $savedAny = true;
+                    }
+                }
+
+                // Sinkronkan ke early_warning jika kode indikator ada di tabel EWS
+                $ewsMatch = $this->db->where('kode_indikator', $codeVal)->where('kode_wilayah', $kodeWilayah)->get('early_warning')->row_array();
+                if ($ewsMatch) {
+                    $this->update_ews_threshold($codeVal, (float)$ewsMatch['ambang_batas'], $ewsMatch['arah_risiko'], $val, $kodeWilayah);
+                }
+                // Jika rekaman merupakan sub-indikator (mengandung .), otomatis hitung ulang total parent-nya
+                if (strpos($codeVal, '.') !== false) {
+                    $parentCode = explode('.', $codeVal)[0];
+                    $this->recalculate_parent_total($parentCode, $yr, $kodeWilayah);
+                }
+            }
+            return $savedAny;
+        }
+
+        // Fallback untuk single record (tahun & nilai)
         $record = array(
-            'kode_indikator'       => trim($data['code'] ?? $data['kode_indikator'] ?? ''),
-            'nama_indikator'       => trim($data['indicator'] ?? $data['nama_indikator'] ?? ''),
+            'kode_indikator'       => $codeVal,
+            'nama_indikator'       => $nameVal,
             'klaster'              => $clusterVal,
             'wilayah'              => trim($data['region'] ?? $data['wilayah'] ?? $namaWilayah),
             'kode_wilayah'         => $kodeWilayah,
             'periode'              => trim($data['period'] ?? $data['periode'] ?? 'Tahunan'),
             'tahun'                => (int)($data['year'] ?? $data['tahun'] ?? 2024),
             'nilai'                => (float)($data['value'] ?? $data['nilai'] ?? 0),
-            'satuan'               => trim($data['unit'] ?? $data['satuan'] ?? '%'),
-            'sumber_data'          => trim($data['source'] ?? $data['sumber_data'] ?? 'Input Manual'),
+            'satuan'               => $unitVal,
+            'sumber_data'          => $sourceVal,
             'definisi_operasional' => $defVal,
             'status_validasi'      => 'Perlu review',
             'diverifikasi_oleh'    => null,
@@ -643,12 +747,6 @@ class M_economy extends CI_Model {
         }
         $res = $this->db->insert('database_ekonomi', $record);
         if ($res) {
-            if (!empty($record['definisi_operasional'])) {
-                $catExists = $this->db->where('kode_indikator', $record['kode_indikator'])->where('kode_wilayah', $record['kode_wilayah'])->get('katalog_indikator')->row_array();
-                if ($catExists && empty($catExists['definisi_operasional'])) {
-                    $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array('definisi_operasional' => $record['definisi_operasional']));
-                }
-            }
             // Sinkronkan ke early_warning jika kode indikator ada di tabel EWS
             $ewsMatch = $this->db->where('kode_indikator', $record['kode_indikator'])->where('kode_wilayah', $record['kode_wilayah'])->get('early_warning')->row_array();
             if ($ewsMatch) {
@@ -938,9 +1036,10 @@ class M_economy extends CI_Model {
     /**
      * Perbarui deret tahun indikator dari modal Edit Series
      */
-    public function update_indicator_series($code, $seriesData, $kode_wilayah = null) {
+    public function update_indicator_series($code, $seriesData, $kode_wilayah = null, $meta = array()) {
         $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
         $code = trim($code);
+        $oldCode = !empty($meta['old_code']) ? trim($meta['old_code']) : $code;
 
         $years = array();
         $values = array();
@@ -958,12 +1057,54 @@ class M_economy extends CI_Model {
         $savedCount = 0;
         $this->db->trans_start();
 
-        $cat = $this->db->where('kode_indikator', $code)->get('katalog_indikator')->row_array();
-        $pName = $cat ? $cat['nama_indikator'] : $code;
-        $cluster = $cat ? $cat['klaster'] : 'Ekonomi';
-        $unit = $cat ? $cat['satuan'] : '';
-        $source = $cat ? $cat['sumber_data'] : '';
-        $def = $cat ? ($cat['definisi_operasional'] ?? '') : '';
+        $cat = $this->db->where('kode_indikator', $oldCode)->get('katalog_indikator')->row_array();
+        $pName = !empty($meta['indicator']) ? trim($meta['indicator']) : ($cat ? $cat['nama_indikator'] : $code);
+        $cluster = !empty($meta['cluster']) ? trim($meta['cluster']) : ($cat ? $cat['klaster'] : 'Ekonomi');
+        $unit = !empty($meta['unit']) ? trim($meta['unit']) : ($cat ? $cat['satuan'] : '');
+        $source = !empty($meta['source']) ? trim($meta['source']) : ($cat ? $cat['sumber_data'] : '');
+        $def = isset($meta['definition']) ? trim($meta['definition']) : ($cat ? ($cat['definisi_operasional'] ?? '') : '');
+
+        // Jika kode indikator diubah
+        if ($oldCode !== $code && !empty($oldCode) && !empty($code)) {
+            $this->db->where('kode_indikator', $oldCode)->where('kode_wilayah', $kodeWil)->update('database_ekonomi', array('kode_indikator' => $code));
+            $this->db->where('kode_indikator', $oldCode)->where('kode_wilayah', $kodeWil)->update('katalog_indikator', array('kode_indikator' => $code));
+        }
+
+        // Perbarui atribut metadata umum untuk seluruh tahun dari indikator ini
+        $this->db->where('kode_indikator', $code)
+            ->where('kode_wilayah', $kodeWil)
+            ->update('database_ekonomi', array(
+                'nama_indikator'       => $pName,
+                'klaster'              => $cluster,
+                'satuan'               => $unit,
+                'sumber_data'          => $source,
+                'definisi_operasional' => $def
+            ));
+
+        // Sinkronkan ke katalog_indikator
+        $catExists = $this->db->where('kode_indikator', $code)->where('kode_wilayah', $kodeWil)->get('katalog_indikator')->row_array();
+        if ($catExists) {
+            $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array(
+                'nama_indikator'       => $pName,
+                'klaster'              => $cluster,
+                'satuan'               => $unit,
+                'sumber_data'          => $source,
+                'definisi_operasional' => $def
+            ));
+        } else {
+            $this->db->insert('katalog_indikator', array(
+                'kode_indikator'       => $code,
+                'nama_indikator'       => $pName,
+                'klaster'              => $cluster,
+                'satuan'               => $unit,
+                'frekuensi'            => 'Tahunan',
+                'sumber_data'          => $source,
+                'definisi_operasional' => $def,
+                'kode_wilayah'         => $kodeWil,
+                'status_validasi'      => 'Perlu review',
+                'is_deleted'           => 0
+            ));
+        }
 
         foreach ($years as $idx => $yr) {
             $yr = (int)$yr;
@@ -982,6 +1123,11 @@ class M_economy extends CI_Model {
             if ($existing) {
                 $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
                     'nilai' => $val,
+                    'nama_indikator' => $pName,
+                    'klaster' => $cluster,
+                    'satuan' => $unit,
+                    'sumber_data' => $source,
+                    'definisi_operasional' => $def,
                     'status_validasi' => 'Perlu review',
                     'catatan' => null,
                     'is_deleted' => 0
