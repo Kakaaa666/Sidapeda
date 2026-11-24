@@ -284,13 +284,32 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                 <?php if ($hasSub): ?>
                                     <?php 
                                         $isInv = (strpos($code, 'INV-') === 0);
-                                        $openLabel = $isInv ? 'Rincian Kuartal (Q1–Q4)' : 'Rincian Sektor (A–U)';
-                                        $badgeLabel = $isInv ? '4 Kuartal' : '18 Sektor';
+                                        $isTk07 = ($code === 'TK-007');
+                                        $isTk08 = ($code === 'TK-008');
+                                        $isTk10 = ($code === 'TK-010');
+                                        if ($isInv) {
+                                            $openLabel = 'Rincian 4 Kuartal';
+                                        } elseif ($isTk07) {
+                                            $openLabel = 'Rincian Sektor & Status';
+                                        } elseif ($isTk08) {
+                                            $openLabel = 'Rincian Formal & Informal';
+                                        } elseif ($isTk10) {
+                                            $openLabel = 'Rincian Setengah Pengangguran';
+                                        } elseif (in_array($code, ['PAR-001', 'PAR-002'])) {
+                                            $openLabel = 'Rincian 12 Bulan';
+                                        } elseif (in_array($code, ['PRO-001', 'PRO-002', 'PRO-004'])) {
+                                            $openLabel = 'Rincian 25 Kecamatan';
+                                        } elseif ($code === 'FIS-001') {
+                                            $openLabel = 'Rincian 4 Komponen PAD';
+                                        } elseif ($code === 'FIS-002') {
+                                            $openLabel = 'Rincian Transfer Daerah';
+                                        } else {
+                                            $openLabel = 'Rincian 17 Sektor';
+                                        }
                                     ?>
-                                    <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
-                                        <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+                                    <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
+                                        <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
                                         <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                        <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -304,16 +323,18 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                             </small>
                         </div>
                         <?php
-                            $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $unit ?? '');
+                            $isRupiah = is_indicator_rupiah($unit ?? '', $item['code'] ?? '');
                             $prefixRp = $isRupiah ? 'Rp ' : '';
+                            $formattedVal = format_indicator_value($val, $unit ?? '', $item['code'] ?? '', false);
+                            $formattedTh = format_indicator_value($th, $unit ?? '', $item['code'] ?? '', false);
                         ?>
                         <div class="risk-value">
                             <span>Nilai Riil</span>
-                            <strong><?= $prefixRp ?><?= number_format($val, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
+                            <strong><?= $prefixRp ?><?= $formattedVal ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-threshold">
                             <span>Batas Ambang</span>
-                            <strong><?= $prefixRp ?><?= number_format($th, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
+                            <strong><?= $prefixRp ?><?= $formattedTh ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-status">
                             <span class="badge <?= $badgeCls ?>"><?= htmlspecialchars($st) ?></span>
@@ -359,16 +380,18 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                     <small style="color:var(--muted);"><?= $subTypeDesc ?> • <?= ($sub['direction'] ?? 'above') === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></small>
                                 </div>
                                 <?php
-                                    $subIsRupiah = (bool)preg_match('/rupiah|rp\b/i', $subUnit ?? '');
+                                    $subIsRupiah = is_indicator_rupiah($subUnit ?? '', $subCode ?? '');
                                     $subPrefixRp = $subIsRupiah ? 'Rp ' : '';
+                                    $subFormattedVal = format_indicator_value($subVal, $subUnit ?? '', $subCode ?? '', false);
+                                    $subFormattedTh = format_indicator_value($subTh, $subUnit ?? '', $subCode ?? '', false);
                                 ?>
                                 <div class="risk-value">
                                     <span>Nilai Riil</span>
-                                    <strong><?= $subPrefixRp ?><?= number_format($subVal, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
+                                    <strong><?= $subPrefixRp ?><?= $subFormattedVal ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
                                 </div>
                                 <div class="risk-threshold">
                                     <span>Batas Ambang</span>
-                                    <strong><?= $subPrefixRp ?><?= number_format($subTh, 2, ',', '.') ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
+                                    <strong><?= $subPrefixRp ?><?= $subFormattedTh ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
                                 </div>
                                 <div class="risk-status">
                                     <span class="badge <?= $subBadgeCls ?>"><?= htmlspecialchars($subSt) ?></span>

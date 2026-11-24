@@ -1136,9 +1136,29 @@
             intPart = str.replace(/\D/g, '');
         }
 
+        if (decPart) {
+            decPart = decPart.replace(/0+$/, '');
+        }
+
         if (!intPart && !decPart) return '';
         let formattedInt = (intPart || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         return (isNeg ? '-' : '') + formattedInt + (decPart ? ',' + decPart : '');
+    }
+
+    function isIndicatorRupiah(unit, code) {
+        if (!unit && !code) return false;
+        const c = (code || '').toUpperCase().trim();
+        const pCode = c.split('-')[0];
+        const nonRupiahPrefixes = ['NAK', 'GEO', 'ANA', 'PAR'];
+        if (nonRupiahPrefixes.includes(pCode)) return false;
+        const rupiahExceptions = ['TK-009', 'TK-011', 'KES-003', 'KES-011', 'KES-012', 'PRO-005', 'HRG-005'];
+        if (rupiahExceptions.includes(c)) return true;
+        if (['TK', 'KES', 'PRO'].includes(pCode)) return false;
+        const u = (unit || '').toLowerCase().trim();
+        if (u.includes('%') || u.includes('persen') || u.includes('jiwa') || u.includes('orang') || u.includes('tahun') || u.includes('indeks') || u.includes('proyek') || u.includes('kunjungan') || u.includes('ton') || u.includes('hektare') || u.includes('kamar') || u.includes('unit')) {
+            return false;
+        }
+        return /\b(rupiah|rp)\b/i.test(u);
     }
 
     function parseRupiahNumber(val) {
@@ -1151,8 +1171,15 @@
         let clean = '';
         if (str.indexOf(',') !== -1) {
             clean = str.replace(/\./g, '').replace(',', '.');
-        } else if (str.split('.').length > 2) {
-            clean = str.replace(/\./g, '');
+        } else if (str.indexOf('.') !== -1) {
+            let parts = str.split('.');
+            if (parts.length > 2) {
+                clean = str.replace(/\./g, '');
+            } else if (parts[1].length === 3) {
+                clean = parts[0] + parts[1];
+            } else {
+                clean = str;
+            }
         } else {
             clean = str;
         }
@@ -6263,13 +6290,15 @@
         }
 
         // Helper untuk Menambah Baris Tahun & Nilai pada Modal Tambah / Edit
-        function appendSeriesRow(tbody, year, value, unit, isEdit, position) {
+        function appendSeriesRow(tbody, year, value, unit, isEdit, position, code) {
             if (!tbody) return;
             const tr = document.createElement('tr');
             tr.className = 'series-table-row is-new-row';
             
             const yearVal = (year !== undefined && year !== null) ? year : '';
             const numVal = (value !== undefined && value !== null) ? value : '';
+            const isRp = isIndicatorRupiah(unit, code);
+            const maskClass = isRp ? 'is-rupiah-mask' : '';
 
             if (isEdit) {
                 tr.innerHTML = `
@@ -6280,7 +6309,7 @@
                         <span class="status-pill pill-empty">Baru</span>
                     </td>
                     <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
-                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formatRupiahNumber(numVal)}" placeholder="0" style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row ${maskClass}" value="${formatRupiahNumber(numVal)}" placeholder="0" style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
                     </td>
                     <td class="series-unit-label-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap;">
                         ${unit || '%'}
@@ -6297,7 +6326,7 @@
                         <input type="number" name="series_years[]" class="series-input-year" value="${yearVal}" placeholder="Tahun" min="1900" max="2100" style="width:100%; height:36px; padding:0 8px; font-weight:800; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:center; background:#fff;">
                     </td>
                     <td style="padding: 6px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7;">
-                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formatRupiahNumber(numVal)}" placeholder="0" required style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
+                        <input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row ${maskClass}" value="${formatRupiahNumber(numVal)}" placeholder="0" required style="width:100%; height:36px; padding:0 12px; font-weight:700; font-size:13px; border:1.5px solid #cbd5e1; border-radius:6px; text-align:right; background:#fff;">
                     </td>
                     <td class="add-series-unit-cell" style="padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid #edf2f7; font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">
                         ${unit || '%'}
@@ -6376,8 +6405,10 @@
                     const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
                     const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
                     const unit = unitInput ? unitInput.value : '%';
+                    const codeInput = isEdit ? document.getElementById('edit-code') : document.getElementById('add-code');
+                    const code = codeInput ? codeInput.value : '';
 
-                    appendSeriesRow(tbody, '', '', unit, isEdit, 'top');
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'top', code);
                     return;
                 }
 
@@ -6391,8 +6422,10 @@
                     const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
                     const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
                     const unit = unitInput ? unitInput.value : '%';
+                    const codeInput = isEdit ? document.getElementById('edit-code') : document.getElementById('add-code');
+                    const code = codeInput ? codeInput.value : '';
 
-                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom');
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom', code);
                     return;
                 }
 
@@ -6406,8 +6439,10 @@
                     const tbody = isEdit ? document.getElementById('edit-series-grid') : document.getElementById('add-series-table-body');
                     const unitInput = isEdit ? document.getElementById('edit-unit') : document.getElementById('add-unit');
                     const unit = unitInput ? unitInput.value : '%';
+                    const codeInput = isEdit ? document.getElementById('edit-code') : document.getElementById('add-code');
+                    const code = codeInput ? codeInput.value : '';
 
-                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom');
+                    appendSeriesRow(tbody, '', '', unit, isEdit, 'bottom', code);
                     return;
                 }
 
@@ -6434,7 +6469,8 @@
                         } else {
                             if (tbody && tbody.querySelectorAll('tr').length === 0) {
                                 const addUnitInput = document.getElementById('add-unit');
-                                appendSeriesRow(tbody, 2024, '', addUnitInput ? addUnitInput.value : '%', false);
+                                const addCodeInput = document.getElementById('add-code');
+                                appendSeriesRow(tbody, 2024, '', addUnitInput ? addUnitInput.value : '%', false, 'bottom', addCodeInput ? addCodeInput.value : '');
                             }
                         }
                     }
@@ -6530,10 +6566,12 @@
                                         const stLabel = isParentTotal ? 'Otomatis' : (hasData ? (item.status || 'Tervalidasi') : 'Baru');
                                         const isWarning = item.status === 'Perlu review' || item.status === 'Ditolak';
 
+                                        const isRp = isIndicatorRupiah(d.unit, d.code);
+                                        const maskClass = isRp ? 'is-rupiah-mask' : '';
                                         const formattedVal = (hasData && item.value !== null && item.value !== undefined) ? formatRupiahNumber(item.value) : '';
                                         const valInputHtml = isParentTotal
-                                            ? `<input type="text" readonly name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formattedVal}" style="background:#dcfce7; color:#15803d; font-weight:800; border:1.5px solid #86efac; cursor:not-allowed;" title="Total otomatis terhitung dari akumulasi seluruh rincian">`
-                                            : `<input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row is-rupiah-mask" value="${formattedVal}" placeholder="0" title="Nilai realisasi ${d.indicator} tahun ${item.year}">`;
+                                            ? `<input type="text" readonly name="series_values[]" class="series-val-input-row ${maskClass}" value="${formattedVal}" style="background:#dcfce7; color:#15803d; font-weight:800; border:1.5px solid #86efac; cursor:not-allowed;" title="Total otomatis terhitung dari akumulasi seluruh rincian">`
+                                            : `<input type="text" inputmode="decimal" name="series_values[]" class="series-val-input-row ${maskClass}" value="${formattedVal}" placeholder="0" title="Nilai realisasi ${d.indicator} tahun ${item.year}">`;
 
                                         rowsHtml += `
                                             <tr class="series-table-row ${hasData ? 'has-data' : 'is-empty'}">
@@ -6967,11 +7005,20 @@
 
             const isInv = (sectoralState.category_type === 'quarterly' || (sectoralState.parent_code && sectoralState.parent_code.startsWith('INV-')));
             const isExp = (sectoralState.category_type === 'expenditure');
-            const keysToSum = isInv
-                ? ['Q1', 'Q2', 'Q3', 'Q4']
-                : (isExp
-                    ? ['1', '2', '3', '4', '5', '6']
-                    : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'MN', 'O', 'P', 'Q', 'RSTU']);
+            const isTk08 = (sectoralState.category_type === 'tk08' || sectoralState.parent_code === 'TK-008');
+            const isPro = (sectoralState.category_type === 'pro' || (sectoralState.parent_code && sectoralState.parent_code.startsWith('PRO-')));
+            let keysToSum = [];
+            if (isInv) {
+                keysToSum = ['Q1', 'Q2', 'Q3', 'Q4'];
+            } else if (isExp) {
+                keysToSum = ['1', '2', '3', '4', '5', '6'];
+            } else if (isTk08) {
+                keysToSum = ['FORMAL', 'INFORMAL'];
+            } else if (isPro) {
+                keysToSum = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25'];
+            } else {
+                keysToSum = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'MN', 'O', 'P', 'Q', 'RSTU'];
+            }
 
             sectoralState.years.forEach(yr => {
                 let sum = 0;
@@ -7007,11 +7054,41 @@
             const years = sectoralState.years;
             const defs = sectoralState.definitions;
             const vals = sectoralState.values;
-            const isInv = (sectoralState.category_type === 'quarterly' || (sectoralState.parent_code && sectoralState.parent_code.startsWith('INV-')));
+            const pCode = sectoralState.parent_code || '';
+            const isMonthly = (sectoralState.category_type === 'monthly' || pCode === 'PAR-001' || pCode === 'PAR-002');
+            const isInv = (sectoralState.category_type === 'quarterly' || pCode.startsWith('INV-'));
             const isExp = (sectoralState.category_type === 'expenditure');
+            const isTk07 = (pCode === 'TK-007');
+            const isTk08 = (pCode === 'TK-008');
+            const isTk10 = (pCode === 'TK-010');
+            const isPar = pCode.startsWith('PAR-');
+            const isPro = pCode.startsWith('PRO-');
+            const isFis = pCode.startsWith('FIS-');
 
-            const col1Title = isInv ? 'Kuartal' : (isExp ? 'Komponen' : 'Kategori');
-            const col2Title = isInv ? 'Rincian Periode Kuartal' : (isExp ? 'Komponen Pengeluaran' : 'Lapangan Usaha');
+            let col1Title = 'Kategori';
+            let col2Title = 'Lapangan Usaha';
+            if (isMonthly) {
+                col1Title = 'Bulan';
+                col2Title = 'Nama Periode Bulan';
+            } else if (isInv) {
+                col1Title = 'Kuartal';
+                col2Title = 'Rincian Periode Kuartal';
+            } else if (isExp) {
+                col1Title = 'Komponen';
+                col2Title = 'Komponen Pengeluaran';
+            } else if (isPar) {
+                col1Title = 'Kategori';
+                col2Title = 'Kategori Pariwisata';
+            } else if (isPro) {
+                col1Title = 'No / Wilayah';
+                col2Title = 'Nama Wilayah Kecamatan';
+            } else if (isFis) {
+                col1Title = 'Komponen';
+                col2Title = 'Komponen Keuangan Daerah';
+            } else if (isTk07 || isTk08 || isTk10) {
+                col1Title = 'Kategori';
+                col2Title = 'Rincian Lapangan Usaha / Status';
+            }
 
             const escapeAttr = function (str) {
                 if (!str) return '';
@@ -7021,20 +7098,11 @@
             // Render Header
             let theadHtml = `
                 <tr>
-                    <th style="min-width:65px; width:85px; position:sticky; left:0; background:#f1f5f9; z-index:11; padding:8px 10px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:left;">
-                        <div style="display:flex; align-items:center; gap:4px;" title="Kode/Simbol Kategori (Dapat Diubah)">
-                            <span>${col1Title}</span>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </div>
+                    <th style="min-width:70px; width:90px; position:sticky; left:0; background:#f1f5f9; z-index:11; padding:9px 10px; font-weight:800; font-size:11.5px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:center;">
+                        <span>${col1Title}</span>
                     </th>
-                    <th style="min-width:270px; max-width:320px; position:sticky; left:85px; background:#f1f5f9; z-index:11; padding:8px 12px; font-weight:800; font-size:11px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1.5px solid #cbd5e1; text-align:left;">
-                        <div style="display:flex; align-items:center; justify-content:space-between;" title="Nama Lapangan Usaha / Komponen (Dapat Diubah)">
-                            <div style="display:flex; align-items:center; gap:4px;">
-                                <span>${col2Title}</span>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </div>
-                            <span style="font-size:9.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:1px 6px; border-radius:4px;">Dapat Diubah</span>
-                        </div>
+                    <th style="min-width:270px; max-width:340px; position:sticky; left:90px; background:#f1f5f9; z-index:11; padding:9px 12px; font-weight:800; font-size:11.5px; color:#334155; border-bottom:1px solid #cbd5e1; border-right:1.5px solid #cbd5e1; text-align:left;">
+                        <span>${col2Title}</span>
                     </th>`;
 
             years.forEach(yr => {
@@ -7054,33 +7122,42 @@
             const defKeys = Object.keys(defs);
 
             defKeys.forEach(k => {
+                if (k === 'TM') return; // Tanpa Migas tidak ditampilkan
+                if (k === 'TOTAL' && isPar) return; // PAR tidak memakai total
                 const item = defs[k];
+                if (!item) return;
+
                 const isTotal = (k === 'TOTAL');
-                const isTanpaMigas = (k === 'TM');
-                const rowBg = isTotal ? '#f0fdf4' : (isTanpaMigas ? '#f8fafc' : '#ffffff');
-                const codeBg = isTotal ? '#dcfce7' : (isTanpaMigas ? '#f1f5f9' : '#ffffff');
-                const rowWeight = (isTotal || isTanpaMigas) ? '800' : '600';
+                const rowBg = isTotal ? '#f0fdf4' : '#ffffff';
+                const codeBg = isTotal ? '#dcfce7' : '#ffffff';
+                const rowWeight = isTotal ? '800' : '600';
                 const textColor = isTotal ? '#15803d' : '#0f172a';
 
                 tbodyHtml += `<tr style="background:${rowBg};">`;
 
-                // Col 1: Kategori / Komponen (Dapat Diubah)
+                // Col 1: Kode / Kategori
                 tbodyHtml += `
-                    <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:5px 6px; font-weight:800; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; text-align:center; vertical-align:middle;">
+                    <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:6px 6px; font-weight:800; font-size:11.5px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; text-align:center; vertical-align:middle;">
                         ${isTotal 
                             ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL (OTOMATIS)</span>' 
-                            : `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
+                            : (item.is_custom 
+                                ? `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
+                                : `<span style="display:inline-block; min-width:38px; padding:3px 7px; font-size:11.5px; font-weight:800; border-radius:5px; background:#f1f5f9; color:#0369a1; border:1px solid #cbd5e1;">${escapeAttr(item.cat_label || k)}</span>`
+                            )
                         }
                     </td>`;
 
-                // Col 2: Nama Lapangan Usaha / Komponen (Dapat Diubah)
+                // Col 2: Nama Lapangan Usaha / Bulan / Komponen
                 const safeName = escapeAttr(item.short_name || item.name || '');
                 tbodyHtml += `
-                    <td style="position:sticky; left:85px; background:${codeBg}; z-index:9; padding:5px 8px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1.5px solid ${isTotal ? '#86efac' : '#cbd5e1'}; vertical-align:middle;">
-                        <div style="display:flex; align-items:center; gap:6px;">
+                    <td style="position:sticky; left:90px; background:${codeBg}; z-index:9; padding:6px 10px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1.5px solid ${isTotal ? '#86efac' : '#cbd5e1'}; vertical-align:middle;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                             ${isTotal 
-                                ? `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" readonly style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:800; font-size:12px; border:1.5px solid #86efac; border-radius:5px; background:#f0fdf4; color:#15803d; outline:none; cursor:not-allowed;" title="Total Akumulasi Otomatis (Read-Only)">`
-                                : `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; background:#ffffff; color:${textColor}; outline:none;" title="Ubah Nama Lapangan Usaha / Komponen">`
+                                ? `<span style="font-weight:800; font-size:12px; color:#15803d;">${safeName}</span>`
+                                : (item.is_custom
+                                    ? `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; background:#ffffff; color:${textColor}; outline:none;">`
+                                    : `<span style="font-weight:${rowWeight}; font-size:12px; color:${textColor}; line-height:1.4;">${safeName}</span>`
+                                )
                             }
                             ${item.is_custom ? `<button type="button" class="btn-sec-del-cat-row icon-button small danger" data-cat="${k}" title="Hapus Baris Kategori Ini" style="width:26px; height:26px; min-width:26px; padding:0; display:flex; align-items:center; justify-content:center; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; cursor:pointer;">&times;</button>` : ''}
                         </div>
@@ -7148,16 +7225,46 @@
                             catSwitcher.value = sectoralState.parent_code;
                         }
 
+                        // Sembunyikan tombol tambah baris kategori untuk indikator terstandarisasi
+                        const btnAddCat = document.getElementById('btn-sec-add-cat-row');
+                        if (btnAddCat) {
+                            btnAddCat.style.display = 'none';
+                        }
+
                         const isInv = (sectoralState.category_type === 'quarterly' || (pCode && pCode.startsWith('INV-')));
                         const isExp = (sectoralState.category_type === 'expenditure');
+                        const isTk07 = (pCode === 'TK-007');
+                        const isTk08 = (pCode === 'TK-008');
+                        const isTk10 = (pCode === 'TK-010');
+                        const isParMonthly = (sectoralState.category_type === 'monthly' || pCode === 'PAR-001' || pCode === 'PAR-002');
+                        const isPar = (pCode && pCode.startsWith('PAR-'));
+                        const isPro = (pCode && pCode.startsWith('PRO-'));
+                        const isFis = (pCode && pCode.startsWith('FIS-'));
+
                         if (badgeEl) {
-                            if (isInv) badgeEl.textContent = 'KUARTAL INVESTASI • BKPM / DPMPTSP';
+                            if (isParMonthly) badgeEl.textContent = 'PARIWISATA • DATA BULANAN BPS / DISBUDPAR';
+                            else if (isPar) badgeEl.textContent = 'PARIWISATA • DATA AKOMODASI & HOTEL';
+                            else if (isPro) badgeEl.textContent = 'PRODUKSI SEKTORAL • 25 KECAMATAN BANYUWANGI';
+                            else if (isFis) badgeEl.textContent = 'FISKAL & KEUANGAN • PENDAPATAN & TRANSFER DAERAH';
+                            else if (isInv) badgeEl.textContent = 'KUARTAL INVESTASI • BKPM / DPMPTSP';
                             else if (isExp) badgeEl.textContent = 'PENGELUARAN PDRB • STANDAR BPS';
+                            else if (isTk07 || isTk08 || isTk10) badgeEl.textContent = 'KETENAGAKERJAAN • SURVEI SAKERNAS BPS';
                             else badgeEl.textContent = 'SEKTORAL PDRB • STANDAR BPS';
                         }
                         if (titleEl) {
                             let tText = 'Input & Kelola PDRB Sektoral (17 Lapangan Usaha)';
-                            if (pCode === 'INV-001') tText = 'Input & Kelola Realisasi Investasi Total PMA & PMDN (4 Kuartal)';
+                            if (pCode === 'PAR-001') tText = 'Input & Kelola Kunjungan Wisatawan Mancanegara (12 Bulan)';
+                            else if (pCode === 'PAR-002') tText = 'Input & Kelola Kunjungan Wisatawan Nusantara (12 Bulan)';
+                            else if (pCode === 'PAR-003') tText = 'Input & Kelola Tamu Hotel (Domestik & Mancanegara)';
+                            else if (pCode === 'PAR-004') tText = 'Input & Kelola Tingkat Penghunian Kamar / TPK (Bintang & Non Bintang)';
+                            else if (pCode === 'PAR-005') tText = 'Input & Kelola Jumlah Kamar Hotel (Bintang & Non Bintang)';
+                            else if (pCode === 'PAR-006') tText = 'Input & Kelola Usaha Hotel & Restoran (Bintang, Non Bintang, Restoran)';
+                            else if (pCode === 'PRO-001') tText = 'Input & Kelola Produksi Pertanian (25 Kecamatan)';
+                            else if (pCode === 'PRO-002') tText = 'Input & Kelola Luas Panen Pertanian (25 Kecamatan)';
+                            else if (pCode === 'PRO-004') tText = 'Input & Kelola Produksi Perikanan (25 Kecamatan)';
+                            else if (pCode === 'FIS-001') tText = 'Input & Kelola Pendapatan Asli Daerah / PAD (4 Komponen)';
+                            else if (pCode === 'FIS-002') tText = 'Input & Kelola Pendapatan Transfer Pemerintah (2 Komponen)';
+                            else if (pCode === 'INV-001') tText = 'Input & Kelola Realisasi Investasi Total PMA & PMDN (4 Kuartal)';
                             else if (pCode === 'INV-002') tText = 'Input & Kelola Realisasi Investasi PMA (4 Kuartal)';
                             else if (pCode === 'INV-003') tText = 'Input & Kelola Realisasi Investasi PMDN (4 Kuartal)';
                             else if (pCode === 'EKO-004') tText = 'Input & Kelola PDRB ADHK Sektoral (17 Lapangan Usaha)';
@@ -7165,21 +7272,48 @@
                             else if (pCode === 'EKO-007') tText = 'Input & Kelola Distribusi / Share Sektoral (17 Lapangan Usaha)';
                             else if (pCode === 'EKO-015') tText = 'Input & Kelola PDRB Pengeluaran ADHB (6 Komponen)';
                             else if (pCode === 'EKO-016') tText = 'Input & Kelola PDRB Pengeluaran ADHK (6 Komponen)';
+                            else if (pCode === 'TK-007') tText = 'Input & Kelola Penduduk Bekerja (3 Sektor & 6 Status Pekerjaan)';
+                            else if (pCode === 'TK-008') tText = 'Input & Kelola Pekerja Formal dan Informal (2 Kategori)';
+                            else if (pCode === 'TK-010') tText = 'Input & Kelola Setengah Pengangguran (Jumlah Orang & Tingkat %)';
                             titleEl.textContent = tText;
                         }
                         if (descEl) {
-                            if (isInv) {
+                            if (isParMonthly) {
+                                descEl.textContent = 'Kelola rincian data bulanan (Januari s.d. Desember) per tahun dalam satu tabel matriks spreadsheet.';
+                            } else if (isPar) {
+                                descEl.textContent = 'Kelola rincian data kategori perhotelan dan akomodasi pariwisata per tahun dalam satu tabel matriks spreadsheet.';
+                            } else if (isPro) {
+                                descEl.textContent = 'Kelola rincian data seluruh 25 wilayah kecamatan di Kabupaten Banyuwangi per tahun dalam satu tabel matriks spreadsheet. Nilai total kabupaten otomatis terhitung.';
+                            } else if (isFis) {
+                                descEl.textContent = 'Kelola rincian data komponen pendapatan daerah dan transfer pemerintah per tahun dalam satu tabel matriks spreadsheet.';
+                            } else if (isInv) {
                                 descEl.textContent = 'Kelola nilai realisasi seluruh 4 kuartal (Q1 s.d. Q4) per tahun dalam satu tabel matriks spreadsheet. Nilai total tahunan otomatis terhitung.';
                             } else if (isExp) {
                                 descEl.textContent = 'Kelola nilai realisasi seluruh komponen pengeluaran PDRB per tahun dalam satu tabel matriks spreadsheet.';
+                            } else if (pCode === 'TK-007') {
+                                descEl.textContent = 'Kelola persentase penduduk bekerja menurut 3 sektor lapangan usaha utama dan 6 status pekerjaan utama per tahun.';
+                            } else if (pCode === 'TK-008') {
+                                descEl.textContent = 'Kelola persentase tenaga kerja formal dan informal per tahun. Nilai total (100%) otomatis terhitung.';
+                            } else if (pCode === 'TK-010') {
+                                descEl.textContent = 'Kelola jumlah setengah pengangguran (orang) dan tingkat setengah pengangguran (%) per tahun.';
                             } else {
                                 descEl.textContent = 'Kelola nilai realisasi seluruh 17 sektor ekonomi per tahun sekaligus dalam satu tabel matriks (Kategori A s.d. U).';
                             }
                         }
                         if (helpEl) {
-                            helpEl.innerHTML = sectoralState.can_auto_sum
-                                ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Total otomatis terhitung real-time saat Anda mengetik nilai`
-                                : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Pertumbuhan per sektor diinput manual dalam satuan persen (%)`;
+                            if (sectoralState.can_auto_sum) {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Total otomatis terhitung real-time saat Anda mengetik nilai`;
+                            } else if (isParMonthly) {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Data bulanan (Januari s.d. Desember) per tahun`;
+                            } else if (isPar || isPro || isFis) {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Rincian data kategori per tahun`;
+                            } else {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Pertumbuhan per sektor diinput manual dalam satuan persen (%)`;
+                            }
                         }
 
                         renderSectoralTable();
@@ -7391,16 +7525,25 @@
                     formData.append(`years[${idx}]`, yr);
                 });
 
-                // Kumpulkan nama Lapangan Usaha dan label Kategori yang diedit
+                // Kumpulkan nama Lapangan Usaha dan label Kategori
                 const names = {};
                 const catLabels = {};
+                if (sectoralState.definitions) {
+                    Object.keys(sectoralState.definitions).forEach(cat => {
+                        const def = sectoralState.definitions[cat];
+                        if (def) {
+                            names[cat] = def.name || def.short_name || '';
+                            catLabels[cat] = def.cat_label || cat;
+                        }
+                    });
+                }
                 document.querySelectorAll('.sec-name-input').forEach(inp => {
                     const cat = inp.getAttribute('data-cat');
-                    if (cat) names[cat] = inp.value.trim();
+                    if (cat && inp.value.trim() !== '') names[cat] = inp.value.trim();
                 });
                 document.querySelectorAll('.sec-cat-label-input').forEach(inp => {
                     const cat = inp.getAttribute('data-cat');
-                    if (cat) catLabels[cat] = inp.value.trim();
+                    if (cat && inp.value.trim() !== '') catLabels[cat] = inp.value.trim();
                 });
 
                 Object.keys(names).forEach(cat => {

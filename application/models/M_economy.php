@@ -652,7 +652,7 @@ class M_economy extends CI_Model {
                 if ($yr < 1900 || $valRaw === '' || $valRaw === null) {
                     continue;
                 }
-                $val = (float)$valRaw;
+                $val = $this->clean_numeric_value($valRaw);
 
                 $existing = $this->db->where('kode_indikator', $codeVal)
                     ->where('tahun', $yr)
@@ -1148,7 +1148,7 @@ class M_economy extends CI_Model {
 
             $rawVal = isset($values[$idx]) ? $values[$idx] : null;
             if ($rawVal === null || $rawVal === '') continue;
-            $val = (float)$rawVal;
+            $val = $this->clean_numeric_value($rawVal);
 
             $existing = $this->db->where('kode_wilayah', $kodeWil)
                 ->where('kode_indikator', $code)
@@ -1476,6 +1476,166 @@ class M_economy extends CI_Model {
             );
         }
 
+        // Ketenagakerjaan: Lapangan Usaha & Status Pekerjaan (TK-007)
+        if ($parentCode === 'TK-007') {
+            return array(
+                'AGR' => array('code' => 'TK-007.AGR', 'cat_label' => 'AGR', 'name' => 'Penduduk Bekerja Lapangan Usaha: Pertanian', 'short_name' => 'Pertanian', 'def' => 'Persentase penduduk bekerja pada sektor pertanian.'),
+                'MAN' => array('code' => 'TK-007.MAN', 'cat_label' => 'MAN', 'name' => 'Penduduk Bekerja Lapangan Usaha: Manufaktur', 'short_name' => 'Manufaktur', 'def' => 'Persentase penduduk bekerja pada sektor manufaktur/industri pengolahan.'),
+                'SRV' => array('code' => 'TK-007.SRV', 'cat_label' => 'SRV', 'name' => 'Penduduk Bekerja Lapangan Usaha: Jasa-jasa', 'short_name' => 'Jasa-jasa', 'def' => 'Persentase penduduk bekerja pada sektor jasa-jasa.'),
+                'S1'  => array('code' => 'TK-007.S1', 'cat_label' => 'S1', 'name' => 'Status Pekerjaan: Buruh/Karyawan/Pegawai', 'short_name' => 'Buruh/Karyawan/Pegawai', 'def' => 'Persentase pekerja dengan status buruh, karyawan, atau pegawai.'),
+                'S2'  => array('code' => 'TK-007.S2', 'cat_label' => 'S2', 'name' => 'Status Pekerjaan: Berusaha Sendiri', 'short_name' => 'Berusaha Sendiri', 'def' => 'Persentase pekerja yang berusaha sendiri tanpa dibantu orang lain.'),
+                'S3'  => array('code' => 'TK-007.S3', 'cat_label' => 'S3', 'name' => 'Status Pekerjaan: Berusaha Dibantu Buruh Tidak Tetap/Tak Dibayar', 'short_name' => 'Berusaha Dibantu Buruh Tidak Tetap', 'def' => 'Persentase pekerja yang berusaha dibantu buruh tidak tetap atau pekerja keluarga tidak dibayar.'),
+                'S4'  => array('code' => 'TK-007.S4', 'cat_label' => 'S4', 'name' => 'Status Pekerjaan: Pekerja Keluarga/Tak Dibayar', 'short_name' => 'Pekerja Keluarga/Tak Dibayar', 'def' => 'Persentase pekerja keluarga atau pembantu tidak dibayar.'),
+                'S5'  => array('code' => 'TK-007.S5', 'cat_label' => 'S5', 'name' => 'Status Pekerjaan: Pekerja Bebas', 'short_name' => 'Pekerja Bebas', 'def' => 'Persentase pekerja bebas baik di sektor pertanian maupun non-pertanian.'),
+                'S6'  => array('code' => 'TK-007.S6', 'cat_label' => 'S6', 'name' => 'Status Pekerjaan: Berusaha Dibantu Buruh Tetap/Dibayar', 'short_name' => 'Berusaha Dibantu Buruh Tetap', 'def' => 'Persentase pekerja yang berusaha dibantu buruh tetap atau pekerja dibayar.'),
+                'TOTAL' => array('code' => 'TK-007', 'cat_label' => 'TOTAL', 'name' => 'Penduduk bekerja menurut lapangan usaha', 'short_name' => 'TOTAL PERSENTASE (100%)', 'def' => 'Total persentase penduduk bekerja menurut lapangan usaha dan status.')
+            );
+        }
+
+        // Ketenagakerjaan: Pekerja Formal dan Informal (TK-008)
+        if ($parentCode === 'TK-008') {
+            return array(
+                'FORMAL'   => array('code' => 'TK-008.FORMAL', 'cat_label' => 'FORMAL', 'name' => 'Pekerja Formal', 'short_name' => 'Formal', 'def' => 'Persentase tenaga kerja yang bekerja pada sektor formal.'),
+                'INFORMAL' => array('code' => 'TK-008.INFORMAL', 'cat_label' => 'INFORMAL', 'name' => 'Pekerja Informal', 'short_name' => 'Informal', 'def' => 'Persentase tenaga kerja yang bekerja pada sektor informal.'),
+                'TOTAL'    => array('code' => 'TK-008', 'cat_label' => 'TOTAL', 'name' => 'Pekerja formal dan informal', 'short_name' => 'TOTAL PERSENTASE (100%)', 'def' => 'Total persentase pekerja formal dan informal.')
+            );
+        }
+
+        // Ketenagakerjaan: Setengah Pengangguran (TK-010)
+        if ($parentCode === 'TK-010') {
+            return array(
+                'JML'   => array('code' => 'TK-010.JML', 'cat_label' => 'JML', 'name' => 'Jumlah Setengah Pengangguran', 'short_name' => 'Jumlah Setengah Pengangguran (Orang)', 'def' => 'Jumlah penduduk yang bekerja di bawah jam kerja normal dan masih mencari pekerjaan atau bersedia menerima pekerjaan lain.'),
+                'TOTAL' => array('code' => 'TK-010', 'cat_label' => 'RATE', 'name' => 'Setengah pengangguran', 'short_name' => 'TINGKAT SETENGAH PENGANGGURAN (%)', 'def' => 'Persentase setengah pengangguran terhadap jumlah angkatan kerja.')
+            );
+        }
+
+        // Pariwisata: Kunjungan Wisatawan Bulanan (PAR-001 & PAR-002) - 12 Bulan murni tanpa A-Z dan tanpa Total
+        if ($parentCode === 'PAR-001' || $parentCode === 'PAR-002') {
+            $isWisman = ($parentCode === 'PAR-002');
+            $labelPrefix = $isWisman ? 'Wisatawan Mancanegara' : 'Wisatawan Nusantara';
+            $months = array(
+                'JAN' => 'Januari',   'FEB' => 'Februari', 'MAR' => 'Maret',
+                'APR' => 'April',     'MEI' => 'Mei',      'JUN' => 'Juni',
+                'JUL' => 'Juli',      'AGS' => 'Agustus',  'SEP' => 'September',
+                'OKT' => 'Oktober',   'NOV' => 'November', 'DES' => 'Desember'
+            );
+            $defs = array();
+            foreach ($months as $k => $mName) {
+                $defs[$k] = array(
+                    'code' => "{$parentCode}.{$k}",
+                    'cat_label' => $k,
+                    'name' => "Kunjungan {$labelPrefix}: Bulan {$mName}",
+                    'short_name' => "Bulan {$mName}",
+                    'def' => "Jumlah kunjungan {$labelPrefix} pada bulan {$mName}."
+                );
+            }
+            return $defs;
+        }
+
+        // Pariwisata: Tamu Hotel & Akomodasi (PAR-003) - Domestik & Mancanegara (Tanpa A-Z, Tanpa Total)
+        if ($parentCode === 'PAR-003') {
+            return array(
+                'DOM' => array('code' => 'PAR-003.DOM', 'cat_label' => 'DOM', 'name' => 'Jumlah Tamu Domestik (Nusantara)', 'short_name' => 'Domestik (Nusantara)', 'def' => 'Jumlah tamu wisatawan nusantara yang menginap di hotel/akomodasi.'),
+                'MAN' => array('code' => 'PAR-003.MAN', 'cat_label' => 'MAN', 'name' => 'Jumlah Tamu Mancanegara', 'short_name' => 'Mancanegara', 'def' => 'Jumlah tamu wisatawan mancanegara yang menginap di hotel/akomodasi.')
+            );
+        }
+
+        // Pariwisata: TPK Hotel (PAR-004) - Bintang & Non Bintang (Tanpa A-Z, Tanpa Total)
+        if ($parentCode === 'PAR-004') {
+            return array(
+                'BIN' => array('code' => 'PAR-004.BIN', 'cat_label' => 'BIN', 'name' => 'TPK Hotel Berbintang', 'short_name' => 'Hotel Berbintang', 'def' => 'Tingkat penghunian kamar khusus pada hotel klasifikasi berbintang.'),
+                'NON' => array('code' => 'PAR-004.NON', 'cat_label' => 'NON', 'name' => 'TPK Hotel Non Bintang', 'short_name' => 'Hotel Non Bintang', 'def' => 'Tingkat penghunian kamar pada hotel klasifikasi non berbintang.')
+            );
+        }
+
+        // Pariwisata: Jumlah Kamar Hotel (PAR-005) - Bintang & Non Bintang (Tanpa A-Z, Tanpa Total)
+        if ($parentCode === 'PAR-005') {
+            return array(
+                'BIN' => array('code' => 'PAR-005.BIN', 'cat_label' => 'BIN', 'name' => 'Jumlah Kamar Hotel Berbintang', 'short_name' => 'Hotel Berbintang', 'def' => 'Jumlah kamar yang tersedia pada hotel berbintang.'),
+                'NON' => array('code' => 'PAR-005.NON', 'cat_label' => 'NON', 'name' => 'Jumlah Kamar Hotel Non Bintang', 'short_name' => 'Hotel Non Bintang', 'def' => 'Jumlah kamar yang tersedia pada hotel non berbintang.')
+            );
+        }
+
+        // Pariwisata: Jumlah Usaha Hotel & Restoran (PAR-006) - Bintang, Non Bintang, Restoran (Tanpa A-Z, Tanpa Total)
+        if ($parentCode === 'PAR-006') {
+            return array(
+                'BIN' => array('code' => 'PAR-006.BIN', 'cat_label' => 'BIN', 'name' => 'Jumlah Hotel Berbintang', 'short_name' => 'Hotel Berbintang', 'def' => 'Jumlah unit usaha hotel klasifikasi berbintang.'),
+                'NON' => array('code' => 'PAR-006.NON', 'cat_label' => 'NON', 'name' => 'Jumlah Hotel Non Bintang', 'short_name' => 'Hotel Non Bintang', 'def' => 'Jumlah unit usaha hotel klasifikasi non berbintang / akomodasi lainnya.'),
+                'RES' => array('code' => 'PAR-006.RES', 'cat_label' => 'RES', 'name' => 'Jumlah Restoran / Rumah Makan', 'short_name' => 'Restoran / Rumah Makan', 'def' => 'Jumlah usaha restoran dan rumah makan.')
+            );
+        }
+
+        // Produksi Sektoral menurut 25 Wilayah Kecamatan (PRO-001, PRO-002, PRO-004)
+        if (in_array($parentCode, array('PRO-001', 'PRO-002', 'PRO-004'))) {
+            $kecamatans = array(
+                '01' => 'Pesanggaran',
+                '02' => 'Siliragung',
+                '03' => 'Bangorejo',
+                '04' => 'Purwoharjo',
+                '05' => 'Tegaldlimo',
+                '06' => 'Muncar',
+                '07' => 'Cluring',
+                '08' => 'Gambiran',
+                '09' => 'Tegalsari',
+                '10' => 'Glenmore',
+                '11' => 'Kalibaru',
+                '12' => 'Genteng',
+                '13' => 'Srono',
+                '14' => 'Rogojampi',
+                '15' => 'Blimbingsari',
+                '16' => 'Kabat',
+                '17' => 'Singojuruh',
+                '18' => 'Sempu',
+                '19' => 'Songgon',
+                '20' => 'Glagah',
+                '21' => 'Licin',
+                '22' => 'Banyuwangi',
+                '23' => 'Giri',
+                '24' => 'Kalipuro',
+                '25' => 'Wongsorejo'
+            );
+            $pLabel = 'Produksi Komoditas Pertanian';
+            if ($parentCode === 'PRO-002') $pLabel = 'Luas Panen Pertanian';
+            if ($parentCode === 'PRO-004') $pLabel = 'Produksi Perikanan';
+
+            $defs = array();
+            foreach ($kecamatans as $k => $kecName) {
+                $defs[$k] = array(
+                    'code' => "{$parentCode}.{$k}",
+                    'cat_label' => $k,
+                    'name' => "{$pLabel}: Kecamatan {$kecName}",
+                    'short_name' => "Kecamatan {$kecName}",
+                    'def' => "Nilai realisasi {$pLabel} di wilayah Kecamatan {$kecName}."
+                );
+            }
+            $defs['TOTAL'] = array(
+                'code' => $parentCode,
+                'cat_label' => 'TOTAL',
+                'name' => "Total {$pLabel} Kabupaten Banyuwangi",
+                'short_name' => "TOTAL KABUPATEN BANYUWANGI",
+                'def' => "Total akumulasi {$pLabel} seluruh kecamatan di Kabupaten Banyuwangi."
+            );
+            return $defs;
+        }
+
+        // Fiskal: Komponen PAD (FIS-001) - Pajak, Retribusi, Kekayaan, Lain-lain
+        if ($parentCode === 'FIS-001') {
+            return array(
+                'PAJ' => array('code' => 'FIS-001.PAJ', 'cat_label' => 'PAJ', 'name' => 'Pajak Daerah', 'short_name' => 'Pajak Daerah', 'def' => 'Realisasi pendapatan pajak daerah.'),
+                'RET' => array('code' => 'FIS-001.RET', 'cat_label' => 'RET', 'name' => 'Retribusi Daerah', 'short_name' => 'Retribusi Daerah', 'def' => 'Realisasi pendapatan retribusi daerah.'),
+                'KKY' => array('code' => 'FIS-001.KKY', 'cat_label' => 'KKY', 'name' => 'Hasil Pengelolaan Kekayaan Daerah yang Dipisahkan', 'short_name' => 'Hasil Pengelolaan Kekayaan Daerah', 'def' => 'Pendapatan hasil pengelolaan kekayaan daerah yang dipisahkan.'),
+                'LL'  => array('code' => 'FIS-001.LL',  'cat_label' => 'LL',  'name' => 'Lain-lain PAD yang Sah', 'short_name' => 'Lain-lain PAD yang Sah', 'def' => 'Realisasi lain-lain pendapatan asli daerah yang sah.')
+            );
+        }
+
+        // Fiskal: Pendapatan Transfer (FIS-002) - Pusat & Antar Daerah
+        if ($parentCode === 'FIS-002') {
+            return array(
+                'PUS' => array('code' => 'FIS-002.PUS', 'cat_label' => 'PUS', 'name' => 'Transfer Pemerintah Pusat', 'short_name' => 'Pemerintah Pusat', 'def' => 'Realisasi pendapatan transfer dari pemerintah pusat.'),
+                'DAE' => array('code' => 'FIS-002.DAE', 'cat_label' => 'DAE', 'name' => 'Transfer Antar Daerah', 'short_name' => 'Antar Daerah', 'def' => 'Realisasi pendapatan transfer antar daerah.')
+            );
+        }
+
         // Lapangan Usaha (EKO-003, EKO-004, EKO-006, EKO-007)
         $prefix = 'PDRB ADHB';
         if ($parentCode === 'EKO-004') {
@@ -1538,14 +1698,6 @@ class M_economy extends CI_Model {
             'def' => "Total agregat seluruh lapangan usaha untuk {$prefix}."
         );
 
-        $defs['TM'] = array(
-            'code' => "{$parentCode}.TM",
-            'cat_label' => 'TM',
-            'name' => "{$prefix}: PDRB Tanpa Migas",
-            'short_name' => 'PDRB TANPA MIGAS',
-            'def' => "Total capaian seluruh lapangan usaha di luar migas untuk {$prefix}."
-        );
-
         return $defs;
     }
 
@@ -1561,17 +1713,21 @@ class M_economy extends CI_Model {
             ->get('katalog_indikator')
             ->result_array();
 
+        $isFixedParent = (strpos($parentCode, 'PAR-') === 0 || strpos($parentCode, 'PRO-') === 0 || strpos($parentCode, 'FIS-') === 0 || strpos($parentCode, 'INV-') === 0 || strpos($parentCode, 'TK-') === 0);
+
         $customDefs = array();
         foreach ($savedInds as $si) {
             $c = $si['kode_indikator'];
             $suffix = substr($c, strlen($parentCode) + 1);
+            if ($suffix === 'TM') continue; // Hindari Tanpa Migas agar hanya 17 sektor murni
+
             $savedName = $si['nama_indikator'];
             $short = preg_replace('/^(PDRB ADH[BK]|Pertumbuhan|Distribusi|PDRB Pengeluaran ADH[BK])\s*(menurut lapangan usaha)?:\s*/i', '', $savedName);
             
             if (isset($defs[$suffix])) {
                 $defs[$suffix]['name'] = $savedName;
                 $defs[$suffix]['short_name'] = $short;
-            } else {
+            } elseif (!$isFixedParent) {
                 $customDefs[$suffix] = array(
                     'code' => $c,
                     'cat_label' => $suffix,
@@ -1633,19 +1789,79 @@ class M_economy extends CI_Model {
         sort($years);
         $isInv = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'));
         $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
-        $unit = $isInv ? 'Miliar rupiah' : (in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah');
-        $cluster = $isInv ? 'Investasi' : ($isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral');
+        $isTk07 = ($parentCode === 'TK-007');
+        $isTk08 = ($parentCode === 'TK-008');
+        $isTk10 = ($parentCode === 'TK-010');
+        $isParMonthly = in_array($parentCode, array('PAR-001', 'PAR-002'));
+        $isPar = (strpos($parentCode, 'PAR-') === 0);
+        $isPro = (strpos($parentCode, 'PRO-') === 0);
+        $isFis = (strpos($parentCode, 'FIS-') === 0);
+
+        if ($isInv) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Investasi';
+            $catType = 'quarterly';
+            $canAutoSum = true;
+        } elseif ($isExp) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Output dan pertumbuhan';
+            $catType = 'expenditure';
+            $canAutoSum = true;
+        } elseif ($isTk07) {
+            $unit = '%';
+            $cluster = 'Ketenagakerjaan';
+            $catType = 'tk07';
+            $canAutoSum = false;
+        } elseif ($isTk08) {
+            $unit = '%';
+            $cluster = 'Ketenagakerjaan';
+            $catType = 'tk08';
+            $canAutoSum = true;
+        } elseif ($isTk10) {
+            $unit = 'Orang / %';
+            $cluster = 'Ketenagakerjaan';
+            $catType = 'tk10';
+            $canAutoSum = false;
+        } elseif ($isParMonthly) {
+            $unit = 'Kunjungan';
+            $cluster = 'Pariwisata dan ekonomi kreatif';
+            $catType = 'monthly';
+            $canAutoSum = false;
+        } elseif ($isPar) {
+            if ($parentCode === 'PAR-004') $unit = '%';
+            elseif ($parentCode === 'PAR-005') $unit = 'Kamar';
+            elseif ($parentCode === 'PAR-006') $unit = 'Unit';
+            else $unit = 'Orang/tamu';
+            $cluster = 'Pariwisata dan ekonomi kreatif';
+            $catType = 'par';
+            $canAutoSum = false;
+        } elseif ($isPro) {
+            $unit = ($parentCode === 'PRO-002') ? 'Hektare' : 'Ton';
+            $cluster = 'Produksi sektoral';
+            $catType = 'pro';
+            $canAutoSum = true;
+        } elseif ($isFis) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Keuangan daerah';
+            $catType = 'fis';
+            $canAutoSum = false;
+        } else {
+            $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
+            $cluster = 'Produksi sektoral';
+            $catType = 'sectoral';
+            $canAutoSum = ($parentCode !== 'EKO-006');
+        }
 
         if (empty($years)) {
-            $years = $isInv ? array(2023, 2024, 2025, 2026) : array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025);
+            $years = $isPro ? array(2024, 2025) : (($isInv || $isTk07 || $isTk08) ? array(2023, 2024, 2025, 2026) : array(2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025));
         }
 
         return array(
             'parent_code' => $parentCode,
-            'category_type' => $isExp ? 'expenditure' : 'sectoral',
+            'category_type' => $catType,
             'unit' => $unit,
             'cluster' => $cluster,
-            'can_auto_sum' => ($parentCode !== 'EKO-006'),
+            'can_auto_sum' => $canAutoSum,
             'definitions' => $defs,
             'years' => $years,
             'values' => $values,
@@ -1663,26 +1879,99 @@ class M_economy extends CI_Model {
 
         $isInv = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'));
         $isExp = in_array($parentCode, array('EKO-015', 'EKO-016'));
-        $unit = $isInv ? 'Miliar rupiah' : (in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah');
-        $cluster = $isInv ? 'Investasi' : ($isExp ? 'Output dan pertumbuhan' : 'Produksi sektoral');
+        $isTk07 = ($parentCode === 'TK-007');
+        $isTk08 = ($parentCode === 'TK-008');
+        $isTk10 = ($parentCode === 'TK-010');
+        $isParMonthly = in_array($parentCode, array('PAR-001', 'PAR-002'));
+        $isPar = (strpos($parentCode, 'PAR-') === 0);
+        $isPro = (strpos($parentCode, 'PRO-') === 0);
+        $isFis = (strpos($parentCode, 'FIS-') === 0);
 
-        $prefix = 'PDRB ADHB';
-        if ($parentCode === 'EKO-004') {
-            $prefix = 'PDRB ADHK';
-        } elseif ($parentCode === 'EKO-006') {
-            $prefix = 'Pertumbuhan';
-        } elseif ($parentCode === 'EKO-007') {
-            $prefix = 'Distribusi';
-        } elseif ($isInv) {
+        if ($isInv) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Investasi';
             $prefix = 'Investasi';
+            $rowPeriod = 'Triwulanan';
+            $freq = 'Triwulanan';
         } elseif ($isExp) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Output dan pertumbuhan';
             $prefix = ($parentCode === 'EKO-016') ? 'PDRB Pengeluaran ADHK' : 'PDRB Pengeluaran ADHB';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } elseif ($isTk07) {
+            $unit = 'Persen';
+            $cluster = 'Ketenagakerjaan';
+            $prefix = 'Tenaga Kerja';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } elseif ($isTk08) {
+            $unit = 'Persen';
+            $cluster = 'Ketenagakerjaan';
+            $prefix = 'Pekerja';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } elseif ($isTk10) {
+            $unit = 'Persen';
+            $cluster = 'Ketenagakerjaan';
+            $prefix = 'Setengah Pengangguran';
+            $rowPeriod = 'Agustus';
+            $freq = 'Semesteran (Agustus)';
+        } elseif ($isParMonthly) {
+            $unit = 'Kunjungan';
+            $cluster = 'Pariwisata dan ekonomi kreatif';
+            $prefix = ($parentCode === 'PAR-001') ? 'Wisnus' : 'Wisman';
+            $rowPeriod = 'Bulanan';
+            $freq = 'Bulanan';
+        } elseif ($isPar) {
+            if ($parentCode === 'PAR-004') $unit = 'Persen';
+            elseif ($parentCode === 'PAR-005') $unit = 'Kamar';
+            elseif ($parentCode === 'PAR-006') $unit = 'Unit';
+            else $unit = 'Orang/tamu';
+            $cluster = 'Pariwisata dan ekonomi kreatif';
+            $prefix = 'Pariwisata';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } elseif ($isPro) {
+            $unit = ($parentCode === 'PRO-002') ? 'Hektare' : 'Ton';
+            $cluster = 'Produksi sektoral';
+            $prefix = 'Komoditas';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } elseif ($isFis) {
+            $unit = 'Miliar rupiah';
+            $cluster = 'Keuangan daerah';
+            $prefix = 'Keuangan';
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
+        } else {
+            $unit = in_array($parentCode, array('EKO-006', 'EKO-007')) ? '%' : 'Miliar rupiah';
+            $cluster = 'Produksi sektoral';
+            $prefix = 'PDRB ADHB';
+            if ($parentCode === 'EKO-004') {
+                $prefix = 'PDRB ADHK';
+            } elseif ($parentCode === 'EKO-006') {
+                $prefix = 'Pertumbuhan';
+            } elseif ($parentCode === 'EKO-007') {
+                $prefix = 'Distribusi';
+            }
+            $rowPeriod = 'Tahunan';
+            $freq = 'Tahunan';
         }
 
         $this->db->trans_start();
 
+        $monthNameMap = array(
+            'JAN' => 'Januari', 'FEB' => 'Februari', 'MAR' => 'Maret',
+            'APR' => 'April',   'MEI' => 'Mei',      'JUN' => 'Juni',
+            'JUL' => 'Juli',    'AGS' => 'Agustus',  'SEP' => 'September',
+            'OKT' => 'Oktober', 'NOV' => 'November', 'DES' => 'Desember'
+        );
+
         foreach ($defs as $key => $def) {
             $code = $def['code'];
+            $curPeriod = ($isParMonthly && isset($monthNameMap[$key])) ? $monthNameMap[$key] : $rowPeriod;
+            $itemUnit = ($code === 'TK-010.JML') ? 'Orang' : $unit;
             // Jika ada nama yang diubah oleh user untuk baris ini
             $name = $def['name'];
             if (!empty($customNames[$key])) {
@@ -1704,8 +1993,8 @@ class M_economy extends CI_Model {
                     'kode_indikator' => $code,
                     'nama_indikator' => $name,
                     'klaster' => $cluster,
-                    'satuan' => $unit,
-                    'frekuensi' => 'Tahunan',
+                    'satuan' => $itemUnit,
+                    'frekuensi' => $freq,
                     'sumber_data' => 'BPS Provinsi Jawa Timur / BPS Kabupaten/Kota',
                     'definisi_operasional' => $explanation,
                     'is_deleted' => 0
@@ -1713,6 +2002,8 @@ class M_economy extends CI_Model {
             } else {
                 $this->db->where('id', (int)$catExists['id'])->update('katalog_indikator', array(
                     'nama_indikator' => $name,
+                    'satuan' => $itemUnit,
+                    'frekuensi' => $freq,
                     'is_deleted' => 0
                 ));
             }
@@ -1724,7 +2015,7 @@ class M_economy extends CI_Model {
 
                 $valRaw = isset($catValues[$yr]) ? $catValues[$yr] : null;
                 if ($valRaw === null || $valRaw === '') continue;
-                $val = (float)$valRaw;
+                $val = $this->clean_numeric_value($valRaw);
 
                 $existing = $this->db->where('kode_indikator', $code)
                     ->where('kode_wilayah', $kodeWil)
@@ -1736,8 +2027,9 @@ class M_economy extends CI_Model {
                     $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
                         'nama_indikator' => $name,
                         'nilai' => $val,
-                        'satuan' => $unit,
+                        'satuan' => $itemUnit,
                         'klaster' => $cluster,
+                        'periode' => $curPeriod,
                         'is_deleted' => 0,
                         'deleted_at' => null,
                         'status_validasi' => 'Tervalidasi'
@@ -1749,10 +2041,10 @@ class M_economy extends CI_Model {
                         'nama_indikator' => $name,
                         'klaster' => $cluster,
                         'wilayah' => $namaWil,
-                        'periode' => 'Tahunan',
+                        'periode' => $curPeriod,
                         'tahun' => $yr,
                         'nilai' => $val,
-                        'satuan' => $unit,
+                        'satuan' => $itemUnit,
                         'sumber_data' => 'BPS Provinsi Jawa Timur / BPS Kabupaten/Kota',
                         'definisi_operasional' => $explanation,
                         'status_validasi' => 'Tervalidasi',
@@ -1805,7 +2097,7 @@ class M_economy extends CI_Model {
                     if ($yr <= 1900 || $yr >= 2100) continue;
                     $valRaw = isset($catValues[$yr]) ? $catValues[$yr] : null;
                     if ($valRaw === null || $valRaw === '') continue;
-                    $val = (float)$valRaw;
+                    $val = $this->clean_numeric_value($valRaw);
 
                     $existing = $this->db->where('kode_indikator', $customCode)
                         ->where('kode_wilayah', $kodeWil)
@@ -3280,6 +3572,7 @@ class M_economy extends CI_Model {
         $valCapAdhb1 = (float)($rec1['EKO-008']['nilai'] ?? 62085.63);
         $valCapAdhk1 = (float)($rec1['EKO-009']['nilai'] ?? 36305.19);
         $pop1 = (float)($rec1['NAK-001']['nilai'] ?? 1735420);
+        $popJiwa = ($pop1 < 10000) ? ($pop1 * 1000) : $pop1;
 
         $rec1Prev = $this->db->select('nilai')->where('kode_indikator', 'EKO-008')->where('kode_wilayah', $kode)->where('tahun', $yr1 - 1)->where('is_deleted', 0)->get('database_ekonomi')->row_array();
         $prevCapAdhb1 = !empty($rec1Prev) ? (float)$rec1Prev['nilai'] : 58085.92;
@@ -3289,7 +3582,7 @@ class M_economy extends CI_Model {
         $statusCap1 = ($deltaCap1 >= 0) ? 'Meningkat' : 'Menurun';
         $valCapFmt = number_format($valCapAdhb1 / 1000, 2, ',', '.');
         $valAdhbFmt = number_format($valAdhb1 / 1000, 2, ',', '.');
-        $popFmt = number_format($pop1, 0, ',', '.');
+        $popFmt = number_format($popJiwa, 0, ',', '.');
         $insight1 = "PDRB per kapita atas dasar harga berlaku (ADHB) Kabupaten Banyuwangi pada tahun {$yr1} tercatat mencapai Rp {$valCapFmt} Juta, {$trendWordCap1} sebesar {$deltaCap1Str} dibandingkan tahun sebelumnya. Capaian ini didukung oleh total PDRB ADHB sebesar Rp {$valAdhbFmt} Triliun dengan jumlah penduduk tercatat sebanyak {$popFmt} jiwa.";
 
         $ann1 = $getAnnual('EKO-008', 1000, 2, array_map(function($v) { return $v * 1000; }, $series['perCapita'] ?? []));
@@ -4598,5 +4891,23 @@ class M_economy extends CI_Model {
 
     public function count_trash_catalog() {
         return $this->db->where('is_deleted', 1)->where('kode_wilayah', $this->get_active_kode_wilayah())->count_all_results('katalog_indikator');
+    }
+
+    private function clean_numeric_value($valRaw) {
+        if ($valRaw === null || $valRaw === '') return null;
+        if (is_numeric($valRaw)) return (float)$valRaw;
+        if (is_string($valRaw)) {
+            $cleanVal = trim($valRaw);
+            if (strpos($cleanVal, ',') !== false) {
+                $cleanVal = str_replace('.', '', $cleanVal);
+                $cleanVal = str_replace(',', '.', $cleanVal);
+            } elseif (substr_count($cleanVal, '.') > 1) {
+                $cleanVal = str_replace('.', '', $cleanVal);
+            } elseif (preg_match('/^\d+\.\d{3}$/', $cleanVal)) {
+                $cleanVal = str_replace('.', '', $cleanVal);
+            }
+            return (float)$cleanVal;
+        }
+        return (float)$valRaw;
     }
 }

@@ -87,8 +87,15 @@
     $subGrouped = [];
     $yearSet = [];
 
-    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral & kuartal
-    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003'];
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral, kuartal & kategori
+    $sectoralParents = [
+        'EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 
+        'INV-001', 'INV-002', 'INV-003', 
+        'TK-007', 'TK-008', 'TK-010',
+        'PAR-001', 'PAR-002', 'PAR-003', 'PAR-004', 'PAR-005', 'PAR-006',
+        'PRO-001', 'PRO-002', 'PRO-004',
+        'FIS-001', 'FIS-002'
+    ];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
     foreach ($records as $r) {
@@ -133,11 +140,14 @@
                     'years' => []
                 ];
             }
-            $subGrouped[$parentCode][$code]['years'][$yr] = $r;
+            // Prioritaskan rekaman Tahunan / Semesteran dibanding bulanan agar sel matriks tahunan akurat
+            if (!isset($subGrouped[$parentCode][$code]['years'][$yr]) || ($r['period'] ?? $r['periode'] ?? '') === 'Tahunan' || ($r['period'] ?? $r['periode'] ?? '') === 'Semesteran (Agustus)') {
+                $subGrouped[$parentCode][$code]['years'][$yr] = $r;
+            }
             if ($yr >= $subGrouped[$parentCode][$code]['latest_year']) {
                 $subGrouped[$parentCode][$code]['latest_id'] = $r['id'];
                 $subGrouped[$parentCode][$code]['latest_year'] = $yr;
-                $subGrouped[$parentCode][$code]['status'] = $r['status'];
+                $subGrouped[$parentCode][$code]['status'] = $r['status'] ?? $r['status_validasi'] ?? 'Perlu review';
             }
         } elseif (!$isSub) {
             if (!isset($grouped[$code])) {
@@ -161,33 +171,88 @@
                     'sub_indicators' => []
                 ];
             }
-            $grouped[$code]['years'][$yr] = $r;
+            // Prioritaskan rekaman Tahunan / Semesteran dibanding bulanan agar sel matriks tahunan akurat
+            if (!isset($grouped[$code]['years'][$yr]) || ($r['period'] ?? $r['periode'] ?? '') === 'Tahunan' || ($r['period'] ?? $r['periode'] ?? '') === 'Semesteran (Agustus)') {
+                $grouped[$code]['years'][$yr] = $r;
+            }
             if ($yr >= $grouped[$code]['latest_year']) {
                 $grouped[$code]['latest_id'] = $r['id'];
                 $grouped[$code]['latest_year'] = $yr;
-                $grouped[$code]['status'] = $r['status'];
-                $grouped[$code]['verified_by'] = $r['verified_by'];
-                $grouped[$code]['notes'] = $r['notes'] ?? '';
+                $grouped[$code]['status'] = $r['status'] ?? $r['status_validasi'] ?? 'Perlu review';
+                $grouped[$code]['verified_by'] = $r['verified_by'] ?? $r['diverifikasi_oleh'] ?? '';
+                $grouped[$code]['notes'] = $r['notes'] ?? $r['catatan'] ?? '';
             }
         }
     }
 
-    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas) & kuartal investasi
+    // Urutan abjad sektor standar BPS (A s.d. U, plus Tanpa Migas), kuartal investasi, TK, PAR, PRO, & FIS
     $sectorOrder = array('A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6, 'G' => 7, 'H' => 8, 'I' => 9, 'J' => 10, 'K' => 11, 'L' => 12, 'MN' => 13, 'O' => 14, 'P' => 15, 'Q' => 16, 'RSTU' => 17, 'TM' => 18);
     $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
+    $monthOrder = array('JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MEI' => 5, 'JUN' => 6, 'JUL' => 7, 'AGS' => 8, 'SEP' => 9, 'OKT' => 10, 'NOV' => 11, 'DES' => 12);
+    $tk07Order = array('AGR' => 1, 'MAN' => 2, 'SRV' => 3, 'S1' => 4, 'S2' => 5, 'S3' => 6, 'S4' => 7, 'S5' => 8, 'S6' => 9);
+    $tk08Order = array('FORMAL' => 1, 'INFORMAL' => 2);
+    $tk10Order = array('JML' => 1);
+    $par03Order = array('DOM' => 1, 'MAN' => 2);
+    $par04Order = array('BIN' => 1, 'NON' => 2);
+    $par05Order = array('BIN' => 1, 'NON' => 2);
+    $par06Order = array('BIN' => 1, 'NON' => 2, 'RES' => 3);
+    $proPanganOrder = array('PADI' => 1, 'JAG' => 2, 'KDL' => 3, 'UBK' => 4, 'UBJ' => 5);
+    $pro04Order = array('LAUT' => 1, 'UMUM' => 2);
+    $fis01Order = array('PAJ' => 1, 'RET' => 2, 'KKY' => 3, 'LL' => 4);
+    $fis02Order = array('PUS' => 1, 'DAE' => 2);
 
     // Sambungkan sub_indicators HANYA ke parent yang ada di $sectoralParents
     foreach ($subGrouped as $pCode => $subs) {
         if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
             continue;
         }
-        $isInv = (strpos($pCode, 'INV-') === 0);
-        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
+
+        uasort($subs, function($a, $b) use (
+            $sectorOrder, $quarterOrder, $monthOrder, $tk07Order, $tk08Order, $tk10Order, 
+            $par03Order, $par04Order, $par05Order, $par06Order, $proPanganOrder, $pro04Order, 
+            $fis01Order, $fis02Order, $pCode
+        ) {
             $kA = $a['sub_key'] ?? '';
             $kB = $b['sub_key'] ?? '';
-            if ($isInv) {
+            if (strpos($pCode, 'INV-') === 0) {
                 $posA = $quarterOrder[$kA] ?? 99;
                 $posB = $quarterOrder[$kB] ?? 99;
+            } elseif (in_array($pCode, ['PAR-001', 'PAR-002'])) {
+                $posA = $monthOrder[$kA] ?? 99;
+                $posB = $monthOrder[$kB] ?? 99;
+            } elseif ($pCode === 'TK-007') {
+                $posA = $tk07Order[$kA] ?? 99;
+                $posB = $tk07Order[$kB] ?? 99;
+            } elseif ($pCode === 'TK-008') {
+                $posA = $tk08Order[$kA] ?? 99;
+                $posB = $tk08Order[$kB] ?? 99;
+            } elseif ($pCode === 'TK-010') {
+                $posA = $tk10Order[$kA] ?? 99;
+                $posB = $tk10Order[$kB] ?? 99;
+            } elseif ($pCode === 'PAR-003') {
+                $posA = $par03Order[$kA] ?? 99;
+                $posB = $par03Order[$kB] ?? 99;
+            } elseif ($pCode === 'PAR-004') {
+                $posA = $par04Order[$kA] ?? 99;
+                $posB = $par04Order[$kB] ?? 99;
+            } elseif ($pCode === 'PAR-005') {
+                $posA = $par05Order[$kA] ?? 99;
+                $posB = $par05Order[$kB] ?? 99;
+            } elseif ($pCode === 'PAR-006') {
+                $posA = $par06Order[$kA] ?? 99;
+                $posB = $par06Order[$kB] ?? 99;
+            } elseif (in_array($pCode, ['PRO-001', 'PRO-002'])) {
+                $posA = $proPanganOrder[$kA] ?? 99;
+                $posB = $proPanganOrder[$kB] ?? 99;
+            } elseif ($pCode === 'PRO-004') {
+                $posA = $pro04Order[$kA] ?? 99;
+                $posB = $pro04Order[$kB] ?? 99;
+            } elseif ($pCode === 'FIS-001') {
+                $posA = $fis01Order[$kA] ?? 99;
+                $posB = $fis01Order[$kB] ?? 99;
+            } elseif ($pCode === 'FIS-002') {
+                $posA = $fis02Order[$kA] ?? 99;
+                $posB = $fis02Order[$kB] ?? 99;
             } else {
                 $posA = $sectorOrder[$kA] ?? 99;
                 $posB = $sectorOrder[$kB] ?? 99;
@@ -197,6 +262,64 @@
         });
 
         $grouped[$pCode]['sub_indicators'] = $subs;
+
+        // Auto-akumulasi nilai TOTAL pada baris parent untuk indikator sektoral / kuartal
+        $canAutoSum = in_array($pCode, [
+            'EKO-003', 'EKO-004', 'EKO-007', 
+            'INV-001', 'INV-002', 'INV-003', 
+            'TK-008',
+            'PAR-001', 'PAR-002', 'PAR-003', 'PAR-005', 'PAR-006',
+            'PRO-001', 'PRO-002', 'PRO-004',
+            'FIS-001', 'FIS-002'
+        ]);
+        if ($canAutoSum) {
+            $subYears = [];
+            foreach ($subs as $sCode => $sData) {
+                // Hindari duplikasi TM (Tanpa Migas) pada PDRB dan RES (Restoran) pada Total Hotel
+                if ($sCode === $pCode . '.TM' || $sCode === $pCode . '.RES') continue;
+
+                if (!empty($sData['years'])) {
+                    foreach ($sData['years'] as $sYr => $sRec) {
+                        $sYr = (int)$sYr;
+                        if (!isset($subYears[$sYr])) {
+                            $subYears[$sYr] = [
+                                'total' => 0,
+                                'count' => 0,
+                                'status' => $sRec['status'] ?? $sRec['status_validasi'] ?? 'Tervalidasi',
+                                'id' => $sRec['id'] ?? 0
+                            ];
+                        }
+                        $subYears[$sYr]['total'] += (float)($sRec['value'] ?? $sRec['nilai'] ?? 0);
+                        $subYears[$sYr]['count']++;
+                    }
+                }
+            }
+
+            foreach ($subYears as $sYr => $syData) {
+                if ($syData['count'] > 0) {
+                    if (!isset($grouped[$pCode]['years'][$sYr])) {
+                        $grouped[$pCode]['years'][$sYr] = [
+                            'id' => $syData['id'],
+                            'code' => $pCode,
+                            'year' => $sYr,
+                            'value' => $syData['total'],
+                            'nilai' => $syData['total'],
+                            'status' => $syData['status'],
+                            'status_validasi' => $syData['status'],
+                            'period' => 'Tahunan',
+                            'periode' => 'Tahunan',
+                            'unit' => $grouped[$pCode]['unit'] ?? '',
+                            'satuan' => $grouped[$pCode]['unit'] ?? '',
+                            'is_total' => true
+                        ];
+                    } else {
+                        $grouped[$pCode]['years'][$sYr]['value'] = $syData['total'];
+                        $grouped[$pCode]['years'][$sYr]['nilai'] = $syData['total'];
+                        $grouped[$pCode]['years'][$sYr]['is_total'] = true;
+                    }
+                }
+            }
+        }
     }
 
     // Urutan resmi prefix indikator (dimulai dari EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
@@ -345,19 +468,19 @@
 
         <!-- TABEL DERET WAKTU: TAHUN KESAMPING (MATRIKS DATABASE EKONOMI) -->
         <div class="data-table-matrix-wrapper" style="overflow-x:auto; -webkit-overflow-scrolling:touch; width:100%; border-top:1px solid var(--line);">
-            <table class="data-matrix-table" id="admin-matrix-table" style="width:100%; min-width:<?= 640 + (count($display_years) * 120) ?>px; border-collapse:separate; border-spacing:0;">
+            <table class="data-matrix-table" id="admin-matrix-table" style="width:100%; min-width:<?= 720 + (count($display_years) * 120) ?>px; border-collapse:separate; border-spacing:0;">
                 <thead>
                     <tr style="background:#f8fafc;">
-                        <th class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:3; width:85px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); box-shadow:2px 0 5px rgba(0,0,0,0.03); text-align:left;">
+                        <th class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:3; width:90px; min-width:90px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); box-shadow:2px 0 5px rgba(0,0,0,0.03); text-align:left;">
                             Kode
                         </th>
-                        <th style="min-width:240px; padding:12px 16px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
+                        <th style="min-width:320px; padding:12px 16px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
                             Nama Indikator
                         </th>
-                        <th style="min-width:130px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
+                        <th style="min-width:145px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
                             Klaster
                         </th>
-                        <th style="min-width:95px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
+                        <th style="min-width:100px; padding:12px 14px; font-size:11px; font-weight:700; color:#475569; border-bottom:1px solid var(--line); text-align:left;">
                             Satuan
                         </th>
                         <?php foreach ($display_years as $yr): ?>
@@ -399,42 +522,71 @@
                                 <td class="matrix-sticky-col-1" style="position:sticky; left:0; background:#fff; z-index:2; padding:11px 14px; border-bottom:1px solid #edf0f4; box-shadow:2px 0 5px rgba(0,0,0,0.03); white-space:nowrap;">
                                     <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:3px 7px; border-radius:5px; display:inline-block;"><?= htmlspecialchars($item['code']) ?></code>
                                 </td>
-                                <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="padding:11px 16px; border-bottom:1px solid #edf0f4; vertical-align:middle; cursor:<?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'data-parent="'.$item['code'].'" onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
-                                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; line-height:1.4; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="min-width:320px; padding:12px 16px; border-bottom:1px solid #edf0f4; vertical-align:middle; cursor:<?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'data-parent="'.$item['code'].'" onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
+                                    <div style="font-size:13px; font-weight:700; color:#1e293b; line-height:1.4;">
                                         <span class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>"><?= htmlspecialchars($item['indicator']) ?></span>
-                                        <?php if ($hasSub): ?>
-                                            <?php 
-                                                $isInv = (strpos($item['code'], 'INV-') === 0);
-                                                $openLabel = $isInv ? 'Rincian Kuartal (Q1–Q4)' : 'Rincian Sektor (A–U)';
-                                                $badgeLabel = $isInv ? '4 Kuartal' : '18 Sektor';
-                                            ?>
-                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1.2px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
-                                                <svg class="sub-arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                                <span style="background:#dcfce7; color:#166534; font-size: 12px; padding:1px 6px; border-radius:10px; font-weight:800;"><?= $badgeLabel ?></span>
-                                            </button>
-                                        <?php endif; ?>
                                     </div>
-                                    <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;">
+                                    <?php if ($hasSub): ?>
+                                        <?php 
+                                            $isInv = (strpos($item['code'], 'INV-') === 0);
+                                            $isTk07 = ($item['code'] === 'TK-007');
+                                            $isTk08 = ($item['code'] === 'TK-008');
+                                            $isTk10 = ($item['code'] === 'TK-010');
+                                            if ($isInv) {
+                                                $openLabel = 'Rincian 4 Kuartal';
+                                            } elseif ($isTk07) {
+                                                $openLabel = 'Rincian Sektor & Status';
+                                            } elseif ($isTk08) {
+                                                $openLabel = 'Rincian Formal & Informal';
+                                            } elseif ($isTk10) {
+                                                $openLabel = 'Rincian Setengah Pengangguran';
+                                            } elseif (in_array($item['code'], ['PAR-001', 'PAR-002'])) {
+                                                $openLabel = 'Rincian 12 Bulan';
+                                            } elseif ($item['code'] === 'PAR-003') {
+                                                $openLabel = 'Rincian Tamu Hotel';
+                                            } elseif ($item['code'] === 'PAR-004') {
+                                                $openLabel = 'Rincian TPK Hotel';
+                                            } elseif ($item['code'] === 'PAR-005') {
+                                                $openLabel = 'Rincian Kamar Hotel';
+                                            } elseif ($item['code'] === 'PAR-006') {
+                                                $openLabel = 'Rincian Hotel & Restoran';
+                                            } elseif (in_array($item['code'], ['PRO-001', 'PRO-002', 'PRO-004'])) {
+                                                $openLabel = 'Rincian 25 Kecamatan';
+                                            } elseif ($item['code'] === 'FIS-001') {
+                                                $openLabel = 'Rincian 4 Komponen PAD';
+                                            } elseif ($item['code'] === 'FIS-002') {
+                                                $openLabel = 'Rincian Transfer Daerah';
+                                            } else {
+                                                $openLabel = 'Rincian 17 Sektor';
+                                            }
+                                        ?>
+                                        <div style="margin-top:5px; margin-bottom:2px;">
+                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
+                                                <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                    <small style="font-size: 11.5px; color:#64748b; display:block; margin-top:3px;">
                                         <?= htmlspecialchars($item['source']) ?>
                                     </small>
                                     <?php if (!empty($item['definition'])): ?>
-                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size: 12.5px; color:#94a3b8; margin-top:3px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:320px;">
+                                        <div class="table-definition-preview" title="<?= htmlspecialchars($item['definition']) ?>" style="font-size: 11.5px; color:#94a3b8; margin-top:3px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-width:340px;">
                                             <span style="color:#64748b; font-weight:600;">Definisi:</span> <?= htmlspecialchars($item['definition']) ?>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (!empty($item['notes']) && $item['status'] !== 'Tervalidasi'): ?>
-                                        <div style="margin-top:4px; font-size: 12.5px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
+                                        <div style="margin-top:4px; font-size: 11px; line-height:1.3; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
                                             <span><strong>Catatan:</strong> <?= htmlspecialchars($item['notes']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td style="padding:11px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle;">
-                                    <span class="badge secondary" style="font-size: 12.5px; padding:3px 7px; white-space:nowrap;">
+                                <td style="min-width:145px; padding:11px 14px; border-bottom:1px solid #edf0f4; vertical-align:middle; white-space:nowrap;">
+                                    <span class="badge secondary" style="font-size: 11.5px; padding:3px 8px; white-space:nowrap;">
                                         <?= htmlspecialchars($item['cluster']) ?>
                                     </span>
                                 </td>
-                                <td style="padding:11px 14px; border-bottom:1px solid #edf0f4; font-size:11px; color:#475569; vertical-align:middle; white-space:nowrap;">
+                                <td style="min-width:100px; padding:11px 14px; border-bottom:1px solid #edf0f4; font-size:11.5px; color:#475569; vertical-align:middle; white-space:nowrap;">
                                     <?= htmlspecialchars($item['unit']) ?>
                                 </td>
                                 <?php foreach ($display_years as $yr): ?>
@@ -442,8 +594,9 @@
                                         <?php if (isset($item['years'][$yr])): ?>
                                             <?php
                                                 $rec = $item['years'][$yr];
-                                                $isRupiah = (bool)preg_match('/rupiah|rp\b/i', $item['unit'] ?? '');
+                                                $isRupiah = is_indicator_rupiah($item['unit'] ?? '', $item['code'] ?? '');
                                                 $prefixRp = $isRupiah ? 'Rp ' : '';
+                                                $formattedVal = format_indicator_value($rec['value'], $item['unit'] ?? '', $item['code'] ?? '', false);
                                                 $st = $rec['status'] ?? 'Perlu review';
                                                 $isValid = ($st === 'Tervalidasi');
                                                 $isRejected = ($st === 'Belum lengkap' || $st === 'Ditolak');
@@ -453,7 +606,7 @@
                                             ?>
                                             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
                                                 <span class="matrix-val-text" style="font-weight:700; font-size:12px; color:#0f172a;">
-                                                    <?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?>
+                                                    <?= $prefixRp ?><?= $formattedVal ?>
                                                 </span>
                                                 <div style="display:flex; align-items:center; gap:3px;">
                                                     <span style="font-size: 12px; font-weight:700; color:<?= $bColor ?>; background:<?= $bBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
@@ -463,7 +616,7 @@
                                                         <button type="button" class="btn-verify-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $isValid ? '#16a34a' : '#fff' ?>; color:<?= $isValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-status="Tervalidasi">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                         </button>
-                                                        <button type="button" class="btn-reject-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $isRejected ? '#dc2626' : '#fff' ?>; color:<?= $isRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-val="<?= $prefixRp ?><?= number_format($rec['value'], 2, ',', '.') ?> <?= htmlspecialchars($item['unit']) ?>" data-period="<?= htmlspecialchars($rec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($rec['notes'] ?? '') ?>">
+                                                        <button type="button" class="btn-reject-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $isRejected ? '#dc2626' : '#fff' ?>; color:<?= $isRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-val="<?= $prefixRp ?><?= $formattedVal ?> <?= htmlspecialchars($item['unit']) ?>" data-period="<?= htmlspecialchars($rec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($rec['notes'] ?? '') ?>">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                         </button>
                                                     </div>
@@ -502,12 +655,42 @@
                                     <?php
                                         $dispKey = $sub['sub_key'];
                                         $isSubInv = (strpos($item['code'], 'INV-') === 0);
+                                        $isSubMonthly = in_array($item['code'], ['PAR-001', 'PAR-002']);
+                                        $isSubTk07 = (strpos($item['code'], 'TK-007') === 0);
+                                        $isSubTk08 = (strpos($item['code'], 'TK-008') === 0);
+                                        $isSubTk10 = (strpos($item['code'], 'TK-010') === 0);
+                                        $isSubFis = (strpos($item['code'], 'FIS-') === 0);
+                                        $isSubPro = (strpos($item['code'], 'PRO-') === 0);
+                                        $isSubPar = (strpos($item['code'], 'PAR-') === 0);
                                         if ($dispKey === 'MN') $dispKey = 'M,N';
                                         elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
                                         if ($isSubInv) {
                                             $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
+                                            $subTypeLabel = 'Periode:';
+                                        } elseif ($isSubMonthly) {
+                                            $cleanSubName = $sub['period'] ?: $dispKey;
+                                            $subTypeLabel = 'Bulan:';
+                                        } elseif ($isSubTk07) {
+                                            $cleanSubName = preg_replace('/^(Penduduk\s+Bekerja\s+Lapangan\s+Usaha:\s*|Status\s+Pekerjaan:\s*)/i', '', $sub['indicator']);
+                                            $subTypeLabel = (strpos($dispKey, 'S') === 0) ? 'Status:' : 'Sektor:';
+                                        } elseif ($isSubTk08) {
+                                            $cleanSubName = preg_replace('/^(Pekerja\s*)/i', '', $sub['indicator']);
+                                            $subTypeLabel = 'Kategori:';
+                                        } elseif ($isSubTk10) {
+                                            $cleanSubName = 'Jumlah Setengah Pengangguran (Orang)';
+                                            $subTypeLabel = 'Satuan:';
+                                        } elseif ($isSubFis) {
+                                            $cleanSubName = $sub['indicator'];
+                                            $subTypeLabel = 'Komponen:';
+                                        } elseif ($isSubPro) {
+                                            $cleanSubName = $sub['indicator'];
+                                            $subTypeLabel = 'Kecamatan:';
+                                        } elseif ($isSubPar) {
+                                            $cleanSubName = $sub['indicator'];
+                                            $subTypeLabel = 'Kategori:';
                                         } else {
                                             $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['indicator']);
+                                            $subTypeLabel = 'Kategori:';
                                         }
 
                                         $sUnverified = 0; $sRejected = 0; $sValid = 0;
@@ -521,7 +704,7 @@
                                     <tr class="matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
                                         <td class="matrix-sticky-col-1" style="position:sticky; left:0; background:#f8fafc; z-index:2; padding:8px 12px 8px 16px; border-bottom:1px solid #edf0f4; box-shadow:2px 0 5px rgba(0,0,0,0.03); white-space:nowrap;">
                                             <div style="display:flex; align-items:center; gap:5px;">
-                                                <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                                 <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
                                                 <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
                                                 <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                             </div>
@@ -531,7 +714,7 @@
                                                 <?= htmlspecialchars($sub['indicator']) ?>
                                             </div>
                                             <div style="font-size:11px; color:#475569; margin-top:2px;">
-                                                <span style="color:#0284c7; font-weight:600;"><?= $isSubInv ? 'Periode:' : 'Kategori:' ?></span> <?= htmlspecialchars($cleanSubName) ?>
+                                                <span style="color:#0284c7; font-weight:600;"><?= $subTypeLabel ?></span> <?= htmlspecialchars($cleanSubName) ?>
                                             </div>
                                             <small style="font-size: 12.5px; color:#64748b; display:block; margin-top:2px;"><?= htmlspecialchars($sub['source']) ?></small>
                                         </td>
@@ -546,8 +729,9 @@
                                                 <?php if (isset($sub['years'][$yr])): ?>
                                                     <?php
                                                         $sRec = $sub['years'][$yr];
-                                                        $sIsRupiah = (bool)preg_match('/rupiah|rp\b/i', $sub['unit'] ?? '');
+                                                        $sIsRupiah = is_indicator_rupiah($sub['unit'] ?? '', $sub['code'] ?? '');
                                                         $sPrefixRp = $sIsRupiah ? 'Rp ' : '';
+                                                        $sFormattedVal = format_indicator_value($sRec['value'], $sub['unit'] ?? '', $sub['code'] ?? '', false);
                                                         $sSt = $sRec['status'] ?? 'Perlu review';
                                                         $sIsValid = ($sSt === 'Tervalidasi');
                                                         $sIsRejected = ($sSt === 'Belum lengkap' || $sSt === 'Ditolak');
@@ -556,7 +740,7 @@
                                                     ?>
                                                     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
                                                         <span style="font-weight:600; font-size:12px; color:#0f172a;">
-                                                            <?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?>
+                                                            <?= $sPrefixRp ?><?= $sFormattedVal ?>
                                                         </span>
                                                         <div style="display:flex; align-items:center; gap:3px;">
                                                             <span style="font-size: 12px; font-weight:700; color:<?= $sbColor ?>; background:<?= $sbBg ?>; padding:1px 5px; border-radius:4px; white-space:nowrap;">
@@ -566,7 +750,7 @@
                                                                 <button type="button" class="btn-verify-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $sIsValid ? '#16a34a' : '#fff' ?>; color:<?= $sIsValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-status="Tervalidasi">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                                 </button>
-                                                                <button type="button" class="btn-reject-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $sIsRejected ? '#dc2626' : '#fff' ?>; color:<?= $sIsRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-val="<?= $sPrefixRp ?><?= number_format($sRec['value'], 2, ',', '.') ?> <?= htmlspecialchars($sub['unit']) ?>" data-period="<?= htmlspecialchars($sRec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($sRec['notes'] ?? '') ?>">
+                                                                <button type="button" class="btn-reject-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $sIsRejected ? '#dc2626' : '#fff' ?>; color:<?= $sIsRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-val="<?= $sPrefixRp ?><?= $sFormattedVal ?> <?= htmlspecialchars($sub['unit']) ?>" data-period="<?= htmlspecialchars($sRec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($sRec['notes'] ?? '') ?>">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                                 </button>
                                                             </div>
