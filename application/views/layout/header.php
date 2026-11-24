@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($title) ? htmlspecialchars($title) . ' — ' : '' ?>Dashboard Ekonomi Daerah <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></title>
+    <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?= base_url('assets/img/favicon-48.png') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('assets/img/favicon-32.png') ?>">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
+    <?php if (isset($active_page) && $active_page === 'peta_ekonomi'): ?>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <?php endif; ?>
     <script>
         const BASE_URL = '<?= rtrim(base_url(), '/') ?>';
         const SITE_URL = '<?= rtrim(site_url(), '/') ?>';
@@ -146,7 +151,7 @@
 
             <div class="header-actions">
                 <div class="search">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     <input id="header-search-input" placeholder="Cari indikator, laporan..." autocomplete="off">
                     <kbd>Enter</kbd>
                 </div>

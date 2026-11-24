@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Akun Sistem — Dashboard Ekonomi Daerah Kabupaten Banyuwangi</title>
+    <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
     <link rel="icon" type="image/svg+xml" href="<?= base_url('assets/img/favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?= base_url('assets/img/favicon-48.png') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('assets/img/favicon-32.png') ?>">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">

@@ -124,7 +124,7 @@
                 <div class="region-dropdown-panel" id="region-dropdown-panel" style="display:none;">
                     <!-- Input Pencarian Wilayah -->
                     <div class="region-search-box">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                         <input type="text" id="region-search-input" placeholder="Cari nama kabupaten / kota..." autocomplete="off">
                         <button type="button" id="btn-clear-region-search" class="clear-search-btn" style="display:none;" title="Bersihkan pencarian">&times;</button>
                     </div>

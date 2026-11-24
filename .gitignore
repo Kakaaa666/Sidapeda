@@ -17,6 +17,12 @@ user_guide_src/cilexer/dist/*
 user_guide_src/cilexer/pycilexer.egg-info/*
 /vendor/
 
+# Local Environment & Secrets
+.env
+.env.local
+config_ai.local.php
+application/config/ai_config.local.php
+
 # IDE Files
 #-------------------------
 /nbproject/
