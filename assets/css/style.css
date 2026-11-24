@@ -4295,6 +4295,1464 @@ select:focus {
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
 }
 
+/* ==========================================================================
+   OPENSTREETMAP & LEAFLET GEOSPATIAL STYLES (JAWA TIMUR & BANYUWANGI)
+   ========================================================================== */
+#leaflet-osm-map {
+    width: 100%;
+    height: 100%;
+    min-height: 580px;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+}
 
+.map-canvas {
+    position: relative;
+    overflow: hidden;
+    background: #e2e8f0;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    min-height: 580px;
+}
 
+.map-canvas .map-search {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1000;
+    width: 250px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(20, 45, 78, 0.14);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+}
+.map-canvas .map-search input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 11.5px;
+    font-family: inherit;
+    background: transparent;
+    color: var(--navy);
+}
 
+.map-canvas .quick-focus-bar {
+    position: absolute;
+    top: 54px;
+    left: 12px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(20, 45, 78, 0.14);
+    overflow: hidden;
+    padding: 2px;
+}
+.map-canvas .quick-focus-bar button {
+    width: 34px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #475569;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.map-canvas .quick-focus-bar button:hover {
+    background: #f1f5f9;
+    color: var(--navy);
+}
+.map-canvas .quick-focus-bar button.active {
+    background: #142d4e;
+    color: #ffffff;
+}
+
+.map-canvas .zoom {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(20, 45, 78, 0.14);
+    overflow: hidden;
+}
+.map-canvas .zoom button {
+    width: 32px;
+    height: 30px;
+    border: none;
+    background: #ffffff;
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.map-canvas .zoom button:hover {
+    background: #f1f5f9;
+}
+.map-canvas .zoom button + button {
+    border-top: 1px solid #e2e8f0;
+}
+.map-canvas .zoom small {
+    display: block;
+    text-align: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    background: #f8fafc;
+    color: #64748b;
+    padding: 2px 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.map-canvas .active-map-label {
+    position: absolute;
+    top: 92px;
+    right: 12px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 14px rgba(20, 45, 78, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+.map-canvas .active-map-label span {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--teal);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.map-canvas .active-map-label strong {
+    font-size: 12px;
+    color: var(--navy);
+    margin: 2px 0;
+}
+.map-canvas .active-map-label small {
+    font-size: 10.5px;
+    color: #64748b;
+}
+
+.map-scale.map-osm-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    border-radius: 6px;
+    padding: 3px 8px;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Custom Marker Pins on OpenStreetMap */
+.custom-osm-pin {
+    background: transparent !important;
+    border: none !important;
+}
+.osm-pin-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transform: translate(-50%, -100%);
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), filter 0.18s;
+}
+.osm-pin-wrapper:hover {
+    transform: translate(-50%, -106%) scale(1.1);
+    z-index: 9999 !important;
+}
+.osm-pin-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #142d4e;
+    color: #ffffff;
+    padding: 3px 7px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(20, 45, 78, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.osm-pin-code {
+    font-size: 9.5px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.22);
+    padding: 1px 4px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+}
+.osm-pin-val {
+    font-size: 11px;
+    font-weight: 800;
+    color: #38bdf8;
+}
+.osm-pin-wrapper.current .osm-pin-badge {
+    background: #0d9488;
+    border-color: #99f6e4;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.45);
+}
+.osm-pin-wrapper.current .osm-pin-val {
+    color: #ffffff;
+}
+.osm-pin-wrapper.high .osm-pin-val {
+    color: #4ade80;
+}
+.osm-pin-wrapper.low .osm-pin-val {
+    color: #fbbf24;
+}
+.osm-pin-arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #142d4e;
+    margin-top: -1px;
+}
+.osm-pin-wrapper.current .osm-pin-arrow {
+    border-top-color: #0d9488;
+}
+.osm-pin-pulse {
+    width: 9px;
+    height: 9px;
+    background: #38bdf8;
+    border-radius: 50%;
+    margin-top: 2px;
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7);
+    animation: osmPinPulse 2s infinite;
+}
+.osm-pin-wrapper.current .osm-pin-pulse {
+    background: #14b8a6;
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.85);
+}
+@keyframes osmPinPulse {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.8); }
+    70% { transform: scale(1.15); box-shadow: 0 0 0 9px rgba(56, 189, 248, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+
+/* Sub-district (Kecamatan Banyuwangi) Pin */
+.custom-kec-pin {
+    background: transparent !important;
+    border: none !important;
+}
+.kec-pin-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1.5px solid #38bdf8;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.35);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+.kec-pin-wrapper:hover {
+    transform: translate(-50%, -50%) scale(1.08);
+    background: #0f172a;
+    border-color: #7dd3fc;
+    z-index: 9999 !important;
+}
+.kec-pin-dot {
+    width: 6px;
+    height: 6px;
+    background: #38bdf8;
+    border-radius: 50%;
+}
+.kec-pin-label {
+    font-size: 10.5px;
+    font-weight: 700;
+}
+.kec-pin-share {
+    font-size: 9.5px;
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Leaflet Popup Styling */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    box-shadow: 0 12px 28px rgba(20, 45, 78, 0.22) !important;
+    padding: 0 !important;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+}
+.leaflet-popup-content {
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+.osm-enterprise-popup {
+    width: 270px;
+    padding: 14px 16px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.osm-enterprise-popup .popup-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.osm-enterprise-popup .popup-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+.osm-enterprise-popup .popup-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+.osm-enterprise-popup .popup-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #142d4e;
+    margin: 0 0 10px 0;
+}
+.osm-enterprise-popup .popup-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
+.osm-enterprise-popup .popup-stat {
+    display: flex;
+    flex-direction: column;
+}
+.osm-enterprise-popup .stat-lbl {
+    font-size: 9.5px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 1px;
+}
+.osm-enterprise-popup .stat-val {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #142d4e;
+}
+.osm-enterprise-popup .stat-val.positive {
+    color: #0d9488;
+}
+.osm-enterprise-popup .stat-coord {
+    font-size: 10px;
+    font-weight: 600;
+    color: #334155;
+    font-family: 'Courier New', monospace;
+}
+.osm-enterprise-popup .popup-actions {
+    display: flex;
+    gap: 6px;
+}
+.osm-enterprise-popup .popup-btn {
+    flex: 1;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+.osm-enterprise-popup .popup-btn.primary {
+    background: #142d4e;
+    color: #ffffff;
+}
+.osm-enterprise-popup .popup-btn.primary:hover {
+    background: #0284c7;
+}
+.osm-enterprise-popup .popup-btn.secondary {
+    background: #e2e8f0;
+    color: #334155;
+}
+.osm-enterprise-popup .popup-btn.secondary:hover {
+    background: #cbd5e1;
+}
+
+/* Tooltip for boundaries */
+.leaflet-tooltip.enterprise-boundary-tooltip {
+    background: #142d4e !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 12px rgba(20, 45, 78, 0.25) !important;
+}
+.leaflet-tooltip.enterprise-boundary-tooltip::before {
+    border-top-color: #142d4e !important;
+}
+
+/* ==========================================================================
+   GIS THEMATIC 4-CLASS CLASSIFICATION & BALLOON MARKERS
+   ========================================================================== */
+.l1 { background: #dc2626 !important; } /* Kelas 1: Rendah (Merah) */
+.l2 { background: #d97706 !important; } /* Kelas 2: Sedang (Oranye/Kuning Emas) */
+.l3 { background: #2563eb !important; } /* Kelas 3: Tinggi (Biru) */
+.l4 { background: #059669 !important; } /* Kelas 4: Sangat Tinggi (Hijau/Emerald) */
+
+.legend-chip.l1 { background: #dc2626 !important; }
+.legend-chip.l2 { background: #d97706 !important; }
+.legend-chip.l3 { background: #2563eb !important; }
+.legend-chip.l4 { background: #059669 !important; }
+
+/* Custom Leaflet Balloon Pin Container */
+.custom-gis-balloon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.gis-balloon-pin {
+    display: block;
+    position: relative;
+    width: 30px;
+    height: 38px;
+    cursor: pointer;
+    user-select: none;
+    transform-origin: 15px 37px;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.gis-balloon-pin:hover {
+    transform: scale(1.18);
+    z-index: 10000 !important;
+}
+
+.gis-balloon-pin.selected {
+    transform: scale(1.26);
+    z-index: 10001 !important;
+}
+
+.gis-balloon-pin .balloon-stem {
+    position: relative;
+    width: 30px;
+    height: 38px;
+    display: block;
+}
+
+.gis-balloon-pin .balloon-svg {
+    display: block;
+    width: 30px;
+    height: 38px;
+}
+
+.gis-balloon-pin.selected .balloon-svg path.balloon-path {
+    stroke: #fef08a !important;
+    stroke-width: 2.2px !important;
+}
+
+.gis-balloon-pulse {
+    position: absolute;
+    bottom: -2px;
+    left: 11px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0ea5e9;
+    opacity: 0.8;
+    animation: balloonPulse 2s infinite ease-out;
+    pointer-events: none;
+}
+
+.gis-balloon-pin.class-4 .gis-balloon-pulse { background: #10b981; }
+.gis-balloon-pin.class-3 .gis-balloon-pulse { background: #3b82f6; }
+.gis-balloon-pin.class-2 .gis-balloon-pulse { background: #f59e0b; }
+.gis-balloon-pin.class-1 .gis-balloon-pulse { background: #ef4444; }
+.gis-balloon-pin.current .gis-balloon-pulse { background: #0d9488; }
+
+@keyframes balloonPulse {
+    0% { transform: scale(0.6); opacity: 0.9; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+    70% { transform: scale(1.6); opacity: 0; box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+    100% { transform: scale(0.6); opacity: 0; }
+}
+
+/* Kecamatan Balloon Pin & Name Tag */
+.kec-balloon-name-tag {
+    position: absolute;
+    top: 39px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.90);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+    border: 0.5px solid rgba(255, 255, 255, 0.22);
+    transition: all 0.15s ease;
+    z-index: 10;
+}
+
+.gis-balloon-pin:hover .kec-balloon-name-tag {
+    background: #0f172a;
+    transform: translateX(-50%) scale(1.08);
+    border-color: #38bdf8;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.gis-balloon-pin.selected .kec-balloon-name-tag {
+    background: #0f172a;
+    color: #fef08a;
+    border-color: #fef08a;
+    font-weight: 800;
+    box-shadow: 0 0 8px rgba(254, 240, 138, 0.6);
+}
+
+/* Breakout animation: Terpecah dari Titik Kota Banyuwangi saat Zoom In */
+@keyframes kecBreakout {
+    0% {
+        opacity: 0;
+        transform: translate(var(--origin-dx, 0px), var(--origin-dy, 0px)) scale(0.18);
+    }
+    40% {
+        opacity: 0.85;
+    }
+    75% {
+        transform: translate(calc(var(--origin-dx, 0px) * 0.05), calc(var(--origin-dy, 0px) * 0.05)) scale(1.15);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+.custom-gis-balloon.kec-balloon-marker.kec-bursting .gis-balloon-pin {
+    animation: kecBreakout 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Tooltip on Real Administrative GeoJSON Polygons */
+.gis-polygon-tooltip {
+    padding: 2px 4px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    line-height: 1.35;
+}
+.gis-polygon-tooltip strong {
+    font-size: 12.5px;
+    color: #ffffff;
+    display: block;
+    margin-bottom: 2px;
+}
+.gis-polygon-tooltip .tip-sub {
+    font-size: 10.5px;
+    color: #94a3b8;
+}
+.gis-polygon-tooltip .tip-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-top: 3px;
+}
+
+/* ==========================================================================
+   ENTERPRISE UI & GIS MAP ENHANCEMENTS (SYMMETRICAL & PROPORTIONAL)
+   ========================================================================== */
+.economic-map-page.map-page {
+    padding: 22px 32px 48px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.economic-map-page .map-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.economic-map-page .map-heading .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0284c7;
+    margin-bottom: 4px;
+    display: inline-block;
+}
+
+.economic-map-page .map-heading h1 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    line-height: 1.25;
+}
+
+.economic-map-page .map-heading p {
+    font-size: 12.5px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.economic-map-page .map-heading .intro-actions .button {
+    height: 38px;
+    padding: 0 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.economic-map-page .map-heading .intro-actions .button:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+/* --- MAP MODE TABS (SYMMETRICAL 5-COLUMN SEGMENTED CONTROL) --- */
+.economic-map-page .map-mode-tabs {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 5px;
+    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.economic-map-page .map-mode-tabs button {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    border-radius: 7px;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    white-space: nowrap;
+}
+
+.economic-map-page .map-mode-tabs button:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.economic-map-page .map-mode-tabs button.active {
+    background: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+}
+
+.economic-map-page .map-mode-tabs button svg {
+    flex-shrink: 0;
+}
+
+/* --- CONTEXT BAR (BALANCED METADATA STRIP) --- */
+.economic-map-page .map-context-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    height: 44px;
+    padding: 0 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.economic-map-page .map-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.economic-map-page .map-breadcrumb button {
+    border: none;
+    background: transparent;
+    color: #475569;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.economic-map-page .map-breadcrumb button:hover {
+    color: #0284c7;
+}
+
+.economic-map-page .map-breadcrumb span.active {
+    color: #0284c7;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.economic-map-page .map-context-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.economic-map-page .map-context-meta span {
+    font-size: 11px;
+    color: #64748b;
+    background: #f8fafc;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #edf2f7;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.economic-map-page .map-context-meta strong {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+/* --- SYMMETRICAL 3-COLUMN MAP LAYOUT (290px | 1fr | 290px) --- */
+.economic-map-page .map-layout {
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr) 290px;
+    gap: 16px;
+    min-height: 640px;
+    align-items: stretch;
+}
+
+@media (max-width: 1380px) {
+    .economic-map-page .map-layout {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+    .economic-map-page .location-panel {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 960px) {
+    .economic-map-page .map-layout {
+        grid-template-columns: 1fr;
+    }
+    .economic-map-page .map-mode-tabs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .economic-map-page .map-mode-tabs {
+        grid-template-columns: 1fr;
+    }
+    .economic-map-page .map-context-bar {
+        height: auto;
+        padding: 10px 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* --- LEFT SIDEBAR: MAP CONFIGURATION PANEL --- */
+.economic-map-page .map-filters {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.economic-map-page .map-filters .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+}
+
+.economic-map-page .map-filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0;
+}
+
+.economic-map-page .map-filters label span {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
+
+.economic-map-page .map-filters select {
+    height: 38px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1e293b;
+    padding: 0 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.economic-map-page .map-filters select:focus {
+    border-color: #0284c7;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.economic-map-page .layer-list {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 2px 0;
+}
+
+.economic-map-page .layer-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.economic-map-page .layer-title strong {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.economic-map-page .check-row {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.economic-map-page .check-row:hover {
+    background: #edf2f7;
+}
+
+.economic-map-page .check-row input[type="checkbox"] {
+    accent-color: #0284c7;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+}
+
+.economic-map-page .check-row span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.economic-map-page .legend-block {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.economic-map-page .legend-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.economic-map-page .legend-heading-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.economic-map-page .legend-heading-left strong {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.economic-map-page .btn-reverse-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.economic-map-page .btn-reverse-legend:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.economic-map-page .legend-color-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.economic-map-page .legend-color-bar span {
+    flex: 1;
+    height: 100%;
+}
+
+.economic-map-page .legend-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.economic-map-page .legend-items-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.economic-map-page .legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 6px;
+    transition: all 0.12s;
+    cursor: pointer;
+}
+
+.economic-map-page .legend-row:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateX(2px);
+}
+
+.economic-map-page .legend-chip {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+}
+
+.economic-map-page .legend-class-lbl {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.economic-map-page .legend-val-range {
+    font-size: 11px;
+    font-family: monospace;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* --- CENTER PANEL: MAP CANVAS CONTAINER --- */
+.economic-map-page .map-canvas {
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+    position: relative;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.economic-map-page #leaflet-osm-map {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+}
+
+/* Symmetrical Map Floating Overlays (Anchored top: 14px) */
+.economic-map-page .map-search {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 1000;
+    width: 230px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+}
+
+.economic-map-page .map-search:focus-within {
+    border-color: #0284c7;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.18);
+}
+
+.economic-map-page .map-search svg {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.economic-map-page .map-search input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 12px;
+    font-family: inherit;
+    color: #0f172a;
+    background: transparent;
+}
+
+.economic-map-page .basemap-switcher-pills {
+    position: absolute;
+    top: 14px;
+    right: 58px;
+    z-index: 1000;
+    height: 38px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.economic-map-page .basemap-switcher-pills button {
+    height: 30px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: #475569;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.economic-map-page .basemap-switcher-pills button:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.economic-map-page .basemap-switcher-pills button.active {
+    background: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+}
+
+.economic-map-page .map-canvas .zoom {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    width: 36px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.economic-map-page .map-canvas .zoom button {
+    width: 36px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.economic-map-page .map-canvas .zoom button:hover {
+    background: #f1f5f9;
+}
+
+.economic-map-page .map-canvas .zoom button + button {
+    border-top: 1px solid #e2e8f0;
+}
+
+.economic-map-page .map-canvas .zoom small {
+    display: block;
+    text-align: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    background: #f8fafc;
+    color: #64748b;
+    padding: 2px 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* --- RIGHT SIDEBAR: REGIONAL PROFILE & DETAILS --- */
+.economic-map-page .location-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.economic-map-page .location-cover {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.economic-map-page .location-cover span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    display: block;
+    text-transform: uppercase;
+}
+
+.economic-map-page .location-cover h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 4px 0 2px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.economic-map-page .location-cover p {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin: 0;
+}
+
+.economic-map-page .location-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.economic-map-page .location-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
+    padding: 12px 14px;
+}
+
+.economic-map-page .location-score span {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    display: block;
+}
+
+.economic-map-page .location-score strong {
+    font-size: 24px;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    display: block;
+    margin-top: 2px;
+}
+
+.economic-map-page .spatial-position {
+    border-top: none;
+    padding: 0;
+}
+
+.economic-map-page .spatial-position span {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.economic-map-page .spatial-position small {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.economic-map-page .spatial-position strong {
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.economic-map-page .spatial-position strong.positive { color: #059669; }
+.economic-map-page .spatial-position strong.negative { color: #dc2626; }
+
+.economic-map-page .spatial-position div {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.economic-map-page .data-list {
+    border-top: 1px solid #f1f5f9;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.economic-map-page .data-list span {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 11.5px;
+}
+
+.economic-map-page .data-list small {
+    color: #64748b;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+
+.economic-map-page .data-list strong {
+    color: #0f172a;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.economic-map-page .location-body .button {
+    height: 38px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.economic-map-page .location-body .button.secondary {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+}
+
+.economic-map-page .location-body .button.secondary:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.economic-map-page .location-body .button:not(.secondary) {
+    background: #0f172a !important;
+    border: 1px solid #0f172a;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+
+.economic-map-page .location-body .button:not(.secondary):hover {
+    background: #1e293b !important;
+    border-color: #1e293b;
+}
+
+/* --- BOTTOM DATA NOTE CALLOUT --- */
+.economic-map-page .map-data-note {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0284c7;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.economic-map-page .map-data-note svg {
+    color: #0284c7;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.economic-map-page .map-data-note p {
+    font-size: 12px;
+    color: #475569;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* --- BOTTOM COMPARISON CHART CARD --- */
+.economic-map-page .card.large {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    margin-top: 20px;
+    overflow: hidden;
+}
+
+.economic-map-page .card.large .card-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.economic-map-page #map-chart-metric-select {
+    height: 36px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    padding: 0 12px !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.economic-map-page #map-chart-metric-select:focus {
+    border-color: #0284c7 !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+@media (max-width: 900px) {
+    .economic-map-page .map-search {
+        width: calc(100% - 28px);
+    }
+    .economic-map-page .basemap-switcher-pills {
+        top: 58px;
+        right: 14px;
+        left: auto;
+    }
+    .economic-map-page .map-canvas .zoom {
+        top: 104px;
+        right: 14px;
+    }
+}
