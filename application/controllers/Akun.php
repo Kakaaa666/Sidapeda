@@ -82,7 +82,9 @@ class Akun extends CI_Controller {
             'admin'      => 'admin123',
             'banyuwangi' => 'banyuwangi123',
             'analis'     => 'analis123',
-            'operator'   => 'operator123'
+            'operator'   => 'operator123',
+            'pimpinan'   => 'pimpinan123',
+            'reviewer'   => 'reviewer123'
         );
 
         if (isset($passMap[$role])) {

@@ -121,12 +121,17 @@ class Api extends CI_Controller {
         $status = $this->input->post('status');
         $notes = $this->input->post('notes');
 
+        $user = $this->session->userdata('user_logged') ?: $this->session->userdata('user');
+        if (!empty($user) && !in_array((int)($user['level'] ?? 1), array(1, 2))) {
+            $this->json_response(array('status' => 'error', 'message' => 'Hanya Akun Level 1 (Administrator) dan Level 2 (Analis) yang memiliki wewenang memvalidasi data.'), 403);
+            return;
+        }
+
         if (!in_array($status, array('Tervalidasi', 'Perlu review', 'Belum lengkap', 'Ditolak'))) {
             $this->json_response(array('status' => 'error', 'message' => 'Status tidak valid.'), 400);
             return;
         }
 
-        $user = $this->session->userdata('user');
         $verifier = !empty($user['nama_lengkap']) ? $user['nama_lengkap'] : (!empty($user['name']) ? $user['name'] : 'Admin Verifikator');
 
         $this->M_economy->update_record_status($code, $year, $status, $notes, $verifier);
@@ -138,12 +143,17 @@ class Api extends CI_Controller {
         $status = $this->input->post('status') ?: 'Tervalidasi';
         $notes = $this->input->post('notes');
 
+        $user = $this->session->userdata('user_logged') ?: $this->session->userdata('user');
+        if (!empty($user) && !in_array((int)($user['level'] ?? 1), array(1, 2))) {
+            $this->json_response(array('status' => 'error', 'message' => 'Hanya Akun Level 1 (Administrator) dan Level 2 (Analis) yang memiliki wewenang memvalidasi data.'), 403);
+            return;
+        }
+
         if (!in_array($status, array('Tervalidasi', 'Perlu review', 'Belum lengkap', 'Ditolak'))) {
             $this->json_response(array('status' => 'error', 'message' => 'Status tidak valid.'), 400);
             return;
         }
 
-        $user = $this->session->userdata('user');
         $verifier = !empty($user['nama_lengkap']) ? $user['nama_lengkap'] : (!empty($user['name']) ? $user['name'] : 'Admin Verifikator');
 
         $this->M_economy->update_series_status($code, $status, $notes, $verifier);
@@ -151,6 +161,12 @@ class Api extends CI_Controller {
     }
 
     public function import_csv() {
+        $user = $this->session->userdata('user_logged') ?: $this->session->userdata('user');
+        if (!empty($user) && !in_array((int)($user['level'] ?? 1), array(1, 3))) {
+            $this->json_response(array('status' => 'error', 'message' => 'Fitur Import Data diperuntukkan bagi Operator Data dan Administrator.'), 403);
+            return;
+        }
+
         // Accepts JSON payload of preview rows or raw CSV
         $rows = json_decode($this->input->raw_input_stream, true);
         if (!is_array($rows) || empty($rows)) {

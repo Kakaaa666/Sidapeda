@@ -11,12 +11,48 @@
     <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/vendor/sweetalert2/sweetalert2.min.css') ?>">
     <?php if (isset($active_page) && $active_page === 'peta_ekonomi'): ?>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <?php endif; ?>
+    <script src="<?= base_url('assets/vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
     <script>
         const BASE_URL = '<?= rtrim(base_url(), '/') ?>';
         const SITE_URL = '<?= rtrim(site_url(), '/') ?>';
+
+        function confirmLogout(event, targetUrl) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const destination = targetUrl || `${SITE_URL}/logout`;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Konfirmasi Keluar',
+                    html: 'Apakah Anda yakin ingin keluar dari sistem <strong>Dashboard Ekonomi Daerah</strong>?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: false,
+                    showCloseButton: false,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Keluar',
+                    cancelButtonText: 'Tidak',
+                    reverseButtons: false,
+                    focusCancel: false
+                }).then(result => {
+                    if (result && result.isConfirmed) {
+                        window.location.href = destination;
+                    }
+                });
+            } else {
+                if (confirm('Apakah Anda yakin ingin keluar dari sistem Dashboard Ekonomi Daerah?')) {
+                    window.location.href = destination;
+                }
+            }
+            return false;
+        }
+        window.confirmLogout = confirmLogout;
     </script>
 </head>
 <body>
@@ -34,16 +70,16 @@
             </a>
         </div>
 
-        <?php if (!empty($user)): ?>
-        <div class="region-chip">
-            <span class="crest"><?= strtoupper(substr(trim(preg_replace('/^(kabupaten|kab\.|kota)\s+/i', '', $nama_wilayah ?? 'Banyuwangi')), 0, 1) ?: 'B') ?></span>
+        <div class="region-chip" title="Wilayah Aktif: <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>">
+            <span class="crest crest-logo">
+                <img src="<?= get_logo_pemda_url($active_kode_wilayah ?? $nama_wilayah ?? '35.10') ?>" alt="Logo <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>" class="region-crest-img">
+            </span>
             <div>
                 <small>Wilayah aktif</small>
                 <strong><?= htmlspecialchars($nama_wilayah ?? 'Kab. Banyuwangi') ?></strong>
             </div>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
         </div>
-        <?php endif; ?>
 
         <nav>
             <div class="nav-label"><?= !empty($is_admin) ? 'PENGELOLAAN SISTEM' : 'PUBLIC DASHBOARD' ?></div>
@@ -60,9 +96,18 @@
                     array('forecast_admin', 'Konfigurasi Proyeksi', '<path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/>', 'forecast_admin'),
                     array('users', 'Pengguna & Level', '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>', 'users')
                 );
+                $allowedMenusByLevel = array(
+                    1 => array('admin', 'database', 'input', 'validation', 'catalog', 'ews_admin', 'forecast_admin', 'users'),
+                    2 => array('admin', 'database', 'validation', 'catalog', 'ews_admin', 'forecast_admin'),
+                    3 => array('admin', 'database', 'input', 'validation', 'catalog'),
+                    4 => array('admin', 'database', 'validation', 'catalog', 'ews_admin')
+                );
+                $uLevel = (int)($user['level'] ?? 1);
+                $allowedList = $allowedMenusByLevel[$uLevel] ?? $allowedMenusByLevel[1];
+
                 foreach ($adminNav as $item):
-                    // Sembunyikan menu Pengguna jika bukan Level 1 (Administrator)
-                    if ($item[0] === 'users' && (!empty($user['level']) && (int)$user['level'] !== 1)) {
+                    // Saring menu sesuai hierarki hak akses peran pengguna
+                    if (!in_array($item[0], $allowedList)) {
                         continue;
                     }
                     $isActive = ($active_page === $item[3]);
@@ -110,7 +155,7 @@
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" title="Keluar (Logout)" onclick="return confirm('Apakah Anda yakin ingin keluar dari Dashboard Ekonomi Daerah?')">
+                    <a href="<?= site_url('logout') ?>" class="nav-item logout-nav-item" title="Keluar (Logout)" onclick="return confirmLogout(event, this.href);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         <span>Keluar (Logout)</span>
                     </a>
@@ -175,7 +220,7 @@
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= site_url('logout') ?>" class="button button-danger-outline" title="Keluar dari Sistem" onclick="return confirm('Apakah Anda yakin ingin keluar dari Dashboard Ekonomi Daerah?')">
+                    <a href="<?= site_url('logout') ?>" class="button button-danger-outline" title="Keluar dari Sistem" onclick="return confirmLogout(event, this.href);">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         <span>Keluar</span>
                     </a>

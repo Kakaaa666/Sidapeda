@@ -26,7 +26,8 @@ a { color: inherit; text-decoration: none; }
 .logo small { display: block; color: #94a3b8; font-size: 12.5px; font-weight: 600; margin-top: 3px; letter-spacing: .08em; text-transform: uppercase; }
 .region-chip { margin: 14px 14px 10px; padding: 10px 12px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius: 10px; display:flex; align-items:center; gap:10px; transition: background .2s, border-color .2s; }
 .region-chip:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.15); }
-.region-chip .crest { width:32px; height:32px; border-radius:8px; background:#fff; color:var(--navy); display:grid; place-items:center; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,.15); flex-shrink:0; }
+.region-chip .crest { width:36px; height:36px; border-radius:8px; background:#fff; color:var(--navy); display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 5px rgba(0,0,0,.2); flex-shrink:0; padding:3px; box-sizing:border-box; overflow:hidden; }
+.region-chip .region-crest-img { width:100%; height:100%; max-width:30px; max-height:30px; object-fit:contain; display:block; }
 .region-chip div { flex:1; min-width:0; }
 .region-chip small { display:block; font-size: 12.5px; color:#94a3b8; font-weight:500; line-height:1.2; }
 .region-chip strong { display:block; font-size:12.5px; font-weight:600; color:#ffffff; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -77,7 +78,9 @@ body.sidebar-collapsed .btn-sidebar-toggle { background:#eff6ff; color:var(--blu
   body.sidebar-collapsed .nav-item span,
   body.sidebar-collapsed .sidebar-bottom .data-status div,
   body.sidebar-collapsed .sidebar-bottom p{display:none!important;}
-  body.sidebar-collapsed .region-chip{margin:12px auto!important;padding:6px 0!important;justify-content:center!important;width:44px!important;height:44px!important;}
+  body.sidebar-collapsed .region-chip{margin:12px auto!important;padding:4px 0!important;justify-content:center!important;width:44px!important;height:44px!important;}
+  body.sidebar-collapsed .region-chip .crest{width:34px!important;height:34px!important;padding:2px!important;}
+  body.sidebar-collapsed .region-chip .region-crest-img{max-width:28px!important;max-height:28px!important;}
   body.sidebar-collapsed .sidebar nav{padding:8px 6px!important;}
   body.sidebar-collapsed .nav-item{justify-content:center!important;padding:0!important;width:44px!important;height:44px!important;margin:4px auto!important;border-radius:10px!important;border-left:none!important;}
   body.sidebar-collapsed .nav-item svg{margin:0!important;flex-shrink:0!important;width:20px!important;height:20px!important;}
@@ -5753,3 +5756,495 @@ select:focus {
         right: 14px;
     }
 }
+
+
+/* ==========================================================================
+   GIS CLEAN CLUSTER MARKERS (MINIMALIST ENTERPRISE - NO NEON GLOW)
+   - Clean flat circular badge with subtle transparent outer ring
+   - Solid high-contrast core with clean crisp border
+   - Clear bold typography for numbers
+   - Outward radial breakout animation from city center point to each district
+   - Interactive flow: select/highlight a city first -> breaks out into its districts
+   ========================================================================== */
+.custom-gis-halo {
+    background: transparent !important;
+    border: none !important;
+}
+
+.gis-halo-pin {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 50%;
+    transform-origin: center center;
+    transition: transform 0.20s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+}
+
+.gis-halo-pin.size-lg {
+    width: 52px;
+    height: 52px;
+}
+
+.gis-halo-pin.size-sm {
+    width: 36px;
+    height: 36px;
+}
+
+/* Subtle flat outer ring without neon glow */
+.gis-halo-pin .halo-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+}
+
+/* Crisp solid core circle */
+.gis-halo-pin .halo-core {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.20);
+    transition: all 0.2s ease;
+}
+
+.gis-halo-pin.size-lg .halo-core {
+    width: 35px;
+    height: 35px;
+    border-width: 2.2px;
+}
+
+.gis-halo-pin.size-sm .halo-core {
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
+}
+
+.gis-halo-pin .halo-num {
+    display: block;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 11.5px;
+    line-height: 1;
+    letter-spacing: -0.2px;
+    text-align: center;
+    color: #ffffff;
+}
+
+.gis-halo-pin.size-lg .halo-num {
+    font-size: 13.5px;
+}
+
+.gis-halo-pin.size-sm .halo-num {
+    font-size: 10px;
+}
+
+/* 4 CLEAN COLOR TIERS - FLAT & SOLID (NO NEON GLOW) */
+/* Tier 1: Hijau (< 10) */
+.gis-halo-pin.tier-green .halo-ring {
+    background: rgba(34, 197, 94, 0.22);
+    border: 1px solid rgba(34, 197, 94, 0.32);
+}
+.gis-halo-pin.tier-green .halo-core {
+    background: #16a34a;
+}
+
+/* Tier 2: Kuning / Amber (10 - 49) */
+.gis-halo-pin.tier-yellow .halo-ring {
+    background: rgba(234, 179, 8, 0.24);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+}
+.gis-halo-pin.tier-yellow .halo-core {
+    background: #eab308;
+}
+
+/* Tier 3: Oranye (50 - 299) */
+.gis-halo-pin.tier-orange .halo-ring {
+    background: rgba(249, 115, 22, 0.24);
+    border: 1px solid rgba(249, 115, 22, 0.35);
+}
+.gis-halo-pin.tier-orange .halo-core {
+    background: #f97316;
+}
+
+/* Tier 4: Merah (>= 300) */
+.gis-halo-pin.tier-red .halo-ring {
+    background: rgba(239, 68, 68, 0.24);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+.gis-halo-pin.tier-red .halo-core {
+    background: #dc2626;
+}
+
+/* Hover and Focus States */
+.gis-halo-pin:hover {
+    transform: scale(1.14);
+    z-index: 10002 !important;
+}
+.gis-halo-pin:hover .halo-ring {
+    background-color: rgba(15, 23, 42, 0.12);
+    border-color: rgba(15, 23, 42, 0.35);
+}
+
+.gis-halo-pin.selected {
+    transform: scale(1.20);
+    z-index: 10005 !important;
+}
+.gis-halo-pin.selected .halo-core {
+    border-color: #0f172a !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95), 0 3px 8px rgba(15, 23, 42, 0.35);
+}
+
+/* Dimmed / Background city pins when a specific city is broken out */
+.gis-halo-pin.dimmed {
+    opacity: 0.35;
+    transform: scale(0.86);
+    pointer-events: auto;
+    filter: grayscale(35%);
+}
+.gis-halo-pin.dimmed:hover {
+    opacity: 0.92;
+    filter: none;
+    transform: scale(1.05);
+}
+
+/* Name Tag under Marker */
+.gis-halo-nametag {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 9.5px;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    padding: 1.5px 6.5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+    border: 0.5px solid rgba(255, 255, 255, 0.20);
+    transition: all 0.15s ease;
+    z-index: 10;
+}
+
+.gis-halo-pin:hover .gis-halo-nametag {
+    background: #0f172a;
+    transform: translateX(-50%) scale(1.06);
+    border-color: #38bdf8;
+}
+
+/* Central Anchor Marker for the Selected City */
+.gis-city-anchor-pin {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #f97316;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* CLEAN OUTWARD RADIAL BREAKOUT ANIMATION FROM CITY CENTER TO DISTRICTS */
+@keyframes cleanCityBreakout {
+    0% {
+        opacity: 0;
+        transform: translate(var(--origin-dx, 0px), var(--origin-dy, 0px)) scale(0.12);
+    }
+    35% {
+        opacity: 0.95;
+    }
+    80% {
+        transform: translate(calc(var(--origin-dx, 0px) * -0.02), calc(var(--origin-dy, 0px) * -0.02)) scale(1.06);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+.custom-gis-halo.cluster-bursting .gis-halo-pin {
+    animation: cleanCityBreakout 0.60s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+
+/* Floating Return to Province Button */
+.map-floating-back-btn {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.map-floating-back-btn:hover {
+    background: #0f172a;
+    border-color: #38bdf8;
+    transform: translateX(-50%) scale(1.04);
+}
+
+/* ========================================================
+   LOGO PEMDA: REGIONAL & BENCHMARKING VISUAL STYLING
+   ======================================================== */
+.region-opt-logo {
+    width: 20px;
+    height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    object-fit: contain;
+    margin-right: 8px;
+    flex-shrink: 0;
+    vertical-align: middle;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+}
+
+.region-table-logo {
+    width: 22px;
+    height: 22px;
+    max-width: 22px;
+    max-height: 22px;
+    object-fit: contain;
+    margin-right: 8px;
+    vertical-align: middle;
+    display: inline-block;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.region-card-logo-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    flex-shrink: 0;
+}
+
+.region-card-logo {
+    width: 100%;
+    height: 100%;
+    max-width: 32px;
+    max-height: 32px;
+    object-fit: contain;
+    display: block;
+}
+
+.comparison-table-row span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.detail-rank-label {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.detail-rank-label .region-table-logo {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    margin-left: 2px;
+}
+
+.h-bar-row .region-table-logo {
+    margin-right: 0 !important;
+    vertical-align: middle;
+}
+
+.h-bar-row:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+/* ==========================================================================
+   SWEETALERT2 CUSTOM EXECUTIVE THEME (SIDAPEDA)
+   ========================================================================== */
+.swal2-container {
+    z-index: 999999 !important;
+    backdrop-filter: blur(4px) !important;
+    background: rgba(9, 23, 41, 0.45) !important;
+}
+
+.swal2-popup.sidapeda-swal-popup,
+.swal2-popup {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    border-radius: 8px !important;
+    padding: 28px 24px 26px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22) !important;
+    max-width: 450px !important;
+    text-align: center !important;
+}
+
+.swal2-title.sidapeda-swal-title,
+.swal2-title {
+    font-size: 25px !important;
+    font-weight: 600 !important;
+    color: #545454 !important;
+    padding: 10px 0 4px !important;
+    margin: 8px 0 6px !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+}
+
+.swal2-html-container.sidapeda-swal-html,
+.swal2-html-container {
+    font-size: 14.5px !important;
+    color: #545454 !important;
+    line-height: 1.55 !important;
+    margin: 4px 0 0 !important;
+    text-align: center !important;
+}
+
+.swal2-icon {
+    margin: 6px auto 14px !important;
+    width: 72px !important;
+    height: 72px !important;
+    border-width: 3.5px !important;
+}
+
+.swal2-icon.swal2-warning {
+    border-color: #facea8 !important;
+    color: #f8bb86 !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #f27474 !important;
+    color: #f27474 !important;
+}
+
+.swal2-icon.swal2-success {
+    border-color: #a5dc86 !important;
+    color: #a5dc86 !important;
+}
+
+.swal2-icon.swal2-question {
+    border-color: #87adbd !important;
+    color: #87adbd !important;
+}
+
+.swal2-actions,
+div:where(.swal2-actions) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 24px auto 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.swal2-deny,
+button:where(.swal2-deny),
+.swal2-loader,
+div:where(.swal2-loader) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    position: absolute !important;
+}
+
+.swal2-styled,
+button:where(.swal2-styled) {
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    flex: 0 0 125px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    white-space: nowrap !important;
+}
+
+/* LEFT BUTTON: CONFIRM (BLUE) */
+.swal2-styled.swal2-confirm,
+button:where(.swal2-styled.swal2-confirm) {
+    background-color: #3085d6 !important;
+    border: none !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+.swal2-styled.swal2-confirm:hover,
+button:where(.swal2-styled.swal2-confirm):hover {
+    filter: brightness(0.92) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* RIGHT BUTTON: CANCEL (RED) */
+.swal2-styled.swal2-cancel,
+button:where(.swal2-styled.swal2-cancel) {
+    background-color: #d33 !important;
+    border: none !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+.swal2-styled.swal2-cancel:hover,
+button:where(.swal2-styled.swal2-cancel):hover {
+    filter: brightness(0.92) !important;
+    transform: translateY(-1px) !important;
+}
+
+.swal2-styled:focus {
+    box-shadow: 0 0 0 3px rgba(48, 133, 214, 0.3) !important;
+}
+
+

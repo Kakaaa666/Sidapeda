@@ -3,6 +3,8 @@
         window.__JATIM_REGIONS__ = <?= json_encode($jatim_regions ?? array(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         window.__DISTRICTS__ = <?= json_encode($districts ?? array(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         window.__JATIM_GEOJSON_URL__ = '<?= base_url("assets/data/jatim_kab_kota.geojson") ?>';
+        window.__JATIM_KECAMATAN_URL__ = '<?= base_url("assets/data/jatim_kecamatan.json") ?>';
+        window.__JATIM_REGENCIES_SUMMARY_URL__ = '<?= base_url("assets/data/jatim_regencies_summary.json") ?>';
     </script>
 
     <?php if ($this->session->flashdata('success')): ?>
@@ -220,6 +222,12 @@
                     <small id="hotspot-note-list">Pacitan, Gresik, Bojonegoro, Sumenep, Surabaya, Kota Malang</small>
                 </div>
             </div>
+
+            <!-- FLOATING BACK TO PROVINCE BUTTON -->
+            <button id="btn-back-to-province" class="map-floating-back-btn" style="display:none;" title="Kembali ke tampilan seluruh Jawa Timur">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Kembali ke Seluruh Jawa Timur (38 Kab/Kota)</span>
+            </button>
 
             <!-- LEAFLET OPENSTREETMAP CONTAINER -->
             <div id="leaflet-osm-map"></div>

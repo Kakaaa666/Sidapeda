@@ -31,9 +31,30 @@ class MY_Controller extends CI_Controller {
             $user = $this->M_auth->current_user();
             $level = (int)($user['level'] ?? 3);
 
-            // Menu Pengguna (/users) khusus Level 1 (Administrator)
+            // 1. Menu Pengguna (/users) khusus Level 1 (Administrator)
             if ($currentClass === 'users' && $level !== 1) {
                 $this->session->set_flashdata('error', 'Akses ditolak: Menu Manajemen Akun hanya dapat diakses oleh Akun Level 1 (Administrator).');
+                redirect('admin');
+                exit;
+            }
+
+            // 2. Menu Import Data (/input) khusus Level 1 (Administrator) dan Level 3 (Operator)
+            if ($currentClass === 'input' && !in_array($level, array(1, 3))) {
+                $this->session->set_flashdata('error', 'Akses ditolak: Fitur Import Data diperuntukkan bagi Operator Data dan Administrator.');
+                redirect('admin');
+                exit;
+            }
+
+            // 3. Konfigurasi Proyeksi (/forecast_admin) khusus Level 1 (Administrator) dan Level 2 (Analis)
+            if ($currentClass === 'forecast_admin' && !in_array($level, array(1, 2))) {
+                $this->session->set_flashdata('error', 'Akses ditolak: Konfigurasi Proyeksi hanya dapat diakses oleh Analis dan Administrator.');
+                redirect('admin');
+                exit;
+            }
+
+            // 4. Manajemen EWS (/ews_admin) untuk Level 1, 2, dan 4 (Reviewer eksekutif)
+            if ($currentClass === 'ews_admin' && !in_array($level, array(1, 2, 4))) {
+                $this->session->set_flashdata('error', 'Akses ditolak: Menu Manajemen EWS hanya dapat diakses oleh Analis, Reviewer, dan Administrator.');
                 redirect('admin');
                 exit;
             }

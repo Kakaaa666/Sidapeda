@@ -93,13 +93,20 @@ $route['insight']    = 'dashboard/Economic_insight';
 $route['report']     = 'dashboard/Laporan_ekonomi';
 
 // Admin Navigation Routes (Yang Sudah Login - diarahkan ke controller admin/)
-$route['admin']                   = 'admin/Admin';
-$route['admin/(:any)']            = 'admin/Admin/$1';
-$route['admin/(:any)/(:any)']     = 'admin/Admin/$1/$2';
+// Submodule routes spesifik (baik dengan prefix admin/ maupun tanpa prefix)
+$route['admin/validation']                = 'admin/Validation';
+$route['admin/validation/(:any)']         = 'admin/Validation/$1';
+$route['admin/validation/(:any)/(:any)']  = 'admin/Validation/$1/$2';
+$route['validation']                      = 'admin/Validation';
+$route['validation/(:any)']               = 'admin/Validation/$1';
+$route['validation/(:any)/(:any)']        = 'admin/Validation/$1/$2';
 
-$route['database']                = 'admin/Database';
-$route['database/(:any)']         = 'admin/Database/$1';
-$route['database/(:any)/(:any)']  = 'admin/Database/$1/$2';
+$route['admin/database']                  = 'admin/Database';
+$route['admin/database/(:any)']           = 'admin/Database/$1';
+$route['admin/database/(:any)/(:any)']    = 'admin/Database/$1/$2';
+$route['database']                        = 'admin/Database';
+$route['database/(:any)']                 = 'admin/Database/$1';
+$route['database/(:any)/(:any)']          = 'admin/Database/$1/$2';
 $route['database_ekonomi']                = 'admin/Database';
 $route['database_ekonomi/(:any)']         = 'admin/Database/$1';
 $route['database_ekonomi/(:any)/(:any)']  = 'admin/Database/$1/$2';
@@ -107,17 +114,19 @@ $route['database-ekonomi']                = 'admin/Database';
 $route['database-ekonomi/(:any)']         = 'admin/Database/$1';
 $route['database-ekonomi/(:any)/(:any)']  = 'admin/Database/$1/$2';
 
-$route['input']                   = 'admin/Input';
-$route['input/(:any)']            = 'admin/Input/$1';
-$route['input/(:any)/(:any)']     = 'admin/Input/$1/$2';
+$route['admin/input']                     = 'admin/Input';
+$route['admin/input/(:any)']              = 'admin/Input/$1';
+$route['admin/input/(:any)/(:any)']       = 'admin/Input/$1/$2';
+$route['input']                           = 'admin/Input';
+$route['input/(:any)']                    = 'admin/Input/$1';
+$route['input/(:any)/(:any)']             = 'admin/Input/$1/$2';
 
-$route['validation']              = 'admin/Validation';
-$route['validation/(:any)']       = 'admin/Validation/$1';
-$route['validation/(:any)/(:any)'] = 'admin/Validation/$1/$2';
-
-$route['catalog']                 = 'admin/Catalog';
-$route['catalog/(:any)']          = 'admin/Catalog/$1';
-$route['catalog/(:any)/(:any)']   = 'admin/Catalog/$1/$2';
+$route['admin/catalog']                   = 'admin/Catalog';
+$route['admin/catalog/(:any)']            = 'admin/Catalog/$1';
+$route['admin/catalog/(:any)/(:any)']     = 'admin/Catalog/$1/$2';
+$route['catalog']                         = 'admin/Catalog';
+$route['catalog/(:any)']                  = 'admin/Catalog/$1';
+$route['catalog/(:any)/(:any)']           = 'admin/Catalog/$1/$2';
 $route['katalog_indikator']               = 'admin/Catalog';
 $route['katalog_indikator/(:any)']        = 'admin/Catalog/$1';
 $route['katalog_indikator/(:any)/(:any)'] = 'admin/Catalog/$1/$2';
@@ -125,49 +134,39 @@ $route['katalog-indikator']               = 'admin/Catalog';
 $route['katalog-indikator/(:any)']        = 'admin/Catalog/$1';
 $route['katalog-indikator/(:any)/(:any)'] = 'admin/Catalog/$1/$2';
 
-$route['ews_admin']               = 'admin/Ews_admin';
-$route['ews_admin/(:any)']        = 'admin/Ews_admin/$1';
-$route['ews_admin/(:any)/(:any)'] = 'admin/Ews_admin/$1/$2';
-$route['ews-admin']               = 'admin/Ews_admin';
-$route['ews-admin/(:any)']        = 'admin/Ews_admin/$1';
-$route['ews-admin/(:any)/(:any)'] = 'admin/Ews_admin/$1/$2';
+$route['admin/ews-admin']                 = 'admin/Ews_admin';
+$route['admin/ews-admin/(:any)']          = 'admin/Ews_admin/$1';
+$route['admin/ews-admin/(:any)/(:any)']   = 'admin/Ews_admin/$1/$2';
+$route['admin/ews_admin']                 = 'admin/Ews_admin';
+$route['admin/ews_admin/(:any)']          = 'admin/Ews_admin/$1';
+$route['admin/ews_admin/(:any)/(:any)']   = 'admin/Ews_admin/$1/$2';
+$route['ews_admin']                       = 'admin/Ews_admin';
+$route['ews_admin/(:any)']                = 'admin/Ews_admin/$1';
+$route['ews_admin/(:any)/(:any)']         = 'admin/Ews_admin/$1/$2';
+$route['ews-admin']                       = 'admin/Ews_admin';
+$route['ews-admin/(:any)']                = 'admin/Ews_admin/$1';
+$route['ews-admin/(:any)/(:any)']         = 'admin/Ews_admin/$1/$2';
 
-$route['forecast_admin']          = 'admin/Forecast_admin';
-$route['forecast_admin/(:any)']   = 'admin/Forecast_admin/$1';
-$route['forecast_admin/(:any)/(:any)'] = 'admin/Forecast_admin/$1/$2';
-$route['forecast-admin']          = 'admin/Forecast_admin';
-$route['forecast-admin/(:any)']   = 'admin/Forecast_admin/$1';
-$route['forecast-admin/(:any)/(:any)'] = 'admin/Forecast_admin/$1/$2';
-
-$route['users']                   = 'admin/Users';
-$route['users/(:any)']            = 'admin/Users/$1';
-$route['users/(:any)/(:any)']     = 'admin/Users/$1/$2';
-
-// Compatibility aliases for admin/* URLs
-$route['admin/database']                = 'admin/Database';
-$route['admin/database/(:any)']         = 'admin/Database/$1';
-$route['admin/database/(:any)/(:any)']  = 'admin/Database/$1/$2';
-$route['admin/input']                   = 'admin/Input';
-$route['admin/input/(:any)']            = 'admin/Input/$1';
-$route['admin/input/(:any)/(:any)']     = 'admin/Input/$1/$2';
-$route['admin/validation']              = 'admin/Validation';
-$route['admin/validation/(:any)']       = 'admin/Validation/$1';
-$route['admin/validation/(:any)/(:any)'] = 'admin/Validation/$1/$2';
-$route['admin/catalog']                 = 'admin/Catalog';
-$route['admin/catalog/(:any)']          = 'admin/Catalog/$1';
-$route['admin/catalog/(:any)/(:any)']   = 'admin/Catalog/$1/$2';
-$route['admin/ews-admin']               = 'admin/Ews_admin';
-$route['admin/ews-admin/(:any)']        = 'admin/Ews_admin/$1';
-$route['admin/ews-admin/(:any)/(:any)'] = 'admin/Ews_admin/$1/$2';
-$route['admin/ews_admin']               = 'admin/Ews_admin';
-$route['admin/ews_admin/(:any)']        = 'admin/Ews_admin/$1';
-$route['admin/ews_admin/(:any)/(:any)'] = 'admin/Ews_admin/$1/$2';
-$route['admin/forecast-admin']          = 'admin/Forecast_admin';
-$route['admin/forecast-admin/(:any)']   = 'admin/Forecast_admin/$1';
+$route['admin/forecast-admin']            = 'admin/Forecast_admin';
+$route['admin/forecast-admin/(:any)']     = 'admin/Forecast_admin/$1';
 $route['admin/forecast-admin/(:any)/(:any)'] = 'admin/Forecast_admin/$1/$2';
-$route['admin/forecast_admin']          = 'admin/Forecast_admin';
-$route['admin/forecast_admin/(:any)']   = 'admin/Forecast_admin/$1';
+$route['admin/forecast_admin']            = 'admin/Forecast_admin';
+$route['admin/forecast_admin/(:any)']     = 'admin/Forecast_admin/$1';
 $route['admin/forecast_admin/(:any)/(:any)'] = 'admin/Forecast_admin/$1/$2';
-$route['admin/users']                   = 'admin/Users';
-$route['admin/users/(:any)']            = 'admin/Users/$1';
-$route['admin/users/(:any)/(:any)']     = 'admin/Users/$1/$2';
+$route['forecast_admin']                  = 'admin/Forecast_admin';
+$route['forecast_admin/(:any)']           = 'admin/Forecast_admin/$1';
+$route['forecast_admin/(:any)/(:any)']    = 'admin/Forecast_admin/$1/$2';
+$route['forecast-admin']                  = 'admin/Forecast_admin';
+$route['forecast-admin/(:any)']           = 'admin/Forecast_admin/$1';
+$route['forecast-admin/(:any)/(:any)']    = 'admin/Forecast_admin/$1/$2';
+
+$route['admin/users']                     = 'admin/Users';
+$route['admin/users/(:any)']              = 'admin/Users/$1';
+$route['admin/users/(:any)/(:any)']       = 'admin/Users/$1/$2';
+$route['users']                           = 'admin/Users';
+$route['users/(:any)']                    = 'admin/Users/$1';
+$route['users/(:any)/(:any)']             = 'admin/Users/$1/$2';
+
+$route['admin/logout']                    = 'admin/Admin/logout';
+$route['admin']                           = 'admin/Admin';
+$route['admin/(:any)']                    = 'admin/Admin/$1';
