@@ -8736,24 +8736,6 @@
             let dailyDates = (sectoralState.daily_dates && sectoralState.daily_dates.length > 0) ? sectoralState.daily_dates : [];
             if (dailyDates.length === 0) {
                 for (let d = 1; d <= 30; d++) {
-                        if (annualInput) annualInput.value = '';
-                    }
-                });
-            });
-        }
-
-        function renderHrg005ExcelTable() {
-            if (!secThead || !secTbody) return;
-
-            const defs = sectoralState.definitions || {};
-            const vals = sectoralState.values || {};
-            const dVals = sectoralState.daily_values || {};
-            let yearsList = (sectoralState.years && sectoralState.years.length > 0) ? sectoralState.years : [2024, 2025, 2026];
-            sectoralState.years = yearsList;
-
-            let dailyDates = (sectoralState.daily_dates && sectoralState.daily_dates.length > 0) ? sectoralState.daily_dates : [];
-            if (dailyDates.length === 0) {
-                for (let d = 1; d <= 30; d++) {
                     dailyDates.push(`2026-11-${String(d).padStart(2, '0')}`);
                 }
                 sectoralState.daily_dates = dailyDates;
@@ -9797,8 +9779,8 @@
                 const delBtn = e.target.closest('.btn-sec-del-year');
                 if (delBtn) {
                     const yr = parseInt(delBtn.getAttribute('data-year'), 10);
-                    const yrHtml = sectoralState.is_monthly_group
-                        ? `Hapus tahun <strong>${yr}</strong> beserta seluruh 12 bulannya dari tabel matriks ini?`
+                    const yrHtml = sectoralState.is_monthly_group 
+                        ? `Hapus tahun <strong>${yr}</strong> beserta seluruh 12 bulannya dari tabel matriks ini?` 
                         : `Hapus kolom tahun <strong>${yr}</strong> dari tabel matriks ini?`;
                     AppSwal.confirm({
                         title: 'Hapus Kolom Tahun?',

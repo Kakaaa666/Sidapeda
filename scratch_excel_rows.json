@@ -1,0 +1,392 @@
+[
+    {
+        "row": 5,
+        "no": "1",
+        "nama": "BERAS",
+        "satuan": ""
+    },
+    {
+        "row": 6,
+        "no": "",
+        "nama": "- Beras Premium",
+        "satuan": "kg"
+    },
+    {
+        "row": 7,
+        "no": "",
+        "nama": "- Beras Medium",
+        "satuan": "kg"
+    },
+    {
+        "row": 8,
+        "no": "2",
+        "nama": "GULA",
+        "satuan": ""
+    },
+    {
+        "row": 9,
+        "no": "",
+        "nama": "- Gula Kristal Putih",
+        "satuan": "kg"
+    },
+    {
+        "row": 10,
+        "no": "3",
+        "nama": "MINYAK GORENG",
+        "satuan": ""
+    },
+    {
+        "row": 11,
+        "no": "",
+        "nama": "- Minyak Goreng Curah",
+        "satuan": "kg"
+    },
+    {
+        "row": 12,
+        "no": "",
+        "nama": "- Minyak Goreng Kemasan Premium",
+        "satuan": "1 liter"
+    },
+    {
+        "row": 13,
+        "no": "",
+        "nama": "- Minyak Goreng Kemasan Sederhana",
+        "satuan": "1 Liter"
+    },
+    {
+        "row": 14,
+        "no": "",
+        "nama": "- Minyak Goreng MINYAKITA",
+        "satuan": "1 Liter"
+    },
+    {
+        "row": 15,
+        "no": "4",
+        "nama": "DAGING",
+        "satuan": ""
+    },
+    {
+        "row": 16,
+        "no": "",
+        "nama": "- Daging Sapi Paha Belakang",
+        "satuan": "kg"
+    },
+    {
+        "row": 17,
+        "no": "",
+        "nama": "- Daging Ayam Ras",
+        "satuan": "kg"
+    },
+    {
+        "row": 18,
+        "no": "",
+        "nama": "- Daging Ayam Kampung",
+        "satuan": "ekor"
+    },
+    {
+        "row": 19,
+        "no": "5",
+        "nama": "TELUR AYAM",
+        "satuan": ""
+    },
+    {
+        "row": 20,
+        "no": "",
+        "nama": "- Telur Ayam Ras",
+        "satuan": "kg"
+    },
+    {
+        "row": 21,
+        "no": "",
+        "nama": "- Telur Ayam Kampung",
+        "satuan": "kg"
+    },
+    {
+        "row": 22,
+        "no": "6",
+        "nama": "SUSU",
+        "satuan": ""
+    },
+    {
+        "row": 23,
+        "no": "",
+        "nama": "Kental Manis",
+        "satuan": ""
+    },
+    {
+        "row": 24,
+        "no": "",
+        "nama": "- Susu Kental Manis Merk Bendera",
+        "satuan": "370 gr\/kl"
+    },
+    {
+        "row": 25,
+        "no": "",
+        "nama": "- Susu Kental Manis Merk Indomilk",
+        "satuan": "370 gr\/kl"
+    },
+    {
+        "row": 26,
+        "no": "",
+        "nama": "Susu Bubuk",
+        "satuan": ""
+    },
+    {
+        "row": 27,
+        "no": "",
+        "nama": "- Susu Bubuk Merk Bendera (Instant)",
+        "satuan": "400 gr\/dos"
+    },
+    {
+        "row": 28,
+        "no": "",
+        "nama": "- Susu Bubuk Merk Indomilk (Instant)",
+        "satuan": "400 gr\/dos"
+    },
+    {
+        "row": 29,
+        "no": "7",
+        "nama": "- Jagung Pipilan Kering",
+        "satuan": "kg"
+    },
+    {
+        "row": 30,
+        "no": "8",
+        "nama": "GARAM BERYODIUM",
+        "satuan": ""
+    },
+    {
+        "row": 31,
+        "no": "",
+        "nama": "- Bata",
+        "satuan": "Buah"
+    },
+    {
+        "row": 32,
+        "no": "",
+        "nama": "- Halus",
+        "satuan": "kg"
+    },
+    {
+        "row": 33,
+        "no": "9",
+        "nama": "TEPUNG TERIGU",
+        "satuan": ""
+    },
+    {
+        "row": 34,
+        "no": "",
+        "nama": "- Terigu Protein Sedang (Kemasan)",
+        "satuan": "kg"
+    },
+    {
+        "row": 35,
+        "no": "10",
+        "nama": "KACANG KEDELAI",
+        "satuan": ""
+    },
+    {
+        "row": 36,
+        "no": "",
+        "nama": "- Kedelai Impor",
+        "satuan": "kg"
+    },
+    {
+        "row": 37,
+        "no": "",
+        "nama": "- Kedelai Lokal",
+        "satuan": "kg"
+    },
+    {
+        "row": 38,
+        "no": "11",
+        "nama": "MIE INSTANT",
+        "satuan": ""
+    },
+    {
+        "row": 39,
+        "no": "",
+        "nama": "- Indomie Rasa Kari Ayam",
+        "satuan": "Bungkus"
+    },
+    {
+        "row": 40,
+        "no": "12",
+        "nama": "CABE",
+        "satuan": ""
+    },
+    {
+        "row": 41,
+        "no": "",
+        "nama": "- Cabe Merah Keriting",
+        "satuan": "kg"
+    },
+    {
+        "row": 42,
+        "no": "",
+        "nama": "- Cabe Merah Besar",
+        "satuan": "kg"
+    },
+    {
+        "row": 43,
+        "no": "",
+        "nama": "- Cabe Rawit Merah",
+        "satuan": "kg"
+    },
+    {
+        "row": 44,
+        "no": "13",
+        "nama": "BAWANG",
+        "satuan": ""
+    },
+    {
+        "row": 45,
+        "no": "",
+        "nama": "- Bawang Merah",
+        "satuan": "kg"
+    },
+    {
+        "row": 46,
+        "no": "",
+        "nama": "- Bawang Putih Sinco\/Honan",
+        "satuan": "kg"
+    },
+    {
+        "row": 47,
+        "no": "14",
+        "nama": "- Ikan Asin Teri",
+        "satuan": "kg"
+    },
+    {
+        "row": 48,
+        "no": "15",
+        "nama": "- KACANG HIJAU",
+        "satuan": "kg"
+    },
+    {
+        "row": 49,
+        "no": "16",
+        "nama": "- KACANG TANAH",
+        "satuan": "kg"
+    },
+    {
+        "row": 50,
+        "no": "17",
+        "nama": "- KETELA POHON",
+        "satuan": "kg"
+    },
+    {
+        "row": 51,
+        "no": "18",
+        "nama": "SAYUR MAYUR",
+        "satuan": ""
+    },
+    {
+        "row": 52,
+        "no": "",
+        "nama": "- KOL\/KUBIS",
+        "satuan": "kg"
+    },
+    {
+        "row": 53,
+        "no": "",
+        "nama": "- KENTANG",
+        "satuan": "kg"
+    },
+    {
+        "row": 54,
+        "no": "",
+        "nama": "- Tomat Merah",
+        "satuan": "kg"
+    },
+    {
+        "row": 55,
+        "no": "",
+        "nama": "- WORTEL",
+        "satuan": "kg"
+    },
+    {
+        "row": 56,
+        "no": "",
+        "nama": "- BUNCIS",
+        "satuan": "kg"
+    },
+    {
+        "row": 57,
+        "no": "19",
+        "nama": "SEMEN",
+        "satuan": ""
+    },
+    {
+        "row": 58,
+        "no": "",
+        "nama": "- Semen Gresik",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 59,
+        "no": "",
+        "nama": "- Semen Tiga Roda",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 60,
+        "no": "",
+        "nama": "- Semen Padang",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 61,
+        "no": "",
+        "nama": "- Semen Tonasa",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 62,
+        "no": "",
+        "nama": "- Semen Bosowa",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 63,
+        "no": "",
+        "nama": "- Semen Dynamix",
+        "satuan": "40 Kg"
+    },
+    {
+        "row": 64,
+        "no": "20",
+        "nama": "IKAN SEGAR",
+        "satuan": ""
+    },
+    {
+        "row": 65,
+        "no": "",
+        "nama": "- Ikan Bandeng",
+        "satuan": "kg"
+    },
+    {
+        "row": 66,
+        "no": "",
+        "nama": "- Ikan Kembung",
+        "satuan": "kg"
+    },
+    {
+        "row": 67,
+        "no": "",
+        "nama": "- Ikan Tuna",
+        "satuan": "kg"
+    },
+    {
+        "row": 68,
+        "no": "",
+        "nama": "- Ikan Tongkol",
+        "satuan": "kg"
+    },
+    {
+        "row": 69,
+        "no": "",
+        "nama": "- Ikan Cakalang",
+        "satuan": "kg"
+    }
+]
