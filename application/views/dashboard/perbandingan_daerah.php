@@ -117,7 +117,7 @@
             <!-- Dropdown Multiselect Checkbox dengan Pencarian -->
             <div class="region-multiselect" id="region-multiselect">
                 <button type="button" class="region-dropdown-btn" id="btn-toggle-region-dropdown" onclick="toggleRegionDropdown(event)" aria-haspopup="true" aria-expanded="false">
-                    <span class="dropdown-btn-text" id="region-dropdown-label">Pilih Wilayah (0 dipilih)</span>
+                    <span class="dropdown-btn-text" id="region-dropdown-label">Semua Wilayah Terpilih (<?= count($all_active_regional) ?>)</span>
                     <svg class="dropdown-chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
@@ -136,15 +136,25 @@
                             <span class="dot-sep">•</span>
                             <button type="button" id="btn-deselect-all-regions" class="quick-link">Hapus Semua</button>
                         </div>
-                        <span class="region-selected-counter" id="region-selected-counter">0 / <?= count($all_active_regional) ?> dipilih</span>
+                        <span class="region-selected-counter" id="region-selected-counter"><?= count($all_active_regional) ?> / <?= count($all_active_regional) ?> dipilih</span>
                     </div>
 
                     <!-- Daftar Pilihan Checkbox -->
                     <div class="region-options-list" id="region-options-list">
                         <?php foreach ($all_active_regional as $r): ?>
-                            <label class="region-option-item" data-name="<?= strtolower(htmlspecialchars($r['name'])) ?>">
-                                <input type="checkbox" class="region-cb" value="<?= htmlspecialchars($r['name']) ?>">
+                            <?php 
+                            $isUserRegion = (!empty($nama_wilayah) && (
+                                strcasecmp(trim($r['name']), trim($nama_wilayah)) === 0 ||
+                                strcasecmp(preg_replace('/^(kabupaten|kab\.|kota)\s+/i', '', $r['name']), preg_replace('/^(kabupaten|kab\.|kota)\s+/i', '', $nama_wilayah)) === 0
+                            ));
+                            ?>
+                            <label class="region-option-item <?= $isUserRegion ? 'is-active-user-region' : '' ?>" data-name="<?= strtolower(htmlspecialchars($r['name'])) ?>">
+                                <input type="checkbox" class="region-cb" value="<?= htmlspecialchars($r['name']) ?>" checked>
+                                <img src="<?= get_logo_pemda_url($r['name']) ?>" alt="" class="region-opt-logo">
                                 <span class="option-name"><?= htmlspecialchars($r['name']) ?></span>
+                                <?php if ($isUserRegion): ?>
+                                    <span class="badge info main-badge" style="margin-left:auto; font-size:9.5px; padding:2px 6px;" title="Wilayah aktif akun login">Daerah Anda</span>
+                                <?php endif; ?>
                             </label>
                         <?php endforeach; ?>
                         <div id="region-search-not-found" class="region-not-found" style="display:none;">
@@ -153,6 +163,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Chips Wilayah Terpilih -->
+            <div class="selected-region-chips" id="selected-region-chips" style="display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; margin-left:8px;"></div>
 
             <script>
             function toggleRegionDropdown(e) {
@@ -255,6 +268,7 @@
 </div>
 
 <script>
+    window.__ACTIVE_REGION_NAME__ = <?= json_encode($nama_wilayah ?? 'Kabupaten Banyuwangi', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__REGIONAL_DATA__ = <?= json_encode($all_active_regional, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__SERIES_DATA__ = <?= json_encode($series, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__SECTORS_DATA__ = <?= json_encode($sectors, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;

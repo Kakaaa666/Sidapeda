@@ -1,0 +1,6670 @@
+{
+  "provinsi": "Jawa Timur",
+  "kode_provinsi": "35",
+  "sumber_referensi": "Badan Pusat Statistik (BPS) Jawa Timur / Kemendagri",
+  "tahun_referensi": "2024 / 2025",
+  "total_wilayah_kab_kota": 38,
+  "total_kecamatan": 666,
+  "data": [
+    {
+      "id": "3501010",
+      "kode_bps": "3501010",
+      "kode_kab": "35.01",
+      "nama": "Donorojo",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.140493062503138,
+      "lng": 110.94607222653477,
+      "nilai": 13
+    },
+    {
+      "id": "3501020",
+      "kode_bps": "3501020",
+      "kode_kab": "35.01",
+      "nama": "Punung",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.117269200158592,
+      "lng": 111.03264212834755,
+      "nilai": 6
+    },
+    {
+      "id": "3501030",
+      "kode_bps": "3501030",
+      "kode_kab": "35.01",
+      "nama": "Pringkuku",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.189730316159443,
+      "lng": 111.03186050172975,
+      "nilai": 8
+    },
+    {
+      "id": "3501040",
+      "kode_bps": "3501040",
+      "kode_kab": "35.01",
+      "nama": "Pacitan",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.185317854730892,
+      "lng": 111.10622486750704,
+      "nilai": 4
+    },
+    {
+      "id": "3501050",
+      "kode_bps": "3501050",
+      "kode_kab": "35.01",
+      "nama": "Kebonagung",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.220688231199025,
+      "lng": 111.17385423769892,
+      "nilai": 5
+    },
+    {
+      "id": "3501060",
+      "kode_bps": "3501060",
+      "kode_kab": "35.01",
+      "nama": "Arjosari",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.09612953275465,
+      "lng": 111.1581373912085,
+      "nilai": 6
+    },
+    {
+      "id": "3501070",
+      "kode_bps": "3501070",
+      "kode_kab": "35.01",
+      "nama": "Nawangan",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -7.988213110418344,
+      "lng": 111.18040864543819,
+      "nilai": 4
+    },
+    {
+      "id": "3501080",
+      "kode_bps": "3501080",
+      "kode_kab": "35.01",
+      "nama": "Bandar",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -7.995425612269807,
+      "lng": 111.26135946220474,
+      "nilai": 5
+    },
+    {
+      "id": "3501090",
+      "kode_bps": "3501090",
+      "kode_kab": "35.01",
+      "nama": "Tegalombo",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.05769765693228,
+      "lng": 111.29848631148135,
+      "nilai": 6
+    },
+    {
+      "id": "3501100",
+      "kode_bps": "3501100",
+      "kode_kab": "35.01",
+      "nama": "Tulakan",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.163685615880572,
+      "lng": 111.26907386732373,
+      "nilai": 4
+    },
+    {
+      "id": "3501110",
+      "kode_bps": "3501110",
+      "kode_kab": "35.01",
+      "nama": "Ngadirojo",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.200693019380521,
+      "lng": 111.32504574234427,
+      "nilai": 5
+    },
+    {
+      "id": "3501120",
+      "kode_bps": "3501120",
+      "kode_kab": "35.01",
+      "nama": "Sudimoro",
+      "nama_kab": "Kabupaten Pacitan",
+      "lat": -8.223345752459172,
+      "lng": 111.37563525967568,
+      "nilai": 6
+    },
+    {
+      "id": "3502010",
+      "kode_bps": "3502010",
+      "kode_kab": "35.02",
+      "nama": "Ngrayun",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -8.10815922308474,
+      "lng": 111.44093896531588,
+      "nilai": 8
+    },
+    {
+      "id": "3502020",
+      "kode_bps": "3502020",
+      "kode_kab": "35.02",
+      "nama": "Slahung",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -8.025179851592025,
+      "lng": 111.39847011288883,
+      "nilai": 12
+    },
+    {
+      "id": "3502030",
+      "kode_bps": "3502030",
+      "kode_kab": "35.02",
+      "nama": "Bungkal",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -8.016836434617842,
+      "lng": 111.46419457203545,
+      "nilai": 6
+    },
+    {
+      "id": "3502040",
+      "kode_bps": "3502040",
+      "kode_kab": "35.02",
+      "nama": "Sambit",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -8.002446930488512,
+      "lng": 111.51512985427917,
+      "nilai": 4
+    },
+    {
+      "id": "3502050",
+      "kode_bps": "3502050",
+      "kode_kab": "35.02",
+      "nama": "Sawoo",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.981588297592911,
+      "lng": 111.58532741340734,
+      "nilai": 5
+    },
+    {
+      "id": "3502060",
+      "kode_bps": "3502060",
+      "kode_kab": "35.02",
+      "nama": "Sooko",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.919924961334677,
+      "lng": 111.6553542463841,
+      "nilai": 6
+    },
+    {
+      "id": "3502061",
+      "kode_bps": "3502061",
+      "kode_kab": "35.02",
+      "nama": "Pudak",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.859225737867538,
+      "lng": 111.7352476158607,
+      "nilai": 6
+    },
+    {
+      "id": "3502070",
+      "kode_bps": "3502070",
+      "kode_kab": "35.02",
+      "nama": "Pulung",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.863596025223278,
+      "lng": 111.63742325251403,
+      "nilai": 4
+    },
+    {
+      "id": "3502080",
+      "kode_bps": "3502080",
+      "kode_kab": "35.02",
+      "nama": "Mlarak",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.918748786801525,
+      "lng": 111.5239301254059,
+      "nilai": 5
+    },
+    {
+      "id": "3502090",
+      "kode_bps": "3502090",
+      "kode_kab": "35.02",
+      "nama": "Siman",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.888107417536487,
+      "lng": 111.51014475185147,
+      "nilai": 4
+    },
+    {
+      "id": "3502100",
+      "kode_bps": "3502100",
+      "kode_kab": "35.02",
+      "nama": "Jetis",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.942291744074626,
+      "lng": 111.4785345879701,
+      "nilai": 6
+    },
+    {
+      "id": "3502110",
+      "kode_bps": "3502110",
+      "kode_kab": "35.02",
+      "nama": "Balong",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.955356495309794,
+      "lng": 111.40143896317448,
+      "nilai": 5
+    },
+    {
+      "id": "3502120",
+      "kode_bps": "3502120",
+      "kode_kab": "35.02",
+      "nama": "Kauman",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.885517606570295,
+      "lng": 111.41450966714665,
+      "nilai": 6
+    },
+    {
+      "id": "3502130",
+      "kode_bps": "3502130",
+      "kode_kab": "35.02",
+      "nama": "Jambon",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.920824424399165,
+      "lng": 111.37327024269769,
+      "nilai": 5
+    },
+    {
+      "id": "3502140",
+      "kode_bps": "3502140",
+      "kode_kab": "35.02",
+      "nama": "Badegan",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.896618862622148,
+      "lng": 111.32055228282556,
+      "nilai": 4
+    },
+    {
+      "id": "3502150",
+      "kode_bps": "3502150",
+      "kode_kab": "35.02",
+      "nama": "Sampung",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.823584708547471,
+      "lng": 111.35051940629735,
+      "nilai": 5
+    },
+    {
+      "id": "3502160",
+      "kode_bps": "3502160",
+      "kode_kab": "35.02",
+      "nama": "Sukorejo",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.8263784450196665,
+      "lng": 111.4229292762539,
+      "nilai": 6
+    },
+    {
+      "id": "3502170",
+      "kode_bps": "3502170",
+      "kode_kab": "35.02",
+      "nama": "Ponorogo",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.866301048634479,
+      "lng": 111.4657654815228,
+      "nilai": 5
+    },
+    {
+      "id": "3502180",
+      "kode_bps": "3502180",
+      "kode_kab": "35.02",
+      "nama": "Babadan",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.816042874969022,
+      "lng": 111.47696600771663,
+      "nilai": 4
+    },
+    {
+      "id": "3502190",
+      "kode_bps": "3502190",
+      "kode_kab": "35.02",
+      "nama": "Jenangan",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.832511828966561,
+      "lng": 111.54817087264864,
+      "nilai": 6
+    },
+    {
+      "id": "3502200",
+      "kode_bps": "3502200",
+      "kode_kab": "35.02",
+      "nama": "Ngebel",
+      "nama_kab": "Kabupaten Ponorogo",
+      "lat": -7.802957623413581,
+      "lng": 111.64571248872217,
+      "nilai": 4
+    },
+    {
+      "id": "3503010",
+      "kode_bps": "3503010",
+      "kode_kab": "35.03",
+      "nama": "Panggul",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.23014160090684,
+      "lng": 111.4567862472301,
+      "nilai": 14
+    },
+    {
+      "id": "3503020",
+      "kode_bps": "3503020",
+      "kode_kab": "35.03",
+      "nama": "Munjungan",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.2964776689288,
+      "lng": 111.57805483832571,
+      "nilai": 9
+    },
+    {
+      "id": "3503030",
+      "kode_bps": "3503030",
+      "kode_kab": "35.03",
+      "nama": "Watulimo",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.273959154566658,
+      "lng": 111.7026509697339,
+      "nilai": 6
+    },
+    {
+      "id": "3503040",
+      "kode_bps": "3503040",
+      "kode_kab": "35.03",
+      "nama": "Kampak",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.201136700255667,
+      "lng": 111.65131556690334,
+      "nilai": 4
+    },
+    {
+      "id": "3503050",
+      "kode_bps": "3503050",
+      "kode_kab": "35.03",
+      "nama": "Dongko",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.203260068010742,
+      "lng": 111.56514754978603,
+      "nilai": 4
+    },
+    {
+      "id": "3503060",
+      "kode_bps": "3503060",
+      "kode_kab": "35.03",
+      "nama": "Pule",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.116901314263604,
+      "lng": 111.53912118279545,
+      "nilai": 7
+    },
+    {
+      "id": "3503070",
+      "kode_bps": "3503070",
+      "kode_kab": "35.03",
+      "nama": "Karangan",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.079609596089153,
+      "lng": 111.67187605972642,
+      "nilai": 7
+    },
+    {
+      "id": "3503071",
+      "kode_bps": "3503071",
+      "kode_kab": "35.03",
+      "nama": "Suruh",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.115171954672201,
+      "lng": 111.61941673247254,
+      "nilai": 6
+    },
+    {
+      "id": "3503080",
+      "kode_bps": "3503080",
+      "kode_kab": "35.03",
+      "nama": "Gandusari",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.133184438899491,
+      "lng": 111.7114392468937,
+      "nilai": 4
+    },
+    {
+      "id": "3503090",
+      "kode_bps": "3503090",
+      "kode_kab": "35.03",
+      "nama": "Durenan",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.098729633166885,
+      "lng": 111.8021398172417,
+      "nilai": 4
+    },
+    {
+      "id": "3503100",
+      "kode_bps": "3503100",
+      "kode_kab": "35.03",
+      "nama": "Pogalan",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.084611545763018,
+      "lng": 111.75347851991924,
+      "nilai": 7
+    },
+    {
+      "id": "3503110",
+      "kode_bps": "3503110",
+      "kode_kab": "35.03",
+      "nama": "Trenggalek",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.032912148728338,
+      "lng": 111.72200959038493,
+      "nilai": 6
+    },
+    {
+      "id": "3503120",
+      "kode_bps": "3503120",
+      "kode_kab": "35.03",
+      "nama": "Tugu",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -8.031900536345256,
+      "lng": 111.63597949118078,
+      "nilai": 6
+    },
+    {
+      "id": "3503130",
+      "kode_bps": "3503130",
+      "kode_kab": "35.03",
+      "nama": "Bendungan",
+      "nama_kab": "Kabupaten Trenggalek",
+      "lat": -7.948721709710068,
+      "lng": 111.71085552384542,
+      "nilai": 7
+    },
+    {
+      "id": "3504010",
+      "kode_bps": "3504010",
+      "kode_kab": "35.04",
+      "nama": "Besuki",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.23122118961171,
+      "lng": 111.77936930813412,
+      "nilai": 8
+    },
+    {
+      "id": "3504020",
+      "kode_bps": "3504020",
+      "kode_kab": "35.04",
+      "nama": "Bandung",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.166321673616405,
+      "lng": 111.76273010815746,
+      "nilai": 6
+    },
+    {
+      "id": "3504030",
+      "kode_bps": "3504030",
+      "kode_kab": "35.04",
+      "nama": "Pakel",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.151879773748318,
+      "lng": 111.82993139609823,
+      "nilai": 8
+    },
+    {
+      "id": "3504040",
+      "kode_bps": "3504040",
+      "kode_kab": "35.04",
+      "nama": "Campur Darat",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.16627569281913,
+      "lng": 111.8625206515052,
+      "nilai": 5
+    },
+    {
+      "id": "3504050",
+      "kode_bps": "3504050",
+      "kode_kab": "35.04",
+      "nama": "Tanggung Gunung",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.233967212976074,
+      "lng": 111.88363267270698,
+      "nilai": 5
+    },
+    {
+      "id": "3504060",
+      "kode_bps": "3504060",
+      "kode_kab": "35.04",
+      "nama": "Kalidawir",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.198768964705096,
+      "lng": 111.9482344180033,
+      "nilai": 6
+    },
+    {
+      "id": "3504070",
+      "kode_bps": "3504070",
+      "kode_kab": "35.04",
+      "nama": "Pucang Laban",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.241622276308636,
+      "lng": 112.00152587542914,
+      "nilai": 8
+    },
+    {
+      "id": "3504080",
+      "kode_bps": "3504080",
+      "kode_kab": "35.04",
+      "nama": "Rejotangan",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.144566396883954,
+      "lng": 112.06412823649863,
+      "nilai": 5
+    },
+    {
+      "id": "3504090",
+      "kode_bps": "3504090",
+      "kode_kab": "35.04",
+      "nama": "Ngunut",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.116158349771595,
+      "lng": 111.99802731027569,
+      "nilai": 6
+    },
+    {
+      "id": "3504100",
+      "kode_bps": "3504100",
+      "kode_kab": "35.04",
+      "nama": "Sumbergempol",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.101341036042037,
+      "lng": 111.95398314815304,
+      "nilai": 5
+    },
+    {
+      "id": "3504110",
+      "kode_bps": "3504110",
+      "kode_kab": "35.04",
+      "nama": "Boyolangu",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.104516539181056,
+      "lng": 111.89917956385774,
+      "nilai": 10
+    },
+    {
+      "id": "3504120",
+      "kode_bps": "3504120",
+      "kode_kab": "35.04",
+      "nama": "Tulungagung",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.067223088511653,
+      "lng": 111.90045497826944,
+      "nilai": 16
+    },
+    {
+      "id": "3504130",
+      "kode_bps": "3504130",
+      "kode_kab": "35.04",
+      "nama": "Kedungwaru",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.045360921391826,
+      "lng": 111.92373504731368,
+      "nilai": 8
+    },
+    {
+      "id": "3504140",
+      "kode_bps": "3504140",
+      "kode_kab": "35.04",
+      "nama": "Ngantru",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.011597963365357,
+      "lng": 111.948387773548,
+      "nilai": 5
+    },
+    {
+      "id": "3504150",
+      "kode_bps": "3504150",
+      "kode_kab": "35.04",
+      "nama": "Karangrejo",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -7.994158552842201,
+      "lng": 111.8917601649569,
+      "nilai": 6
+    },
+    {
+      "id": "3504160",
+      "kode_bps": "3504160",
+      "kode_kab": "35.04",
+      "nama": "Kauman",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.037668058785524,
+      "lng": 111.85869797024608,
+      "nilai": 6
+    },
+    {
+      "id": "3504170",
+      "kode_bps": "3504170",
+      "kode_kab": "35.04",
+      "nama": "Gondang",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -8.070740645890876,
+      "lng": 111.83323723473805,
+      "nilai": 8
+    },
+    {
+      "id": "3504180",
+      "kode_bps": "3504180",
+      "kode_kab": "35.04",
+      "nama": "Pager Wojo",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -7.9774014112369445,
+      "lng": 111.78526402019497,
+      "nilai": 8
+    },
+    {
+      "id": "3504190",
+      "kode_bps": "3504190",
+      "kode_kab": "35.04",
+      "nama": "Sendang",
+      "nama_kab": "Kabupaten Tulungagung",
+      "lat": -7.92811873206433,
+      "lng": 111.83045110786837,
+      "nilai": 5
+    },
+    {
+      "id": "3505010",
+      "kode_bps": "3505010",
+      "kode_kab": "35.05",
+      "nama": "Bakung",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.27188628829885,
+      "lng": 112.07463946832567,
+      "nilai": 6
+    },
+    {
+      "id": "3505020",
+      "kode_bps": "3505020",
+      "kode_kab": "35.05",
+      "nama": "Wonotirto",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.263817682817129,
+      "lng": 112.17588160519907,
+      "nilai": 6
+    },
+    {
+      "id": "3505030",
+      "kode_bps": "3505030",
+      "kode_kab": "35.05",
+      "nama": "Panggungrejo",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.26782632025323,
+      "lng": 112.26412007620104,
+      "nilai": 4
+    },
+    {
+      "id": "3505040",
+      "kode_bps": "3505040",
+      "kode_kab": "35.05",
+      "nama": "Wates",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.289984758412526,
+      "lng": 112.34380663299862,
+      "nilai": 6
+    },
+    {
+      "id": "3505050",
+      "kode_bps": "3505050",
+      "kode_kab": "35.05",
+      "nama": "Binangun",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.207394472956606,
+      "lng": 112.33533283527399,
+      "nilai": 4
+    },
+    {
+      "id": "3505060",
+      "kode_bps": "3505060",
+      "kode_kab": "35.05",
+      "nama": "Sutojayan",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.17506791383302,
+      "lng": 112.22827920289966,
+      "nilai": 8
+    },
+    {
+      "id": "3505070",
+      "kode_bps": "3505070",
+      "kode_kab": "35.05",
+      "nama": "Kademangan",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.187350489282531,
+      "lng": 112.10866789878395,
+      "nilai": 4
+    },
+    {
+      "id": "3505080",
+      "kode_bps": "3505080",
+      "kode_kab": "35.05",
+      "nama": "Kanigoro",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.124329597302015,
+      "lng": 112.20793717139885,
+      "nilai": 4
+    },
+    {
+      "id": "3505090",
+      "kode_bps": "3505090",
+      "kode_kab": "35.05",
+      "nama": "Talun",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.099391071186867,
+      "lng": 112.27383674544231,
+      "nilai": 6
+    },
+    {
+      "id": "3505100",
+      "kode_bps": "3505100",
+      "kode_kab": "35.05",
+      "nama": "Selopuro",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.137886875548174,
+      "lng": 112.31142460207799,
+      "nilai": 4
+    },
+    {
+      "id": "3505110",
+      "kode_bps": "3505110",
+      "kode_kab": "35.05",
+      "nama": "Kesamben",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.12666103393656,
+      "lng": 112.38093939707979,
+      "nilai": 4
+    },
+    {
+      "id": "3505120",
+      "kode_bps": "3505120",
+      "kode_kab": "35.05",
+      "nama": "Selorejo",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.096259913133371,
+      "lng": 112.43673968221667,
+      "nilai": 8
+    },
+    {
+      "id": "3505130",
+      "kode_bps": "3505130",
+      "kode_kab": "35.05",
+      "nama": "Doko",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.041248486903203,
+      "lng": 112.40521600321695,
+      "nilai": 8
+    },
+    {
+      "id": "3505140",
+      "kode_bps": "3505140",
+      "kode_kab": "35.05",
+      "nama": "Wlingi",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.021195392162292,
+      "lng": 112.38051710004218,
+      "nilai": 6
+    },
+    {
+      "id": "3505150",
+      "kode_bps": "3505150",
+      "kode_kab": "35.05",
+      "nama": "Gandusari",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -7.996419596870171,
+      "lng": 112.32969324902066,
+      "nilai": 8
+    },
+    {
+      "id": "3505160",
+      "kode_bps": "3505160",
+      "kode_kab": "35.05",
+      "nama": "Garum",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.04120898413333,
+      "lng": 112.24336742047356,
+      "nilai": 6
+    },
+    {
+      "id": "3505170",
+      "kode_bps": "3505170",
+      "kode_kab": "35.05",
+      "nama": "Nglegok",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -7.997870108986323,
+      "lng": 112.22058203257296,
+      "nilai": 8
+    },
+    {
+      "id": "3505180",
+      "kode_bps": "3505180",
+      "kode_kab": "35.05",
+      "nama": "Sanankulon",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.089038559535213,
+      "lng": 112.14185763000327,
+      "nilai": 4
+    },
+    {
+      "id": "3505190",
+      "kode_bps": "3505190",
+      "kode_kab": "35.05",
+      "nama": "Ponggok",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.021016663050496,
+      "lng": 112.1201197253401,
+      "nilai": 8
+    },
+    {
+      "id": "3505200",
+      "kode_bps": "3505200",
+      "kode_kab": "35.05",
+      "nama": "Srengat",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.08345855691922,
+      "lng": 112.07020547160174,
+      "nilai": 8
+    },
+    {
+      "id": "3505210",
+      "kode_bps": "3505210",
+      "kode_kab": "35.05",
+      "nama": "Wonodadi",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.053123605335253,
+      "lng": 112.00521106760273,
+      "nilai": 15
+    },
+    {
+      "id": "3505220",
+      "kode_bps": "3505220",
+      "kode_kab": "35.05",
+      "nama": "Udanawu",
+      "nama_kab": "Kabupaten Blitar",
+      "lat": -8.014179480836207,
+      "lng": 112.03220503608638,
+      "nilai": 10
+    },
+    {
+      "id": "3506010",
+      "kode_bps": "3506010",
+      "kode_kab": "35.06",
+      "nama": "Mojo",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.896491711466984,
+      "lng": 111.90616870544375,
+      "nilai": 11
+    },
+    {
+      "id": "3506020",
+      "kode_bps": "3506020",
+      "kode_kab": "35.06",
+      "nama": "Semen",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.837448414250565,
+      "lng": 111.90097215987716,
+      "nilai": 17
+    },
+    {
+      "id": "3506030",
+      "kode_bps": "3506030",
+      "kode_kab": "35.06",
+      "nama": "Ngadiluwih",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.896791664029217,
+      "lng": 111.9967902035129,
+      "nilai": 5
+    },
+    {
+      "id": "3506040",
+      "kode_bps": "3506040",
+      "kode_kab": "35.06",
+      "nama": "Kras",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.963647125536527,
+      "lng": 111.97820666670357,
+      "nilai": 9
+    },
+    {
+      "id": "3506050",
+      "kode_bps": "3506050",
+      "kode_kab": "35.06",
+      "nama": "Ringinrejo",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.975445395904097,
+      "lng": 112.04928223679262,
+      "nilai": 7
+    },
+    {
+      "id": "3506060",
+      "kode_bps": "3506060",
+      "kode_kab": "35.06",
+      "nama": "Kandat",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.91957539063431,
+      "lng": 112.04346312204213,
+      "nilai": 7
+    },
+    {
+      "id": "3506070",
+      "kode_bps": "3506070",
+      "kode_kab": "35.06",
+      "nama": "Wates",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.903742322343252,
+      "lng": 112.10196757069514,
+      "nilai": 9
+    },
+    {
+      "id": "3506080",
+      "kode_bps": "3506080",
+      "kode_kab": "35.06",
+      "nama": "Ngancar",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.941387822570551,
+      "lng": 112.18507902151863,
+      "nilai": 5
+    },
+    {
+      "id": "3506090",
+      "kode_bps": "3506090",
+      "kode_kab": "35.06",
+      "nama": "Plosoklaten",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.872199497669468,
+      "lng": 112.18415724469786,
+      "nilai": 9
+    },
+    {
+      "id": "3506100",
+      "kode_bps": "3506100",
+      "kode_kab": "35.06",
+      "nama": "Gurah",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.81770290449209,
+      "lng": 112.11041388360273,
+      "nilai": 5
+    },
+    {
+      "id": "3506110",
+      "kode_bps": "3506110",
+      "kode_kab": "35.06",
+      "nama": "Puncu",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.850303942594638,
+      "lng": 112.24150795848111,
+      "nilai": 7
+    },
+    {
+      "id": "3506120",
+      "kode_bps": "3506120",
+      "kode_kab": "35.06",
+      "nama": "Kepung",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.825572626179692,
+      "lng": 112.27993271526822,
+      "nilai": 9
+    },
+    {
+      "id": "3506130",
+      "kode_bps": "3506130",
+      "kode_kab": "35.06",
+      "nama": "Kandangan",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.752208785533778,
+      "lng": 112.30159961652764,
+      "nilai": 5
+    },
+    {
+      "id": "3506140",
+      "kode_bps": "3506140",
+      "kode_kab": "35.06",
+      "nama": "Pare",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.778312147100677,
+      "lng": 112.17280982853916,
+      "nilai": 7
+    },
+    {
+      "id": "3506141",
+      "kode_bps": "3506141",
+      "kode_kab": "35.06",
+      "nama": "Badas",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.726147405621768,
+      "lng": 112.2101578525132,
+      "nilai": 7
+    },
+    {
+      "id": "3506150",
+      "kode_bps": "3506150",
+      "kode_kab": "35.06",
+      "nama": "Kunjang",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.662441970705207,
+      "lng": 112.17894685411889,
+      "nilai": 9
+    },
+    {
+      "id": "3506160",
+      "kode_bps": "3506160",
+      "kode_kab": "35.06",
+      "nama": "Plemahan",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.7052992782382885,
+      "lng": 112.1535817732835,
+      "nilai": 5
+    },
+    {
+      "id": "3506170",
+      "kode_bps": "3506170",
+      "kode_kab": "35.06",
+      "nama": "Purwoasri",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.637608745021513,
+      "lng": 112.1265097441232,
+      "nilai": 9
+    },
+    {
+      "id": "3506180",
+      "kode_bps": "3506180",
+      "kode_kab": "35.06",
+      "nama": "Papar",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.705336528637889,
+      "lng": 112.08924681003204,
+      "nilai": 7
+    },
+    {
+      "id": "3506190",
+      "kode_bps": "3506190",
+      "kode_kab": "35.06",
+      "nama": "Pagu",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.778336851772703,
+      "lng": 112.08170274258359,
+      "nilai": 7
+    },
+    {
+      "id": "3506191",
+      "kode_bps": "3506191",
+      "kode_kab": "35.06",
+      "nama": "Kayen Kidul",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.7436264906465135,
+      "lng": 112.10212593788621,
+      "nilai": 9
+    },
+    {
+      "id": "3506200",
+      "kode_bps": "3506200",
+      "kode_kab": "35.06",
+      "nama": "Gampengrejo",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.7642354130887545,
+      "lng": 112.03297871243149,
+      "nilai": 9
+    },
+    {
+      "id": "3506201",
+      "kode_bps": "3506201",
+      "kode_kab": "35.06",
+      "nama": "Ngasem",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.802692138675843,
+      "lng": 112.04799255504689,
+      "nilai": 5
+    },
+    {
+      "id": "3506210",
+      "kode_bps": "3506210",
+      "kode_kab": "35.06",
+      "nama": "Banyakan",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.790622773369081,
+      "lng": 111.92430005012287,
+      "nilai": 5
+    },
+    {
+      "id": "3506220",
+      "kode_bps": "3506220",
+      "kode_kab": "35.06",
+      "nama": "Grogol",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.758214235602301,
+      "lng": 111.93692350446862,
+      "nilai": 5
+    },
+    {
+      "id": "3506230",
+      "kode_bps": "3506230",
+      "kode_kab": "35.06",
+      "nama": "Tarokan",
+      "nama_kab": "Kabupaten Kediri",
+      "lat": -7.727006362061128,
+      "lng": 111.93834665938036,
+      "nilai": 7
+    },
+    {
+      "id": "3507010",
+      "kode_bps": "3507010",
+      "kode_kab": "35.07",
+      "nama": "Donomulyo",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.32490966946519,
+      "lng": 112.43080786953216,
+      "nilai": 21
+    },
+    {
+      "id": "3507020",
+      "kode_bps": "3507020",
+      "kode_kab": "35.07",
+      "nama": "Kalipare",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.212269184697918,
+      "lng": 112.43768611733663,
+      "nilai": 8
+    },
+    {
+      "id": "3507030",
+      "kode_bps": "3507030",
+      "kode_kab": "35.07",
+      "nama": "Pagak",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.246673669390137,
+      "lng": 112.51884237676589,
+      "nilai": 14
+    },
+    {
+      "id": "3507040",
+      "kode_bps": "3507040",
+      "kode_kab": "35.07",
+      "nama": "Bantur",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.315004222531392,
+      "lng": 112.55290462503952,
+      "nilai": 11
+    },
+    {
+      "id": "3507050",
+      "kode_bps": "3507050",
+      "kode_kab": "35.07",
+      "nama": "Gedangan",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.343083718872993,
+      "lng": 112.62206611990543,
+      "nilai": 8
+    },
+    {
+      "id": "3507060",
+      "kode_bps": "3507060",
+      "kode_kab": "35.07",
+      "nama": "Sumbermanjing",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.341053324675027,
+      "lng": 112.71528323439526,
+      "nilai": 6
+    },
+    {
+      "id": "3507070",
+      "kode_bps": "3507070",
+      "kode_kab": "35.07",
+      "nama": "Dampit",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.242175360629476,
+      "lng": 112.7688869408251,
+      "nilai": 8
+    },
+    {
+      "id": "3507080",
+      "kode_bps": "3507080",
+      "kode_kab": "35.07",
+      "nama": "Tirto Yudo",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.288068033338481,
+      "lng": 112.84638088159072,
+      "nilai": 11
+    },
+    {
+      "id": "3507090",
+      "kode_bps": "3507090",
+      "kode_kab": "35.07",
+      "nama": "Ampelgading",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.23150910252576,
+      "lng": 112.89169896808927,
+      "nilai": 11
+    },
+    {
+      "id": "3507100",
+      "kode_bps": "3507100",
+      "kode_kab": "35.07",
+      "nama": "Poncokusumo",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.04285179328827,
+      "lng": 112.84124684254105,
+      "nilai": 6
+    },
+    {
+      "id": "3507110",
+      "kode_bps": "3507110",
+      "kode_kab": "35.07",
+      "nama": "Wajak",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.121296338007,
+      "lng": 112.76946968162761,
+      "nilai": 8
+    },
+    {
+      "id": "3507120",
+      "kode_bps": "3507120",
+      "kode_kab": "35.07",
+      "nama": "Turen",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.177770006199077,
+      "lng": 112.69237233143811,
+      "nilai": 11
+    },
+    {
+      "id": "3507130",
+      "kode_bps": "3507130",
+      "kode_kab": "35.07",
+      "nama": "Bululawang",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.101595443486517,
+      "lng": 112.65169091969895,
+      "nilai": 8
+    },
+    {
+      "id": "3507140",
+      "kode_bps": "3507140",
+      "kode_kab": "35.07",
+      "nama": "Gondanglegi",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.15778008796314,
+      "lng": 112.6345379638905,
+      "nilai": 6
+    },
+    {
+      "id": "3507150",
+      "kode_bps": "3507150",
+      "kode_kab": "35.07",
+      "nama": "Pagelaran",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.198761621829734,
+      "lng": 112.60421033653505,
+      "nilai": 11
+    },
+    {
+      "id": "3507160",
+      "kode_bps": "3507160",
+      "kode_kab": "35.07",
+      "nama": "Kepanjen",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.133106426026988,
+      "lng": 112.57162745800268,
+      "nilai": 6
+    },
+    {
+      "id": "3507170",
+      "kode_bps": "3507170",
+      "kode_kab": "35.07",
+      "nama": "Sumber Pucung",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.165208599359778,
+      "lng": 112.49354520538999,
+      "nilai": 11
+    },
+    {
+      "id": "3507180",
+      "kode_bps": "3507180",
+      "kode_kab": "35.07",
+      "nama": "Kromengan",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.122814131446633,
+      "lng": 112.49099280689674,
+      "nilai": 6
+    },
+    {
+      "id": "3507190",
+      "kode_bps": "3507190",
+      "kode_kab": "35.07",
+      "nama": "Ngajum",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.052197717824873,
+      "lng": 112.53202811535067,
+      "nilai": 8
+    },
+    {
+      "id": "3507200",
+      "kode_bps": "3507200",
+      "kode_kab": "35.07",
+      "nama": "Wonosari",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.065990968085034,
+      "lng": 112.49382112326633,
+      "nilai": 8
+    },
+    {
+      "id": "3507210",
+      "kode_bps": "3507210",
+      "kode_kab": "35.07",
+      "nama": "Wagir",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.999978075067083,
+      "lng": 112.55865908841723,
+      "nilai": 11
+    },
+    {
+      "id": "3507220",
+      "kode_bps": "3507220",
+      "kode_kab": "35.07",
+      "nama": "Pakisaji",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.960902592108056,
+      "lng": 112.70508770423281,
+      "nilai": 11
+    },
+    {
+      "id": "3507230",
+      "kode_bps": "3507230",
+      "kode_kab": "35.07",
+      "nama": "Tajinan",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.059676513619914,
+      "lng": 112.68136360172903,
+      "nilai": 11
+    },
+    {
+      "id": "3507240",
+      "kode_bps": "3507240",
+      "kode_kab": "35.07",
+      "nama": "Tumpang",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.011045460340199,
+      "lng": 112.75933131024622,
+      "nilai": 6
+    },
+    {
+      "id": "3507250",
+      "kode_bps": "3507250",
+      "kode_kab": "35.07",
+      "nama": "Pakis",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.960902592108056,
+      "lng": 112.70508770423281,
+      "nilai": 11
+    },
+    {
+      "id": "3507260",
+      "kode_bps": "3507260",
+      "kode_kab": "35.07",
+      "nama": "Jabung",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.946953941474477,
+      "lng": 112.79033993110271,
+      "nilai": 8
+    },
+    {
+      "id": "3507270",
+      "kode_bps": "3507270",
+      "kode_kab": "35.07",
+      "nama": "Lawang",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -8.101595443486517,
+      "lng": 112.65169091969895,
+      "nilai": 8
+    },
+    {
+      "id": "3507280",
+      "kode_bps": "3507280",
+      "kode_kab": "35.07",
+      "nama": "Singosari",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.865482754466326,
+      "lng": 112.6568235778745,
+      "nilai": 11
+    },
+    {
+      "id": "3507290",
+      "kode_bps": "3507290",
+      "kode_kab": "35.07",
+      "nama": "Karangploso",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.862121503303951,
+      "lng": 112.59513369894218,
+      "nilai": 8
+    },
+    {
+      "id": "3507300",
+      "kode_bps": "3507300",
+      "kode_kab": "35.07",
+      "nama": "Dau",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.947749478564544,
+      "lng": 112.53671747493851,
+      "nilai": 6
+    },
+    {
+      "id": "3507310",
+      "kode_bps": "3507310",
+      "kode_kab": "35.07",
+      "nama": "Pujon",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.839350132986992,
+      "lng": 112.44802845217227,
+      "nilai": 8
+    },
+    {
+      "id": "3507320",
+      "kode_bps": "3507320",
+      "kode_kab": "35.07",
+      "nama": "Ngantang",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.892718173212576,
+      "lng": 112.37525696124368,
+      "nilai": 11
+    },
+    {
+      "id": "3507330",
+      "kode_bps": "3507330",
+      "kode_kab": "35.07",
+      "nama": "Kasembon",
+      "nama_kab": "Kabupaten Malang",
+      "lat": -7.8061812828079455,
+      "lng": 112.33737730078667,
+      "nilai": 6
+    },
+    {
+      "id": "3508010",
+      "kode_bps": "3508010",
+      "kode_kab": "35.08",
+      "nama": "Tempursari",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.285531116628185,
+      "lng": 112.97496146376439,
+      "nilai": 14
+    },
+    {
+      "id": "3508020",
+      "kode_bps": "3508020",
+      "kode_kab": "35.08",
+      "nama": "Pronojiwo",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.188286062027528,
+      "lng": 112.95801341319061,
+      "nilai": 9
+    },
+    {
+      "id": "3508030",
+      "kode_bps": "3508030",
+      "kode_kab": "35.08",
+      "nama": "Candipuro",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.17436674283615,
+      "lng": 113.05174600351096,
+      "nilai": 7
+    },
+    {
+      "id": "3508040",
+      "kode_bps": "3508040",
+      "kode_kab": "35.08",
+      "nama": "Pasirian",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.245167639863222,
+      "lng": 113.10293055929212,
+      "nilai": 4
+    },
+    {
+      "id": "3508050",
+      "kode_bps": "3508050",
+      "kode_kab": "35.08",
+      "nama": "Tempeh",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.213982950522919,
+      "lng": 113.17851624041893,
+      "nilai": 5
+    },
+    {
+      "id": "3508060",
+      "kode_bps": "3508060",
+      "kode_kab": "35.08",
+      "nama": "Lumajang",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.134329478696563,
+      "lng": 113.23503335562093,
+      "nilai": 4
+    },
+    {
+      "id": "3508061",
+      "kode_bps": "3508061",
+      "kode_kab": "35.08",
+      "nama": "Sumbersuko",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.152161860434378,
+      "lng": 113.18586275631061,
+      "nilai": 7
+    },
+    {
+      "id": "3508070",
+      "kode_bps": "3508070",
+      "kode_kab": "35.08",
+      "nama": "Tekung",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.1778074984047,
+      "lng": 113.258495195214,
+      "nilai": 7
+    },
+    {
+      "id": "3508080",
+      "kode_bps": "3508080",
+      "kode_kab": "35.08",
+      "nama": "Kunir",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.223247679565533,
+      "lng": 113.22989522337006,
+      "nilai": 7
+    },
+    {
+      "id": "3508090",
+      "kode_bps": "3508090",
+      "kode_kab": "35.08",
+      "nama": "Yosowilangun",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.255780225739795,
+      "lng": 113.28275802788573,
+      "nilai": 4
+    },
+    {
+      "id": "3508100",
+      "kode_bps": "3508100",
+      "kode_kab": "35.08",
+      "nama": "Rowokangkung",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.178320876464097,
+      "lng": 113.31981945439873,
+      "nilai": 5
+    },
+    {
+      "id": "3508110",
+      "kode_bps": "3508110",
+      "kode_kab": "35.08",
+      "nama": "Jatiroto",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.12827001419911,
+      "lng": 113.33138746014907,
+      "nilai": 5
+    },
+    {
+      "id": "3508120",
+      "kode_bps": "3508120",
+      "kode_kab": "35.08",
+      "nama": "Randuagung",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.057496933508634,
+      "lng": 113.31693549132972,
+      "nilai": 7
+    },
+    {
+      "id": "3508130",
+      "kode_bps": "3508130",
+      "kode_kab": "35.08",
+      "nama": "Sukodono",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.105898365820797,
+      "lng": 113.23624568622866,
+      "nilai": 7
+    },
+    {
+      "id": "3508140",
+      "kode_bps": "3508140",
+      "kode_kab": "35.08",
+      "nama": "Padang",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.0929244489433,
+      "lng": 113.17539821083477,
+      "nilai": 5
+    },
+    {
+      "id": "3508150",
+      "kode_bps": "3508150",
+      "kode_kab": "35.08",
+      "nama": "Pasrujambe",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.091373449853513,
+      "lng": 113.00467962063014,
+      "nilai": 5
+    },
+    {
+      "id": "3508160",
+      "kode_bps": "3508160",
+      "kode_kab": "35.08",
+      "nama": "Senduro",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.036715515022358,
+      "lng": 113.03777086298832,
+      "nilai": 7
+    },
+    {
+      "id": "3508170",
+      "kode_bps": "3508170",
+      "kode_kab": "35.08",
+      "nama": "Gucialit",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.024593585125604,
+      "lng": 113.13904124148694,
+      "nilai": 4
+    },
+    {
+      "id": "3508180",
+      "kode_bps": "3508180",
+      "kode_kab": "35.08",
+      "nama": "Kedungjajang",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -8.039607252925915,
+      "lng": 113.22466235938658,
+      "nilai": 4
+    },
+    {
+      "id": "3508190",
+      "kode_bps": "3508190",
+      "kode_kab": "35.08",
+      "nama": "Klakah",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -7.997973105943805,
+      "lng": 113.2571038162858,
+      "nilai": 4
+    },
+    {
+      "id": "3508200",
+      "kode_bps": "3508200",
+      "kode_kab": "35.08",
+      "nama": "Ranuyoso",
+      "nama_kab": "Kabupaten Lumajang",
+      "lat": -7.9483080490499685,
+      "lng": 113.26271969259291,
+      "nilai": 5
+    },
+    {
+      "id": "3509010",
+      "kode_bps": "3509010",
+      "kode_kab": "35.09",
+      "nama": "Kencong",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.286539106982383,
+      "lng": 113.35733516997034,
+      "nilai": 14
+    },
+    {
+      "id": "3509020",
+      "kode_bps": "3509020",
+      "kode_kab": "35.09",
+      "nama": "Gumuk Mas",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.327597310875163,
+      "lng": 113.40442086642591,
+      "nilai": 6
+    },
+    {
+      "id": "3509030",
+      "kode_bps": "3509030",
+      "kode_kab": "35.09",
+      "nama": "Puger",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.403606865769516,
+      "lng": 113.40328617680349,
+      "nilai": 9
+    },
+    {
+      "id": "3509040",
+      "kode_bps": "3509040",
+      "kode_kab": "35.09",
+      "nama": "Wuluhan",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.358748311016372,
+      "lng": 113.54095656723587,
+      "nilai": 9
+    },
+    {
+      "id": "3509050",
+      "kode_bps": "3509050",
+      "kode_kab": "35.09",
+      "nama": "Ambulu",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.381158481476202,
+      "lng": 113.6114633701732,
+      "nilai": 11
+    },
+    {
+      "id": "3509060",
+      "kode_bps": "3509060",
+      "kode_kab": "35.09",
+      "nama": "Tempurejo",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.415378603701404,
+      "lng": 113.76491833098662,
+      "nilai": 11
+    },
+    {
+      "id": "3509070",
+      "kode_bps": "3509070",
+      "kode_kab": "35.09",
+      "nama": "Silo",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.266900553234953,
+      "lng": 113.86944352115685,
+      "nilai": 11
+    },
+    {
+      "id": "3509080",
+      "kode_bps": "3509080",
+      "kode_kab": "35.09",
+      "nama": "Mayang",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.203587696062105,
+      "lng": 113.80141112607292,
+      "nilai": 9
+    },
+    {
+      "id": "3509090",
+      "kode_bps": "3509090",
+      "kode_kab": "35.09",
+      "nama": "Mumbulsari",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.240996561470627,
+      "lng": 113.43947411431441,
+      "nilai": 9
+    },
+    {
+      "id": "3509100",
+      "kode_bps": "3509100",
+      "kode_kab": "35.09",
+      "nama": "Jenggawah",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.291073465776456,
+      "lng": 113.64593342247531,
+      "nilai": 6
+    },
+    {
+      "id": "3509110",
+      "kode_bps": "3509110",
+      "kode_kab": "35.09",
+      "nama": "Ajung",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.2359982032046,
+      "lng": 113.65531682014337,
+      "nilai": 9
+    },
+    {
+      "id": "3509120",
+      "kode_bps": "3509120",
+      "kode_kab": "35.09",
+      "nama": "Rambipuji",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.231523902811798,
+      "lng": 113.59730390855123,
+      "nilai": 6
+    },
+    {
+      "id": "3509130",
+      "kode_bps": "3509130",
+      "kode_kab": "35.09",
+      "nama": "Balung",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.270776777392141,
+      "lng": 113.52816643931523,
+      "nilai": 6
+    },
+    {
+      "id": "3509140",
+      "kode_bps": "3509140",
+      "kode_kab": "35.09",
+      "nama": "Umbulsari",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.240996561470627,
+      "lng": 113.43947411431441,
+      "nilai": 9
+    },
+    {
+      "id": "3509150",
+      "kode_bps": "3509150",
+      "kode_kab": "35.09",
+      "nama": "Semboro",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.18141282937598,
+      "lng": 113.43606326264808,
+      "nilai": 6
+    },
+    {
+      "id": "3509160",
+      "kode_bps": "3509160",
+      "kode_kab": "35.09",
+      "nama": "Jombang",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.221481773824125,
+      "lng": 113.35899125673374,
+      "nilai": 22
+    },
+    {
+      "id": "3509170",
+      "kode_bps": "3509170",
+      "kode_kab": "35.09",
+      "nama": "Sumber Baru",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.0795728069365,
+      "lng": 113.40632329583717,
+      "nilai": 11
+    },
+    {
+      "id": "3509180",
+      "kode_bps": "3509180",
+      "kode_kab": "35.09",
+      "nama": "Tanggul",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.096041949934591,
+      "lng": 113.49842616064386,
+      "nilai": 11
+    },
+    {
+      "id": "3509190",
+      "kode_bps": "3509190",
+      "kode_kab": "35.09",
+      "nama": "Bangsalsari",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.14847542054655,
+      "lng": 113.55188063055682,
+      "nilai": 11
+    },
+    {
+      "id": "3509200",
+      "kode_bps": "3509200",
+      "kode_kab": "35.09",
+      "nama": "Panti",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.069450460924125,
+      "lng": 113.62276875515438,
+      "nilai": 9
+    },
+    {
+      "id": "3509210",
+      "kode_bps": "3509210",
+      "kode_kab": "35.09",
+      "nama": "Sukorambi",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.119175594208114,
+      "lng": 113.66097372241607,
+      "nilai": 11
+    },
+    {
+      "id": "3509220",
+      "kode_bps": "3509220",
+      "kode_kab": "35.09",
+      "nama": "Arjasa",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.101717102621928,
+      "lng": 113.73154805755858,
+      "nilai": 6
+    },
+    {
+      "id": "3509230",
+      "kode_bps": "3509230",
+      "kode_kab": "35.09",
+      "nama": "Pakusari",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.156923523954747,
+      "lng": 113.76919439547741,
+      "nilai": 11
+    },
+    {
+      "id": "3509240",
+      "kode_bps": "3509240",
+      "kode_kab": "35.09",
+      "nama": "Kalisat",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.122423911151172,
+      "lng": 113.80665733349748,
+      "nilai": 11
+    },
+    {
+      "id": "3509250",
+      "kode_bps": "3509250",
+      "kode_kab": "35.09",
+      "nama": "Ledokombo",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.140864139477273,
+      "lng": 113.91548285578477,
+      "nilai": 6
+    },
+    {
+      "id": "3509260",
+      "kode_bps": "3509260",
+      "kode_kab": "35.09",
+      "nama": "Sumberjambe",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.078248201439294,
+      "lng": 113.93456739020442,
+      "nilai": 6
+    },
+    {
+      "id": "3509270",
+      "kode_bps": "3509270",
+      "kode_kab": "35.09",
+      "nama": "Sukowono",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.06679419519003,
+      "lng": 113.83271592012522,
+      "nilai": 9
+    },
+    {
+      "id": "3509280",
+      "kode_bps": "3509280",
+      "kode_kab": "35.09",
+      "nama": "Jelbuk",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.053508311781144,
+      "lng": 113.724027087747,
+      "nilai": 6
+    },
+    {
+      "id": "3509710",
+      "kode_bps": "3509710",
+      "kode_kab": "35.09",
+      "nama": "Kaliwates",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.184894971212033,
+      "lng": 113.6769001659529,
+      "nilai": 6
+    },
+    {
+      "id": "3509720",
+      "kode_bps": "3509720",
+      "kode_kab": "35.09",
+      "nama": "Sumbersari",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.177960823013551,
+      "lng": 113.72803084238318,
+      "nilai": 11
+    },
+    {
+      "id": "3509730",
+      "kode_bps": "3509730",
+      "kode_kab": "35.09",
+      "nama": "Patrang",
+      "nama_kab": "Kabupaten Jember",
+      "lat": -8.135556668426734,
+      "lng": 113.69894122292351,
+      "nilai": 9
+    },
+    {
+      "id": "3510010",
+      "kode_bps": "3510010",
+      "kode_kab": "35.10",
+      "nama": "Pesanggaran",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.519741507521363,
+      "lng": 113.9719259839289,
+      "nilai": 19
+    },
+    {
+      "id": "3510011",
+      "kode_bps": "3510011",
+      "kode_kab": "35.10",
+      "nama": "Siliragung",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.512120928637126,
+      "lng": 114.09725185953131,
+      "nilai": 6
+    },
+    {
+      "id": "3510020",
+      "kode_bps": "3510020",
+      "kode_kab": "35.10",
+      "nama": "Bangorejo",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.536630678127858,
+      "lng": 114.1752492506011,
+      "nilai": 12
+    },
+    {
+      "id": "3510030",
+      "kode_bps": "3510030",
+      "kode_kab": "35.10",
+      "nama": "Purwoharjo",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.535070445175341,
+      "lng": 114.24091182729829,
+      "nilai": 10
+    },
+    {
+      "id": "3510040",
+      "kode_bps": "3510040",
+      "kode_kab": "35.10",
+      "nama": "Tegaldlimo",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.648143103148644,
+      "lng": 114.42710015208834,
+      "nilai": 6
+    },
+    {
+      "id": "3510050",
+      "kode_bps": "3510050",
+      "kode_kab": "35.10",
+      "nama": "Muncar",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.447964751550451,
+      "lng": 114.32172953082106,
+      "nilai": 8
+    },
+    {
+      "id": "3510060",
+      "kode_bps": "3510060",
+      "kode_kab": "35.10",
+      "nama": "Cluring",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.435849437138122,
+      "lng": 114.2347280209113,
+      "nilai": 10
+    },
+    {
+      "id": "3510070",
+      "kode_bps": "3510070",
+      "kode_kab": "35.10",
+      "nama": "Gambiran",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.41206890009517,
+      "lng": 114.16725580574064,
+      "nilai": 6
+    },
+    {
+      "id": "3510071",
+      "kode_bps": "3510071",
+      "kode_kab": "35.10",
+      "nama": "Tegalsari",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.423764085253579,
+      "lng": 114.12583586478354,
+      "nilai": 8
+    },
+    {
+      "id": "3510080",
+      "kode_bps": "3510080",
+      "kode_kab": "35.10",
+      "nama": "Glenmore",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.314350353017769,
+      "lng": 114.04835007310092,
+      "nilai": 6
+    },
+    {
+      "id": "3510090",
+      "kode_bps": "3510090",
+      "kode_kab": "35.10",
+      "nama": "Kalibaru",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.26961637092382,
+      "lng": 113.98077638570486,
+      "nilai": 8
+    },
+    {
+      "id": "3510100",
+      "kode_bps": "3510100",
+      "kode_kab": "35.10",
+      "nama": "Genteng",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.34773399381257,
+      "lng": 114.14843270673404,
+      "nilai": 10
+    },
+    {
+      "id": "3510110",
+      "kode_bps": "3510110",
+      "kode_kab": "35.10",
+      "nama": "Srono",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.378942008041237,
+      "lng": 114.26145600317474,
+      "nilai": 8
+    },
+    {
+      "id": "3510120",
+      "kode_bps": "3510120",
+      "kode_kab": "35.10",
+      "nama": "Rogojampi",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.324921482842441,
+      "lng": 114.28929930241631,
+      "nilai": 6
+    },
+    {
+      "id": "3510121",
+      "kode_bps": "3510121",
+      "kode_kab": "35.10",
+      "nama": "Blimbingsari",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.3309705105877,
+      "lng": 114.33617008014654,
+      "nilai": 6
+    },
+    {
+      "id": "3510130",
+      "kode_bps": "3510130",
+      "kode_kab": "35.10",
+      "nama": "Kabat",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.26575415724757,
+      "lng": 114.30435067652614,
+      "nilai": 8
+    },
+    {
+      "id": "3510140",
+      "kode_bps": "3510140",
+      "kode_kab": "35.10",
+      "nama": "Singojuruh",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.304372298249026,
+      "lng": 114.2313797732427,
+      "nilai": 10
+    },
+    {
+      "id": "3510150",
+      "kode_bps": "3510150",
+      "kode_kab": "35.10",
+      "nama": "Sempu",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.282250638116261,
+      "lng": 114.15171684070312,
+      "nilai": 8
+    },
+    {
+      "id": "3510160",
+      "kode_bps": "3510160",
+      "kode_kab": "35.10",
+      "nama": "Songgon",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.185459389753035,
+      "lng": 114.15648409108493,
+      "nilai": 6
+    },
+    {
+      "id": "3510170",
+      "kode_bps": "3510170",
+      "kode_kab": "35.10",
+      "nama": "Glagah",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.194321436873453,
+      "lng": 114.29990699637243,
+      "nilai": 10
+    },
+    {
+      "id": "3510171",
+      "kode_bps": "3510171",
+      "kode_kab": "35.10",
+      "nama": "Licin",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.15871641005214,
+      "lng": 114.23653058230326,
+      "nilai": 10
+    },
+    {
+      "id": "3510180",
+      "kode_bps": "3510180",
+      "kode_kab": "35.10",
+      "nama": "Banyuwangi",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.228372443269812,
+      "lng": 114.3676838494936,
+      "nilai": 6
+    },
+    {
+      "id": "3510190",
+      "kode_bps": "3510190",
+      "kode_kab": "35.10",
+      "nama": "Giri",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.19190565082003,
+      "lng": 114.33412590814387,
+      "nilai": 8
+    },
+    {
+      "id": "3510200",
+      "kode_bps": "3510200",
+      "kode_kab": "35.10",
+      "nama": "Kalipuro",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -8.11591600225662,
+      "lng": 114.33369637644378,
+      "nilai": 10
+    },
+    {
+      "id": "3510210",
+      "kode_bps": "3510210",
+      "kode_kab": "35.10",
+      "nama": "Wongsorejo",
+      "nama_kab": "Kabupaten Banyuwangi",
+      "lat": -7.9891630000279825,
+      "lng": 114.33294975211955,
+      "nilai": 10
+    },
+    {
+      "id": "3511010",
+      "kode_bps": "3511010",
+      "kode_kab": "35.11",
+      "nama": "Maesan",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -8.01810482621235,
+      "lng": 113.74875149189138,
+      "nilai": 9
+    },
+    {
+      "id": "3511020",
+      "kode_bps": "3511020",
+      "kode_kab": "35.11",
+      "nama": "Grujugan",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.976768693810761,
+      "lng": 113.7526795903544,
+      "nilai": 5
+    },
+    {
+      "id": "3511030",
+      "kode_bps": "3511030",
+      "kode_kab": "35.11",
+      "nama": "Tamanan",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -8.019918744593364,
+      "lng": 113.82960025928368,
+      "nilai": 6
+    },
+    {
+      "id": "3511031",
+      "kode_bps": "3511031",
+      "kode_kab": "35.11",
+      "nama": "Jambesari Darus Sholah",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.989553352238428,
+      "lng": 113.85217002816073,
+      "nilai": 4
+    },
+    {
+      "id": "3511040",
+      "kode_bps": "3511040",
+      "kode_kab": "35.11",
+      "nama": "Pujer",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.982548348753559,
+      "lng": 113.888819606471,
+      "nilai": 4
+    },
+    {
+      "id": "3511050",
+      "kode_bps": "3511050",
+      "kode_kab": "35.11",
+      "nama": "Tlogosari",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -8.02980186046956,
+      "lng": 113.97395401731703,
+      "nilai": 5
+    },
+    {
+      "id": "3511060",
+      "kode_bps": "3511060",
+      "kode_kab": "35.11",
+      "nama": "Sukosari",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.941258494682826,
+      "lng": 113.95416063001086,
+      "nilai": 3
+    },
+    {
+      "id": "3511061",
+      "kode_bps": "3511061",
+      "kode_kab": "35.11",
+      "nama": "Sumber Wringin",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.828690256517449,
+      "lng": 113.7739158884366,
+      "nilai": 5
+    },
+    {
+      "id": "3511070",
+      "kode_bps": "3511070",
+      "kode_kab": "35.11",
+      "nama": "Tapen",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.885151109677895,
+      "lng": 113.93714899982729,
+      "nilai": 3
+    },
+    {
+      "id": "3511080",
+      "kode_bps": "3511080",
+      "kode_kab": "35.11",
+      "nama": "Wonosari",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.916969468043909,
+      "lng": 113.89824954381257,
+      "nilai": 5
+    },
+    {
+      "id": "3511090",
+      "kode_bps": "3511090",
+      "kode_kab": "35.11",
+      "nama": "Tenggarang",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.935117817852223,
+      "lng": 113.84981848393035,
+      "nilai": 4
+    },
+    {
+      "id": "3511100",
+      "kode_bps": "3511100",
+      "kode_kab": "35.11",
+      "nama": "Bondowoso",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.928650014967159,
+      "lng": 113.81891812682804,
+      "nilai": 4
+    },
+    {
+      "id": "3511110",
+      "kode_bps": "3511110",
+      "kode_kab": "35.11",
+      "nama": "Curah Dami",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.931137824906237,
+      "lng": 113.77337052217196,
+      "nilai": 3
+    },
+    {
+      "id": "3511111",
+      "kode_bps": "3511111",
+      "kode_kab": "35.11",
+      "nama": "Binakal",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.911263423464745,
+      "lng": 113.74008435231781,
+      "nilai": 4
+    },
+    {
+      "id": "3511120",
+      "kode_bps": "3511120",
+      "kode_kab": "35.11",
+      "nama": "Pakem",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.90940281880004,
+      "lng": 113.70178899264975,
+      "nilai": 4
+    },
+    {
+      "id": "3511130",
+      "kode_bps": "3511130",
+      "kode_kab": "35.11",
+      "nama": "Wringin",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.828690256517449,
+      "lng": 113.7739158884366,
+      "nilai": 5
+    },
+    {
+      "id": "3511140",
+      "kode_bps": "3511140",
+      "kode_kab": "35.11",
+      "nama": "Tegalampel",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.872931964333572,
+      "lng": 113.821635715134,
+      "nilai": 3
+    },
+    {
+      "id": "3511141",
+      "kode_bps": "3511141",
+      "kode_kab": "35.11",
+      "nama": "Taman Krocok",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.851585111877824,
+      "lng": 113.86792970870948,
+      "nilai": 5
+    },
+    {
+      "id": "3511150",
+      "kode_bps": "3511150",
+      "kode_kab": "35.11",
+      "nama": "Klabang",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.82806155002941,
+      "lng": 113.92050716066775,
+      "nilai": 4
+    },
+    {
+      "id": "3511151",
+      "kode_bps": "3511151",
+      "kode_kab": "35.11",
+      "nama": "Ijen",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -8.04793677433023,
+      "lng": 114.16251412251279,
+      "nilai": 3
+    },
+    {
+      "id": "3511152",
+      "kode_bps": "3511152",
+      "kode_kab": "35.11",
+      "nama": "Botolinggo",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.911664853328775,
+      "lng": 114.03924798932727,
+      "nilai": 3
+    },
+    {
+      "id": "3511160",
+      "kode_bps": "3511160",
+      "kode_kab": "35.11",
+      "nama": "Prajekan",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.811378800713305,
+      "lng": 113.9967559912537,
+      "nilai": 3
+    },
+    {
+      "id": "3511170",
+      "kode_bps": "3511170",
+      "kode_kab": "35.11",
+      "nama": "Cermee",
+      "nama_kab": "Kabupaten Bondowoso",
+      "lat": -7.848661565351564,
+      "lng": 114.06870888077478,
+      "nilai": 5
+    },
+    {
+      "id": "3512010",
+      "kode_bps": "3512010",
+      "kode_kab": "35.12",
+      "nama": "Sumbermalang",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.882371958354599,
+      "lng": 113.67610220628903,
+      "nilai": 5
+    },
+    {
+      "id": "3512020",
+      "kode_bps": "3512020",
+      "kode_kab": "35.12",
+      "nama": "Jatibanteng",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.823691684754555,
+      "lng": 113.6520053610468,
+      "nilai": 11
+    },
+    {
+      "id": "3512030",
+      "kode_bps": "3512030",
+      "kode_kab": "35.12",
+      "nama": "Banyuglugur",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.752554791151679,
+      "lng": 113.62652423618971,
+      "nilai": 3
+    },
+    {
+      "id": "3512040",
+      "kode_bps": "3512040",
+      "kode_kab": "35.12",
+      "nama": "Besuki",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.753810333082042,
+      "lng": 113.70253311986386,
+      "nilai": 7
+    },
+    {
+      "id": "3512050",
+      "kode_bps": "3512050",
+      "kode_kab": "35.12",
+      "nama": "Suboh",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.765703480093503,
+      "lng": 113.73124399474345,
+      "nilai": 5
+    },
+    {
+      "id": "3512060",
+      "kode_bps": "3512060",
+      "kode_kab": "35.12",
+      "nama": "Mlandingan",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.778232450718476,
+      "lng": 113.79176617575757,
+      "nilai": 3
+    },
+    {
+      "id": "3512070",
+      "kode_bps": "3512070",
+      "kode_kab": "35.12",
+      "nama": "Bungatan",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.7355962060428585,
+      "lng": 113.8289610502019,
+      "nilai": 4
+    },
+    {
+      "id": "3512080",
+      "kode_bps": "3512080",
+      "kode_kab": "35.12",
+      "nama": "Kendit",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.746006200641146,
+      "lng": 113.90530157501487,
+      "nilai": 4
+    },
+    {
+      "id": "3512090",
+      "kode_bps": "3512090",
+      "kode_kab": "35.12",
+      "nama": "Panarukan",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.696790133979703,
+      "lng": 113.97406688470863,
+      "nilai": 5
+    },
+    {
+      "id": "3512100",
+      "kode_bps": "3512100",
+      "kode_kab": "35.12",
+      "nama": "Situbondo",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.72132412237996,
+      "lng": 113.99631983640326,
+      "nilai": 3
+    },
+    {
+      "id": "3512110",
+      "kode_bps": "3512110",
+      "kode_kab": "35.12",
+      "nama": "Mangaran",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.642066891953304,
+      "lng": 114.04089778180398,
+      "nilai": 5
+    },
+    {
+      "id": "3512120",
+      "kode_bps": "3512120",
+      "kode_kab": "35.12",
+      "nama": "Panji",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.715435876774477,
+      "lng": 114.03335805864629,
+      "nilai": 4
+    },
+    {
+      "id": "3512130",
+      "kode_bps": "3512130",
+      "kode_kab": "35.12",
+      "nama": "Kapongan",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.711798976073754,
+      "lng": 114.07713491955856,
+      "nilai": 3
+    },
+    {
+      "id": "3512140",
+      "kode_bps": "3512140",
+      "kode_kab": "35.12",
+      "nama": "Arjasa",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.844638445921387,
+      "lng": 114.12734611036946,
+      "nilai": 4
+    },
+    {
+      "id": "3512150",
+      "kode_bps": "3512150",
+      "kode_kab": "35.12",
+      "nama": "Jangkar",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.772793663372335,
+      "lng": 114.16949523588325,
+      "nilai": 5
+    },
+    {
+      "id": "3512160",
+      "kode_bps": "3512160",
+      "kode_kab": "35.12",
+      "nama": "Asembagus",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.858712813676072,
+      "lng": 114.21386591664786,
+      "nilai": 3
+    },
+    {
+      "id": "3512170",
+      "kode_bps": "3512170",
+      "kode_kab": "35.12",
+      "nama": "Banyuputih",
+      "nama_kab": "Kabupaten Situbondo",
+      "lat": -7.833301445747383,
+      "lng": 114.34683048074362,
+      "nilai": 4
+    },
+    {
+      "id": "3513010",
+      "kode_bps": "3513010",
+      "kode_kab": "35.13",
+      "nama": "Sukapura",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.921575711951807,
+      "lng": 113.01049027361273,
+      "nilai": 13
+    },
+    {
+      "id": "3513020",
+      "kode_bps": "3513020",
+      "kode_kab": "35.13",
+      "nama": "Sumber",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.955539971323127,
+      "lng": 113.08866534161423,
+      "nilai": 8
+    },
+    {
+      "id": "3513030",
+      "kode_bps": "3513030",
+      "kode_kab": "35.13",
+      "nama": "Kuripan",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.901805430616723,
+      "lng": 113.13807628531077,
+      "nilai": 7
+    },
+    {
+      "id": "3513040",
+      "kode_bps": "3513040",
+      "kode_kab": "35.13",
+      "nama": "Bantaran",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.870005275896759,
+      "lng": 113.18976968255791,
+      "nilai": 4
+    },
+    {
+      "id": "3513050",
+      "kode_bps": "3513050",
+      "kode_kab": "35.13",
+      "nama": "Leces",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.861555402061008,
+      "lng": 113.22911021769177,
+      "nilai": 5
+    },
+    {
+      "id": "3513060",
+      "kode_bps": "3513060",
+      "kode_kab": "35.13",
+      "nama": "Tegalsiwalan",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.866134620884201,
+      "lng": 113.26638545763086,
+      "nilai": 5
+    },
+    {
+      "id": "3513070",
+      "kode_bps": "3513070",
+      "kode_kab": "35.13",
+      "nama": "Banyuanyar",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.859999904628827,
+      "lng": 113.30879526765086,
+      "nilai": 7
+    },
+    {
+      "id": "3513080",
+      "kode_bps": "3513080",
+      "kode_kab": "35.13",
+      "nama": "Tiris",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.951295232506888,
+      "lng": 113.38187725377489,
+      "nilai": 4
+    },
+    {
+      "id": "3513090",
+      "kode_bps": "3513090",
+      "kode_kab": "35.13",
+      "nama": "Krucil",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.9411453567089,
+      "lng": 113.50721482931856,
+      "nilai": 5
+    },
+    {
+      "id": "3513100",
+      "kode_bps": "3513100",
+      "kode_kab": "35.13",
+      "nama": "Gading",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.869096625175808,
+      "lng": 113.49794965723959,
+      "nilai": 7
+    },
+    {
+      "id": "3513110",
+      "kode_bps": "3513110",
+      "kode_kab": "35.13",
+      "nama": "Pakuniran",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.823429562097289,
+      "lng": 113.5520331868346,
+      "nilai": 4
+    },
+    {
+      "id": "3513120",
+      "kode_bps": "3513120",
+      "kode_kab": "35.13",
+      "nama": "Kotaanyar",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.764089919496592,
+      "lng": 113.55568290688304,
+      "nilai": 5
+    },
+    {
+      "id": "3513130",
+      "kode_bps": "3513130",
+      "kode_kab": "35.13",
+      "nama": "Paiton",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.7270569470336365,
+      "lng": 113.51665607666382,
+      "nilai": 7
+    },
+    {
+      "id": "3513140",
+      "kode_bps": "3513140",
+      "kode_kab": "35.13",
+      "nama": "Besuk",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.7893152762376845,
+      "lng": 113.47777130712143,
+      "nilai": 4
+    },
+    {
+      "id": "3513150",
+      "kode_bps": "3513150",
+      "kode_kab": "35.13",
+      "nama": "Kraksaan",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.756550410606038,
+      "lng": 113.42841074174723,
+      "nilai": 5
+    },
+    {
+      "id": "3513160",
+      "kode_bps": "3513160",
+      "kode_kab": "35.13",
+      "nama": "Krejengan",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.800588000485119,
+      "lng": 113.41635084360782,
+      "nilai": 7
+    },
+    {
+      "id": "3513170",
+      "kode_bps": "3513170",
+      "kode_kab": "35.13",
+      "nama": "Pajarakan",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.774924859789254,
+      "lng": 113.37258469548584,
+      "nilai": 4
+    },
+    {
+      "id": "3513180",
+      "kode_bps": "3513180",
+      "kode_kab": "35.13",
+      "nama": "Maron",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.842032482817975,
+      "lng": 113.36005546174265,
+      "nilai": 5
+    },
+    {
+      "id": "3513190",
+      "kode_bps": "3513190",
+      "kode_kab": "35.13",
+      "nama": "Gending",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.795145779874493,
+      "lng": 113.31312961772457,
+      "nilai": 7
+    },
+    {
+      "id": "3513200",
+      "kode_bps": "3513200",
+      "kode_kab": "35.13",
+      "nama": "Dringu",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.787909689214531,
+      "lng": 113.255761934557,
+      "nilai": 4
+    },
+    {
+      "id": "3513210",
+      "kode_bps": "3513210",
+      "kode_kab": "35.13",
+      "nama": "Wonomerto",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.828487866207368,
+      "lng": 113.15045819341749,
+      "nilai": 4
+    },
+    {
+      "id": "3513220",
+      "kode_bps": "3513220",
+      "kode_kab": "35.13",
+      "nama": "Lumbang",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.845837843001004,
+      "lng": 113.05761192951462,
+      "nilai": 7
+    },
+    {
+      "id": "3513230",
+      "kode_bps": "3513230",
+      "kode_kab": "35.13",
+      "nama": "Tongas",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.761350193473975,
+      "lng": 113.0934314466527,
+      "nilai": 5
+    },
+    {
+      "id": "3513240",
+      "kode_bps": "3513240",
+      "kode_kab": "35.13",
+      "nama": "Sumberasih",
+      "nama_kab": "Kabupaten Probolinggo",
+      "lat": -7.955539971323127,
+      "lng": 113.08866534161423,
+      "nilai": 8
+    },
+    {
+      "id": "3514010",
+      "kode_bps": "3514010",
+      "kode_kab": "35.14",
+      "nama": "Purwodadi",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.813785017138091,
+      "lng": 112.7355967206333,
+      "nilai": 18
+    },
+    {
+      "id": "3514020",
+      "kode_bps": "3514020",
+      "kode_kab": "35.14",
+      "nama": "Tutur",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.8845751859489805,
+      "lng": 112.82497642321052,
+      "nilai": 12
+    },
+    {
+      "id": "3514030",
+      "kode_bps": "3514030",
+      "kode_kab": "35.14",
+      "nama": "Puspo",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.851646360311345,
+      "lng": 112.88639215690148,
+      "nilai": 9
+    },
+    {
+      "id": "3514040",
+      "kode_bps": "3514040",
+      "kode_kab": "35.14",
+      "nama": "Tosari",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.899746820874071,
+      "lng": 112.90424426393196,
+      "nilai": 9
+    },
+    {
+      "id": "3514050",
+      "kode_bps": "3514050",
+      "kode_kab": "35.14",
+      "nama": "Lumbang",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.819101675798793,
+      "lng": 112.98540437373146,
+      "nilai": 5
+    },
+    {
+      "id": "3514060",
+      "kode_bps": "3514060",
+      "kode_kab": "35.14",
+      "nama": "Pasrepan",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.791462505960846,
+      "lng": 112.87266000089993,
+      "nilai": 7
+    },
+    {
+      "id": "3514070",
+      "kode_bps": "3514070",
+      "kode_kab": "35.14",
+      "nama": "Kejayan",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.739545240098218,
+      "lng": 112.84354797825894,
+      "nilai": 9
+    },
+    {
+      "id": "3514080",
+      "kode_bps": "3514080",
+      "kode_kab": "35.14",
+      "nama": "Wonorejo",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.714963372364347,
+      "lng": 112.7893926883849,
+      "nilai": 5
+    },
+    {
+      "id": "3514090",
+      "kode_bps": "3514090",
+      "kode_kab": "35.14",
+      "nama": "Purwosari",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.76279960535315,
+      "lng": 112.70822831728168,
+      "nilai": 7
+    },
+    {
+      "id": "3514100",
+      "kode_bps": "3514100",
+      "kode_kab": "35.14",
+      "nama": "Prigen",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.706744587327374,
+      "lng": 112.6409136645513,
+      "nilai": 5
+    },
+    {
+      "id": "3514110",
+      "kode_bps": "3514110",
+      "kode_kab": "35.14",
+      "nama": "Sukorejo",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.693117539800541,
+      "lng": 112.7306298947692,
+      "nilai": 9
+    },
+    {
+      "id": "3514120",
+      "kode_bps": "3514120",
+      "kode_kab": "35.14",
+      "nama": "Pandaan",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.6496183926689385,
+      "lng": 112.7076293611741,
+      "nilai": 7
+    },
+    {
+      "id": "3514130",
+      "kode_bps": "3514130",
+      "kode_kab": "35.14",
+      "nama": "Gempol",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.594183240898128,
+      "lng": 112.68128534506876,
+      "nilai": 9
+    },
+    {
+      "id": "3514140",
+      "kode_bps": "3514140",
+      "kode_kab": "35.14",
+      "nama": "Beji",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.598278603558789,
+      "lng": 112.7433687754252,
+      "nilai": 5
+    },
+    {
+      "id": "3514150",
+      "kode_bps": "3514150",
+      "kode_kab": "35.14",
+      "nama": "Bangil",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.585805329437672,
+      "lng": 112.81262411714525,
+      "nilai": 7
+    },
+    {
+      "id": "3514160",
+      "kode_bps": "3514160",
+      "kode_kab": "35.14",
+      "nama": "Rembang",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.645414474820514,
+      "lng": 112.79633144673747,
+      "nilai": 9
+    },
+    {
+      "id": "3514170",
+      "kode_bps": "3514170",
+      "kode_kab": "35.14",
+      "nama": "Kraton",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.642734034879932,
+      "lng": 112.85275101175468,
+      "nilai": 5
+    },
+    {
+      "id": "3514180",
+      "kode_bps": "3514180",
+      "kode_kab": "35.14",
+      "nama": "Pohjentrek",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.663466110888654,
+      "lng": 112.87119772719502,
+      "nilai": 7
+    },
+    {
+      "id": "3514190",
+      "kode_bps": "3514190",
+      "kode_kab": "35.14",
+      "nama": "Gondang Wetan",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.7086272394529445,
+      "lng": 112.9116820916076,
+      "nilai": 9
+    },
+    {
+      "id": "3514200",
+      "kode_bps": "3514200",
+      "kode_kab": "35.14",
+      "nama": "Rejoso",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.679193162318712,
+      "lng": 112.95046362537904,
+      "nilai": 7
+    },
+    {
+      "id": "3514210",
+      "kode_bps": "3514210",
+      "kode_kab": "35.14",
+      "nama": "Winongan",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.749108760333139,
+      "lng": 112.94477221243105,
+      "nilai": 5
+    },
+    {
+      "id": "3514220",
+      "kode_bps": "3514220",
+      "kode_kab": "35.14",
+      "nama": "Grati",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.738178334916317,
+      "lng": 113.00263854417364,
+      "nilai": 7
+    },
+    {
+      "id": "3514230",
+      "kode_bps": "3514230",
+      "kode_kab": "35.14",
+      "nama": "Lekok",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.675218069513531,
+      "lng": 113.0085243151678,
+      "nilai": 5
+    },
+    {
+      "id": "3514240",
+      "kode_bps": "3514240",
+      "kode_kab": "35.14",
+      "nama": "Nguling",
+      "nama_kab": "Kabupaten Pasuruan",
+      "lat": -7.718693336535667,
+      "lng": 113.05345223620841,
+      "nilai": 9
+    },
+    {
+      "id": "3515010",
+      "kode_bps": "3515010",
+      "kode_kab": "35.15",
+      "nama": "Tarik",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.447624071737489,
+      "lng": 112.51567704125571,
+      "nilai": 42
+    },
+    {
+      "id": "3515020",
+      "kode_bps": "3515020",
+      "kode_kab": "35.15",
+      "nama": "Prambon",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.464539782803279,
+      "lng": 112.58493661606964,
+      "nilai": 27
+    },
+    {
+      "id": "3515030",
+      "kode_bps": "3515030",
+      "kode_kab": "35.15",
+      "nama": "Krembung",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.515949368971505,
+      "lng": 112.63862035314806,
+      "nilai": 21
+    },
+    {
+      "id": "3515040",
+      "kode_bps": "3515040",
+      "kode_kab": "35.15",
+      "nama": "Porong",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.5285842775357255,
+      "lng": 112.70795341819127,
+      "nilai": 12
+    },
+    {
+      "id": "3515050",
+      "kode_bps": "3515050",
+      "kode_kab": "35.15",
+      "nama": "Jabon",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.544977997018423,
+      "lng": 112.79744713093369,
+      "nilai": 17
+    },
+    {
+      "id": "3515060",
+      "kode_bps": "3515060",
+      "kode_kab": "35.15",
+      "nama": "Tanggulangin",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.50706939556233,
+      "lng": 112.72229302114923,
+      "nilai": 21
+    },
+    {
+      "id": "3515070",
+      "kode_bps": "3515070",
+      "kode_kab": "35.15",
+      "nama": "Candi",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.483475495113345,
+      "lng": 112.72976833694545,
+      "nilai": 12
+    },
+    {
+      "id": "3515080",
+      "kode_bps": "3515080",
+      "kode_kab": "35.15",
+      "nama": "Tulangan",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.475189627226153,
+      "lng": 112.64455394338832,
+      "nilai": 21
+    },
+    {
+      "id": "3515090",
+      "kode_bps": "3515090",
+      "kode_kab": "35.15",
+      "nama": "Wonoayu",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.429369135411879,
+      "lng": 112.63036087267625,
+      "nilai": 12
+    },
+    {
+      "id": "3515100",
+      "kode_bps": "3515100",
+      "kode_kab": "35.15",
+      "nama": "Sukodono",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.398893276944056,
+      "lng": 112.67354698751079,
+      "nilai": 17
+    },
+    {
+      "id": "3515110",
+      "kode_bps": "3515110",
+      "kode_kab": "35.15",
+      "nama": "Sidoarjo",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.465154853155933,
+      "lng": 112.74817806859316,
+      "nilai": 17
+    },
+    {
+      "id": "3515120",
+      "kode_bps": "3515120",
+      "kode_kab": "35.15",
+      "nama": "Buduran",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.435368930877583,
+      "lng": 112.75578404016711,
+      "nilai": 21
+    },
+    {
+      "id": "3515130",
+      "kode_bps": "3515130",
+      "kode_kab": "35.15",
+      "nama": "Sedati",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.4043040895224905,
+      "lng": 112.80397257981583,
+      "nilai": 17
+    },
+    {
+      "id": "3515140",
+      "kode_bps": "3515140",
+      "kode_kab": "35.15",
+      "nama": "Waru",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.354386376507916,
+      "lng": 112.76645679148359,
+      "nilai": 21
+    },
+    {
+      "id": "3515150",
+      "kode_bps": "3515150",
+      "kode_kab": "35.15",
+      "nama": "Gedangan",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.391469196084025,
+      "lng": 112.72973624640375,
+      "nilai": 12
+    },
+    {
+      "id": "3515160",
+      "kode_bps": "3515160",
+      "kode_kab": "35.15",
+      "nama": "Taman",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.365966859754482,
+      "lng": 112.67317812209913,
+      "nilai": 12
+    },
+    {
+      "id": "3515170",
+      "kode_bps": "3515170",
+      "kode_kab": "35.15",
+      "nama": "Krian",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.399738166082763,
+      "lng": 112.59555974643983,
+      "nilai": 17
+    },
+    {
+      "id": "3515180",
+      "kode_bps": "3515180",
+      "kode_kab": "35.15",
+      "nama": "Balong Bendo",
+      "nama_kab": "Kabupaten Sidoarjo",
+      "lat": -7.418357590247852,
+      "lng": 112.52807005264262,
+      "nilai": 21
+    },
+    {
+      "id": "3516010",
+      "kode_bps": "3516010",
+      "kode_kab": "35.16",
+      "nama": "Jatirejo",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.650139203231221,
+      "lng": 112.43090631861483,
+      "nilai": 17
+    },
+    {
+      "id": "3516020",
+      "kode_bps": "3516020",
+      "kode_kab": "35.16",
+      "nama": "Gondang",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.6757851153187335,
+      "lng": 112.48220121321751,
+      "nilai": 11
+    },
+    {
+      "id": "3516030",
+      "kode_bps": "3516030",
+      "kode_kab": "35.16",
+      "nama": "Pacet",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.672743087976735,
+      "lng": 112.54297448962471,
+      "nilai": 8
+    },
+    {
+      "id": "3516040",
+      "kode_bps": "3516040",
+      "kode_kab": "35.16",
+      "nama": "Trawas",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.643078367722235,
+      "lng": 112.59393528807904,
+      "nilai": 5
+    },
+    {
+      "id": "3516050",
+      "kode_bps": "3516050",
+      "kode_kab": "35.16",
+      "nama": "Ngoro",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.566278723610119,
+      "lng": 112.61915838189361,
+      "nilai": 7
+    },
+    {
+      "id": "3516060",
+      "kode_bps": "3516060",
+      "kode_kab": "35.16",
+      "nama": "Pungging",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.536588606535374,
+      "lng": 112.57167637714252,
+      "nilai": 8
+    },
+    {
+      "id": "3516070",
+      "kode_bps": "3516070",
+      "kode_kab": "35.16",
+      "nama": "Kutorejo",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.56303464595264,
+      "lng": 112.5210871161413,
+      "nilai": 5
+    },
+    {
+      "id": "3516080",
+      "kode_bps": "3516080",
+      "kode_kab": "35.16",
+      "nama": "Mojosari",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.504961859904525,
+      "lng": 112.54300324262326,
+      "nilai": 7
+    },
+    {
+      "id": "3516090",
+      "kode_bps": "3516090",
+      "kode_kab": "35.16",
+      "nama": "Bangsal",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.50611214057012,
+      "lng": 112.49951194003378,
+      "nilai": 5
+    },
+    {
+      "id": "3516091",
+      "kode_bps": "3516091",
+      "kode_kab": "35.16",
+      "nama": "Mojoanyar",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.47503774486443,
+      "lng": 112.48103905160643,
+      "nilai": 8
+    },
+    {
+      "id": "3516100",
+      "kode_bps": "3516100",
+      "kode_kab": "35.16",
+      "nama": "Dlanggu",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.5706135294253665,
+      "lng": 112.47701334987438,
+      "nilai": 8
+    },
+    {
+      "id": "3516110",
+      "kode_bps": "3516110",
+      "kode_kab": "35.16",
+      "nama": "Puri",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.529475260460661,
+      "lng": 112.44578760719234,
+      "nilai": 7
+    },
+    {
+      "id": "3516120",
+      "kode_bps": "3516120",
+      "kode_kab": "35.16",
+      "nama": "Trowulan",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.551946369767618,
+      "lng": 112.38993115726878,
+      "nilai": 8
+    },
+    {
+      "id": "3516130",
+      "kode_bps": "3516130",
+      "kode_kab": "35.16",
+      "nama": "Sooko",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.501326185612653,
+      "lng": 112.41063385249097,
+      "nilai": 5
+    },
+    {
+      "id": "3516140",
+      "kode_bps": "3516140",
+      "kode_kab": "35.16",
+      "nama": "Gedek",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.4432628330834385,
+      "lng": 112.40075065485773,
+      "nilai": 7
+    },
+    {
+      "id": "3516150",
+      "kode_bps": "3516150",
+      "kode_kab": "35.16",
+      "nama": "Kemlagi",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.400423016423094,
+      "lng": 112.36840946050485,
+      "nilai": 8
+    },
+    {
+      "id": "3516160",
+      "kode_bps": "3516160",
+      "kode_kab": "35.16",
+      "nama": "Jetis",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.40440183856233,
+      "lng": 112.44542527488403,
+      "nilai": 5
+    },
+    {
+      "id": "3516170",
+      "kode_bps": "3516170",
+      "kode_kab": "35.16",
+      "nama": "Dawar Blandong",
+      "nama_kab": "Kabupaten Mojokerto",
+      "lat": -7.343434828605194,
+      "lng": 112.42101496936597,
+      "nilai": 7
+    },
+    {
+      "id": "3517010",
+      "kode_bps": "3517010",
+      "kode_kab": "35.17",
+      "nama": "Bandar Kedung Mulyo",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.56715032243835,
+      "lng": 112.1399256289747,
+      "nilai": 9
+    },
+    {
+      "id": "3517020",
+      "kode_bps": "3517020",
+      "kode_kab": "35.17",
+      "nama": "Perak",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.570924352751144,
+      "lng": 112.17242719673398,
+      "nilai": 17
+    },
+    {
+      "id": "3517030",
+      "kode_bps": "3517030",
+      "kode_kab": "35.17",
+      "nama": "Gudo",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.626465618269935,
+      "lng": 112.1997557900585,
+      "nilai": 11
+    },
+    {
+      "id": "3517040",
+      "kode_bps": "3517040",
+      "kode_kab": "35.17",
+      "nama": "Diwek",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.599159867040039,
+      "lng": 112.23498325727678,
+      "nilai": 7
+    },
+    {
+      "id": "3517050",
+      "kode_bps": "3517050",
+      "kode_kab": "35.17",
+      "nama": "Ngoro",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.678782202543635,
+      "lng": 112.25141381632571,
+      "nilai": 9
+    },
+    {
+      "id": "3517060",
+      "kode_bps": "3517060",
+      "kode_kab": "35.17",
+      "nama": "Mojowarno",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.620364397833406,
+      "lng": 112.31216637480696,
+      "nilai": 5
+    },
+    {
+      "id": "3517070",
+      "kode_bps": "3517070",
+      "kode_kab": "35.17",
+      "nama": "Bareng",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.690137095765356,
+      "lng": 112.31419705353177,
+      "nilai": 5
+    },
+    {
+      "id": "3517080",
+      "kode_bps": "3517080",
+      "kode_kab": "35.17",
+      "nama": "Wonosalam",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.713265173148637,
+      "lng": 112.3892634381457,
+      "nilai": 7
+    },
+    {
+      "id": "3517090",
+      "kode_bps": "3517090",
+      "kode_kab": "35.17",
+      "nama": "Mojoagung",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.582454483216303,
+      "lng": 112.35511465977216,
+      "nilai": 9
+    },
+    {
+      "id": "3517100",
+      "kode_bps": "3517100",
+      "kode_kab": "35.17",
+      "nama": "Sumobito",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.5221420536451395,
+      "lng": 112.32864674206442,
+      "nilai": 7
+    },
+    {
+      "id": "3517110",
+      "kode_bps": "3517110",
+      "kode_kab": "35.17",
+      "nama": "Jogo Roto",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.572344336692413,
+      "lng": 112.27849646930589,
+      "nilai": 5
+    },
+    {
+      "id": "3517120",
+      "kode_bps": "3517120",
+      "kode_kab": "35.17",
+      "nama": "Peterongan",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.514637063395189,
+      "lng": 112.27601664058339,
+      "nilai": 5
+    },
+    {
+      "id": "3517130",
+      "kode_bps": "3517130",
+      "kode_kab": "35.17",
+      "nama": "Jombang",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.536991000913017,
+      "lng": 112.22122771804999,
+      "nilai": 9
+    },
+    {
+      "id": "3517140",
+      "kode_bps": "3517140",
+      "kode_kab": "35.17",
+      "nama": "Megaluh",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.499700015635117,
+      "lng": 112.19168697815397,
+      "nilai": 7
+    },
+    {
+      "id": "3517150",
+      "kode_bps": "3517150",
+      "kode_kab": "35.17",
+      "nama": "Tembelang",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.478702838864074,
+      "lng": 112.2499649475243,
+      "nilai": 5
+    },
+    {
+      "id": "3517160",
+      "kode_bps": "3517160",
+      "kode_kab": "35.17",
+      "nama": "Kesamben",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.469291750774435,
+      "lng": 112.32866178845639,
+      "nilai": 9
+    },
+    {
+      "id": "3517170",
+      "kode_bps": "3517170",
+      "kode_kab": "35.17",
+      "nama": "Kudu",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.413690281347154,
+      "lng": 112.29638169110943,
+      "nilai": 7
+    },
+    {
+      "id": "3517171",
+      "kode_bps": "3517171",
+      "kode_kab": "35.17",
+      "nama": "Ngusikan",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.389899618581903,
+      "lng": 112.31955663538693,
+      "nilai": 9
+    },
+    {
+      "id": "3517180",
+      "kode_bps": "3517180",
+      "kode_kab": "35.17",
+      "nama": "Ploso",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.439170182444384,
+      "lng": 112.2355258079371,
+      "nilai": 7
+    },
+    {
+      "id": "3517190",
+      "kode_bps": "3517190",
+      "kode_kab": "35.17",
+      "nama": "Kabuh",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.387780514089907,
+      "lng": 112.20875225416962,
+      "nilai": 5
+    },
+    {
+      "id": "3517200",
+      "kode_bps": "3517200",
+      "kode_kab": "35.17",
+      "nama": "Plandaan",
+      "nama_kab": "Kabupaten Jombang",
+      "lat": -7.432040966707531,
+      "lng": 112.13494359401435,
+      "nilai": 9
+    },
+    {
+      "id": "3518010",
+      "kode_bps": "3518010",
+      "kode_kab": "35.18",
+      "nama": "Sawahan",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.747061458183578,
+      "lng": 111.7732302698297,
+      "nilai": 15
+    },
+    {
+      "id": "3518020",
+      "kode_bps": "3518020",
+      "kode_kab": "35.18",
+      "nama": "Ngetos",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.7456229341884,
+      "lng": 111.82855117376407,
+      "nilai": 10
+    },
+    {
+      "id": "3518030",
+      "kode_bps": "3518030",
+      "kode_kab": "35.18",
+      "nama": "Berbek",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.6514041822310555,
+      "lng": 111.84329020508548,
+      "nilai": 8
+    },
+    {
+      "id": "3518040",
+      "kode_bps": "3518040",
+      "kode_kab": "35.18",
+      "nama": "Loceret",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.698757421738694,
+      "lng": 111.88438364401365,
+      "nilai": 4
+    },
+    {
+      "id": "3518050",
+      "kode_bps": "3518050",
+      "kode_kab": "35.18",
+      "nama": "Pace",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.684035966087218,
+      "lng": 111.92366370750568,
+      "nilai": 6
+    },
+    {
+      "id": "3518060",
+      "kode_bps": "3518060",
+      "kode_kab": "35.18",
+      "nama": "Tanjunganom",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.6297209223583256,
+      "lng": 111.99893560836063,
+      "nilai": 6
+    },
+    {
+      "id": "3518070",
+      "kode_bps": "3518070",
+      "kode_kab": "35.18",
+      "nama": "Prambon",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.703673870316933,
+      "lng": 112.00865859558239,
+      "nilai": 8
+    },
+    {
+      "id": "3518080",
+      "kode_bps": "3518080",
+      "kode_kab": "35.18",
+      "nama": "Ngronggot",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.675218572280891,
+      "lng": 112.05502183705339,
+      "nilai": 4
+    },
+    {
+      "id": "3518090",
+      "kode_bps": "3518090",
+      "kode_kab": "35.18",
+      "nama": "Kertosono",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.609993653770618,
+      "lng": 112.08934428324962,
+      "nilai": 6
+    },
+    {
+      "id": "3518100",
+      "kode_bps": "3518100",
+      "kode_kab": "35.18",
+      "nama": "Patianrowo",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.548564151934384,
+      "lng": 112.09958989455089,
+      "nilai": 8
+    },
+    {
+      "id": "3518110",
+      "kode_bps": "3518110",
+      "kode_kab": "35.18",
+      "nama": "Baron",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.584969922707979,
+      "lng": 112.05144924151371,
+      "nilai": 4
+    },
+    {
+      "id": "3518120",
+      "kode_bps": "3518120",
+      "kode_kab": "35.18",
+      "nama": "Gondang",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.526490796246463,
+      "lng": 111.99369499494698,
+      "nilai": 6
+    },
+    {
+      "id": "3518130",
+      "kode_bps": "3518130",
+      "kode_kab": "35.18",
+      "nama": "Sukomoro",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.596909403584088,
+      "lng": 111.94837638203141,
+      "nilai": 8
+    },
+    {
+      "id": "3518140",
+      "kode_bps": "3518140",
+      "kode_kab": "35.18",
+      "nama": "Nganjuk",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.595085234177046,
+      "lng": 111.90616163647243,
+      "nilai": 4
+    },
+    {
+      "id": "3518150",
+      "kode_bps": "3518150",
+      "kode_kab": "35.18",
+      "nama": "Bagor",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.585223106894354,
+      "lng": 111.8499211660546,
+      "nilai": 6
+    },
+    {
+      "id": "3518160",
+      "kode_bps": "3518160",
+      "kode_kab": "35.18",
+      "nama": "Wilangan",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.602466696205264,
+      "lng": 111.80708672239875,
+      "nilai": 8
+    },
+    {
+      "id": "3518170",
+      "kode_bps": "3518170",
+      "kode_kab": "35.18",
+      "nama": "Rejoso",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.496081842960772,
+      "lng": 111.89026630807702,
+      "nilai": 4
+    },
+    {
+      "id": "3518180",
+      "kode_bps": "3518180",
+      "kode_kab": "35.18",
+      "nama": "Ngluyu",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.4408332196097895,
+      "lng": 111.99096637356861,
+      "nilai": 8
+    },
+    {
+      "id": "3518190",
+      "kode_bps": "3518190",
+      "kode_kab": "35.18",
+      "nama": "Lengkong",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.482602950860191,
+      "lng": 112.06330860700228,
+      "nilai": 4
+    },
+    {
+      "id": "3518200",
+      "kode_bps": "3518200",
+      "kode_kab": "35.18",
+      "nama": "Jatikalen",
+      "nama_kab": "Kabupaten Nganjuk",
+      "lat": -7.490048655787262,
+      "lng": 112.12620984355112,
+      "nilai": 6
+    },
+    {
+      "id": "3519010",
+      "kode_bps": "3519010",
+      "kode_kab": "35.19",
+      "nama": "Kebonsari",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.7440540251404775,
+      "lng": 111.4847961117012,
+      "nilai": 13
+    },
+    {
+      "id": "3519020",
+      "kode_bps": "3519020",
+      "kode_kab": "35.19",
+      "nama": "Geger",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.707518974060841,
+      "lng": 111.52789896252496,
+      "nilai": 6
+    },
+    {
+      "id": "3519030",
+      "kode_bps": "3519030",
+      "kode_kab": "35.19",
+      "nama": "Dolopo",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.777610759560234,
+      "lng": 111.54432170514504,
+      "nilai": 8
+    },
+    {
+      "id": "3519040",
+      "kode_bps": "3519040",
+      "kode_kab": "35.19",
+      "nama": "Dagangan",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.729366715507365,
+      "lng": 111.59163726124362,
+      "nilai": 4
+    },
+    {
+      "id": "3519050",
+      "kode_bps": "3519050",
+      "kode_kab": "35.19",
+      "nama": "Wungu",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.654603587712479,
+      "lng": 111.59474515961841,
+      "nilai": 4
+    },
+    {
+      "id": "3519060",
+      "kode_bps": "3519060",
+      "kode_kab": "35.19",
+      "nama": "Kare",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.722205007288342,
+      "lng": 111.68149646169621,
+      "nilai": 5
+    },
+    {
+      "id": "3519070",
+      "kode_bps": "3519070",
+      "kode_kab": "35.19",
+      "nama": "Gemarang",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.637815162352967,
+      "lng": 111.7412008201156,
+      "nilai": 6
+    },
+    {
+      "id": "3519080",
+      "kode_bps": "3519080",
+      "kode_kab": "35.19",
+      "nama": "Saradan",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.516437070413055,
+      "lng": 111.75525163524276,
+      "nilai": 6
+    },
+    {
+      "id": "3519090",
+      "kode_bps": "3519090",
+      "kode_kab": "35.19",
+      "nama": "Pilangkenceng",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.4745797777317335,
+      "lng": 111.66206473375526,
+      "nilai": 4
+    },
+    {
+      "id": "3519100",
+      "kode_bps": "3519100",
+      "kode_kab": "35.19",
+      "nama": "Mejayan",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.584441788952311,
+      "lng": 111.6786917122045,
+      "nilai": 5
+    },
+    {
+      "id": "3519110",
+      "kode_bps": "3519110",
+      "kode_kab": "35.19",
+      "nama": "Wonoasri",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.589453728260254,
+      "lng": 111.63354549583595,
+      "nilai": 6
+    },
+    {
+      "id": "3519120",
+      "kode_bps": "3519120",
+      "kode_kab": "35.19",
+      "nama": "Balerejo",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.539158382346384,
+      "lng": 111.59497261613306,
+      "nilai": 4
+    },
+    {
+      "id": "3519130",
+      "kode_bps": "3519130",
+      "kode_kab": "35.19",
+      "nama": "Madiun",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.592229770027083,
+      "lng": 111.57582708835838,
+      "nilai": 5
+    },
+    {
+      "id": "3519140",
+      "kode_bps": "3519140",
+      "kode_kab": "35.19",
+      "nama": "Sawahan",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.566852474835821,
+      "lng": 111.52211946568976,
+      "nilai": 5
+    },
+    {
+      "id": "3519150",
+      "kode_bps": "3519150",
+      "kode_kab": "35.19",
+      "nama": "Jiwan",
+      "nama_kab": "Kabupaten Madiun",
+      "lat": -7.613006272841708,
+      "lng": 111.48864876849883,
+      "nilai": 6
+    },
+    {
+      "id": "3520010",
+      "kode_bps": "3520010",
+      "kode_kab": "35.20",
+      "nama": "Poncol",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.720425685604692,
+      "lng": 111.25032288929357,
+      "nilai": 10
+    },
+    {
+      "id": "3520020",
+      "kode_bps": "3520020",
+      "kode_kab": "35.20",
+      "nama": "Parang",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.750579933044954,
+      "lng": 111.3315542028049,
+      "nilai": 7
+    },
+    {
+      "id": "3520030",
+      "kode_bps": "3520030",
+      "kode_kab": "35.20",
+      "nama": "Lembeyan",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.752485025852597,
+      "lng": 111.4057507699579,
+      "nilai": 5
+    },
+    {
+      "id": "3520040",
+      "kode_bps": "3520040",
+      "kode_kab": "35.20",
+      "nama": "Takeran",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.67854165254399,
+      "lng": 111.47693220304278,
+      "nilai": 3
+    },
+    {
+      "id": "3520041",
+      "kode_bps": "3520041",
+      "kode_kab": "35.20",
+      "nama": "Nguntoronadi",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.710538291339372,
+      "lng": 111.44951590746624,
+      "nilai": 4
+    },
+    {
+      "id": "3520050",
+      "kode_bps": "3520050",
+      "kode_kab": "35.20",
+      "nama": "Kawedanan",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.6940529168001985,
+      "lng": 111.40705313527195,
+      "nilai": 4
+    },
+    {
+      "id": "3520060",
+      "kode_bps": "3520060",
+      "kode_kab": "35.20",
+      "nama": "Magetan",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.648204268606301,
+      "lng": 111.33295422553397,
+      "nilai": 5
+    },
+    {
+      "id": "3520061",
+      "kode_bps": "3520061",
+      "kode_kab": "35.20",
+      "nama": "Ngariboyo",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.686836465434482,
+      "lng": 111.33653521465713,
+      "nilai": 3
+    },
+    {
+      "id": "3520070",
+      "kode_bps": "3520070",
+      "kode_kab": "35.20",
+      "nama": "Plaosan",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.677375022026421,
+      "lng": 111.23645460368769,
+      "nilai": 3
+    },
+    {
+      "id": "3520071",
+      "kode_bps": "3520071",
+      "kode_kab": "35.20",
+      "nama": "Sidorejo",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.649843883187818,
+      "lng": 111.26093132049301,
+      "nilai": 5
+    },
+    {
+      "id": "3520080",
+      "kode_bps": "3520080",
+      "kode_kab": "35.20",
+      "nama": "Panekan",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.616745403903176,
+      "lng": 111.28340793128355,
+      "nilai": 4
+    },
+    {
+      "id": "3520090",
+      "kode_bps": "3520090",
+      "kode_kab": "35.20",
+      "nama": "Sukomoro",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.625887820716519,
+      "lng": 111.37674105482938,
+      "nilai": 5
+    },
+    {
+      "id": "3520100",
+      "kode_bps": "3520100",
+      "kode_kab": "35.20",
+      "nama": "Bendo",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.6437141928234835,
+      "lng": 111.43301763705013,
+      "nilai": 3
+    },
+    {
+      "id": "3520110",
+      "kode_bps": "3520110",
+      "kode_kab": "35.20",
+      "nama": "Maospati",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.597563313337322,
+      "lng": 111.44435043077611,
+      "nilai": 4
+    },
+    {
+      "id": "3520120",
+      "kode_bps": "3520120",
+      "kode_kab": "35.20",
+      "nama": "Karangrejo",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.5586455423936405,
+      "lng": 111.42103095450216,
+      "nilai": 3
+    },
+    {
+      "id": "3520121",
+      "kode_bps": "3520121",
+      "kode_kab": "35.20",
+      "nama": "Karas",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.575649137697791,
+      "lng": 111.37825914021558,
+      "nilai": 4
+    },
+    {
+      "id": "3520130",
+      "kode_bps": "3520130",
+      "kode_kab": "35.20",
+      "nama": "Barat",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.555430410897555,
+      "lng": 111.46149435622982,
+      "nilai": 5
+    },
+    {
+      "id": "3520131",
+      "kode_bps": "3520131",
+      "kode_kab": "35.20",
+      "nama": "Kartoharjo",
+      "nama_kab": "Kabupaten Magetan",
+      "lat": -7.530969871708385,
+      "lng": 111.47712982371908,
+      "nilai": 5
+    },
+    {
+      "id": "3521010",
+      "kode_bps": "3521010",
+      "kode_kab": "35.21",
+      "nama": "Sine",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.511604120545233,
+      "lng": 111.16955949261818,
+      "nilai": 13
+    },
+    {
+      "id": "3521020",
+      "kode_bps": "3521020",
+      "kode_kab": "35.21",
+      "nama": "Ngrambe",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.504344590120286,
+      "lng": 111.21732057346618,
+      "nilai": 8
+    },
+    {
+      "id": "3521030",
+      "kode_bps": "3521030",
+      "kode_kab": "35.21",
+      "nama": "Jogorogo",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.543684934446197,
+      "lng": 111.25089975381168,
+      "nilai": 6
+    },
+    {
+      "id": "3521040",
+      "kode_bps": "3521040",
+      "kode_kab": "35.21",
+      "nama": "Kendal",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.560029962832868,
+      "lng": 111.29917083222335,
+      "nilai": 4
+    },
+    {
+      "id": "3521050",
+      "kode_bps": "3521050",
+      "kode_kab": "35.21",
+      "nama": "Geneng",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.479946588459398,
+      "lng": 111.4382176575379,
+      "nilai": 5
+    },
+    {
+      "id": "3521051",
+      "kode_bps": "3521051",
+      "kode_kab": "35.21",
+      "nama": "Gerih",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.5326905350064495,
+      "lng": 111.3853363197532,
+      "nilai": 6
+    },
+    {
+      "id": "3521060",
+      "kode_bps": "3521060",
+      "kode_kab": "35.21",
+      "nama": "Kwadungan",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.513272539953837,
+      "lng": 111.51110297897722,
+      "nilai": 6
+    },
+    {
+      "id": "3521070",
+      "kode_bps": "3521070",
+      "kode_kab": "35.21",
+      "nama": "Pangkur",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.498044908630613,
+      "lng": 111.53976365533968,
+      "nilai": 5
+    },
+    {
+      "id": "3521080",
+      "kode_bps": "3521080",
+      "kode_kab": "35.21",
+      "nama": "Karangjati",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.449724088290353,
+      "lng": 111.60848052520551,
+      "nilai": 4
+    },
+    {
+      "id": "3521090",
+      "kode_bps": "3521090",
+      "kode_kab": "35.21",
+      "nama": "Bringin",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.402090281161341,
+      "lng": 111.5848654067988,
+      "nilai": 6
+    },
+    {
+      "id": "3521100",
+      "kode_bps": "3521100",
+      "kode_kab": "35.21",
+      "nama": "Padas",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.448564454378802,
+      "lng": 111.52796382247982,
+      "nilai": 5
+    },
+    {
+      "id": "3521101",
+      "kode_bps": "3521101",
+      "kode_kab": "35.21",
+      "nama": "Kasreman",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.395750984770444,
+      "lng": 111.51566486384006,
+      "nilai": 4
+    },
+    {
+      "id": "3521110",
+      "kode_bps": "3521110",
+      "kode_kab": "35.21",
+      "nama": "Ngawi",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.414035858303917,
+      "lng": 111.45353062529645,
+      "nilai": 6
+    },
+    {
+      "id": "3521120",
+      "kode_bps": "3521120",
+      "kode_kab": "35.21",
+      "nama": "Paron",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.462681417234598,
+      "lng": 111.36789310632221,
+      "nilai": 4
+    },
+    {
+      "id": "3521130",
+      "kode_bps": "3521130",
+      "kode_kab": "35.21",
+      "nama": "Kedunggalar",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.425234981433042,
+      "lng": 111.30989588442095,
+      "nilai": 5
+    },
+    {
+      "id": "3521140",
+      "kode_bps": "3521140",
+      "kode_kab": "35.21",
+      "nama": "Pitu",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.35848103854321,
+      "lng": 111.36401535193899,
+      "nilai": 4
+    },
+    {
+      "id": "3521150",
+      "kode_bps": "3521150",
+      "kode_kab": "35.21",
+      "nama": "Widodaren",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.409209870755117,
+      "lng": 111.23319281591257,
+      "nilai": 6
+    },
+    {
+      "id": "3521160",
+      "kode_bps": "3521160",
+      "kode_kab": "35.21",
+      "nama": "Mantingan",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.390695519842091,
+      "lng": 111.15945038127238,
+      "nilai": 4
+    },
+    {
+      "id": "3521170",
+      "kode_bps": "3521170",
+      "kode_kab": "35.21",
+      "nama": "Karanganyar",
+      "nama_kab": "Kabupaten Ngawi",
+      "lat": -7.3105169549172855,
+      "lng": 111.21691466292685,
+      "nilai": 5
+    },
+    {
+      "id": "3522010",
+      "kode_bps": "3522010",
+      "kode_kab": "35.22",
+      "nama": "Margomulyo",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.318783706516288,
+      "lng": 111.49630377204367,
+      "nilai": 4
+    },
+    {
+      "id": "3522020",
+      "kode_bps": "3522020",
+      "kode_kab": "35.22",
+      "nama": "Ngraho",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.2560709690668785,
+      "lng": 111.5404663397768,
+      "nilai": 13
+    },
+    {
+      "id": "3522030",
+      "kode_bps": "3522030",
+      "kode_kab": "35.22",
+      "nama": "Tambakrejo",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.297783704862162,
+      "lng": 111.63001835599623,
+      "nilai": 8
+    },
+    {
+      "id": "3522040",
+      "kode_bps": "3522040",
+      "kode_kab": "35.22",
+      "nama": "Ngambon",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.329180730477099,
+      "lng": 111.7165185818495,
+      "nilai": 6
+    },
+    {
+      "id": "3522041",
+      "kode_bps": "3522041",
+      "kode_kab": "35.22",
+      "nama": "Sekar",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.400494061900072,
+      "lng": 111.71574716478608,
+      "nilai": 6
+    },
+    {
+      "id": "3522050",
+      "kode_bps": "3522050",
+      "kode_kab": "35.22",
+      "nama": "Bubulan",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.323523038107309,
+      "lng": 111.8298960245514,
+      "nilai": 5
+    },
+    {
+      "id": "3522051",
+      "kode_bps": "3522051",
+      "kode_kab": "35.22",
+      "nama": "Gondang",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.403494123136843,
+      "lng": 111.82829962354057,
+      "nilai": 5
+    },
+    {
+      "id": "3522060",
+      "kode_bps": "3522060",
+      "kode_kab": "35.22",
+      "nama": "Temayang",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.36342118147091,
+      "lng": 111.91484867669887,
+      "nilai": 6
+    },
+    {
+      "id": "3522070",
+      "kode_bps": "3522070",
+      "kode_kab": "35.22",
+      "nama": "Sugihwaras",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.331752584952664,
+      "lng": 111.96813401213129,
+      "nilai": 4
+    },
+    {
+      "id": "3522080",
+      "kode_bps": "3522080",
+      "kode_kab": "35.22",
+      "nama": "Kedungadem",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.320078385997651,
+      "lng": 112.03624590354242,
+      "nilai": 5
+    },
+    {
+      "id": "3522090",
+      "kode_bps": "3522090",
+      "kode_kab": "35.22",
+      "nama": "Kepoh Baru",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.19062405244311,
+      "lng": 112.094107412999,
+      "nilai": 6
+    },
+    {
+      "id": "3522100",
+      "kode_bps": "3522100",
+      "kode_kab": "35.22",
+      "nama": "Baureno",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.122284686954405,
+      "lng": 112.10028669182644,
+      "nilai": 4
+    },
+    {
+      "id": "3522110",
+      "kode_bps": "3522110",
+      "kode_kab": "35.22",
+      "nama": "Kanor",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.118548655836749,
+      "lng": 112.02934595706039,
+      "nilai": 5
+    },
+    {
+      "id": "3522120",
+      "kode_bps": "3522120",
+      "kode_kab": "35.22",
+      "nama": "Sumberejo",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.2090877928231425,
+      "lng": 112.02822238211304,
+      "nilai": 6
+    },
+    {
+      "id": "3522130",
+      "kode_bps": "3522130",
+      "kode_kab": "35.22",
+      "nama": "Balen",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.194485073986603,
+      "lng": 111.96422339603268,
+      "nilai": 4
+    },
+    {
+      "id": "3522140",
+      "kode_bps": "3522140",
+      "kode_kab": "35.22",
+      "nama": "Sukosewu",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.249670243784181,
+      "lng": 111.93203895295566,
+      "nilai": 6
+    },
+    {
+      "id": "3522150",
+      "kode_bps": "3522150",
+      "kode_kab": "35.22",
+      "nama": "Kapas",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.194640083040513,
+      "lng": 111.90331961400952,
+      "nilai": 5
+    },
+    {
+      "id": "3522160",
+      "kode_bps": "3522160",
+      "kode_kab": "35.22",
+      "nama": "Bojonegoro",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.155398067878705,
+      "lng": 111.89430264725053,
+      "nilai": 6
+    },
+    {
+      "id": "3522170",
+      "kode_bps": "3522170",
+      "kode_kab": "35.22",
+      "nama": "Trucuk",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.120172421306371,
+      "lng": 111.83292388565731,
+      "nilai": 5
+    },
+    {
+      "id": "3522180",
+      "kode_bps": "3522180",
+      "kode_kab": "35.22",
+      "nama": "Dander",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.232899131791983,
+      "lng": 111.84406449231047,
+      "nilai": 6
+    },
+    {
+      "id": "3522190",
+      "kode_bps": "3522190",
+      "kode_kab": "35.22",
+      "nama": "Ngasem",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.249401653529489,
+      "lng": 111.76117016566178,
+      "nilai": 4
+    },
+    {
+      "id": "3522191",
+      "kode_bps": "3522191",
+      "kode_kab": "35.22",
+      "nama": "Gayam",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.173734128374025,
+      "lng": 111.70672989118438,
+      "nilai": 4
+    },
+    {
+      "id": "3522200",
+      "kode_bps": "3522200",
+      "kode_kab": "35.22",
+      "nama": "Kalitidu",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.1459513541607915,
+      "lng": 111.7854701850063,
+      "nilai": 4
+    },
+    {
+      "id": "3522210",
+      "kode_bps": "3522210",
+      "kode_kab": "35.22",
+      "nama": "Malo",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.108711687907574,
+      "lng": 111.71584117397892,
+      "nilai": 5
+    },
+    {
+      "id": "3522220",
+      "kode_bps": "3522220",
+      "kode_kab": "35.22",
+      "nama": "Purwosari",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.220494852179268,
+      "lng": 111.6690135180905,
+      "nilai": 6
+    },
+    {
+      "id": "3522230",
+      "kode_bps": "3522230",
+      "kode_kab": "35.22",
+      "nama": "Padangan",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.182859446458282,
+      "lng": 111.61271922999637,
+      "nilai": 4
+    },
+    {
+      "id": "3522240",
+      "kode_bps": "3522240",
+      "kode_kab": "35.22",
+      "nama": "Kasiman",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.117107162796707,
+      "lng": 111.64053515116393,
+      "nilai": 5
+    },
+    {
+      "id": "3522241",
+      "kode_bps": "3522241",
+      "kode_kab": "35.22",
+      "nama": "Kedewan",
+      "nama_kab": "Kabupaten Bojonegoro",
+      "lat": -7.046244896657521,
+      "lng": 111.6477618716245,
+      "nilai": 4
+    },
+    {
+      "id": "3523010",
+      "kode_bps": "3523010",
+      "kode_kab": "35.23",
+      "nama": "Kenduruan",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.939400210101602,
+      "lng": 111.63072697162346,
+      "nilai": 17
+    },
+    {
+      "id": "3523020",
+      "kode_bps": "3523020",
+      "kode_kab": "35.23",
+      "nama": "Bangilan",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.9586692906631935,
+      "lng": 111.71190065040544,
+      "nilai": 8
+    },
+    {
+      "id": "3523030",
+      "kode_bps": "3523030",
+      "kode_kab": "35.23",
+      "nama": "Senori",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.040456640576626,
+      "lng": 111.72558877302784,
+      "nilai": 7
+    },
+    {
+      "id": "3523040",
+      "kode_bps": "3523040",
+      "kode_kab": "35.23",
+      "nama": "Singgahan",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.986286956640677,
+      "lng": 111.77887716306489,
+      "nilai": 5
+    },
+    {
+      "id": "3523050",
+      "kode_bps": "3523050",
+      "kode_kab": "35.23",
+      "nama": "Montong",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.973840480718164,
+      "lng": 111.88386265729596,
+      "nilai": 5
+    },
+    {
+      "id": "3523060",
+      "kode_bps": "3523060",
+      "kode_kab": "35.23",
+      "nama": "Parengan",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.0631067563851735,
+      "lng": 111.8506740805082,
+      "nilai": 8
+    },
+    {
+      "id": "3523070",
+      "kode_bps": "3523070",
+      "kode_kab": "35.23",
+      "nama": "Soko",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.0936442389128445,
+      "lng": 111.93461691766878,
+      "nilai": 7
+    },
+    {
+      "id": "3523080",
+      "kode_bps": "3523080",
+      "kode_kab": "35.23",
+      "nama": "Rengel",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.069819544879157,
+      "lng": 112.00858157315679,
+      "nilai": 7
+    },
+    {
+      "id": "3523081",
+      "kode_bps": "3523081",
+      "kode_kab": "35.23",
+      "nama": "Grabagan",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.007861843365304,
+      "lng": 111.99284467367151,
+      "nilai": 7
+    },
+    {
+      "id": "3523090",
+      "kode_bps": "3523090",
+      "kode_kab": "35.23",
+      "nama": "Plumpang",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.042417633134351,
+      "lng": 112.1083218285423,
+      "nilai": 7
+    },
+    {
+      "id": "3523100",
+      "kode_bps": "3523100",
+      "kode_kab": "35.23",
+      "nama": "Widang",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -7.033309824791584,
+      "lng": 112.1746583516849,
+      "nilai": 5
+    },
+    {
+      "id": "3523110",
+      "kode_bps": "3523110",
+      "kode_kab": "35.23",
+      "nama": "Palang",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.935145655149098,
+      "lng": 112.15072910644832,
+      "nilai": 8
+    },
+    {
+      "id": "3523120",
+      "kode_bps": "3523120",
+      "kode_kab": "35.23",
+      "nama": "Semanding",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.955537045306928,
+      "lng": 112.05527139522468,
+      "nilai": 8
+    },
+    {
+      "id": "3523130",
+      "kode_bps": "3523130",
+      "kode_kab": "35.23",
+      "nama": "Tuban",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.895729998513347,
+      "lng": 112.03341511123304,
+      "nilai": 5
+    },
+    {
+      "id": "3523140",
+      "kode_bps": "3523140",
+      "kode_kab": "35.23",
+      "nama": "Jenu",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.813167451670125,
+      "lng": 111.95969363965591,
+      "nilai": 8
+    },
+    {
+      "id": "3523150",
+      "kode_bps": "3523150",
+      "kode_kab": "35.23",
+      "nama": "Merakurak",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.880720628146913,
+      "lng": 111.95879105971584,
+      "nilai": 5
+    },
+    {
+      "id": "3523160",
+      "kode_bps": "3523160",
+      "kode_kab": "35.23",
+      "nama": "Kerek",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.8893167456582844,
+      "lng": 111.85335204053783,
+      "nilai": 7
+    },
+    {
+      "id": "3523170",
+      "kode_bps": "3523170",
+      "kode_kab": "35.23",
+      "nama": "Tambakboyo",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.843532086222678,
+      "lng": 111.81087010178564,
+      "nilai": 8
+    },
+    {
+      "id": "3523180",
+      "kode_bps": "3523180",
+      "kode_kab": "35.23",
+      "nama": "Jatirogo",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.871613694876596,
+      "lng": 111.67437621016276,
+      "nilai": 11
+    },
+    {
+      "id": "3523190",
+      "kode_bps": "3523190",
+      "kode_kab": "35.23",
+      "nama": "Bancar",
+      "nama_kab": "Kabupaten Tuban",
+      "lat": -6.8097536431309305,
+      "lng": 111.73620243939946,
+      "nilai": 5
+    },
+    {
+      "id": "3524010",
+      "kode_bps": "3524010",
+      "kode_kab": "35.24",
+      "nama": "Sukorame",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.35067905692003,
+      "lng": 112.1086525934088,
+      "nilai": 13
+    },
+    {
+      "id": "3524020",
+      "kode_bps": "3524020",
+      "kode_kab": "35.24",
+      "nama": "Bluluk",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.298956504777079,
+      "lng": 112.12624713439342,
+      "nilai": 9
+    },
+    {
+      "id": "3524030",
+      "kode_bps": "3524030",
+      "kode_kab": "35.24",
+      "nama": "Ngimbang",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.297197904120193,
+      "lng": 112.19515392914357,
+      "nilai": 4
+    },
+    {
+      "id": "3524040",
+      "kode_bps": "3524040",
+      "kode_kab": "35.24",
+      "nama": "Sambeng",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.2992353823944836,
+      "lng": 112.2804950522713,
+      "nilai": 5
+    },
+    {
+      "id": "3524050",
+      "kode_bps": "3524050",
+      "kode_kab": "35.24",
+      "nama": "Mantup",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.268663002417913,
+      "lng": 112.35332352410009,
+      "nilai": 4
+    },
+    {
+      "id": "3524060",
+      "kode_bps": "3524060",
+      "kode_kab": "35.24",
+      "nama": "Kembangbahu",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.203924875376226,
+      "lng": 112.36195839171113,
+      "nilai": 4
+    },
+    {
+      "id": "3524070",
+      "kode_bps": "3524070",
+      "kode_kab": "35.24",
+      "nama": "Sugio",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.180377496755849,
+      "lng": 112.27402155686224,
+      "nilai": 7
+    },
+    {
+      "id": "3524080",
+      "kode_bps": "3524080",
+      "kode_kab": "35.24",
+      "nama": "Kedungpring",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.1863628274815206,
+      "lng": 112.20328997839117,
+      "nilai": 7
+    },
+    {
+      "id": "3524090",
+      "kode_bps": "3524090",
+      "kode_kab": "35.24",
+      "nama": "Modo",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.218764021910437,
+      "lng": 112.13862211944341,
+      "nilai": 7
+    },
+    {
+      "id": "3524100",
+      "kode_bps": "3524100",
+      "kode_kab": "35.24",
+      "nama": "Babat",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.108896715399023,
+      "lng": 112.21398509135942,
+      "nilai": 5
+    },
+    {
+      "id": "3524110",
+      "kode_bps": "3524110",
+      "kode_kab": "35.24",
+      "nama": "Pucuk",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.091578148937851,
+      "lng": 112.29311511433046,
+      "nilai": 4
+    },
+    {
+      "id": "3524120",
+      "kode_bps": "3524120",
+      "kode_kab": "35.24",
+      "nama": "Sukodadi",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.115842453174804,
+      "lng": 112.33706750393935,
+      "nilai": 5
+    },
+    {
+      "id": "3524130",
+      "kode_bps": "3524130",
+      "kode_kab": "35.24",
+      "nama": "Lamongan",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.125410714007912,
+      "lng": 112.3936910172115,
+      "nilai": 4
+    },
+    {
+      "id": "3524140",
+      "kode_bps": "3524140",
+      "kode_kab": "35.24",
+      "nama": "Tikung",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.18859096869831,
+      "lng": 112.41266575698313,
+      "nilai": 5
+    },
+    {
+      "id": "3524141",
+      "kode_bps": "3524141",
+      "kode_kab": "35.24",
+      "nama": "Sarirejo",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.176473098463304,
+      "lng": 112.46064403609198,
+      "nilai": 7
+    },
+    {
+      "id": "3524150",
+      "kode_bps": "3524150",
+      "kode_kab": "35.24",
+      "nama": "Deket",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.099198292685196,
+      "lng": 112.454783801374,
+      "nilai": 4
+    },
+    {
+      "id": "3524160",
+      "kode_bps": "3524160",
+      "kode_kab": "35.24",
+      "nama": "Glagah",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.073801278239991,
+      "lng": 112.50371276801285,
+      "nilai": 5
+    },
+    {
+      "id": "3524170",
+      "kode_bps": "3524170",
+      "kode_kab": "35.24",
+      "nama": "Karangbinangun",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.032179157911702,
+      "lng": 112.46086151326452,
+      "nilai": 7
+    },
+    {
+      "id": "3524180",
+      "kode_bps": "3524180",
+      "kode_kab": "35.24",
+      "nama": "Turi",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.070960329007093,
+      "lng": 112.38642370477223,
+      "nilai": 7
+    },
+    {
+      "id": "3524190",
+      "kode_bps": "3524190",
+      "kode_kab": "35.24",
+      "nama": "Kalitengah",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.019783699629912,
+      "lng": 112.39410350749958,
+      "nilai": 5
+    },
+    {
+      "id": "3524200",
+      "kode_bps": "3524200",
+      "kode_kab": "35.24",
+      "nama": "Karang Geneng",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.013628193509266,
+      "lng": 112.34152898018496,
+      "nilai": 7
+    },
+    {
+      "id": "3524210",
+      "kode_bps": "3524210",
+      "kode_kab": "35.24",
+      "nama": "Sekaran",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.052073842086158,
+      "lng": 112.26623519815777,
+      "nilai": 7
+    },
+    {
+      "id": "3524220",
+      "kode_bps": "3524220",
+      "kode_kab": "35.24",
+      "nama": "Maduran",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -7.0096500528014465,
+      "lng": 112.27718370585194,
+      "nilai": 4
+    },
+    {
+      "id": "3524230",
+      "kode_bps": "3524230",
+      "kode_kab": "35.24",
+      "nama": "Laren",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -6.977736322964547,
+      "lng": 112.27094729209796,
+      "nilai": 5
+    },
+    {
+      "id": "3524240",
+      "kode_bps": "3524240",
+      "kode_kab": "35.24",
+      "nama": "Solokuro",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -6.927638790848808,
+      "lng": 112.3543116118349,
+      "nilai": 7
+    },
+    {
+      "id": "3524250",
+      "kode_bps": "3524250",
+      "kode_kab": "35.24",
+      "nama": "Paciran",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -6.88560106997777,
+      "lng": 112.37042998154342,
+      "nilai": 5
+    },
+    {
+      "id": "3524260",
+      "kode_bps": "3524260",
+      "kode_kab": "35.24",
+      "nama": "Brondong",
+      "nama_kab": "Kabupaten Lamongan",
+      "lat": -6.908311379274409,
+      "lng": 112.23919250066001,
+      "nilai": 4
+    },
+    {
+      "id": "3525010",
+      "kode_bps": "3525010",
+      "kode_kab": "35.25",
+      "nama": "Wringinanom",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.373720576514691,
+      "lng": 112.5201991317957,
+      "nilai": 10
+    },
+    {
+      "id": "3525020",
+      "kode_bps": "3525020",
+      "kode_kab": "35.25",
+      "nama": "Driyorejo",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.34400981107287,
+      "lng": 112.6131935483948,
+      "nilai": 10
+    },
+    {
+      "id": "3525030",
+      "kode_bps": "3525030",
+      "kode_kab": "35.25",
+      "nama": "Kedamean",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.318367280671256,
+      "lng": 112.53134554564424,
+      "nilai": 8
+    },
+    {
+      "id": "3525040",
+      "kode_bps": "3525040",
+      "kode_kab": "35.25",
+      "nama": "Menganti",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.276884958278069,
+      "lng": 112.58462641157982,
+      "nilai": 6
+    },
+    {
+      "id": "3525050",
+      "kode_bps": "3525050",
+      "kode_kab": "35.25",
+      "nama": "Cerme",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.2194825060137005,
+      "lng": 112.55390092186806,
+      "nilai": 8
+    },
+    {
+      "id": "3525060",
+      "kode_bps": "3525060",
+      "kode_kab": "35.25",
+      "nama": "Benjeng",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.245504730144319,
+      "lng": 112.48868628847171,
+      "nilai": 6
+    },
+    {
+      "id": "3525070",
+      "kode_bps": "3525070",
+      "kode_kab": "35.25",
+      "nama": "Balongpanggang",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.26803175547715,
+      "lng": 112.43498297711325,
+      "nilai": 12
+    },
+    {
+      "id": "3525080",
+      "kode_bps": "3525080",
+      "kode_kab": "35.25",
+      "nama": "Duduksampeyan",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.145464386422808,
+      "lng": 112.52777602592842,
+      "nilai": 8
+    },
+    {
+      "id": "3525090",
+      "kode_bps": "3525090",
+      "kode_kab": "35.25",
+      "nama": "Kebomas",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.177711728263055,
+      "lng": 112.62416306738514,
+      "nilai": 8
+    },
+    {
+      "id": "3525100",
+      "kode_bps": "3525100",
+      "kode_kab": "35.25",
+      "nama": "Gresik",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.16022727023921,
+      "lng": 112.65285785835073,
+      "nilai": 6
+    },
+    {
+      "id": "3525110",
+      "kode_bps": "3525110",
+      "kode_kab": "35.25",
+      "nama": "Manyar",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.101879815359068,
+      "lng": 112.59497957470838,
+      "nilai": 6
+    },
+    {
+      "id": "3525120",
+      "kode_bps": "3525120",
+      "kode_kab": "35.25",
+      "nama": "Bungah",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -7.028357568443315,
+      "lng": 112.58412409636249,
+      "nilai": 10
+    },
+    {
+      "id": "3525130",
+      "kode_bps": "3525130",
+      "kode_kab": "35.25",
+      "nama": "Sidayu",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -6.983626295700761,
+      "lng": 112.55047996744105,
+      "nilai": 10
+    },
+    {
+      "id": "3525140",
+      "kode_bps": "3525140",
+      "kode_kab": "35.25",
+      "nama": "Dukun",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -6.983941369438883,
+      "lng": 112.44286691387896,
+      "nilai": 19
+    },
+    {
+      "id": "3525150",
+      "kode_bps": "3525150",
+      "kode_kab": "35.25",
+      "nama": "Panceng",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -6.932661517217781,
+      "lng": 112.46162502671484,
+      "nilai": 10
+    },
+    {
+      "id": "3525160",
+      "kode_bps": "3525160",
+      "kode_kab": "35.25",
+      "nama": "Ujungpangkah",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -6.916730282173395,
+      "lng": 112.55351076407929,
+      "nilai": 6
+    },
+    {
+      "id": "3525170",
+      "kode_bps": "3525170",
+      "kode_kab": "35.25",
+      "nama": "Sangkapura",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -5.816153164851275,
+      "lng": 112.65749227889263,
+      "nilai": 8
+    },
+    {
+      "id": "3525180",
+      "kode_bps": "3525180",
+      "kode_kab": "35.25",
+      "nama": "Tambak",
+      "nama_kab": "Kabupaten Gresik",
+      "lat": -5.7598534923105245,
+      "lng": 112.66586115427063,
+      "nilai": 10
+    },
+    {
+      "id": "3526010",
+      "kode_bps": "3526010",
+      "kode_kab": "35.26",
+      "nama": "Kamal",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.139064379262033,
+      "lng": 112.72874498383408,
+      "nilai": 4
+    },
+    {
+      "id": "3526020",
+      "kode_bps": "3526020",
+      "kode_kab": "35.26",
+      "nama": "Labang",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.136654619576275,
+      "lng": 112.78818789996518,
+      "nilai": 8
+    },
+    {
+      "id": "3526030",
+      "kode_bps": "3526030",
+      "kode_kab": "35.26",
+      "nama": "Kwanyar",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.146914517691133,
+      "lng": 112.87797521062288,
+      "nilai": 6
+    },
+    {
+      "id": "3526040",
+      "kode_bps": "3526040",
+      "kode_kab": "35.26",
+      "nama": "Modung",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.171743863973191,
+      "lng": 112.9766739073573,
+      "nilai": 4
+    },
+    {
+      "id": "3526050",
+      "kode_bps": "3526050",
+      "kode_kab": "35.26",
+      "nama": "Blega",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.124122487284167,
+      "lng": 113.0488178074231,
+      "nilai": 8
+    },
+    {
+      "id": "3526060",
+      "kode_bps": "3526060",
+      "kode_kab": "35.26",
+      "nama": "Konang",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.045725694408085,
+      "lng": 113.0567658615501,
+      "nilai": 6
+    },
+    {
+      "id": "3526070",
+      "kode_bps": "3526070",
+      "kode_kab": "35.26",
+      "nama": "Galis",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.088488965721257,
+      "lng": 112.96296618609222,
+      "nilai": 8
+    },
+    {
+      "id": "3526080",
+      "kode_bps": "3526080",
+      "kode_kab": "35.26",
+      "nama": "Tanah Merah",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.07166303458627,
+      "lng": 112.86976534364115,
+      "nilai": 4
+    },
+    {
+      "id": "3526090",
+      "kode_bps": "3526090",
+      "kode_kab": "35.26",
+      "nama": "Tragah",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.10015788904278,
+      "lng": 112.82156072846382,
+      "nilai": 6
+    },
+    {
+      "id": "3526100",
+      "kode_bps": "3526100",
+      "kode_kab": "35.26",
+      "nama": "Socah",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.081004499080731,
+      "lng": 112.73190264477705,
+      "nilai": 10
+    },
+    {
+      "id": "3526110",
+      "kode_bps": "3526110",
+      "kode_kab": "35.26",
+      "nama": "Bangkalan",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.027938454982646,
+      "lng": 112.7422748299104,
+      "nilai": 15
+    },
+    {
+      "id": "3526120",
+      "kode_bps": "3526120",
+      "kode_kab": "35.26",
+      "nama": "Burneh",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.03342971970968,
+      "lng": 112.8041469679783,
+      "nilai": 8
+    },
+    {
+      "id": "3526130",
+      "kode_bps": "3526130",
+      "kode_kab": "35.26",
+      "nama": "Arosbaya",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -6.972701171855341,
+      "lng": 112.839365480293,
+      "nilai": 6
+    },
+    {
+      "id": "3526140",
+      "kode_bps": "3526140",
+      "kode_kab": "35.26",
+      "nama": "Geger",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -7.0018611080847855,
+      "lng": 112.9327198043733,
+      "nilai": 8
+    },
+    {
+      "id": "3526150",
+      "kode_bps": "3526150",
+      "kode_kab": "35.26",
+      "nama": "Kokop",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -6.980411984276892,
+      "lng": 113.06330061178086,
+      "nilai": 4
+    },
+    {
+      "id": "3526160",
+      "kode_bps": "3526160",
+      "kode_kab": "35.26",
+      "nama": "Tanjungbumi",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -6.909712764003535,
+      "lng": 113.06410063387351,
+      "nilai": 8
+    },
+    {
+      "id": "3526170",
+      "kode_bps": "3526170",
+      "kode_kab": "35.26",
+      "nama": "Sepulu",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -6.92661980248533,
+      "lng": 112.96888664029532,
+      "nilai": 6
+    },
+    {
+      "id": "3526180",
+      "kode_bps": "3526180",
+      "kode_kab": "35.26",
+      "nama": "Klampis",
+      "nama_kab": "Kabupaten Bangkalan",
+      "lat": -6.9255389359112876,
+      "lng": 112.8890095313802,
+      "nilai": 4
+    },
+    {
+      "id": "3527010",
+      "kode_bps": "3527010",
+      "kode_kab": "35.27",
+      "nama": "Sreseh",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.192852535871029,
+      "lng": 113.09588432344594,
+      "nilai": 20
+    },
+    {
+      "id": "3527020",
+      "kode_bps": "3527020",
+      "kode_kab": "35.27",
+      "nama": "Torjun",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.146335948132947,
+      "lng": 113.20517864604253,
+      "nilai": 13
+    },
+    {
+      "id": "3527021",
+      "kode_bps": "3527021",
+      "kode_kab": "35.27",
+      "nama": "Pangarengan",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.192947191502624,
+      "lng": 113.17242266298749,
+      "nilai": 6
+    },
+    {
+      "id": "3527030",
+      "kode_bps": "3527030",
+      "kode_kab": "35.27",
+      "nama": "Sampang",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.177419395024011,
+      "lng": 113.25228420868865,
+      "nilai": 10
+    },
+    {
+      "id": "3527040",
+      "kode_bps": "3527040",
+      "kode_kab": "35.27",
+      "nama": "Camplong",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.18845672820223,
+      "lng": 113.33715517132767,
+      "nilai": 6
+    },
+    {
+      "id": "3527050",
+      "kode_bps": "3527050",
+      "kode_kab": "35.27",
+      "nama": "Omben",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.106991229557896,
+      "lng": 113.32843396824862,
+      "nilai": 8
+    },
+    {
+      "id": "3527060",
+      "kode_bps": "3527060",
+      "kode_kab": "35.27",
+      "nama": "Kedungdung",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.068668454797847,
+      "lng": 113.2414556746276,
+      "nilai": 10
+    },
+    {
+      "id": "3527070",
+      "kode_bps": "3527070",
+      "kode_kab": "35.27",
+      "nama": "Jrengik",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.127789156923951,
+      "lng": 113.14414247171788,
+      "nilai": 6
+    },
+    {
+      "id": "3527080",
+      "kode_bps": "3527080",
+      "kode_kab": "35.27",
+      "nama": "Tambelangan",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.042797802431544,
+      "lng": 113.15804003355686,
+      "nilai": 8
+    },
+    {
+      "id": "3527090",
+      "kode_bps": "3527090",
+      "kode_kab": "35.27",
+      "nama": "Banyuates",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -6.946505418531057,
+      "lng": 113.17525818019654,
+      "nilai": 10
+    },
+    {
+      "id": "3527100",
+      "kode_bps": "3527100",
+      "kode_kab": "35.27",
+      "nama": "Robatal",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.004343709658774,
+      "lng": 113.28512820306537,
+      "nilai": 6
+    },
+    {
+      "id": "3527101",
+      "kode_bps": "3527101",
+      "kode_kab": "35.27",
+      "nama": "Karang Penang",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -7.017450292391848,
+      "lng": 113.37394361495302,
+      "nilai": 8
+    },
+    {
+      "id": "3527110",
+      "kode_bps": "3527110",
+      "kode_kab": "35.27",
+      "nama": "Ketapang",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -6.925681987976411,
+      "lng": 113.30293595072749,
+      "nilai": 10
+    },
+    {
+      "id": "3527120",
+      "kode_bps": "3527120",
+      "kode_kab": "35.27",
+      "nama": "Sokobanah",
+      "nama_kab": "Kabupaten Sampang",
+      "lat": -6.935087730520795,
+      "lng": 113.40975236535996,
+      "nilai": 8
+    },
+    {
+      "id": "3528010",
+      "kode_bps": "3528010",
+      "kode_kab": "35.28",
+      "nama": "Tlanakan",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.196624961709684,
+      "lng": 113.43201538344945,
+      "nilai": 18
+    },
+    {
+      "id": "3528020",
+      "kode_bps": "3528020",
+      "kode_kab": "35.28",
+      "nama": "Pademawu",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.196531985000712,
+      "lng": 113.51544128399895,
+      "nilai": 12
+    },
+    {
+      "id": "3528030",
+      "kode_bps": "3528030",
+      "kode_kab": "35.28",
+      "nama": "Galis",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.16040512631169,
+      "lng": 113.55422192753342,
+      "nilai": 9
+    },
+    {
+      "id": "3528040",
+      "kode_bps": "3528040",
+      "kode_kab": "35.28",
+      "nama": "Larangan",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.119691048983581,
+      "lng": 113.55071373024788,
+      "nilai": 7
+    },
+    {
+      "id": "3528050",
+      "kode_bps": "3528050",
+      "kode_kab": "35.28",
+      "nama": "Pamekasan",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.1578114597844955,
+      "lng": 113.47371571236104,
+      "nilai": 5
+    },
+    {
+      "id": "3528060",
+      "kode_bps": "3528060",
+      "kode_kab": "35.28",
+      "nama": "Proppo",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.1343446872083,
+      "lng": 113.4090386435342,
+      "nilai": 7
+    },
+    {
+      "id": "3528070",
+      "kode_bps": "3528070",
+      "kode_kab": "35.28",
+      "nama": "Palengaan",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.076133452797979,
+      "lng": 113.43387467739558,
+      "nilai": 9
+    },
+    {
+      "id": "3528080",
+      "kode_bps": "3528080",
+      "kode_kab": "35.28",
+      "nama": "Pegantenan",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.039423545003323,
+      "lng": 113.47686300560854,
+      "nilai": 5
+    },
+    {
+      "id": "3528090",
+      "kode_bps": "3528090",
+      "kode_kab": "35.28",
+      "nama": "Kadur",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.085146222441164,
+      "lng": 113.56152893813291,
+      "nilai": 9
+    },
+    {
+      "id": "3528100",
+      "kode_bps": "3528100",
+      "kode_kab": "35.28",
+      "nama": "Pakong",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -7.041944650674573,
+      "lng": 113.55843382650347,
+      "nilai": 9
+    },
+    {
+      "id": "3528110",
+      "kode_bps": "3528110",
+      "kode_kab": "35.28",
+      "nama": "Waru",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -6.979269479606512,
+      "lng": 113.56402936931237,
+      "nilai": 5
+    },
+    {
+      "id": "3528120",
+      "kode_bps": "3528120",
+      "kode_kab": "35.28",
+      "nama": "Batu Marmar",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -6.957009076471978,
+      "lng": 113.49524636934551,
+      "nilai": 7
+    },
+    {
+      "id": "3528130",
+      "kode_bps": "3528130",
+      "kode_kab": "35.28",
+      "nama": "Pasean",
+      "nama_kab": "Kabupaten Pamekasan",
+      "lat": -6.922199946889576,
+      "lng": 113.59341139394307,
+      "nilai": 5
+    },
+    {
+      "id": "3529010",
+      "kode_bps": "3529010",
+      "kode_kab": "35.29",
+      "nama": "Pragaan",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.0956442473165975,
+      "lng": 113.65807225691297,
+      "nilai": 4
+    },
+    {
+      "id": "3529020",
+      "kode_bps": "3529020",
+      "kode_kab": "35.29",
+      "nama": "Bluto",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.103253388406216,
+      "lng": 113.77524404013153,
+      "nilai": 4
+    },
+    {
+      "id": "3529030",
+      "kode_bps": "3529030",
+      "kode_kab": "35.29",
+      "nama": "Saronggi",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.0884208408012155,
+      "lng": 113.83863798850594,
+      "nilai": 6
+    },
+    {
+      "id": "3529040",
+      "kode_bps": "3529040",
+      "kode_kab": "35.29",
+      "nama": "Giligenteng",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.206169085678386,
+      "lng": 113.86305595520867,
+      "nilai": 4
+    },
+    {
+      "id": "3529050",
+      "kode_bps": "3529050",
+      "kode_kab": "35.29",
+      "nama": "Talango",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.087764544362564,
+      "lng": 114.00255731401606,
+      "nilai": 3
+    },
+    {
+      "id": "3529060",
+      "kode_bps": "3529060",
+      "kode_kab": "35.29",
+      "nama": "Kalianget",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.050947423367616,
+      "lng": 113.8942707578075,
+      "nilai": 7
+    },
+    {
+      "id": "3529070",
+      "kode_bps": "3529070",
+      "kode_kab": "35.29",
+      "nama": "Kota Sumenep",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.007449374831743,
+      "lng": 113.87390604074913,
+      "nilai": 11
+    },
+    {
+      "id": "3529071",
+      "kode_bps": "3529071",
+      "kode_kab": "35.29",
+      "nama": "Batuan",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.022386806665115,
+      "lng": 113.83755028703973,
+      "nilai": 4
+    },
+    {
+      "id": "3529080",
+      "kode_bps": "3529080",
+      "kode_kab": "35.29",
+      "nama": "Lenteng",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.036417314384006,
+      "lng": 113.76740274888948,
+      "nilai": 3
+    },
+    {
+      "id": "3529090",
+      "kode_bps": "3529090",
+      "kode_kab": "35.29",
+      "nama": "Ganding",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.034698954381895,
+      "lng": 113.70316798168884,
+      "nilai": 3
+    },
+    {
+      "id": "3529100",
+      "kode_bps": "3529100",
+      "kode_kab": "35.29",
+      "nama": "Guluk Guluk",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.040626345416029,
+      "lng": 113.63611087716043,
+      "nilai": 6
+    },
+    {
+      "id": "3529110",
+      "kode_bps": "3529110",
+      "kode_kab": "35.29",
+      "nama": "Pasongsongan",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.950397419995125,
+      "lng": 113.66542590777183,
+      "nilai": 3
+    },
+    {
+      "id": "3529120",
+      "kode_bps": "3529120",
+      "kode_kab": "35.29",
+      "nama": "Ambunten",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.9087388493310815,
+      "lng": 113.74495173693133,
+      "nilai": 6
+    },
+    {
+      "id": "3529130",
+      "kode_bps": "3529130",
+      "kode_kab": "35.29",
+      "nama": "Rubaru",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.970781400562261,
+      "lng": 113.76521837377301,
+      "nilai": 6
+    },
+    {
+      "id": "3529140",
+      "kode_bps": "3529140",
+      "kode_kab": "35.29",
+      "nama": "Dasuk",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.915100745607656,
+      "lng": 113.82121202495942,
+      "nilai": 4
+    },
+    {
+      "id": "3529150",
+      "kode_bps": "3529150",
+      "kode_kab": "35.29",
+      "nama": "Manding",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.958314779360466,
+      "lng": 113.87992735148985,
+      "nilai": 6
+    },
+    {
+      "id": "3529160",
+      "kode_bps": "3529160",
+      "kode_kab": "35.29",
+      "nama": "Batuputih",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.903988667457453,
+      "lng": 113.9297989221927,
+      "nilai": 4
+    },
+    {
+      "id": "3529170",
+      "kode_bps": "3529170",
+      "kode_kab": "35.29",
+      "nama": "Gapura",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.000276715078292,
+      "lng": 113.95592841137652,
+      "nilai": 3
+    },
+    {
+      "id": "3529180",
+      "kode_bps": "3529180",
+      "kode_kab": "35.29",
+      "nama": "Batang Batang",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.9430554079165265,
+      "lng": 114.01135612279995,
+      "nilai": 3
+    },
+    {
+      "id": "3529190",
+      "kode_bps": "3529190",
+      "kode_kab": "35.29",
+      "nama": "Dungkek",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.97178591301477,
+      "lng": 114.08591905707297,
+      "nilai": 6
+    },
+    {
+      "id": "3529200",
+      "kode_bps": "3529200",
+      "kode_kab": "35.29",
+      "nama": "Nonggunong",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.077636410241825,
+      "lng": 114.33332153926465,
+      "nilai": 6
+    },
+    {
+      "id": "3529210",
+      "kode_bps": "3529210",
+      "kode_kab": "35.29",
+      "nama": "Gayam",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.134826450320549,
+      "lng": 114.33981426207882,
+      "nilai": 4
+    },
+    {
+      "id": "3529220",
+      "kode_bps": "3529220",
+      "kode_kab": "35.29",
+      "nama": "Raas",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.142350310182946,
+      "lng": 114.59014191393494,
+      "nilai": 3
+    },
+    {
+      "id": "3529230",
+      "kode_bps": "3529230",
+      "kode_kab": "35.29",
+      "nama": "Sapeken",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -7.080275831818385,
+      "lng": 115.75503906921125,
+      "nilai": 3
+    },
+    {
+      "id": "3529240",
+      "kode_bps": "3529240",
+      "kode_kab": "35.29",
+      "nama": "Arjasa",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.913740527140264,
+      "lng": 115.29715976578242,
+      "nilai": 6
+    },
+    {
+      "id": "3529241",
+      "kode_bps": "3529241",
+      "kode_kab": "35.29",
+      "nama": "Kangayan",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -6.90057720845631,
+      "lng": 115.45360792301878,
+      "nilai": 6
+    },
+    {
+      "id": "3529250",
+      "kode_bps": "3529250",
+      "kode_kab": "35.29",
+      "nama": "Masalembu",
+      "nama_kab": "Kabupaten Sumenep",
+      "lat": -5.4184984039518715,
+      "lng": 114.4676119291345,
+      "nilai": 4
+    },
+    {
+      "id": "3571010",
+      "kode_bps": "3571010",
+      "kode_kab": "35.71",
+      "nama": "Mojoroto",
+      "nama_kab": "Kota Kediri",
+      "lat": -7.809250515244213,
+      "lng": 111.98746564610353,
+      "nilai": 34
+    },
+    {
+      "id": "3571020",
+      "kode_bps": "3571020",
+      "kode_kab": "35.71",
+      "nama": "Kota Kediri",
+      "nama_kab": "Kota Kediri",
+      "lat": -7.825515522783834,
+      "lng": 112.0172958061055,
+      "nilai": 22
+    },
+    {
+      "id": "3571030",
+      "kode_bps": "3571030",
+      "kode_kab": "35.71",
+      "nama": "Pesantren",
+      "nama_kab": "Kota Kediri",
+      "lat": -7.845866063727187,
+      "lng": 112.04706320478185,
+      "nilai": 17
+    },
+    {
+      "id": "3572010",
+      "kode_bps": "3572010",
+      "kode_kab": "35.72",
+      "nama": "Sukorejo",
+      "nama_kab": "Kota Blitar",
+      "lat": -8.098585386171555,
+      "lng": 112.14825277118086,
+      "nilai": 22
+    },
+    {
+      "id": "3572020",
+      "kode_bps": "3572020",
+      "kode_kab": "35.72",
+      "nama": "Kepanjenkidul",
+      "nama_kab": "Kota Blitar",
+      "lat": -8.07926238490719,
+      "lng": 112.17462691802801,
+      "nilai": 34
+    },
+    {
+      "id": "3572030",
+      "kode_bps": "3572030",
+      "kode_kab": "35.72",
+      "nama": "Sananwetan",
+      "nama_kab": "Kota Blitar",
+      "lat": -8.104487904338136,
+      "lng": 112.17565113369824,
+      "nilai": 17
+    },
+    {
+      "id": "3573010",
+      "kode_bps": "3573010",
+      "kode_kab": "35.73",
+      "nama": "Kedungkandang",
+      "nama_kab": "Kota Malang",
+      "lat": -8.0052,
+      "lng": 112.658,
+      "nilai": 26
+    },
+    {
+      "id": "3573020",
+      "kode_bps": "3573020",
+      "kode_kab": "35.73",
+      "nama": "Sukun",
+      "nama_kab": "Kota Malang",
+      "lat": -7.9892,
+      "lng": 112.6205,
+      "nilai": 32
+    },
+    {
+      "id": "3573030",
+      "kode_bps": "3573030",
+      "kode_kab": "35.73",
+      "nama": "Klojen",
+      "nama_kab": "Kota Malang",
+      "lat": -7.9785,
+      "lng": 112.6315,
+      "nilai": 100
+    },
+    {
+      "id": "3573040",
+      "kode_bps": "3573040",
+      "kode_kab": "35.73",
+      "nama": "Blimbing",
+      "nama_kab": "Kota Malang",
+      "lat": -7.9425,
+      "lng": 112.645,
+      "nilai": 45
+    },
+    {
+      "id": "3573050",
+      "kode_bps": "3573050",
+      "kode_kab": "35.73",
+      "nama": "Lowokwaru",
+      "nama_kab": "Kota Malang",
+      "lat": -7.9482,
+      "lng": 112.6102,
+      "nilai": 48
+    },
+    {
+      "id": "3574010",
+      "kode_bps": "3574010",
+      "kode_kab": "35.74",
+      "nama": "Kademangan",
+      "nama_kab": "Kota Probolinggo",
+      "lat": -7.767726649903924,
+      "lng": 113.18255245831527,
+      "nilai": 20
+    },
+    {
+      "id": "3574011",
+      "kode_bps": "3574011",
+      "kode_kab": "35.74",
+      "nama": "Kedopok",
+      "nama_kab": "Kota Probolinggo",
+      "lat": -7.790021297835505,
+      "lng": 113.20231408402792,
+      "nilai": 8
+    },
+    {
+      "id": "3574020",
+      "kode_bps": "3574020",
+      "kode_kab": "35.74",
+      "nama": "Wonoasih",
+      "nama_kab": "Kota Probolinggo",
+      "lat": -7.796543202516051,
+      "lng": 113.2216463410438,
+      "nilai": 13
+    },
+    {
+      "id": "3574030",
+      "kode_bps": "3574030",
+      "kode_kab": "35.74",
+      "nama": "Mayangan",
+      "nama_kab": "Kota Probolinggo",
+      "lat": -7.745322250328809,
+      "lng": 113.21970504013582,
+      "nilai": 10
+    },
+    {
+      "id": "3574031",
+      "kode_bps": "3574031",
+      "kode_kab": "35.74",
+      "nama": "Kanigaran",
+      "nama_kab": "Kota Probolinggo",
+      "lat": -7.7639415165157715,
+      "lng": 113.21175918648518,
+      "nilai": 6
+    },
+    {
+      "id": "3575010",
+      "kode_bps": "3575010",
+      "kode_kab": "35.75",
+      "nama": "Gadingrejo",
+      "nama_kab": "Kota Pasuruan",
+      "lat": -7.640696682831236,
+      "lng": 112.88631306127375,
+      "nilai": 25
+    },
+    {
+      "id": "3575020",
+      "kode_bps": "3575020",
+      "kode_kab": "35.75",
+      "nama": "Purworejo",
+      "nama_kab": "Kota Pasuruan",
+      "lat": -7.665441343913333,
+      "lng": 112.89755270812954,
+      "nilai": 16
+    },
+    {
+      "id": "3575030",
+      "kode_bps": "3575030",
+      "kode_kab": "35.75",
+      "nama": "Bugulkidul",
+      "nama_kab": "Kota Pasuruan",
+      "lat": -7.65057445629731,
+      "lng": 112.92929186152007,
+      "nilai": 13
+    },
+    {
+      "id": "3575031",
+      "kode_bps": "3575031",
+      "kode_kab": "35.75",
+      "nama": "Panggungrejo",
+      "nama_kab": "Kota Pasuruan",
+      "lat": -7.639743511120089,
+      "lng": 112.91324583645911,
+      "nilai": 7
+    },
+    {
+      "id": "3576010",
+      "kode_bps": "3576010",
+      "kode_kab": "35.76",
+      "nama": "Prajurit Kulon",
+      "nama_kab": "Kota Mojokerto",
+      "lat": -7.475316910115421,
+      "lng": 112.41955111514474,
+      "nilai": 34
+    },
+    {
+      "id": "3576020",
+      "kode_bps": "3576020",
+      "kode_kab": "35.76",
+      "nama": "Magersari",
+      "nama_kab": "Kota Mojokerto",
+      "lat": -7.464238530814183,
+      "lng": 112.45223310387922,
+      "nilai": 22
+    },
+    {
+      "id": "3576021",
+      "kode_bps": "3576021",
+      "kode_kab": "35.76",
+      "nama": "Kranggan",
+      "nama_kab": "Kota Mojokerto",
+      "lat": -7.477793952555683,
+      "lng": 112.44018511447997,
+      "nilai": 17
+    },
+    {
+      "id": "3577010",
+      "kode_bps": "3577010",
+      "kode_kab": "35.77",
+      "nama": "Mangu Harjo",
+      "nama_kab": "Kota Madiun",
+      "lat": -7.621029062550244,
+      "lng": 111.51402002312906,
+      "nilai": 22
+    },
+    {
+      "id": "3577020",
+      "kode_bps": "3577020",
+      "kode_kab": "35.77",
+      "nama": "Taman",
+      "nama_kab": "Kota Madiun",
+      "lat": -7.649820336333196,
+      "lng": 111.5273372659096,
+      "nilai": 17
+    },
+    {
+      "id": "3577030",
+      "kode_bps": "3577030",
+      "kode_kab": "35.77",
+      "nama": "Kartoharjo",
+      "nama_kab": "Kota Madiun",
+      "lat": -7.616909565851745,
+      "lng": 111.54165906321796,
+      "nilai": 34
+    },
+    {
+      "id": "3578010",
+      "kode_bps": "3578010",
+      "kode_kab": "35.78",
+      "nama": "Karang Pilang",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.33504465689293,
+      "lng": 112.68741260055816,
+      "nilai": 45
+    },
+    {
+      "id": "3578020",
+      "kode_bps": "3578020",
+      "kode_kab": "35.78",
+      "nama": "Jambangan",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.323706379414872,
+      "lng": 112.7153166425963,
+      "nilai": 18
+    },
+    {
+      "id": "3578030",
+      "kode_bps": "3578030",
+      "kode_kab": "35.78",
+      "nama": "Gayungan",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.3291880020654325,
+      "lng": 112.72645324624287,
+      "nilai": 13
+    },
+    {
+      "id": "3578040",
+      "kode_bps": "3578040",
+      "kode_kab": "35.78",
+      "nama": "Wonocolo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.3226326374367225,
+      "lng": 112.7415935210509,
+      "nilai": 29
+    },
+    {
+      "id": "3578050",
+      "kode_bps": "3578050",
+      "kode_kab": "35.78",
+      "nama": "Tenggilis Mejoyo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.324676297593083,
+      "lng": 112.75429018733058,
+      "nilai": 22
+    },
+    {
+      "id": "3578060",
+      "kode_bps": "3578060",
+      "kode_kab": "35.78",
+      "nama": "Gunung Anyar",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.337744392839342,
+      "lng": 112.79690081199874,
+      "nilai": 13
+    },
+    {
+      "id": "3578070",
+      "kode_bps": "3578070",
+      "kode_kab": "35.78",
+      "nama": "Rungkut",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.31921268166886,
+      "lng": 112.80237785928904,
+      "nilai": 22
+    },
+    {
+      "id": "3578080",
+      "kode_bps": "3578080",
+      "kode_kab": "35.78",
+      "nama": "Sukolilo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.2918925518721815,
+      "lng": 112.80707727192637,
+      "nilai": 22
+    },
+    {
+      "id": "3578090",
+      "kode_bps": "3578090",
+      "kode_kab": "35.78",
+      "nama": "Mulyorejo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.266677940188952,
+      "lng": 112.79950326405734,
+      "nilai": 18
+    },
+    {
+      "id": "3578100",
+      "kode_bps": "3578100",
+      "kode_kab": "35.78",
+      "nama": "Gubeng",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.279650414531433,
+      "lng": 112.7594678326166,
+      "nilai": 18
+    },
+    {
+      "id": "3578110",
+      "kode_bps": "3578110",
+      "kode_kab": "35.78",
+      "nama": "Wonokromo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.297751013830321,
+      "lng": 112.73785613645562,
+      "nilai": 13
+    },
+    {
+      "id": "3578120",
+      "kode_bps": "3578120",
+      "kode_kab": "35.78",
+      "nama": "Dukuh Pakis",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.291607678977568,
+      "lng": 112.70019260568448,
+      "nilai": 22
+    },
+    {
+      "id": "3578130",
+      "kode_bps": "3578130",
+      "kode_kab": "35.78",
+      "nama": "Wiyung",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.31305450567887,
+      "lng": 112.68803571284597,
+      "nilai": 18
+    },
+    {
+      "id": "3578140",
+      "kode_bps": "3578140",
+      "kode_kab": "35.78",
+      "nama": "Lakarsantri",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.30944768555701,
+      "lng": 112.65491644469805,
+      "nilai": 22
+    },
+    {
+      "id": "3578141",
+      "kode_bps": "3578141",
+      "kode_kab": "35.78",
+      "nama": "Sambikerep",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.277055602385649,
+      "lng": 112.65199526924006,
+      "nilai": 13
+    },
+    {
+      "id": "3578150",
+      "kode_bps": "3578150",
+      "kode_kab": "35.78",
+      "nama": "Tandes",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.255820962900355,
+      "lng": 112.6715509342469,
+      "nilai": 18
+    },
+    {
+      "id": "3578160",
+      "kode_bps": "3578160",
+      "kode_kab": "35.78",
+      "nama": "Suko Manunggal",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.269108274145307,
+      "lng": 112.69964666622157,
+      "nilai": 22
+    },
+    {
+      "id": "3578170",
+      "kode_bps": "3578170",
+      "kode_kab": "35.78",
+      "nama": "Sawahan",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.2730184187235425,
+      "lng": 112.72143135697755,
+      "nilai": 22
+    },
+    {
+      "id": "3578180",
+      "kode_bps": "3578180",
+      "kode_kab": "35.78",
+      "nama": "Tegalsari",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.275544293610062,
+      "lng": 112.73682761028842,
+      "nilai": 18
+    },
+    {
+      "id": "3578190",
+      "kode_bps": "3578190",
+      "kode_kab": "35.78",
+      "nama": "Genteng",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.258932127098836,
+      "lng": 112.74487424141647,
+      "nilai": 13
+    },
+    {
+      "id": "3578200",
+      "kode_bps": "3578200",
+      "kode_kab": "35.78",
+      "nama": "Tambaksari",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.2508793674733605,
+      "lng": 112.76797287721669,
+      "nilai": 13
+    },
+    {
+      "id": "3578210",
+      "kode_bps": "3578210",
+      "kode_kab": "35.78",
+      "nama": "Kenjeran",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.217738883477291,
+      "lng": 112.76890197406271,
+      "nilai": 18
+    },
+    {
+      "id": "3578211",
+      "kode_bps": "3578211",
+      "kode_kab": "35.78",
+      "nama": "Bulak",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.237344121938372,
+      "lng": 112.79013513833618,
+      "nilai": 18
+    },
+    {
+      "id": "3578220",
+      "kode_bps": "3578220",
+      "kode_kab": "35.78",
+      "nama": "Simokerto",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.239540163700409,
+      "lng": 112.7532468777308,
+      "nilai": 18
+    },
+    {
+      "id": "3578230",
+      "kode_bps": "3578230",
+      "kode_kab": "35.78",
+      "nama": "Semampir",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.214816573310182,
+      "lng": 112.74890918358116,
+      "nilai": 13
+    },
+    {
+      "id": "3578240",
+      "kode_bps": "3578240",
+      "kode_kab": "35.78",
+      "nama": "Pabean Cantian",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.219639978436792,
+      "lng": 112.73363839344728,
+      "nilai": 22
+    },
+    {
+      "id": "3578250",
+      "kode_bps": "3578250",
+      "kode_kab": "35.78",
+      "nama": "Bubutan",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.248797303257132,
+      "lng": 112.72779016899105,
+      "nilai": 13
+    },
+    {
+      "id": "3578260",
+      "kode_bps": "3578260",
+      "kode_kab": "35.78",
+      "nama": "Krembangan",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.228703541371187,
+      "lng": 112.72169680381268,
+      "nilai": 22
+    },
+    {
+      "id": "3578270",
+      "kode_bps": "3578270",
+      "kode_kab": "35.78",
+      "nama": "Asemrowo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.23750819641579,
+      "lng": 112.6897923773301,
+      "nilai": 13
+    },
+    {
+      "id": "3578280",
+      "kode_bps": "3578280",
+      "kode_kab": "35.78",
+      "nama": "Benowo",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.223674905518528,
+      "lng": 112.64635121858925,
+      "nilai": 13
+    },
+    {
+      "id": "3578281",
+      "kode_bps": "3578281",
+      "kode_kab": "35.78",
+      "nama": "Pakal",
+      "nama_kab": "Kota Surabaya",
+      "lat": -7.22976063079222,
+      "lng": 112.61591037247699,
+      "nilai": 22
+    },
+    {
+      "id": "3579010",
+      "kode_bps": "3579010",
+      "kode_kab": "35.79",
+      "nama": "Batu",
+      "nama_kab": "Kota Batu",
+      "lat": -7.8839315485389365,
+      "lng": 112.5113666100886,
+      "nilai": 34
+    },
+    {
+      "id": "3579020",
+      "kode_bps": "3579020",
+      "kode_kab": "35.79",
+      "nama": "Junrejo",
+      "nama_kab": "Kota Batu",
+      "lat": -7.907756451466927,
+      "lng": 112.54572293946958,
+      "nilai": 17
+    },
+    {
+      "id": "3579030",
+      "kode_bps": "3579030",
+      "kode_kab": "35.79",
+      "nama": "Bumiaji",
+      "nama_kab": "Kota Batu",
+      "lat": -7.798168613887977,
+      "lng": 112.53902512964535,
+      "nilai": 22
+    }
+  ]
+}

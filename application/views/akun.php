@@ -10,7 +10,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('assets/img/favicon-32.png') ?>">
     <link rel="icon" type="image/png" sizes="192x192" href="<?= base_url('assets/img/favicon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= base_url('assets/img/favicon-192.png') ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . (file_exists(FCPATH . 'assets/css/style.css') ? filemtime(FCPATH . 'assets/css/style.css') : time())) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/vendor/sweetalert2/sweetalert2.min.css') ?>">
+    <script src="<?= base_url('assets/vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
     <style>
         :root {
             --login-bg: #091729;
@@ -418,7 +420,7 @@
                         <input type="checkbox" name="remember" value="1" checked>
                         <span>Ingat akun di perangkat ini</span>
                     </label>
-                    <a href="javascript:void(0)" onclick="alert('Untuk bantuan pemulihan akun silakan hubungi administrator BAPPEDA Kabupaten Banyuwangi.')" class="forgot-link">Lupa sandi?</a>
+                    <a href="javascript:void(0)" onclick="showForgotPassAlert()" class="forgot-link">Lupa sandi?</a>
                 </div>
 
                 <button type="submit" class="btn-submit">
@@ -547,6 +549,19 @@
                 formRegister.style.display = 'none';
                 tabLoginBtn.classList.add('active');
                 tabRegisterBtn.classList.remove('active');
+            }
+        }
+        function showForgotPassAlert() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Bantuan Pemulihan Sandi',
+                    html: 'Untuk bantuan reset atau pemulihan kata sandi akun, silakan hubungi <strong>Administrator Sistem</strong> atau Tim Pengelola Data BAPPEDA.',
+                    icon: 'info',
+                    confirmButtonColor: '#2563eb',
+                    confirmButtonText: 'Mengerti'
+                });
+            } else {
+                alert('Untuk bantuan pemulihan akun silakan hubungi administrator BAPPEDA.');
             }
         }
     </script>

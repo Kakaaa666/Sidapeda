@@ -3,7 +3,7 @@
     <section class="hero">
         <div>
             <span class="badge info">EXECUTIVE ECONOMIC OVERVIEW</span>
-            <h1>Dashboard Perekonomian<br>Kabupaten Banyuwangi</h1>
+            <h1>Dashboard Perekonomian<br><?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></h1>
             <p>Pantau perkembangan, analisis, dan prospek perekonomian daerah<br>dalam satu platform intelijen ekonomi terintegrasi.</p>
         </div>
         <div class="hero-meta">
@@ -172,7 +172,7 @@
                         </select>
                     </div>
                     <div class="legend" id="trend-legend">
-                        <i style="background:var(--blue)"></i> <span id="legend-label-0">Banyuwangi</span>
+                        <i style="background:var(--blue)"></i> <span id="legend-label-0"><?= htmlspecialchars(str_replace(array('Kabupaten ', 'Kab. ', 'Kota '), '', $nama_wilayah ?? 'Banyuwangi')) ?></span>
                         <i style="background:var(--teal)"></i> <span id="legend-label-1">Jawa Timur</span>
                         <i style="background:#d29a28"></i> <span id="legend-label-2">Nasional</span>
                     </div>
@@ -182,7 +182,7 @@
             <div id="overview-line-chart-container" class="chart-wrap dynamic-chart">
                 <!-- Rendered dynamically by JS -->
             </div>
-            <div class="source">Sumber: PDRB ADHK Kabupaten Banyuwangi & BPS Provinsi Jawa Timur</div>
+            <div class="source">Sumber: PDRB ADHK <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?> & BPS Provinsi Jawa Timur</div>
         </article>
 
         <!-- SECTORAL BAR CHART -->
@@ -197,44 +197,55 @@
             </div>
 
             <div class="bar-chart" id="overview-sector-bars">
-                <?php
-                // Sort sectors by selected year growth
-                $sectorSort = $sectors;
-                usort($sectorSort, function($a, $b) use ($year_idx) {
-                    $gA = $a['growthSeries'][$year_idx] ?? $a['growthLocal'];
-                    $gB = $b['growthSeries'][$year_idx] ?? $b['growthLocal'];
-                    return $gB <=> $gA;
-                });
-                $top5 = array_slice($sectorSort, 0, 5);
-                $topSector = $top5[0];
+                <?php if (!empty($sectors)): ?>
+                    <?php
+                    // Sort sectors by selected year growth
+                    $sectorSort = $sectors;
+                    usort($sectorSort, function($a, $b) use ($year_idx) {
+                        $gA = isset($a['growthSeries'][$year_idx]) ? $a['growthSeries'][$year_idx] : ($a['growthLocal'] ?? 0);
+                        $gB = isset($b['growthSeries'][$year_idx]) ? $b['growthSeries'][$year_idx] : ($b['growthLocal'] ?? 0);
+                        return $gB <=> $gA;
+                    });
+                    $top5 = array_slice($sectorSort, 0, 5);
+                    $topSector = !empty($top5) ? $top5[0] : null;
 
-                $allGrowth = array_map(function($s) use ($year_idx) { return $s['growthSeries'][$year_idx] ?? $s['growthLocal']; }, $top5);
-                $minG = min(0, min($allGrowth));
-                $maxG = max(0, max($allGrowth));
-                $rangeG = $maxG - $minG ?: 1;
-                $zeroG = (0 - $minG) / $rangeG * 100;
+                    $allGrowth = array_map(function($s) use ($year_idx) {
+                        return (float)(isset($s['growthSeries'][$year_idx]) ? $s['growthSeries'][$year_idx] : ($s['growthLocal'] ?? 0));
+                    }, $top5);
+                    $minG = !empty($allGrowth) ? min(0, min($allGrowth)) : 0;
+                    $maxG = !empty($allGrowth) ? max(0, max($allGrowth)) : 5;
+                    $rangeG = ($maxG - $minG) ?: 1;
+                    $zeroG = (0 - $minG) / $rangeG * 100;
 
-                foreach ($top5 as $s):
-                    $curG = $s['growthSeries'][$year_idx] ?? $s['growthLocal'];
-                    $w = abs($curG) / $rangeG * 100;
-                    $l = $curG >= 0 ? $zeroG : $zeroG - $w;
-                ?>
-                    <div class="bar-row">
-                        <span title="<?= htmlspecialchars($s['name']) ?>"><?= htmlspecialchars($s['short']) ?></span>
-                        <div class="bar-track">
-                            <b class="bar-zero" style="left: <?= $zeroG ?>%"></b>
-                            <i class="<?= $curG < 0 ? 'negative' : '' ?>" style="left: <?= $l ?>%; width: <?= $w ?>%"></i>
+                    foreach ($top5 as $s):
+                        $curG = (float)(isset($s['growthSeries'][$year_idx]) ? $s['growthSeries'][$year_idx] : ($s['growthLocal'] ?? 0));
+                        $w = abs($curG) / $rangeG * 100;
+                        $l = $curG >= 0 ? $zeroG : $zeroG - $w;
+                    ?>
+                        <div class="bar-row">
+                            <span title="<?= htmlspecialchars($s['name'] ?? $s['short'] ?? '') ?>"><?= htmlspecialchars($s['short'] ?? $s['name'] ?? '') ?></span>
+                            <div class="bar-track">
+                                <b class="bar-zero" style="left: <?= $zeroG ?>%"></b>
+                                <i class="<?= $curG < 0 ? 'negative' : '' ?>" style="left: <?= $l ?>%; width: <?= $w ?>%"></i>
+                            </div>
+                            <strong class="<?= $curG < 0 ? 'negative' : '' ?>"><?= number_format($curG, 1, ',', '.') ?>%</strong>
                         </div>
-                        <strong class="<?= $curG < 0 ? 'negative' : '' ?>"><?= number_format($curG, 1, ',', '.') ?>%</strong>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <?php $topSector = null; ?>
+                    <div style="padding: 24px 12px; text-align: center; color: var(--muted); font-size: 12px;">
+                        Data pertumbuhan sektoral untuk wilayah ini sedang dalam pemutakhiran.
                     </div>
-                <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
+            <?php if (!empty($topSector)): ?>
             <div class="insight-strip">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.5 15a7 7 0 1 1 7 0c-.9.7-1.3 1.5-1.5 2h-4c-.2-.5-.6-1.3-1.5-2Z"/></svg>
-                <span><strong><?= $topSector['short'] ?></strong> mencatat laju pertumbuhan tertinggi pada tahun <?= $display_year ?>: <?= number_format($topSector['growthSeries'][$year_idx] ?? $topSector['growthLocal'], 1, ',', '.') ?>%.</span>
+                <span><strong><?= htmlspecialchars($topSector['short'] ?? $topSector['name'] ?? '') ?></strong> mencatat laju pertumbuhan tertinggi pada tahun <?= $display_year ?>: <?= number_format(isset($topSector['growthSeries'][$year_idx]) ? $topSector['growthSeries'][$year_idx] : ($topSector['growthLocal'] ?? 0), 1, ',', '.') ?>%.</span>
             </div>
-            <div class="source">Sumber: PDRB Lapangan Usaha Kabupaten Banyuwangi</div>
+            <?php endif; ?>
+            <div class="source">Sumber: PDRB Lapangan Usaha <?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?></div>
         </article>
     </section>
 
@@ -257,7 +268,7 @@
                 <span class="signal <?= $gNow >= 0 ? 'success' : 'warning' ?>"></span>
                 <div>
                     <strong><?= $gNow >= 0 ? 'Pertumbuhan ekonomi positif' : 'Pertumbuhan ekonomi terkontraksi' ?></strong>
-                    <p>Pertumbuhan ekonomi <?= number_format($gNow, 2, ',', '.') ?>% pada tahun <?= $display_year ?>; sektor <?= $topSector['short'] ?> memimpin laju pertumbuhan sektoral.</p>
+                    <p>Pertumbuhan ekonomi <?= number_format($gNow, 2, ',', '.') ?>% pada tahun <?= $display_year ?>; <?= !empty($topSector['short']) ? 'sektor ' . htmlspecialchars($topSector['short']) . ' memimpin laju pertumbuhan sektoral.' : 'kinerja sektoral bergerak stabil.' ?></p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg>
             </a>
@@ -395,6 +406,7 @@
 
     <!-- SUNTIKKAN DATA DETAIL RESMI DARI DATABASE -->
     <script>
+        window.__ACTIVE_REGION_NAME__ = <?= json_encode($nama_wilayah ?? 'Kabupaten Banyuwangi', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         window.KPI_REAL_DATA = <?= json_encode(!empty($kpi_details) ? $kpi_details : array(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     </script>
 </div>

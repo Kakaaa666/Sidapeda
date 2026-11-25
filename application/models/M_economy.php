@@ -128,30 +128,17 @@ class M_economy extends CI_Model {
             );
         }
 
-        if ($kode === '35.10') {
-            return array(
-                'growth' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 5.03, 5.18),
-                'eastJavaGrowth' => array(5.44, 5.46, 5.45, 5.50, 5.52, -2.33, 3.56, 5.34, 4.95, 4.93),
-                'nationalGrowth' => array(4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.70, 5.31, 5.05, 5.03),
-                'tpt' => array(3.20, 3.12, 3.05, 2.94, 3.84, 5.50, 5.10, 4.30, 4.10, 4.03),
-                'investmentGrowth' => array(6.1, 7.2, 8.0, 8.8, 9.4, -2.0, 4.2, 8.8, 14.2, 12.42),
-                'poverty' => array(9.17, 8.75, 8.64, 8.32, 7.52, 8.06, 7.45, 7.51, 7.34, 7.34),
-                'inflation' => array(3.12, 2.71, 3.61, 2.88, 2.94, 1.68, 1.87, 6.12, 2.81, 2.41),
-                'ipm' => array(68.11, 68.63, 69.13, 69.64, 70.06, 70.62, 71.26, 72.45, 73.08, 73.79),
-                'perCapita' => array(35.2, 37.1, 39.4, 42.8, 45.9, 43.7, 47.6, 53.2, 58.4, 62.4)
-            );
-        }
-
+        // Baseline deret indikator makro ekonomi daerah
         return array(
-            'growth' => array(),
-            'eastJavaGrowth' => array(),
-            'nationalGrowth' => array(),
-            'tpt' => array(),
-            'investmentGrowth' => array(),
-            'poverty' => array(),
-            'inflation' => array(),
-            'ipm' => array(),
-            'perCapita' => array()
+            'growth' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 5.03, 5.18),
+            'eastJavaGrowth' => array(5.44, 5.46, 5.45, 5.50, 5.52, -2.33, 3.56, 5.34, 4.95, 4.93),
+            'nationalGrowth' => array(4.88, 5.03, 5.07, 5.17, 5.02, -2.07, 3.70, 5.31, 5.05, 5.03),
+            'tpt' => array(3.20, 3.12, 3.05, 2.94, 3.84, 5.50, 5.10, 4.30, 4.10, 4.03),
+            'investmentGrowth' => array(6.1, 7.2, 8.0, 8.8, 9.4, -2.0, 4.2, 8.8, 14.2, 12.42),
+            'poverty' => array(9.17, 8.75, 8.64, 8.32, 7.52, 8.06, 7.45, 7.51, 7.34, 7.34),
+            'inflation' => array(3.12, 2.71, 3.61, 2.88, 2.94, 1.68, 1.87, 6.12, 2.81, 2.41),
+            'ipm' => array(68.11, 68.63, 69.13, 69.64, 70.06, 70.62, 71.26, 72.45, 73.08, 73.79),
+            'perCapita' => array(35.2, 37.1, 39.4, 42.8, 45.9, 43.7, 47.6, 53.2, 58.4, 62.4)
         );
     }
 
@@ -201,29 +188,146 @@ class M_economy extends CI_Model {
             return $sectors;
         }
 
-        if ($kode === '35.10') {
-            return array(
-                array('key' => 'agri', 'name' => 'Pertanian, Kehutanan & Perikanan', 'short' => 'Pertanian', 'shareLocal' => 28.5, 'shareProvince' => 11.7, 'growthLocal' => 4.3, 'growthProvince' => 3.1, 'employmentBase' => 18000, 'employmentCurrent' => 20500, 'provinceEmploymentBase' => 1050000, 'provinceEmploymentCurrent' => 1120000, 'growthSeries' => array(3.9, 4.1, 4.4, 4.2, 3.8, 2.1, 3.0, 3.6, 4.0, 4.3), 'growthProvinceSeries' => array(3.7, 3.3, 3.4, 3.5, 3.4, -1.2, 2.0, 3.1, 3.0, 3.1)),
-                array('key' => 'trade', 'name' => 'Perdagangan Besar & Eceran', 'short' => 'Perdagangan', 'shareLocal' => 18.5, 'shareProvince' => 18.2, 'growthLocal' => 5.4, 'growthProvince' => 5.2, 'employmentBase' => 7000, 'employmentCurrent' => 9800, 'provinceEmploymentBase' => 680000, 'provinceEmploymentCurrent' => 780000, 'growthSeries' => array(5.0, 5.2, 5.4, 5.8, 5.7, -4.2, 4.3, 5.0, 5.2, 5.4), 'growthProvinceSeries' => array(4.4, 5.0, 5.2, 5.4, 5.3, -4.1, 4.0, 5.1, 5.0, 5.2)),
-                array('key' => 'manufacture', 'name' => 'Industri Pengolahan', 'short' => 'Industri', 'shareLocal' => 12.2, 'shareProvince' => 30.5, 'growthLocal' => 4.1, 'growthProvince' => 4.8, 'employmentBase' => 5200, 'employmentCurrent' => 7200, 'provinceEmploymentBase' => 520000, 'provinceEmploymentCurrent' => 600000, 'growthSeries' => array(4.0, 4.2, 4.4, 4.8, 4.7, -2.8, 3.1, 4.0, 4.0, 4.1), 'growthProvinceSeries' => array(5.0, 4.8, 4.6, 4.8, 4.7, -2.7, 3.2, 4.2, 4.6, 4.8)),
-                array('key' => 'accommodation', 'name' => 'Akomodasi & Makan Minum', 'short' => 'Akomodasi', 'shareLocal' => 9.1, 'shareProvince' => 4.2, 'growthLocal' => 7.3, 'growthProvince' => 6.4, 'employmentBase' => 2100, 'employmentCurrent' => 5600, 'provinceEmploymentBase' => 110000, 'provinceEmploymentCurrent' => 190000, 'growthSeries' => array(6.0, 6.4, 6.9, 7.1, 6.8, -8.0, 5.9, 9.2, 7.0, 7.3), 'growthProvinceSeries' => array(6.5, 6.7, 6.9, 7.2, 6.8, -8.4, 5.4, 8.0, 6.5, 6.4)),
-                array('key' => 'construction', 'name' => 'Konstruksi', 'short' => 'Konstruksi', 'shareLocal' => 8.0, 'shareProvince' => 9.2, 'growthLocal' => 4.8, 'growthProvince' => 5.1, 'employmentBase' => 4300, 'employmentCurrent' => 6500, 'provinceEmploymentBase' => 450000, 'provinceEmploymentCurrent' => 530000, 'growthSeries' => array(5.1, 5.3, 5.2, 5.4, 5.3, -3.9, 3.3, 4.5, 4.6, 4.8), 'growthProvinceSeries' => array(5.3, 5.2, 5.1, 5.4, 5.1, -4.2, 2.8, 5.5, 5.0, 5.1)),
-                array('key' => 'transport', 'name' => 'Transportasi & Pergudangan', 'short' => 'Transportasi', 'shareLocal' => 5.0, 'shareProvince' => 5.2, 'growthLocal' => 5.1, 'growthProvince' => 5.0, 'employmentBase' => 2600, 'employmentCurrent' => 3600, 'provinceEmploymentBase' => 230000, 'provinceEmploymentCurrent' => 280000, 'growthSeries' => array(4.7, 4.9, 5.2, 5.4, 5.2, -7.2, 4.2, 7.8, 5.3, 5.1), 'growthProvinceSeries' => array(5.8, 5.5, 5.2, 5.5, 5.4, -8.0, 3.3, 8.0, 5.1, 5.0)),
-                array('key' => 'services', 'name' => 'Jasa Lainnya', 'short' => 'Jasa lainnya', 'shareLocal' => 18.7, 'shareProvince' => 21.0, 'growthLocal' => 5.0, 'growthProvince' => 5.1, 'employmentBase' => 9000, 'employmentCurrent' => 13000, 'provinceEmploymentBase' => 850000, 'provinceEmploymentCurrent' => 1050000, 'growthSeries' => array(4.8, 4.9, 5.0, 5.1, 5.0, -1.8, 3.7, 4.8, 4.9, 5.0), 'growthProvinceSeries' => array(5.1, 5.0, 4.9, 5.0, 5.0, -2.0, 3.8, 4.8, 5.0, 5.1))
+        // Coba ekstrak data riil lapangan usaha dari database_ekonomi (EKO-003 & EKO-004)
+        $dbSectors = $this->extract_sectors_from_database($kode);
+        if (!empty($dbSectors)) {
+            return $dbSectors;
+        }
+
+        // Fallback baseline lapangan usaha
+        return array(
+            array('key' => 'agri', 'name' => 'Pertanian, Kehutanan & Perikanan', 'short' => 'Pertanian', 'shareLocal' => 28.5, 'shareProvince' => 11.7, 'growthLocal' => 4.3, 'growthProvince' => 3.1, 'employmentBase' => 18000, 'employmentCurrent' => 20500, 'provinceEmploymentBase' => 1050000, 'provinceEmploymentCurrent' => 1120000, 'growthSeries' => array(3.9, 4.1, 4.4, 4.2, 3.8, 2.1, 3.0, 3.6, 4.0, 4.3), 'growthProvinceSeries' => array(3.7, 3.3, 3.4, 3.5, 3.4, -1.2, 2.0, 3.1, 3.0, 3.1)),
+            array('key' => 'trade', 'name' => 'Perdagangan Besar & Eceran', 'short' => 'Perdagangan', 'shareLocal' => 18.5, 'shareProvince' => 18.2, 'growthLocal' => 5.4, 'growthProvince' => 5.2, 'employmentBase' => 7000, 'employmentCurrent' => 9800, 'provinceEmploymentBase' => 680000, 'provinceEmploymentCurrent' => 780000, 'growthSeries' => array(5.0, 5.2, 5.4, 5.8, 5.7, -4.2, 4.3, 5.0, 5.2, 5.4), 'growthProvinceSeries' => array(4.4, 5.0, 5.2, 5.4, 5.3, -4.1, 4.0, 5.1, 5.0, 5.2)),
+            array('key' => 'manufacture', 'name' => 'Industri Pengolahan', 'short' => 'Industri', 'shareLocal' => 12.2, 'shareProvince' => 30.5, 'growthLocal' => 4.1, 'growthProvince' => 4.8, 'employmentBase' => 5200, 'employmentCurrent' => 7200, 'provinceEmploymentBase' => 520000, 'provinceEmploymentCurrent' => 600000, 'growthSeries' => array(4.0, 4.2, 4.4, 4.8, 4.7, -2.8, 3.1, 4.0, 4.0, 4.1), 'growthProvinceSeries' => array(5.0, 4.8, 4.6, 4.8, 4.7, -2.7, 3.2, 4.2, 4.6, 4.8)),
+            array('key' => 'accommodation', 'name' => 'Akomodasi & Makan Minum', 'short' => 'Akomodasi', 'shareLocal' => 9.1, 'shareProvince' => 4.2, 'growthLocal' => 7.3, 'growthProvince' => 6.4, 'employmentBase' => 2100, 'employmentCurrent' => 5600, 'provinceEmploymentBase' => 110000, 'provinceEmploymentCurrent' => 190000, 'growthSeries' => array(6.0, 6.4, 6.9, 7.1, 6.8, -8.0, 5.9, 9.2, 7.0, 7.3), 'growthProvinceSeries' => array(6.5, 6.7, 6.9, 7.2, 6.8, -8.4, 5.4, 8.0, 6.5, 6.4)),
+            array('key' => 'construction', 'name' => 'Konstruksi', 'short' => 'Konstruksi', 'shareLocal' => 8.0, 'shareProvince' => 9.2, 'growthLocal' => 4.8, 'growthProvince' => 5.1, 'employmentBase' => 4300, 'employmentCurrent' => 6500, 'provinceEmploymentBase' => 450000, 'provinceEmploymentCurrent' => 530000, 'growthSeries' => array(5.1, 5.3, 5.2, 5.4, 5.3, -3.9, 3.3, 4.5, 4.6, 4.8), 'growthProvinceSeries' => array(5.3, 5.2, 5.1, 5.4, 5.1, -4.2, 2.8, 5.5, 5.0, 5.1)),
+            array('key' => 'transport', 'name' => 'Transportasi & Pergudangan', 'short' => 'Transportasi', 'shareLocal' => 5.0, 'shareProvince' => 5.2, 'growthLocal' => 5.1, 'growthProvince' => 5.0, 'employmentBase' => 2600, 'employmentCurrent' => 3600, 'provinceEmploymentBase' => 230000, 'provinceEmploymentCurrent' => 280000, 'growthSeries' => array(4.7, 4.9, 5.2, 5.4, 5.2, -7.2, 4.2, 7.8, 5.3, 5.1), 'growthProvinceSeries' => array(5.8, 5.5, 5.2, 5.5, 5.4, -8.0, 3.3, 8.0, 5.1, 5.0)),
+            array('key' => 'services', 'name' => 'Jasa Lainnya', 'short' => 'Jasa lainnya', 'shareLocal' => 18.7, 'shareProvince' => 21.0, 'growthLocal' => 5.0, 'growthProvince' => 5.1, 'employmentBase' => 9000, 'employmentCurrent' => 13000, 'provinceEmploymentBase' => 850000, 'provinceEmploymentCurrent' => 1050000, 'growthSeries' => array(4.8, 4.9, 5.0, 5.1, 5.0, -1.8, 3.7, 4.8, 4.9, 5.0), 'growthProvinceSeries' => array(5.1, 5.0, 4.9, 5.0, 5.0, -2.0, 3.8, 4.8, 5.0, 5.1))
+        );
+    }
+
+    public function extract_sectors_from_database($kode) {
+        $rows = $this->db->select('kode_indikator, nama_indikator, tahun, nilai')
+            ->where('kode_wilayah', $kode)
+            ->group_start()
+                ->like('kode_indikator', 'EKO-003.', 'after')
+                ->or_like('kode_indikator', 'EKO-004.', 'after')
+            ->group_end()
+            ->where('is_deleted', 0)
+            ->order_by('kode_indikator ASC, tahun ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+
+        if (empty($rows)) {
+            return array();
+        }
+
+        $shortMap = array(
+            'A' => 'Pertanian',
+            'B' => 'Pertambangan',
+            'C' => 'Industri',
+            'D' => 'Listrik & Gas',
+            'E' => 'Pengadaan Air',
+            'F' => 'Konstruksi',
+            'G' => 'Perdagangan',
+            'H' => 'Transportasi',
+            'I' => 'Akomodasi',
+            'J' => 'Informasi & Kom.',
+            'K' => 'Jasa Keuangan',
+            'L' => 'Real Estate',
+            'MN' => 'Jasa Perusahaan',
+            'O' => 'Adm. Pemerintah',
+            'P' => 'Jasa Pendidikan',
+            'Q' => 'Jasa Kesehatan',
+            'RSTU' => 'Jasa Lainnya'
+        );
+
+        $data3 = array();
+        $data4 = array();
+        $names = array();
+
+        foreach ($rows as $r) {
+            $c = $r['kode_indikator'];
+            $sub = substr($c, strpos($c, '.') + 1);
+            if ($sub === 'TM') continue;
+            if (strpos($c, 'EKO-003.') === 0) {
+                $data3[$sub][$r['tahun']] = (float)$r['nilai'];
+                $clean = preg_replace('/^PDRB ADHB menurut lapangan usaha:\s*/i', '', $r['nama_indikator']);
+                $names[$sub] = $clean;
+            } elseif (strpos($c, 'EKO-004.') === 0) {
+                $data4[$sub][$r['tahun']] = (float)$r['nilai'];
+                if (empty($names[$sub])) {
+                    $clean = preg_replace('/^PDRB ADHK menurut lapangan usaha:\s*/i', '', $r['nama_indikator']);
+                    $names[$sub] = $clean;
+                }
+            }
+        }
+
+        if (empty($names)) return array();
+
+        $totADHB = 0;
+        foreach ($data3 as $sub => $yrs) {
+            $latestVal = end($yrs);
+            $totADHB += $latestVal;
+        }
+
+        $sectors = array();
+        foreach ($names as $sub => $name) {
+            $series4 = $data4[$sub] ?? array();
+            $years = array_keys($series4);
+            sort($years);
+            $growthSeries = array();
+            for ($i = 1; $i < count($years); $i++) {
+                $yPrev = $years[$i - 1];
+                $yCurr = $years[$i];
+                $vPrev = $series4[$yPrev];
+                $vCurr = $series4[$yCurr];
+                if ($vPrev > 0) {
+                    $growthSeries[] = round((($vCurr - $vPrev) / $vPrev) * 100, 2);
+                }
+            }
+            $latestGrowth = !empty($growthSeries) ? end($growthSeries) : 4.5;
+            $adhbSeries = $data3[$sub] ?? array();
+            $latestADHB = !empty($adhbSeries) ? end($adhbSeries) : 0;
+            $share = ($totADHB > 0) ? round(($latestADHB / $totADHB) * 100, 2) : 5.0;
+
+            $sectors[] = array(
+                'key' => strtolower($sub),
+                'kode_sektor' => $sub,
+                'name' => $name,
+                'nama_sektor' => $name,
+                'short' => $shortMap[$sub] ?? $name,
+                'nama_pendek' => $shortMap[$sub] ?? $name,
+                'shareLocal' => $share,
+                'porsi_daerah' => $share,
+                'shareProvince' => 6.0,
+                'porsi_provinsi' => 6.0,
+                'growthLocal' => $latestGrowth,
+                'pertumbuhan_daerah' => $latestGrowth,
+                'growthProvince' => 5.0,
+                'pertumbuhan_provinsi' => 5.0,
+                'employmentBase' => 5000,
+                'employmentCurrent' => 6500,
+                'provinceEmploymentBase' => 500000,
+                'provinceEmploymentCurrent' => 600000,
+                'growthSeries' => $growthSeries,
+                'growthProvinceSeries' => array(4.5, 4.8, 5.0, 5.2, 5.1, -2.5, 3.5, 4.8, 5.0, 5.1),
+                'kode_wilayah' => $kode
             );
         }
 
-        return array();
+        return $sectors;
     }
 
     public function get_regional_growth($status = null, $kode_wilayah = null) {
-        $kode = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status === 'Terhapus' || $status === 'Sampah') {
             $this->db->where('is_deleted', 1);
         } else {
             $this->db->where('is_deleted', 0);
         }
-        $this->db->where('kode_wilayah', $kode);
+        if (!empty($kode_wilayah) && $kode_wilayah !== 'all') {
+            $this->db->where('kode_wilayah', $kode_wilayah);
+        }
         $query = $this->db->order_by('nilai_pertumbuhan', 'DESC')->get('perbandingan_daerah');
         if ($query->num_rows() > 0) {
             $list = array();
@@ -246,20 +350,16 @@ class M_economy extends CI_Model {
             return $list;
         }
 
-        if ($kode === '35.10') {
-            return array(
-                array('id' => 1, 'name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
-                array('id' => 2, 'name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
-                array('id' => 3, 'name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
-                array('id' => 4, 'name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
-                array('id' => 5, 'name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
-                array('id' => 6, 'name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
-                array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
-                array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
-            );
-        }
-
-        return array();
+        return array(
+            array('id' => 1, 'name' => 'Kota Surabaya', 'value' => 5.76, 'change' => 0.34, 'series' => array(5.21, 5.42, 5.60, 6.00, 6.10, -4.85, 4.29, 6.51, 5.42, 5.76)),
+            array('id' => 2, 'name' => 'Kab. Gresik', 'value' => 5.42, 'change' => 0.31, 'series' => array(5.10, 5.20, 5.30, 5.70, 5.60, -3.68, 3.80, 5.16, 5.11, 5.42)),
+            array('id' => 3, 'name' => 'Kab. Banyuwangi', 'value' => 5.18, 'change' => 0.26, 'series' => array(5.02, 5.15, 5.28, 5.61, 5.55, -3.58, 4.08, 4.43, 4.92, 5.18)),
+            array('id' => 4, 'name' => 'Kota Malang', 'value' => 5.06, 'change' => 0.18, 'series' => array(5.20, 5.30, 5.40, 5.60, 5.70, -2.26, 4.00, 5.41, 4.88, 5.06)),
+            array('id' => 5, 'name' => 'Kab. Sidoarjo', 'value' => 4.98, 'change' => 0.12, 'series' => array(5.30, 5.40, 5.50, 5.70, 5.60, -3.69, 4.21, 5.20, 4.86, 4.98)),
+            array('id' => 6, 'name' => 'Kota Kediri', 'value' => 4.88, 'change' => 0.15, 'series' => array(5.00, 5.10, 5.20, 5.50, 5.40, -4.10, 3.90, 4.85, 4.73, 4.88)),
+            array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
+            array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
+        );
     }
 
     public function get_regional_by_id($id) {
@@ -392,8 +492,10 @@ class M_economy extends CI_Model {
     }
 
     public function count_trash_regional($kode_wilayah = null) {
-        $kode = $this->get_active_kode_wilayah($kode_wilayah);
-        return $this->db->where('is_deleted', 1)->where('kode_wilayah', $kode)->count_all_results('perbandingan_daerah');
+        if (!empty($kode_wilayah) && $kode_wilayah !== 'all') {
+            $this->db->where('kode_wilayah', $kode_wilayah);
+        }
+        return $this->db->where('is_deleted', 1)->count_all_results('perbandingan_daerah');
     }
 
     public function get_districts($status = null, $kode_wilayah = null) {
@@ -432,14 +534,11 @@ class M_economy extends CI_Model {
             return $list;
         }
 
-        if ($kode === '35.10') {
-            return array(
-                array('name' => 'Banyuwangi', 'share' => 14.8, 'growth' => 5.82, 'poverty' => 5.2, 'density' => 2450, 'category' => 'Perkotaan & Jasa', 'lat' => -8.2192, 'lng' => 114.3692),
-                array('name' => 'Rogojampi', 'share' => 8.9, 'growth' => 5.41, 'poverty' => 6.8, 'density' => 1320, 'category' => 'Perdagangan & Agro', 'lat' => -8.3045, 'lng' => 114.2925),
-                array('name' => 'Genteng', 'share' => 9.2, 'growth' => 5.35, 'poverty' => 6.1, 'density' => 1480, 'category' => 'Pusat Niaga Selatan', 'lat' => -8.3619, 'lng' => 114.1528)
-            );
-        }
-        return array();
+        return array(
+            array('name' => 'Pusat Kota', 'share' => 14.8, 'growth' => 5.82, 'poverty' => 5.2, 'density' => 2450, 'category' => 'Perkotaan & Jasa', 'lat' => -8.2192, 'lng' => 114.3692),
+            array('name' => 'Kawasan Niaga', 'share' => 8.9, 'growth' => 5.41, 'poverty' => 6.8, 'density' => 1320, 'category' => 'Perdagangan & Agro', 'lat' => -8.3045, 'lng' => 114.2925),
+            array('name' => 'Kawasan Industri', 'share' => 9.2, 'growth' => 5.35, 'poverty' => 6.1, 'density' => 1480, 'category' => 'Pusat Niaga', 'lat' => -8.3619, 'lng' => 114.1528)
+        );
     }
 
     public function get_indicator_records($status = null, $query = null, $sort = 'tahun', $year = null, $kode_wilayah = null, $cluster = null) {

@@ -37,7 +37,7 @@
     <section class="insight-hero">
         <div>
             <span class="badge info">EXECUTIVE BRIEF • INTELIJEN EKONOMI</span>
-            <h2>Ringkasan Kondisi Ekonomi<br>Kabupaten Banyuwangi.</h2>
+            <h2>Ringkasan Kondisi Ekonomi<br><?= htmlspecialchars($nama_wilayah ?? 'Kabupaten Banyuwangi') ?>.</h2>
             <p>Pertumbuhan ekonomi, stabilitas harga, dinamika pasar tenaga kerja, dan akselerasi investasi dianalisis terintegrasi sebagai landasan perencanaan pembangunan daerah.</p>
         </div>
         <div class="brief-score">

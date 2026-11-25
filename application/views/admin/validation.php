@@ -1,3 +1,6 @@
+<?php
+$canValidate = !empty($user) && in_array((int)($user['level'] ?? 1), array(1, 2));
+?>
 <div class="page admin-page">
     <div class="admin-intro">
         <div>
@@ -637,12 +640,14 @@
                                                         <?= $isValid ? '✓ Valid' : ($isRejected ? '✕ Ditolak' : '⏱ Review') ?>
                                                     </span>
                                                     <div style="display:inline-flex; align-items:center; gap:2px;">
+                                                    <?php if ($canValidate): ?>
                                                         <button type="button" class="btn-verify-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $isValid ? '#16a34a' : '#fff' ?>; color:<?= $isValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-status="Tervalidasi">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                         </button>
                                                         <button type="button" class="btn-reject-record" style="width:20px; height:20px; border-radius:4px; border:1px solid <?= $isRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $isRejected ? '#dc2626' : '#fff' ?>; color:<?= $isRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $isRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $item['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" data-val="<?= $prefixRp ?><?= $formattedVal ?> <?= htmlspecialchars($item['unit']) ?>" data-period="<?= htmlspecialchars($rec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($rec['notes'] ?? '') ?>">
                                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                         </button>
+                                                    <?php endif; ?>
                                                     </div>
                                                 </div>
                                                 <?php if (!empty($rec['notes']) && !$isValid): ?>
@@ -659,16 +664,18 @@
                                     </td>
                                 <?php endforeach; ?>
                                 <td class="matrix-sticky-col-last" style="position:sticky; right:0; background:#fff; z-index:2; padding:11px 12px; border-bottom:1px solid #edf0f4; box-shadow:-2px 0 5px rgba(0,0,0,0.03); text-align:center; vertical-align:middle; white-space:nowrap;">
-                                    <?php if ($unverifiedCount > 0 || $rejectedCount > 0): ?>
+                                    <?php if ($canValidate && ($unverifiedCount > 0 || $rejectedCount > 0)): ?>
                                         <button type="button" class="btn-verify-series button small success" data-code="<?= $item['code'] ?>" data-indicator="<?= htmlspecialchars($item['indicator']) ?>" title="Setujui seluruh tahun yang belum tervalidasi untuk indikator ini" style="padding:4px 9px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer;">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                             <span>Setujui Semua</span>
                                         </button>
-                                    <?php else: ?>
+                                    <?php elseif ($unverifiedCount === 0 && $rejectedCount === 0): ?>
                                         <span class="badge success" style="font-size: 12.5px; padding:3px 8px; display:inline-flex; align-items:center; gap:3px;">
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                             <span>Semua Valid</span>
                                         </span>
+                                    <?php else: ?>
+                                        <span class="badge warning" style="font-size: 11px; padding:3px 7px;">Menunggu Validasi</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -812,12 +819,14 @@
                                                                 <?= $sIsValid ? '✓ Valid' : ($sIsRejected ? '✕ Ditolak' : '⏱ Review') ?>
                                                             </span>
                                                             <div style="display:inline-flex; align-items:center; gap:2px;">
+                                                            <?php if ($canValidate): ?>
                                                                 <button type="button" class="btn-verify-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsValid ? '#86efac' : '#cbd5e1' ?>; background:<?= $sIsValid ? '#16a34a' : '#fff' ?>; color:<?= $sIsValid ? '#fff' : '#16a34a' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsValid ? 'Sudah Tervalidasi (klik untuk konfirmasi ulang)' : 'Setujui Data (Validasi)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-status="Tervalidasi">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                                 </button>
                                                                 <button type="button" class="btn-reject-record" style="width:19px; height:19px; border-radius:4px; border:1px solid <?= $sIsRejected ? '#fca5a5' : '#cbd5e1' ?>; background:<?= $sIsRejected ? '#dc2626' : '#fff' ?>; color:<?= $sIsRejected ? '#fff' : '#dc2626' ?>; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;" title="<?= $sIsRejected ? 'Sudah Ditolak (klik untuk perbarui alasan)' : 'Tolak Data (Harus Disertai Alasan)' ?>" data-code="<?= $sub['code'] ?>" data-year="<?= $yr ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" data-val="<?= $sPrefixRp ?><?= $sFormattedVal ?> <?= htmlspecialchars($sub['unit']) ?>" data-period="<?= htmlspecialchars($sRec['period'] ?? 'Tahunan') ?> <?= $yr ?>" data-notes="<?= htmlspecialchars($sRec['notes'] ?? '') ?>">
                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                                                 </button>
+                                                            <?php endif; ?>
                                                             </div>
                                                         </div>
                                                         <?php if (!empty($sRec['notes']) && !$sIsValid): ?>
@@ -832,13 +841,15 @@
                                             </td>
                                         <?php endforeach; ?>
                                         <td class="matrix-sticky-col-last" style="position:sticky; right:0; background:#f8fafc; z-index:2; padding:7px 12px; border-bottom:1px solid #edf0f4; text-align:center; vertical-align:middle; white-space:nowrap;">
-                                            <?php if ($sUnverified > 0 || $sRejected > 0): ?>
+                                            <?php if ($canValidate && ($sUnverified > 0 || $sRejected > 0)): ?>
                                                 <button type="button" class="btn-verify-series button small success" data-code="<?= $sub['code'] ?>" data-indicator="<?= htmlspecialchars($sub['indicator']) ?>" title="Setujui seluruh tahun yang belum tervalidasi untuk sub-indikator ini" style="padding:3px 7px; font-size: 12.5px; font-weight:700; display:inline-flex; align-items:center; gap:3px; white-space:nowrap; cursor:pointer;">
                                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                                     <span>Setujui</span>
                                                 </button>
-                                            <?php else: ?>
+                                            <?php elseif ($sUnverified === 0 && $sRejected === 0): ?>
                                                 <span class="badge success" style="font-size: 12px; padding:2px 6px;">✓ Valid</span>
+                                            <?php else: ?>
+                                                <span class="badge warning" style="font-size: 11px; padding:2px 5px;">Menunggu</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>

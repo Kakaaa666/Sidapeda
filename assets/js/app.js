@@ -1,5 +1,5 @@
 /**
- * SI-DAPEDA — Sistem Informasi Data & Analisis Pembangunan Daerah
+ * SI-DAPEDA â€” Sistem Informasi Data & Analisis Pembangunan Daerah
  * SI-DAPEDA Frontend & Interactive Intelligence Engine
  */
 
@@ -34,7 +34,7 @@
 
     // Helper: Number Formatter
     function formatNum(val, digits = 2) {
-        if (!Number.isFinite(val)) return '—';
+        if (!Number.isFinite(val)) return 'â€”';
         return new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: digits,
             maximumFractionDigits: digits
@@ -44,6 +44,243 @@
     function formatPct(val, digits = 2) {
         return formatNum(val, digits) + '%';
     }
+
+    // Helper: Pemda Logo URL Resolver
+    function getLogoPemdaUrl(query) {
+        const base = (typeof BASE_URL !== 'undefined' ? BASE_URL : '').replace(/\/+$/, '');
+        if (!query) return base + '/assets/img/Logo%20Pemda/Kab.%20Banyuwangi.png';
+        const q = String(query).trim();
+        
+        const codeMap = {
+            '35.01': 'Kab. Pacitan.png',
+            '35.02': 'Kab. Ponorogo.png',
+            '35.03': 'Kab. Trenggalek.png',
+            '35.04': 'Kab. Tulungagung.png',
+            '35.05': 'Kab. Blitar.png',
+            '35.06': 'Kab. Kediri.png',
+            '35.07': 'Kab. Malang.png',
+            '35.08': 'Kab. Lumajang.png',
+            '35.09': 'Kab. Jember.png',
+            '35.10': 'Kab. Banyuwangi.png',
+            '35.11': 'Kab. Bondowoso.png',
+            '35.12': 'Kab. Situbondo.png',
+            '35.13': 'Kab. Probolinggo.png',
+            '35.14': 'Kab. Pasuruan.png',
+            '35.15': 'Kab. Sidoarjo.png',
+            '35.16': 'Kab. Mojokerto.png',
+            '35.17': 'Kab. Jombang.png',
+            '35.18': 'Kab. Nganjuk.png',
+            '35.19': 'Kab. Madiun.png',
+            '35.20': 'Kab. Magetan.png',
+            '35.21': 'Kab. Ngawi.png',
+            '35.22': 'Kab. Bojonegoro.png',
+            '35.23': 'Kab. Tuban.png',
+            '35.24': 'Kab. Lamongan.png',
+            '35.25': 'Kab. Gresik.png',
+            '35.26': 'Kab. Bangkalan.png',
+            '35.27': 'Kab. Sampang.png',
+            '35.28': 'Kab. Pamekasan.png',
+            '35.29': 'Kab. Sumenep.png',
+            '35.71': 'Kota Kediri.png',
+            '35.72': 'Kota Blitar.png',
+            '35.73': 'Kota Malang.png',
+            '35.74': 'Kota Probolinggo.png',
+            '35.75': 'Kota Pasuruan.png',
+            '35.76': 'Kota Mojokerto.png',
+            '35.77': 'Kota Madiun.png',
+            '35.78': 'Kota Surabaya.png',
+            '35.79': 'Kota Batu.png',
+            '35': 'Jawa Timur.png',
+            '35.00': 'Jawa Timur.png'
+        };
+        if (codeMap[q]) {
+            return base + '/assets/img/Logo%20Pemda/' + encodeURIComponent(codeMap[q]);
+        }
+
+        if (/jawa\s*timur|jatim|provinsi/i.test(q)) {
+            return base + '/assets/img/Logo%20Pemda/Jawa%20Timur.png';
+        }
+
+        const qClean = q.replace(/^(pemerintah\s+kabupaten|pemerintah\s+kota|pemerintah\s+kab\.|kabupaten|kab\.|kota)\s+/i, '').trim().toLowerCase();
+
+        if (/kota/i.test(q) || ['batu', 'surabaya'].includes(qClean)) {
+            const kotaMap = {
+                'kediri': 'Kota Kediri.png',
+                'blitar': 'Kota Blitar.png',
+                'malang': 'Kota Malang.png',
+                'probolinggo': 'Kota Probolinggo.png',
+                'pasuruan': 'Kota Pasuruan.png',
+                'mojokerto': 'Kota Mojokerto.png',
+                'madiun': 'Kota Madiun.png',
+                'surabaya': 'Kota Surabaya.png',
+                'batu': 'Kota Batu.png'
+            };
+            for (const [k, f] of Object.entries(kotaMap)) {
+                if (qClean.includes(k)) return base + '/assets/img/Logo%20Pemda/' + encodeURIComponent(f);
+            }
+        }
+
+        const kabMap = {
+            'pacitan': 'Kab. Pacitan.png',
+            'ponorogo': 'Kab. Ponorogo.png',
+            'trenggalek': 'Kab. Trenggalek.png',
+            'tulungagung': 'Kab. Tulungagung.png',
+            'blitar': 'Kab. Blitar.png',
+            'kediri': 'Kab. Kediri.png',
+            'malang': 'Kab. Malang.png',
+            'lumajang': 'Kab. Lumajang.png',
+            'jember': 'Kab. Jember.png',
+            'banyuwangi': 'Kab. Banyuwangi.png',
+            'bondowoso': 'Kab. Bondowoso.png',
+            'situbondo': 'Kab. Situbondo.png',
+            'probolinggo': 'Kab. Probolinggo.png',
+            'pasuruan': 'Kab. Pasuruan.png',
+            'sidoarjo': 'Kab. Sidoarjo.png',
+            'mojokerto': 'Kab. Mojokerto.png',
+            'jombang': 'Kab. Jombang.png',
+            'nganjuk': 'Kab. Nganjuk.png',
+            'madiun': 'Kab. Madiun.png',
+            'magetan': 'Kab. Magetan.png',
+            'ngawi': 'Kab. Ngawi.png',
+            'bojonegoro': 'Kab. Bojonegoro.png',
+            'tuban': 'Kab. Tuban.png',
+            'lamongan': 'Kab. Lamongan.png',
+            'gresik': 'Kab. Gresik.png',
+            'bangkalan': 'Kab. Bangkalan.png',
+            'sampang': 'Kab. Sampang.png',
+            'pamekasan': 'Kab. Pamekasan.png',
+            'sumenep': 'Kab. Sumenep.png'
+        };
+        for (const [k, f] of Object.entries(kabMap)) {
+            if (qClean.includes(k)) return base + '/assets/img/Logo%20Pemda/' + encodeURIComponent(f);
+        }
+
+        return base + '/assets/img/Logo%20Pemda/Kab.%20Banyuwangi.png';
+    }
+    window.getLogoPemdaUrl = getLogoPemdaUrl;
+
+    // =========================================================================
+    // GLOBAL SWEETALERT2 EXECUTIVE HELPER (SIDAPEDA)
+    // =========================================================================
+    const AppSwal = {
+        fire: function (options) {
+            if (typeof Swal !== 'undefined') {
+                return Swal.fire(options);
+            } else {
+                return new Promise(resolve => {
+                    const ok = confirm((options.title || '') + (options.html ? '\n\n' + options.html.replace(/<[^>]+>/g, '') : (options.text ? '\n\n' + options.text : '')));
+                    resolve({ isConfirmed: ok, isDismissed: !ok });
+                });
+            }
+        },
+        confirm: function (options) {
+            const opts = Object.assign({
+                title: 'Apakah Anda yakin?',
+                html: '',
+                icon: 'warning',
+                showCancelButton: true,
+                showDenyButton: false,
+                showCloseButton: false,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Tidak',
+                reverseButtons: false,
+                focusCancel: false
+            }, options);
+            return this.fire(opts);
+        },
+        dangerConfirm: function (options) {
+            const opts = Object.assign({
+                title: 'Konfirmasi Tindakan Kritis',
+                html: '',
+                icon: 'error',
+                showCancelButton: true,
+                showDenyButton: false,
+                showCloseButton: false,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Tidak',
+                reverseButtons: false,
+                focusCancel: false
+            }, options);
+            return this.fire(opts);
+        },
+        success: function (title, html) {
+            return this.fire({
+                title: title || 'Berhasil',
+                html: html || '',
+                icon: 'success',
+                confirmButtonColor: '#0d9488',
+                confirmButtonText: 'Selesai'
+            });
+        },
+        error: function (title, html) {
+            return this.fire({
+                title: title || 'Terjadi Kesalahan',
+                html: html || '',
+                icon: 'error',
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Tutup'
+            });
+        },
+        info: function (title, html) {
+            return this.fire({
+                title: title || 'Informasi',
+                html: html || '',
+                icon: 'info',
+                confirmButtonColor: '#2463a6',
+                confirmButtonText: 'Mengerti'
+            });
+        }
+    };
+    window.AppSwal = AppSwal;
+
+    // Global Logout Confirmation via SweetAlert2
+    window.confirmLogout = function (event, targetUrl) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const destination = targetUrl || (event && event.currentTarget ? event.currentTarget.href : `${(typeof SITE_URL !== 'undefined' ? SITE_URL : '').replace(/\/+$/, '')}/logout`);
+
+        AppSwal.confirm({
+            title: 'Konfirmasi Keluar',
+            html: 'Apakah Anda yakin ingin keluar dari sistem <strong>Dashboard Ekonomi Daerah</strong>?',
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: false,
+            showCloseButton: false,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Keluar',
+            cancelButtonText: 'Tidak',
+            reverseButtons: false,
+            focusCancel: false
+        }).then(result => {
+            if (result && result.isConfirmed) {
+                window.location.href = destination;
+            }
+        });
+        return false;
+    };
+
+    // Override native window.alert with modern SweetAlert2
+    const _nativeAlert = window.alert;
+    window.alert = function (msg) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Pemberitahuan Sistem',
+                html: String(msg || ''),
+                icon: 'info',
+                confirmButtonColor: '#2463a6',
+                confirmButtonText: 'Tutup'
+            });
+        } else if (_nativeAlert) {
+            _nativeAlert(msg);
+        }
+    };
 
     // Global Helper: Toggle Sub-Indikator Sektoral / Komponen (A s.d. U / 1 s.d. 6)
     let _lastIndicatorToggle = { code: '', time: 0 };
@@ -113,7 +350,7 @@
                     btn.style.borderColor = '#16a34a';
                     btn.style.color = '#14532d';
                 } else {
-                    const openText = btn.getAttribute('data-label-open') || 'Rincian Sektor (A–U)';
+                    const openText = btn.getAttribute('data-label-open') || 'Rincian Sektor (Aâ€“U)';
                     lbl.textContent = openText;
                     btn.style.background = '#f0fdf4';
                     btn.style.borderColor = '#86efac';
@@ -446,6 +683,8 @@
         }
         const unit = opts.unit || '%';
         const showRank = opts.showRank !== false;
+        const showLogo = Boolean(opts.showLogo || items.some(d => d.logo));
+        const colLabelWidth = opts.labelWidth || (showLogo ? '195px' : '160px');
         const vals = items.map(d => Number(d.value)).filter(Number.isFinite);
         const maxVal = opts.maxVal !== undefined ? opts.maxVal : (Math.max(0, ...vals) || 1);
         const minVal = Math.min(0, ...vals);
@@ -464,13 +703,17 @@
 
             const valFormatted = `${formatNum(v, opts.decimals ?? 2)}${unit}`.trim();
             const hasDistinctBadge = item.badge && item.badge.trim() !== valFormatted && item.badge.trim() !== `${v}${unit}`.trim() && item.badge.trim() !== `${v}`.trim();
+            const itemLogoUrl = item.logo || (showLogo && typeof getLogoPemdaUrl === 'function' ? getLogoPemdaUrl(item.label) : null);
 
             rowsHtml += `
-                <div class="h-bar-row ${isHighlight ? 'highlighted' : ''}" data-index="${idx}" data-label="${item.label}" style="display:grid; grid-template-columns: ${showRank ? '28px ' : ''}160px 1fr 105px; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; font-size:11px; ${borderStyle} cursor:pointer; transition: all 0.2s ease;">
+                <div class="h-bar-row ${isHighlight ? 'highlighted' : ''}" data-index="${idx}" data-label="${item.label}" style="display:grid; grid-template-columns: ${showRank ? '28px ' : ''}${colLabelWidth} 1fr 105px; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; font-size:11px; ${borderStyle} cursor:pointer; transition: all 0.2s ease;">
                     ${showRank ? `<span class="badge ${isHighlight ? 'primary' : 'neutral'}" style="font-size:9px; padding:2px 4px; text-align:center; font-weight:700;">#${idx + 1}</span>` : ''}
-                    <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.label}">
-                        <strong style="color:var(--navy); font-size:11px;">${item.label}</strong>
-                        ${item.subLabel ? `<br><small style="color:var(--muted); font-size:9px;">${item.subLabel}</small>` : ''}
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;" title="${item.label}">
+                        ${itemLogoUrl ? `<img src="${itemLogoUrl}" alt="" class="region-table-logo" style="width:20px; height:20px; max-width:20px; max-height:20px; object-fit:contain; flex-shrink:0; margin-right:0; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.12));">` : ''}
+                        <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;">
+                            <strong style="color:var(--navy); font-size:11px;">${item.label}</strong>
+                            ${item.subLabel ? `<br><small style="color:var(--muted); font-size:9px;">${item.subLabel}</small>` : ''}
+                        </div>
                     </div>
                     <div style="position:relative; height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden;">
                         ${minVal < 0 ? `<div style="position:absolute; left:${zeroPct}%; top:0; bottom:0; width:1px; background:#64748b; z-index:2;"></div>` : ''}
@@ -531,9 +774,10 @@
             `<text x="${x(i)}" y="${height - 8}" text-anchor="middle">${String(yr).slice(-2)}</text>`
         ).join('');
 
-        const legend = series.map((s, idx) =>
-            `<span><i class="${s.className || 'series-' + idx}"></i>${s.name}</span>`
-        ).join('');
+        const legend = series.map((s, idx) => {
+            const logo = s.logo || (typeof getLogoPemdaUrl === 'function' ? getLogoPemdaUrl(s.name) : null);
+            return `<span style="display:inline-flex; align-items:center; gap:5px;"><i class="${s.className || 'series-' + idx}"></i>${logo ? `<img src="${logo}" alt="" style="width:13px; height:13px; object-fit:contain; flex-shrink:0;">` : ''}<span>${s.name}</span></span>`;
+        }).join('');
 
         return `
             <svg class="line-chart" viewBox="0 0 640 ${height}" preserveAspectRatio="none" role="img">
@@ -760,7 +1004,7 @@
             <div class="dynamic-chart-legend">
                 <span><i class="series-0"></i>Historis</span>
                 <span><i class="series-1"></i>Proyeksi</span>
-                <span><i class="forecast-interval-key"></i>Rentang Indikatif (±1,96 RMSE)</span>
+                <span><i class="forecast-interval-key"></i>Rentang Indikatif (Â±1,96 RMSE)</span>
             </div>`;
     }
 
@@ -1426,23 +1670,32 @@
                         const id = btn.getAttribute('data-id');
                         const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
-                        if (confirm(`Pindahkan "${name}" ke tempat sampah?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.`)) {
-                            fetch(`${cleanSite}/${cfg.controller}/soft_delete/${id}`, {
-                                method: 'POST',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            })
-                                .then(r => r.json())
-                                .then(data => {
-                                    if (data.status === 'success') {
-                                        location.reload();
-                                    } else {
-                                        alert(data.message || 'Gagal memproses soft delete.');
-                                    }
+                        AppSwal.confirm({
+                            title: 'Pindahkan ke Tempat Sampah?',
+                            html: `Apakah Anda yakin ingin memindahkan <strong>"${name}"</strong> ke tempat sampah?<br><small style="color:#64748b; font-size:11.5px; margin-top:6px; display:block;">Data tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.</small>`,
+                            icon: 'warning',
+                            confirmButtonColor: '#e11d48',
+                            confirmButtonText: 'Ya',
+                            cancelButtonText: 'Tidak'
+                        }).then(result => {
+                            if (result && result.isConfirmed) {
+                                fetch(`${cleanSite}/${cfg.controller}/soft_delete/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                                 })
-                                .catch(() => {
-                                    window.location.href = `${cleanSite}/${cfg.controller}/soft_delete/${id}`;
-                                });
-                        }
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            location.reload();
+                                        } else {
+                                            AppSwal.error('Gagal Memproses', data.message || 'Gagal memproses soft delete.');
+                                        }
+                                    })
+                                    .catch(() => {
+                                        window.location.href = `${cleanSite}/${cfg.controller}/soft_delete/${id}`;
+                                    });
+                            }
+                        });
                         return;
                     }
                 }
@@ -1456,23 +1709,32 @@
                         const id = btn.getAttribute('data-id');
                         const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
-                        if (confirm(`Pulihkan "${name}" kembali ke daftar aktif?`)) {
-                            fetch(`${cleanSite}/${cfg.controller}/restore/${id}`, {
-                                method: 'POST',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            })
-                                .then(r => r.json())
-                                .then(data => {
-                                    if (data.status === 'success') {
-                                        location.reload();
-                                    } else {
-                                        alert(data.message || 'Gagal memulihkan data.');
-                                    }
+                        AppSwal.confirm({
+                            title: 'Pulihkan Data?',
+                            html: `Pulihkan <strong>"${name}"</strong> kembali ke daftar aktif?`,
+                            icon: 'question',
+                            confirmButtonColor: '#0d9488',
+                            confirmButtonText: 'Ya',
+                            cancelButtonText: 'Tidak'
+                        }).then(result => {
+                            if (result && result.isConfirmed) {
+                                fetch(`${cleanSite}/${cfg.controller}/restore/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                                 })
-                                .catch(() => {
-                                    window.location.href = `${cleanSite}/${cfg.controller}/restore/${id}`;
-                                });
-                        }
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            location.reload();
+                                        } else {
+                                            AppSwal.error('Gagal Memulihkan', data.message || 'Gagal memulihkan data.');
+                                        }
+                                    })
+                                    .catch(() => {
+                                        window.location.href = `${cleanSite}/${cfg.controller}/restore/${id}`;
+                                    });
+                            }
+                        });
                         return;
                     }
                 }
@@ -1486,23 +1748,32 @@
                         const id = btn.getAttribute('data-id');
                         const name = btn.getAttribute('data-name') || 'item ini';
                         if (!id) return;
-                        if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${name}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                            fetch(`${cleanSite}/${cfg.controller}/hard_delete/${id}`, {
-                                method: 'POST',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            })
-                                .then(r => r.json())
-                                .then(data => {
-                                    if (data.status === 'success') {
-                                        location.reload();
-                                    } else {
-                                        alert(data.message || 'Gagal menghapus permanen.');
-                                    }
+                        AppSwal.dangerConfirm({
+                            title: 'Hapus Permanen?',
+                            html: `Peringatan: Apakah Anda yakin ingin <strong>MENGHAPUS PERMANEN</strong> <strong>"${name}"</strong>?<br><br><span style="color:#e11d48; font-weight:600; font-size:12px;">Data yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!</span>`,
+                            icon: 'error',
+                            confirmButtonColor: '#b91c1c',
+                            confirmButtonText: 'Ya',
+                            cancelButtonText: 'Tidak'
+                        }).then(result => {
+                            if (result && result.isConfirmed) {
+                                fetch(`${cleanSite}/${cfg.controller}/hard_delete/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                                 })
-                                .catch(() => {
-                                    window.location.href = `${cleanSite}/${cfg.controller}/hard_delete/${id}`;
-                                });
-                        }
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            location.reload();
+                                        } else {
+                                            AppSwal.error('Gagal Menghapus', data.message || 'Gagal menghapus permanen.');
+                                        }
+                                    })
+                                    .catch(() => {
+                                        window.location.href = `${cleanSite}/${cfg.controller}/hard_delete/${id}`;
+                                    });
+                            }
+                        });
                         return;
                     }
                 }
@@ -1525,21 +1796,26 @@
         const legend1 = document.getElementById('legend-label-1');
         const legend2 = document.getElementById('legend-label-2');
 
+        const rawRegionName = (window.__ACTIVE_REGION_NAME__ || 'Kabupaten Banyuwangi').trim();
+        const shortRegionName = rawRegionName.replace(/^kabupaten\s+|^kab\.\s+|^kota\s+/i, '').trim() || 'Banyuwangi';
+
+        if (legend0) legend0.textContent = shortRegionName;
+
         const indicatorConfigs = {
             'growth': {
                 title: 'Tren Pertumbuhan Ekonomi',
-                desc: 'Persentase pertumbuhan PDRB ADHK • perbandingan wilayah',
+                desc: 'Persentase pertumbuhan PDRB ADHK â€¢ perbandingan wilayah',
                 unit: '%',
                 hasPeers: true,
                 getSeries: (endIdx) => [
-                    { name: 'Banyuwangi', values: AppState.series.growth.slice(0, endIdx + 1), className: 'series-0' },
+                    { name: shortRegionName, values: AppState.series.growth.slice(0, endIdx + 1), className: 'series-0' },
                     { name: 'Jawa Timur', values: AppState.series.eastJavaGrowth.slice(0, endIdx + 1), className: 'series-1' },
                     { name: 'Nasional', values: AppState.series.nationalGrowth.slice(0, endIdx + 1), className: 'series-2' }
                 ]
             },
             'perCapita': {
                 title: 'Tren PDRB Per Kapita',
-                desc: 'Tingkat pendapatan per kapita Kabupaten Banyuwangi (Juta Rupiah)',
+                desc: `Tingkat pendapatan per kapita ${rawRegionName} (Juta Rupiah)`,
                 unit: ' Jt',
                 hasPeers: false,
                 getSeries: (endIdx) => [
@@ -1548,29 +1824,29 @@
             },
             'inflation': {
                 title: 'Tren Inflasi Tahunan',
-                desc: 'Perkembangan laju inflasi tahunan (yoy) Kabupaten Banyuwangi',
+                desc: `Perkembangan laju inflasi tahunan (yoy) ${rawRegionName}`,
                 unit: '%',
                 hasPeers: false,
                 getSeries: (endIdx) => [
-                    { name: 'Inflasi Banyuwangi', values: AppState.series.inflation.slice(0, endIdx + 1), className: 'series-0' }
+                    { name: `Inflasi ${shortRegionName}`, values: AppState.series.inflation.slice(0, endIdx + 1), className: 'series-0' }
                 ]
             },
             'tpt': {
                 title: 'Tren Tingkat Pengangguran Terbuka (TPT)',
-                desc: 'Proporsi angkatan kerja terbuka Kabupaten Banyuwangi (%)',
+                desc: `Proporsi angkatan kerja terbuka ${rawRegionName} (%)`,
                 unit: '%',
                 hasPeers: false,
                 getSeries: (endIdx) => [
-                    { name: 'TPT Banyuwangi', values: AppState.series.tpt.slice(0, endIdx + 1), className: 'series-0' }
+                    { name: `TPT ${shortRegionName}`, values: AppState.series.tpt.slice(0, endIdx + 1), className: 'series-0' }
                 ]
             },
             'poverty': {
                 title: 'Tren Tingkat Kemiskinan',
-                desc: 'Persentase penduduk miskin Kabupaten Banyuwangi (%)',
+                desc: `Persentase penduduk miskin ${rawRegionName} (%)`,
                 unit: '%',
                 hasPeers: false,
                 getSeries: (endIdx) => [
-                    { name: 'Kemiskinan Banyuwangi', values: AppState.series.poverty.slice(0, endIdx + 1), className: 'series-0' }
+                    { name: `Kemiskinan ${shortRegionName}`, values: AppState.series.poverty.slice(0, endIdx + 1), className: 'series-0' }
                 ]
             },
             'investmentGrowth': {
@@ -1579,7 +1855,7 @@
                 unit: '%',
                 hasPeers: false,
                 getSeries: (endIdx) => [
-                    { name: 'Investasi Banyuwangi', values: AppState.series.investmentGrowth.slice(0, endIdx + 1), className: 'series-0' }
+                    { name: `Investasi ${shortRegionName}`, values: AppState.series.investmentGrowth.slice(0, endIdx + 1), className: 'series-0' }
                 ]
             },
             'ipm': {
@@ -1588,7 +1864,7 @@
                 unit: ' pt',
                 hasPeers: false,
                 getSeries: (endIdx) => [
-                    { name: 'IPM Banyuwangi', values: AppState.series.ipm.slice(0, endIdx + 1), className: 'series-0' }
+                    { name: `IPM ${shortRegionName}`, values: AppState.series.ipm.slice(0, endIdx + 1), className: 'series-0' }
                 ]
             }
         };
@@ -1680,7 +1956,7 @@
             const curVal = card ? (card.dataset.value || (card.querySelector('.kpi-value strong') ? card.querySelector('.kpi-value strong').textContent.trim() : '')) : '';
             const curUnit = card ? (card.dataset.unit || (card.querySelector('.kpi-value span') ? card.querySelector('.kpi-value span').textContent.trim() : '')) : '';
             const curStatus = card ? (card.dataset.status || (card.querySelector('.badge') ? card.querySelector('.badge').textContent.trim() : 'Meningkat')) : 'Meningkat';
-            const curDelta = card ? (card.dataset.delta || (card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[↗↘]/g, '').trim() : '')) : '';
+            const curDelta = card ? (card.dataset.delta || (card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[â†—â†˜]/g, '').trim() : '')) : '';
             const cardYear = card ? (card.dataset.year || (card.querySelector('.kpi-period') && card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/) ? card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/)[1] : null)) : null;
             const curYear = cardYear || (filterYear && filterYear.value && filterYear.value !== 'all' ? filterYear.value : '2024');
             const yearNum = parseInt(curYear, 10) || 2024;
@@ -1775,8 +2051,8 @@
                     comparisonTitle: 'Posisi PDRB per kapita antarwilayah',
                     comparisonDesc: 'Perbandingan kabupaten/kota sekitar untuk melihat posisi relatif Banyuwangi.',
                     peers: [
-                        { name: 'Nasional', value: 78.6, note: 'Pembanding nasional · Data BPS', current: false },
-                        { name: 'Jawa Timur', value: 70.8, note: 'Pembanding provinsi · Data BPS', current: false },
+                        { name: 'Nasional', value: 78.6, note: 'Pembanding nasional Â· Data BPS', current: false },
+                        { name: 'Jawa Timur', value: 70.8, note: 'Pembanding provinsi Â· Data BPS', current: false },
                         { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 62.4, note: 'Kabupaten terpilih', current: true },
                         { name: 'Kab. Jember', value: 48.7, note: 'PDRB per kapita nominal', current: false },
                         { name: 'Kab. Situbondo', value: 45.2, note: 'PDRB per kapita nominal', current: false },
@@ -1825,11 +2101,11 @@
                     comparisonTitle: 'Perbandingan inflasi wilayah',
                     comparisonDesc: 'Pembanding daerah dan nasional untuk membaca apakah tekanan harga bersifat lokal atau lebih luas.',
                     peers: [
-                        { name: 'Kab. Situbondo', value: 2.31, note: 'Kabupaten pembanding · Data BPS', current: false },
+                        { name: 'Kab. Situbondo', value: 2.31, note: 'Kabupaten pembanding Â· Data BPS', current: false },
                         { name: 'Kab. Banyuwangi', value: parseFloat(curVal.replace(',', '.')) || 2.41, note: 'Kabupaten terpilih', current: true },
-                        { name: 'Nasional', value: 2.51, note: 'Inflasi nasional · Data BPS', current: false },
-                        { name: 'Jawa Timur', value: 2.67, note: 'Inflasi provinsi · Data BPS', current: false },
-                        { name: 'Kab. Jember', value: 2.73, note: 'Kabupaten pembanding · Data BPS', current: false }
+                        { name: 'Nasional', value: 2.51, note: 'Inflasi nasional Â· Data BPS', current: false },
+                        { name: 'Jawa Timur', value: 2.67, note: 'Inflasi provinsi Â· Data BPS', current: false },
+                        { name: 'Kab. Jember', value: 2.73, note: 'Kabupaten pembanding Â· Data BPS', current: false }
                     ],
                     heatTitle: 'Peta panas inflasi bulanan per kelompok',
                     heatDesc: 'Intensitas inflasi berdasarkan 12 bulan referensi dan kelompok pengeluaran.',
@@ -1894,7 +2170,7 @@
                     heatRows: [
                         { name: 'Laki-laki', values: [4.4, 4.1, 3.9, 3.8, 3.7] },
                         { name: 'Perempuan', values: [4.9, 4.6, 4.1, 4.3, 4.4] },
-                        { name: 'Usia Muda (15–24)', values: [11.4, 10.3, 9.1, 8.9, 8.7] },
+                        { name: 'Usia Muda (15â€“24)', values: [11.4, 10.3, 9.1, 8.9, 8.7] },
                         { name: 'Pendidikan SMA/SMK', values: [5.1, 4.8, 4.4, 4.2, 4.0] }
                     ],
                     annualSeries: [
@@ -1918,14 +2194,14 @@
                     metrics: [
                         { label: 'Perubahan tahunan', value: '+0,00 pp', note: 'Stabil dibandingkan tahun sebelumnya' },
                         { label: 'Perubahan sejak 2015', value: '-1,83 pp', note: 'Penurunan angka kemiskinan jangka panjang' },
-                        { label: 'Tingkat terendah', value: '7,34%', note: 'Capaian terendah tercatat 2023–2024' }
+                        { label: 'Tingkat terendah', value: '7,34%', note: 'Capaian terendah tercatat 2023â€“2024' }
                     ],
                     componentTitle: 'Dimensi kemiskinan dan kerentanan',
                     componentDesc: 'Tingkat kemiskinan (P0) perlu dibaca bersama kedalaman (P1), keparahan (P2), garis kemiskinan, dan persebaran spasial.',
                     components: [
-                        { name: 'P0 · Tingkat Kemiskinan', value: parseFloat(curVal.replace(',', '.')) || 7.34, unit: '%', context: 'Persentase penduduk di bawah garis kemiskinan' },
-                        { name: 'P1 · Kedalaman Kemiskinan', value: 1.18, unit: 'indeks', context: 'Rata-rata jarak pengeluaran dari garis kemiskinan' },
-                        { name: 'P2 · Keparahan Kemiskinan', value: 0.26, unit: 'indeks', context: 'Ketimpangan pengeluaran di antara penduduk miskin' },
+                        { name: 'P0 Â· Tingkat Kemiskinan', value: parseFloat(curVal.replace(',', '.')) || 7.34, unit: '%', context: 'Persentase penduduk di bawah garis kemiskinan' },
+                        { name: 'P1 Â· Kedalaman Kemiskinan', value: 1.18, unit: 'indeks', context: 'Rata-rata jarak pengeluaran dari garis kemiskinan' },
+                        { name: 'P2 Â· Keparahan Kemiskinan', value: 0.26, unit: 'indeks', context: 'Ketimpangan pengeluaran di antara penduduk miskin' },
                         { name: 'Garis Kemiskinan (GK)', value: 528450, unit: 'Rp/kapita/bulan', context: 'Standar minimum pemenuhan kebutuhan dasar' },
                         { name: 'Kemiskinan Perkotaan', value: 6.42, unit: '%', context: 'Persentase penduduk miskin wilayah perkotaan' },
                         { name: 'Kemiskinan Perdesaan', value: 8.12, unit: '%', context: 'Persentase penduduk miskin wilayah perdesaan' }
@@ -2101,11 +2377,11 @@
                     comparisonTitle: 'Pertumbuhan investasi menurut wilayah',
                     comparisonDesc: 'Perbandingan indeks pertumbuhan realisasi investasi antarkecamatan.',
                     peers: [
-                        { name: 'Pesanggaran', value: 14.9, note: 'Indeks pertumbuhan · Pertambangan & wisata', current: false },
-                        { name: 'Banyuwangi (Kota)', value: 13.0, note: 'Indeks pertumbuhan · Perdagangan & jasa', current: true },
-                        { name: 'Muncar', value: 12.0, note: 'Indeks pertumbuhan · Perikanan', current: false },
-                        { name: 'Rogojampi', value: 10.1, note: 'Indeks pertumbuhan · Perdagangan', current: false },
-                        { name: 'Glagah', value: 9.7, note: 'Indeks pertumbuhan · Pariwisata', current: false }
+                        { name: 'Pesanggaran', value: 14.9, note: 'Indeks pertumbuhan Â· Pertambangan & wisata', current: false },
+                        { name: 'Banyuwangi (Kota)', value: 13.0, note: 'Indeks pertumbuhan Â· Perdagangan & jasa', current: true },
+                        { name: 'Muncar', value: 12.0, note: 'Indeks pertumbuhan Â· Perikanan', current: false },
+                        { name: 'Rogojampi', value: 10.1, note: 'Indeks pertumbuhan Â· Perdagangan', current: false },
+                        { name: 'Glagah', value: 9.7, note: 'Indeks pertumbuhan Â· Pariwisata', current: false }
                     ],
                     heatTitle: 'Peta panas pertumbuhan investasi',
                     heatDesc: 'Tren pertumbuhan investasi sektoral pada lima tahun terakhir.',
@@ -2222,7 +2498,7 @@
             const curVal = (card && card.dataset.value) ? card.dataset.value : (cfg.curVal || (card && card.querySelector('.kpi-value strong') ? card.querySelector('.kpi-value strong').textContent.trim() : ''));
             const curUnit = (card && card.dataset.unit) ? card.dataset.unit : (cfg.curUnit || (card && card.querySelector('.kpi-value span') ? card.querySelector('.kpi-value span').textContent.trim() : ''));
             const curStatus = (card && card.dataset.status) ? card.dataset.status : (cfg.curStatus || (card && card.querySelector('.badge') ? card.querySelector('.badge').textContent.trim() : 'Meningkat'));
-            const curDelta = (card && card.dataset.delta) ? card.dataset.delta : (cfg.curDelta || (card && card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[↗↘]/g, '').trim() : ''));
+            const curDelta = (card && card.dataset.delta) ? card.dataset.delta : (cfg.curDelta || (card && card.querySelector('.kpi-bottom span') ? card.querySelector('.kpi-bottom span').textContent.replace(/[â†—â†˜]/g, '').trim() : ''));
             const badgeClass = card && card.querySelector('.badge') ? card.querySelector('.badge').className.replace('badge', '').trim() : 'success';
             const curYear = (card && card.dataset.year) ? card.dataset.year : (cfg.year || (card && card.querySelector('.kpi-period') && card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/) ? card.querySelector('.kpi-period').textContent.match(/\b(20\d\d)\b/)[1] : (filterYear && filterYear.value && filterYear.value !== 'all' ? filterYear.value : '2024')));
             const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : (typeof BASE_URL !== 'undefined' ? BASE_URL : '')).replace(/\/+$/, '');
@@ -2238,7 +2514,7 @@
                     <div class="detail-component-row">
                         <div class="detail-component-name">
                             <strong>${c.name}</strong>
-                            <small>${c.context}${c.share ? ' · Pangsa ' + c.share + '%' : ''}</small>
+                            <small>${c.context}${c.share ? ' Â· Pangsa ' + c.share + '%' : ''}</small>
                         </div>
                         <div class="detail-component-track">
                             <i style="width: ${pct}%"></i>
@@ -2255,8 +2531,8 @@
                         <td><strong>${c.name}</strong></td>
                         <td class="numeric">${c.value}</td>
                         <td>${c.unit}</td>
-                        <td class="numeric">${c.share ? c.share + '%' : '—'}</td>
-                        <td class="numeric">${c.benchmark ? c.benchmark + '%' : '—'}</td>
+                        <td class="numeric">${c.share ? c.share + '%' : 'â€”'}</td>
+                        <td class="numeric">${c.benchmark ? c.benchmark + '%' : 'â€”'}</td>
                         <td>${c.context}</td>
                     </tr>
                 `;
@@ -2269,6 +2545,7 @@
                     <div class="detail-rank-row ${p.current ? 'selected' : ''}">
                         <div class="detail-rank-label">
                             <span>${i + 1}</span>
+                            <img src="${getLogoPemdaUrl(p.name)}" alt="" class="region-table-logo">
                             <strong>${p.name}</strong>
                             <small>${p.note}</small>
                         </div>
@@ -2284,7 +2561,7 @@
             cfg.peers.forEach(p => {
                 peerTableRowsHtml += `
                     <tr class="${p.current ? 'selected-row' : ''}">
-                        <td><strong>${p.name}</strong></td>
+                        <td><img src="${getLogoPemdaUrl(p.name)}" alt="" class="region-table-logo"><strong>${p.name}</strong></td>
                         <td class="numeric">${p.value}</td>
                         <td>${p.note}</td>
                         <td>${p.current ? '<span class="badge info">Wilayah Dipilih</span>' : '<span class="table-muted">Pembanding</span>'}</td>
@@ -2323,7 +2600,7 @@
                         <td><strong>${s.year}</strong></td>
                         <td class="numeric">${s.value}</td>
                         <td>${cfg.components[0] ? cfg.components[0].unit : '%'}</td>
-                        <td class="numeric">${s.change === null ? '—' : s.change}</td>
+                        <td class="numeric">${s.change === null ? 'â€”' : s.change}</td>
                     </tr>
                 `;
             });
@@ -2368,7 +2645,7 @@
                         const trend = isNeg ? 'terkendali dengan penurunan' : 'mengalami pergerakan';
                         const deltaPhrase = hasDelta ? `, ${trend} sebesar ${curDelta} dari periode sebelumnya` : '';
                         const mtm = (cfg.metrics && cfg.metrics[0]) ? cfg.metrics[0].value : '0,19%';
-                        return `Tingkat inflasi tahunan (yoy) Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal} ${curUnit}${deltaPhrase}. Kondisi stabilitas harga konsumen tetap berada dalam rentang sasaran target (2,5 ± 1%), didukung oleh dinamika inflasi bulanan (mtm) ${mtm}.`;
+                        return `Tingkat inflasi tahunan (yoy) Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal} ${curUnit}${deltaPhrase}. Kondisi stabilitas harga konsumen tetap berada dalam rentang sasaran target (2,5 Â± 1%), didukung oleh dinamika inflasi bulanan (mtm) ${mtm}.`;
                     }
                     case 3: { // Pengangguran Terbuka
                         const trend = isNeg ? 'membaik dengan penurunan' : 'mengalami pergerakan';
@@ -2522,7 +2799,7 @@
                 </header>
 
                 <div class="detail-context">
-                    <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Tahun ${cfg.year || curYear} • Tahunan</span>
+                    <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Tahun ${cfg.year || curYear} â€¢ Tahunan</span>
                     <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Kabupaten Banyuwangi</span>
                     <span><i class="pulse"></i> Basis Data Resmi Terintegrasi</span>
                 </div>
@@ -2576,11 +2853,11 @@
                 <!-- BREAKDOWN CARD (SEKTORAL / KUARTAL) -->
                 ${breakdownCardHtml}
 
-                <!-- DEEP DIVE · DATA EXPLORER -->
+                <!-- DEEP DIVE Â· DATA EXPLORER -->
                 <section class="detail-explorer">
                     <div class="detail-explorer-heading">
                         <div>
-                            <span class="eyebrow" style="font-size:10.5px; font-weight:700; color:#0284c7;">DEEP DIVE · DATA EXPLORER</span>
+                            <span class="eyebrow" style="font-size:10.5px; font-weight:700; color:#0284c7;">DEEP DIVE Â· DATA EXPLORER</span>
                             <h3>Eksplorasi Lanjutan Indikator</h3>
                             <p>Telusuri rincian komponen pembentuk, posisi relatif antarwilayah Jawa Timur, dan observasi seri historis.</p>
                         </div>
@@ -2588,9 +2865,9 @@
                     </div>
 
                     <div class="detail-explorer-tabs" role="tablist">
-                        <button type="button" class="active" id="btn-tab-components" role="tab">01 · Struktur &amp; Komponen</button>
-                        <button type="button" id="btn-tab-benchmark" role="tab">02 · Benchmarking Wilayah</button>
-                        <button type="button" id="btn-tab-history" role="tab">03 · Data Historis</button>
+                        <button type="button" class="active" id="btn-tab-components" role="tab">01 Â· Struktur &amp; Komponen</button>
+                        <button type="button" id="btn-tab-benchmark" role="tab">02 Â· Benchmarking Wilayah</button>
+                        <button type="button" id="btn-tab-history" role="tab">03 Â· Data Historis</button>
                     </div>
 
                     <!-- TAB 1: STRUKTUR & KOMPONEN -->
@@ -2813,7 +3090,7 @@
                 ${coverageNoteHtml}
 
                 <footer class="detail-modal-footer">
-                    <span>Periode data: 2015–${curYear} • Frekuensi tahunan terintegrasi</span>
+                    <span>Periode data: 2015â€“${curYear} â€¢ Frekuensi tahunan terintegrasi</span>
                     <div>
                         <button type="button" class="button secondary" id="btn-footer-close-modal">Tutup</button>
                         <a href="${cleanSite}/analisis_ekonomi" class="button primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
@@ -3087,6 +3364,10 @@
         let activeTab = 'Regional Ranking';
         let selectedRegions = Array.from(document.querySelectorAll('.region-cb:checked')).map(cb => cb.value);
 
+        const norm = s => (s || '').toLowerCase().replace(/^kabupaten\s+|^kab\.\s+|^kota\s+/i, '').trim();
+        const activeRegionName = (window.__ACTIVE_REGION_NAME__ || 'Kabupaten Banyuwangi').trim();
+        const isFocalRegion = (name) => norm(name) === norm(activeRegionName);
+
         function renderComparison() {
             const period = periodSelect ? periodSelect.value : '10';
             const sliceStart = period === '5' ? 5 : 0;
@@ -3101,7 +3382,7 @@
                 const avg = mean(vals);
                 const chg = vals.length > 1 ? vals[vals.length - 1] - vals[vals.length - 2] : 0;
                 return { ...item, avg, chg };
-            }).filter(item => selectedRegions.includes(item.name)).sort((a, b) => b.avg - a.avg);
+            }).filter(item => selectedRegions.some(sel => sel === item.name || norm(sel) === norm(item.name))).sort((a, b) => b.avg - a.avg);
 
             // JIKA TIDAK ADA WILAYAH YANG DIPILIH, JANGAN TAMPILKAN DATA (EMPTY STATE)
             if (rows.length === 0) {
@@ -3113,18 +3394,18 @@
                             <small>Belum ada wilayah dipilih</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Rata-rata Pertumbuhan</span><span class="badge neutral">—</span></div>
-                            <strong>—</strong>
+                            <div><span>Rata-rata Pertumbuhan</span><span class="badge neutral">â€”</span></div>
+                            <strong>â€”</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Pertumbuhan Tertinggi</span><span class="badge neutral">—</span></div>
-                            <strong>—</strong>
+                            <div><span>Pertumbuhan Tertinggi</span><span class="badge neutral">â€”</span></div>
+                            <strong>â€”</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Disparitas Laju</span><span class="badge neutral">—</span></div>
-                            <strong>—</strong>
+                            <div><span>Disparitas Laju</span><span class="badge neutral">â€”</span></div>
+                            <strong>â€”</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>`;
                 }
@@ -3144,24 +3425,25 @@
                 return;
             }
 
-            const hasBwi = rows.some(r => r.name === 'Kab. Banyuwangi');
-            const bwi = rows.find(r => r.name === 'Kab. Banyuwangi');
+            const hasActive = rows.some(r => isFocalRegion(r.name));
+            const activeRow = rows.find(r => isFocalRegion(r.name));
+            const cleanFocalName = activeRow ? activeRow.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '') : activeRegionName.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '');
             const peerAvg = mean(rows.map(r => r.avg));
 
             // Render KPIs
             if (kpiContainer) {
-                if (hasBwi) {
-                    const rank = rows.findIndex(r => r.name === 'Kab. Banyuwangi') + 1;
-                    const gap = bwi.avg - peerAvg;
+                if (hasActive) {
+                    const rank = rows.findIndex(r => isFocalRegion(r.name)) + 1;
+                    const gap = activeRow.avg - peerAvg;
                     kpiContainer.innerHTML = `
                         <div class="comparison-kpi">
-                            <div><span>Peringkat Banyuwangi</span><span class="badge success">Posisi #${rank}</span></div>
+                            <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Peringkat ${cleanFocalName}</span><span class="badge success">Posisi #${rank}</span></div>
                             <strong>#${rank}</strong>
                             <small>dari ${rows.length} wilayah terpilih</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Rata-rata Banyuwangi</span><span class="badge info">Periode</span></div>
-                            <strong>${formatPct(bwi.avg)}</strong>
+                            <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Rata-rata ${cleanFocalName}</span><span class="badge info">Periode</span></div>
+                            <strong>${formatPct(activeRow.avg)}</strong>
                             <small>periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
                         </div>
                         <div class="comparison-kpi">
@@ -3185,7 +3467,7 @@
                             <small>kabupaten/kota dalam ranking</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Pertumbuhan Tertinggi</span><span class="badge success">#1 ${topRegion.name.replace('Kab. ', '').replace('Kota ', '')}</span></div>
+                            <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(topRegion.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Pertumbuhan Tertinggi</span><span class="badge success">#1 ${topRegion.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '')}</span></div>
                             <strong>${formatPct(topRegion.avg)}</strong>
                             <small>${topRegion.name}</small>
                         </div>
@@ -3213,10 +3495,11 @@
                 const rankingBarData = rows.map((r, idx) => ({
                     label: r.name,
                     value: r.avg,
+                    logo: getLogoPemdaUrl(r.name),
                     subLabel: `Perubahan: ${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp | Gap ke rerata: ${r.avg >= peerAvg ? '+' : ''}${formatNum(r.avg - peerAvg)} pp`,
-                    badge: (hasBwi && r.name === 'Kab. Banyuwangi') ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
-                    badgeClass: (hasBwi && r.name === 'Kab. Banyuwangi') ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
-                    isHighlight: (hasBwi && r.name === 'Kab. Banyuwangi')
+                    badge: (hasActive && isFocalRegion(r.name)) ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
+                    badgeClass: (hasActive && isFocalRegion(r.name)) ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
+                    isHighlight: (hasActive && isFocalRegion(r.name))
                 }));
 
                 let listHtml = `
@@ -3226,7 +3509,7 @@
                             <span class="badge info">Periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'} (${rows.length} Wilayah)</span>
                         </div>
                         <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                            ${createHorizontalBarChartSVG(rankingBarData, { unit: '%', decimals: 2 })}
+                            ${createHorizontalBarChartSVG(rankingBarData, { unit: '%', decimals: 2, showLogo: true })}
                         </div>
                     </div>
 
@@ -3240,14 +3523,15 @@
                     <div class="comparison-ranking">`;
 
                 rows.forEach((r, idx) => {
-                    const isBwi = hasBwi && r.name === 'Kab. Banyuwangi';
+                    const isFocal = hasActive && isFocalRegion(r.name);
                     const diff = r.avg - peerAvg;
                     listHtml += `
-                        <div class="comparison-table-row ${isBwi ? 'selected' : ''}" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
+                        <div class="comparison-table-row ${isFocal ? 'selected' : ''}" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
                             <b>${idx + 1}</b>
                             <span>
-                                <i class="region-avatar">${r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}</i>
+                                <img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo">
                                 <strong>${r.name}</strong>
+                                ${isFocal ? '<span class="badge info" style="font-size:8px; padding:1px 5px; margin-left:6px;">Daerah Anda</span>' : ''}
                             </span>
                             <strong>${formatPct(r.avg)}</strong>
                             <small class="${r.chg >= 0 ? 'positive' : 'negative'}">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</small>
@@ -3266,37 +3550,38 @@
 
                 // Bangun deret grafik yang sesuai HANYA dengan wilayah yang dicentang pengguna
                 const benchmarkSeries = [
-                    { name: 'Jawa Timur', values: jatimSeries, className: 'series-1' }
+                    { name: 'Jawa Timur', values: jatimSeries, logo: getLogoPemdaUrl('Jawa Timur'), className: 'series-1' }
                 ];
 
                 const colorClasses = ['series-0', 'series-2', 'series-3', 'series-4', 'series-5'];
                 let cIdx = 0;
                 rows.forEach(r => {
                     let vals = r.series && r.series.length > 0 ? r.series.slice(sliceStart) : [];
-                    if (r.name === 'Kab. Banyuwangi' && AppState.series && AppState.series.growth) {
+                    if (isFocalRegion(r.name) && AppState.series && AppState.series.growth) {
                         vals = AppState.series.growth.slice(sliceStart);
                     }
                     if (vals.length > 0) {
                         benchmarkSeries.push({
-                            name: r.name.replace('Kab. ', '').replace('Kota ', ''),
+                            name: r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, ''),
                             values: vals,
-                            className: (r.name === 'Kab. Banyuwangi') ? 'series-0' : colorClasses[(cIdx++) % colorClasses.length]
+                            logo: getLogoPemdaUrl(r.name),
+                            className: isFocalRegion(r.name) ? 'series-0' : colorClasses[(cIdx++) % colorClasses.length]
                         });
                     }
                 });
 
                 let benchKpiHtml = `
                     <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">`;
-                if (hasBwi) {
+                if (hasActive) {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span>Rerata Banyuwangi</span><strong>${formatPct(bwi.avg)}</strong><small>Periode terpilih</small></div>
-                        <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata ${cleanFocalName}</span><strong>${formatPct(activeRow.avg)}</strong><small>Periode terpilih</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
                         <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
                         <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
                 } else {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span>Pertumbuhan Tertinggi</span><strong>${formatPct(rows[0].avg)}</strong><small>${rows[0].name}</small></div>
-                        <div class="comparison-kpi"><span>Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(rows[0].name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Pertumbuhan Tertinggi</span><strong>${formatPct(rows[0].avg)}</strong><small>${rows[0].name}</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
                         <div class="comparison-kpi"><span>Rerata Wilayah Terpilih</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
                         <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
                 }
@@ -3313,79 +3598,80 @@
                 tabEyebrow.textContent = 'GAP ANALYSIS';
                 const jatimAvg = mean((AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : []);
 
-                if (hasBwi) {
-                    tabTitle.textContent = 'Selisih Kinerja terhadap Benchmark Utama';
-                    tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi Kab. Banyuwangi terhadap provinsi dan wilayah pembanding yang dipilih.';
+                if (hasActive) {
+                    tabTitle.textContent = `Selisih Kinerja terhadap Benchmark Utama (${cleanFocalName})`;
+                    tabDesc.textContent = `Analisis komparatif selisih pertumbuhan ekonomi ${activeRow.name} terhadap provinsi dan wilayah pembanding yang dipilih.`;
 
-                    const gapJatim = bwi.avg - jatimAvg;
+                    const gapJatim = activeRow.avg - jatimAvg;
 
                     const gapBarData = rows.map(r => {
-                        const diff = r.avg - bwi.avg;
+                        const diff = r.avg - activeRow.avg;
                         return {
                             label: r.name,
                             value: diff,
-                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis Banyuwangi: ${formatPct(bwi.avg)}`,
+                            logo: getLogoPemdaUrl(r.name),
+                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis ${cleanFocalName}: ${formatPct(activeRow.avg)}`,
                             badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan (0 pp)' : `${formatNum(diff)} pp`),
                             badgeClass: diff > 0 ? 'warning' : (diff === 0 ? 'primary' : 'success'),
-                            isHighlight: r.name === 'Kab. Banyuwangi'
+                            isHighlight: isFocalRegion(r.name)
                         };
                     });
 
                     let gapTableRows = `
                         <tr>
-                            <td><strong>Provinsi Jawa Timur</strong></td>
-                            <td>${formatPct(bwi.avg)}</td>
+                            <td><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo"><strong>Provinsi Jawa Timur</strong></td>
+                            <td>${formatPct(activeRow.avg)}</td>
                             <td>${formatPct(jatimAvg)}</td>
                             <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
                             <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
                         </tr>
                         <tr>
-                            <td><strong>Rerata Daerah Terpilih</strong></td>
-                            <td>${formatPct(bwi.avg)}</td>
+                            <td><span class="badge neutral" style="font-size:9.5px; margin-right:6px; padding:2px 6px;">Kelompok</span><strong>Rerata Daerah Terpilih</strong></td>
+                            <td>${formatPct(activeRow.avg)}</td>
                             <td>${formatPct(peerAvg)}</td>
-                            <td><strong class="${(bwi.avg - peerAvg) >= 0 ? 'positive' : 'negative'}">${(bwi.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(bwi.avg - peerAvg)} pp</strong></td>
-                            <td><span class="badge ${(bwi.avg - peerAvg) >= 0 ? 'success' : 'warning'}">${(bwi.avg - peerAvg) >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
+                            <td><strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}">${(activeRow.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(activeRow.avg - peerAvg)} pp</strong></td>
+                            <td><span class="badge ${(activeRow.avg - peerAvg) >= 0 ? 'success' : 'warning'}">${(activeRow.avg - peerAvg) >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
                         </tr>`;
 
-                    rows.filter(r => r.name !== 'Kab. Banyuwangi').forEach(r => {
-                        const diffVsBwi = bwi.avg - r.avg;
+                    rows.filter(r => !isFocalRegion(r.name)).forEach(r => {
+                        const diffVsFocal = activeRow.avg - r.avg;
                         gapTableRows += `
                             <tr>
-                                <td><span>${r.name}</span></td>
-                                <td>${formatPct(bwi.avg)}</td>
+                                <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><span>${r.name}</span></td>
+                                <td>${formatPct(activeRow.avg)}</td>
                                 <td>${formatPct(r.avg)}</td>
-                                <td><strong class="${diffVsBwi >= 0 ? 'positive' : 'negative'}">${diffVsBwi >= 0 ? '+' : ''}${formatNum(diffVsBwi)} pp</strong></td>
-                                <td><span class="badge ${diffVsBwi >= 0 ? 'success' : 'warning'}">${diffVsBwi >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
+                                <td><strong class="${diffVsFocal >= 0 ? 'positive' : 'negative'}">${diffVsFocal >= 0 ? '+' : ''}${formatNum(diffVsFocal)} pp</strong></td>
+                                <td><span class="badge ${diffVsFocal >= 0 ? 'success' : 'warning'}">${diffVsFocal >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
                             </tr>`;
                     });
 
                     tabContent.innerHTML = `
                         <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
                             <div class="metric-box" style="padding:12px;">
-                                <span>Gap Banyuwangi terhadap Jawa Timur</span>
+                                <span>Gap ${cleanFocalName} terhadap Jawa Timur</span>
                                 <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
-                                <small>${gapJatim >= 0 ? 'Banyuwangi tumbuh lebih cepat dari provinsi' : 'Banyuwangi tumbuh di bawah provinsi'}</small>
+                                <small>${gapJatim >= 0 ? cleanFocalName + ' tumbuh lebih cepat dari provinsi' : cleanFocalName + ' tumbuh di bawah provinsi'}</small>
                             </div>
                             <div class="metric-box" style="padding:12px;">
-                                <span>Gap Banyuwangi terhadap Rerata ${rows.length} Daerah</span>
-                                <strong class="${(bwi.avg - peerAvg) >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${(bwi.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(bwi.avg - peerAvg)} pp</strong>
-                                <small>${(bwi.avg - peerAvg) >= 0 ? 'Banyuwangi di atas rata-rata pembanding' : 'Banyuwangi di bawah rata-rata pembanding'}</small>
+                                <span>Gap ${cleanFocalName} terhadap Rerata ${rows.length} Daerah</span>
+                                <strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${(activeRow.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(activeRow.avg - peerAvg)} pp</strong>
+                                <small>${(activeRow.avg - peerAvg) >= 0 ? cleanFocalName + ' di atas rata-rata pembanding' : cleanFocalName + ' di bawah rata-rata pembanding'}</small>
                             </div>
                         </div>
 
                         <div style="margin: 18px 0;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                 <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
-                                <small style="color:var(--muted); font-size:9px;">Relatif terhadap Banyuwangi (${formatPct(bwi.avg)})</small>
+                                <small style="color:var(--muted); font-size:9px;">Relatif terhadap ${cleanFocalName} (${formatPct(activeRow.avg)})</small>
                             </div>
                             <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2, showLogo: true })}
                             </div>
                         </div>
 
                         <div class="result-table-wrap">
                             <table class="result-table">
-                                <thead><tr><th>Benchmark / Wilayah</th><th>Nilai Banyuwangi</th><th>Nilai Pembanding</th><th>Gap (Banyuwangi - Pembanding)</th><th>Status Relatif</th></tr></thead>
+                                <thead><tr><th>Benchmark / Wilayah</th><th>Nilai ${cleanFocalName}</th><th>Nilai Pembanding</th><th>Gap (${cleanFocalName} - Pembanding)</th><th>Status Relatif</th></tr></thead>
                                 <tbody>${gapTableRows}</tbody>
                             </table>
                         </div>`;
@@ -3398,6 +3684,7 @@
                         return {
                             label: r.name,
                             value: diff,
+                            logo: getLogoPemdaUrl(r.name),
                             subLabel: `Rata-rata: ${formatPct(r.avg)} | Rerata Kelompok: ${formatPct(peerAvg)}`,
                             badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? '0 pp' : `${formatNum(diff)} pp`),
                             badgeClass: diff > 0 ? 'success' : (diff === 0 ? 'neutral' : 'warning'),
@@ -3410,7 +3697,7 @@
                         const diff = r.avg - peerAvg;
                         gapTableRows += `
                             <tr>
-                                <td><strong>${r.name}</strong></td>
+                                <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><strong>${r.name}</strong></td>
                                 <td>${formatPct(r.avg)}</td>
                                 <td>${formatPct(peerAvg)}</td>
                                 <td><strong class="${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</strong></td>
@@ -3438,7 +3725,7 @@
                                 <small style="color:var(--muted); font-size:9px;">Rata-rata kelompok: ${formatPct(peerAvg)}</small>
                             </div>
                             <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2 })}
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2, showLogo: true })}
                             </div>
                         </div>
 
@@ -3460,14 +3747,14 @@
                     const vals = r.series.slice(sliceStart);
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
-                    const isHighlight = hasBwi && r.name === 'Kab. Banyuwangi';
-                    const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
+                    const isHighlight = hasActive && isFocalRegion(r.name);
+                    const avatarLetters = r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '').slice(0, 2).toUpperCase();
                     profCards += `
                         <div style="background:${isHighlight ? '#f0f9ff' : '#ffffff'}; border:1px solid ${isHighlight ? '#93c5fd' : 'var(--line)'}; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                                 <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:36px; height:36px; border-radius:10px; background:${isHighlight ? '#0284c7' : '#eff6ff'}; color:${isHighlight ? '#fff' : '#0284c7'}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; border:1px solid ${isHighlight ? '#0284c7' : '#bfdbfe'};">
-                                        ${avatarLetters}
+                                    <div class="region-card-logo-wrap" style="${isHighlight ? 'border-color:#38bdf8;' : ''}">
+                                        <img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-card-logo">
                                     </div>
                                     <div>
                                         <span style="font-weight:700; color:${isHighlight ? 'var(--blue)' : 'var(--navy)'}; font-size:14px; display:block; margin-bottom:2px;">${r.name}</span>
@@ -3508,11 +3795,11 @@
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
                     const gapVsPeer = r.avg - peerAvg;
-                    const isHighlight = hasBwi && r.name === 'Kab. Banyuwangi';
+                    const isHighlight = hasActive && isFocalRegion(r.name);
                     profTable += `
                         <tr style="${isHighlight ? 'background:#eff6ff; font-weight:600;' : ''}">
                             <td><strong>#${idx + 1}</strong></td>
-                            <td><strong>${r.name}</strong> ${isHighlight ? '<span class="badge primary" style="font-size:7px; margin-left:4px;">Banyuwangi</span>' : ''}</td>
+                            <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><strong>${r.name}</strong> ${isHighlight ? `<span class="badge primary" style="font-size:7px; margin-left:4px;">${cleanFocalName}</span>` : ''}</td>
                             <td><strong>${formatPct(r.avg)}</strong></td>
                             <td>${formatPct(vals[vals.length - 1])}</td>
                             <td style="color:var(--green); font-weight:600;">${formatPct(maxV)}</td>
@@ -3541,7 +3828,7 @@
 
                     return {
                         name: r.name,
-                        short: r.name.replace('Kab. ', '').replace('Kota ', ''),
+                        short: r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, ''),
                         quadrant,
                         classification: cls,
                         growthGap: r.avg - peerAvg,
@@ -3557,11 +3844,11 @@
                             <thead><tr><th>Wilayah</th><th>Kuadran</th><th>Klasifikasi</th><th>Rata-rata Pertumbuhan</th><th>Gap Pertumbuhan</th><th>Akselerasi Tahunan</th><th>Gap Akselerasi</th></tr></thead>
                             <tbody>`;
                 klassenRows.forEach(item => {
-                    const isBwi = hasBwi && item.name === 'Kab. Banyuwangi';
+                    const isFocal = hasActive && isFocalRegion(item.name);
                     const qBadgeClass = item.quadrant === 'I' ? 'success' : (item.quadrant === 'II' ? 'warning' : (item.quadrant === 'III' ? 'info' : 'neutral'));
                     klassenTable += `
-                        <tr style="${isBwi ? 'background:#edf5fc; font-weight:600;' : ''}">
-                            <td><strong>${item.name}</strong> ${isBwi ? '<span class="badge primary" style="font-size:7px;">Banyuwangi</span>' : ''}</td>
+                        <tr style="${isFocal ? 'background:#edf5fc; font-weight:600;' : ''}">
+                            <td><img src="${getLogoPemdaUrl(item.name)}" alt="" class="region-table-logo"><strong>${item.name}</strong> ${isFocal ? `<span class="badge primary" style="font-size:7px;">${cleanFocalName}</span>` : ''}</td>
                             <td><span class="badge ${qBadgeClass}">Kuadran ${item.quadrant}</span></td>
                             <td><strong>${item.classification}</strong></td>
                             <td>${formatPct(item.avg)}</td>
@@ -3583,15 +3870,15 @@
                 tabTitle.textContent = 'Kartu Profil Head-to-Head Wilayah Pembanding';
                 tabDesc.textContent = 'Perbandingan langsung indikator kinerja antar-daerah yang dipilih.';
 
-                const baseRegion = hasBwi ? bwi : rows[0];
+                const baseRegion = hasActive ? activeRow : rows[0];
                 const baseName = baseRegion.name;
                 const peerList = rows.filter(r => r.name !== baseName);
 
                 let peerHtml = `
                     <div style="background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #1e40af, #0284c7); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; box-shadow:0 2px 6px rgba(30,64,175,0.2);">
-                                ${baseName.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase()}
+                            <div class="region-card-logo-wrap" style="border-color:#3b82f6;">
+                                <img src="${getLogoPemdaUrl(baseName)}" alt="" class="region-card-logo">
                             </div>
                             <div>
                                 <strong style="font-size:13px; color:var(--navy); display:block;">Basis Acuan: ${baseName}</strong>
@@ -3607,14 +3894,13 @@
                     peerHtml += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">`;
                     peerList.forEach((r, idx) => {
                         const lead = baseRegion.avg - r.avg;
-                        const avatarLetters = r.name.replace('Kab. ', '').replace('Kota ', '').slice(0, 2).toUpperCase();
                         peerHtml += `
                             <div style="background:#ffffff; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 2px 10px rgba(15,23,42,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s ease, box-shadow 0.15s ease;">
                                 <div>
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                                         <div style="display:flex; align-items:center; gap:10px;">
-                                            <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; border:1px solid #bfdbfe;">
-                                                ${avatarLetters}
+                                            <div class="region-card-logo-wrap">
+                                                <img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-card-logo">
                                             </div>
                                             <div>
                                                 <h4 style="font-size:15px; font-weight:700; color:var(--navy); margin:0 0 3px 0;">${r.name}</h4>
@@ -3691,6 +3977,7 @@
             const checkedCbs = document.querySelectorAll('.region-cb:checked');
             const total = allCbs.length;
             const count = checkedCbs.length;
+            const chipsContainer = document.getElementById('selected-region-chips');
 
             if (counterBadge) {
                 counterBadge.textContent = `${count} / ${total} dipilih`;
@@ -3707,6 +3994,46 @@
                     dropdownLabel.textContent = `${checkedCbs[0].value}, ${checkedCbs[1].value}`;
                 } else {
                     dropdownLabel.textContent = `${count} Wilayah Terpilih`;
+                }
+            }
+
+            if (chipsContainer) {
+                if (count === 0) {
+                    chipsContainer.innerHTML = '<span style="font-size:11px; color:#94a3b8; font-style:italic;">Tidak ada wilayah dipilih</span>';
+                } else if (count === total) {
+                    chipsContainer.innerHTML = `<span class="badge info" style="font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Seluruh Jawa Timur (${total} Daerah)</span>`;
+                } else {
+                    let chipsHtml = '';
+                    const maxChips = 5;
+                    checkedCbs.forEach((cb, idx) => {
+                        if (idx < maxChips) {
+                            const val = cb.value;
+                            const shortName = val.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '');
+                            chipsHtml += `
+                                <span class="region-chip-badge" style="display:inline-flex; align-items:center; gap:5px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:14px; padding:2px 8px; font-size:11px; font-weight:600; color:#1e40af;">
+                                    <img src="${getLogoPemdaUrl(val)}" alt="" style="width:13px; height:13px; object-fit:contain;">
+                                    <span>${shortName}</span>
+                                    <button type="button" class="btn-remove-chip" data-value="${val}" style="border:none; background:none; cursor:pointer; color:#93c5fd; font-size:13px; line-height:1; padding:0 0 0 2px;" title="Hapus ${val}">&times;</button>
+                                </span>`;
+                        }
+                    });
+                    if (count > maxChips) {
+                        chipsHtml += `<span class="badge neutral" style="font-size:10.5px; padding:2px 7px;">+${count - maxChips} lainnya</span>`;
+                    }
+                    chipsContainer.innerHTML = chipsHtml;
+
+                    chipsContainer.querySelectorAll('.btn-remove-chip').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const valToRemove = this.dataset.value;
+                            const targetCb = document.querySelector(`.region-cb[value="${valToRemove}"]`);
+                            if (targetCb) {
+                                targetCb.checked = false;
+                                targetCb.dispatchEvent(new Event('change'));
+                            }
+                        });
+                    });
                 }
             }
         }
@@ -4031,14 +4358,14 @@
             'Location Quotient (LQ)': 'Identifikasi sektor basis dan keunggulan komparatif ekonomi daerah Kabupaten Banyuwangi.',
             'Shift Share Analysis': 'Dekomposisi pertumbuhan sektoral terhadap komponen pertumbuhan provinsi, bauran industri, dan keunggulan daya saing lokal.',
             'Tipologi Klassen': 'Klasifikasi performa dan posisi pertumbuhan sektoral daerah relatif terhadap rata-rata pertumbuhan agregat.',
-            'Analisis Korelasi': 'Analisis kekuatan dan arah asosiasi linear Pearson antar indikator makroekonomi daerah deret 2015–2024.'
+            'Analisis Korelasi': 'Analisis kekuatan dan arah asosiasi linear Pearson antar indikator makroekonomi daerah deret 2015â€“2024.'
         };
 
         const formulas = {
-            'Location Quotient (LQ)': 'LQ = (Tenaga kerja sektor lokal / total lokal) ÷ (Tenaga kerja sektor provinsi / total provinsi). LQ > 1 menunjukkan sektor basis.',
-            'Shift Share Analysis': 'ΔEij = Eij·r + Eij·(rin - r) + Eij·(rij - rin). Komponen: Efek Pertumbuhan Provinsi, Efek Bauran Industri, Efek Daya Saing Lokal.',
+            'Location Quotient (LQ)': 'LQ = (Tenaga kerja sektor lokal / total lokal) Ã· (Tenaga kerja sektor provinsi / total provinsi). LQ > 1 menunjukkan sektor basis.',
+            'Shift Share Analysis': 'Î”Eij = EijÂ·r + EijÂ·(rin - r) + EijÂ·(rij - rin). Komponen: Efek Pertumbuhan Provinsi, Efek Bauran Industri, Efek Daya Saing Lokal.',
             'Tipologi Klassen': 'Kuadran I: Pangsa > rata-rata lokal & Pertumbuhan > agregat daerah; Kuadran II: Pangsa > rata-rata, Pertumbuhan < agregat; Kuadran III: Pangsa < rata-rata, Pertumbuhan > agregat; Kuadran IV: Keduanya di bawah ambang.',
-            'Analisis Korelasi': 'r = Σ[(x - x̄)(y - ȳ)] ÷ √[Σ(x - x̄)² Σ(y - ȳ)²]. R² = r² mengukur persentase variasi bersama in-sample.'
+            'Analisis Korelasi': 'r = Î£[(x - xÌ„)(y - È³)] Ã· âˆš[Î£(x - xÌ„)Â² Î£(y - È³)Â²]. RÂ² = rÂ² mengukur persentase variasi bersama in-sample.'
         };
 
         if (btnFormula && formulaBox) {
@@ -4079,7 +4406,7 @@
                 let html = `
                     <div class="method-summary-grid">
                         <div class="method-metric"><span>Sektor Basis</span><strong>${basisCount}</strong><small>Nilai LQ > 1.0</small></div>
-                        <div class="method-metric"><span>Sektor Nonbasis</span><strong>${lqRows.length - basisCount}</strong><small>Nilai LQ ≤ 1.0</small></div>
+                        <div class="method-metric"><span>Sektor Nonbasis</span><strong>${lqRows.length - basisCount}</strong><small>Nilai LQ â‰¤ 1.0</small></div>
                         <div class="method-metric"><span>LQ Tertinggi</span><strong>${formatNum(maxLq, 2)}</strong><small>${lqRows.find(r => r.lq === maxLq)?.short || ''}</small></div>
                     </div>
                     <article class="card method-card">
@@ -4258,11 +4585,11 @@
 
             } else if (activeMethod === 'Analisis Korelasi') {
                 const pairs = [
-                    { key: 'growth-tpt', label: 'Pertumbuhan ekonomi × TPT', xName: 'Pertumbuhan ekonomi (%)', yName: 'TPT (%)', x: AppState.series.growth, y: AppState.series.tpt },
-                    { key: 'investment-growth', label: 'Pertumbuhan investasi × Pertumbuhan ekonomi', xName: 'Pertumbuhan investasi (%)', yName: 'Pertumbuhan ekonomi (%)', x: AppState.series.investmentGrowth, y: AppState.series.growth },
-                    { key: 'growth-poverty', label: 'Pertumbuhan ekonomi × Kemiskinan', xName: 'Pertumbuhan ekonomi (%)', yName: 'Kemiskinan (%)', x: AppState.series.growth, y: AppState.series.poverty },
-                    { key: 'percapita-poverty', label: 'PDRB per kapita × Kemiskinan', xName: 'PDRB per kapita (juta)', yName: 'Kemiskinan (%)', x: AppState.series.perCapita, y: AppState.series.poverty },
-                    { key: 'investment-tpt', label: 'Pertumbuhan investasi × TPT', xName: 'Pertumbuhan investasi (%)', yName: 'TPT (%)', x: AppState.series.investmentGrowth, y: AppState.series.tpt }
+                    { key: 'growth-tpt', label: 'Pertumbuhan ekonomi Ã— TPT', xName: 'Pertumbuhan ekonomi (%)', yName: 'TPT (%)', x: AppState.series.growth, y: AppState.series.tpt },
+                    { key: 'investment-growth', label: 'Pertumbuhan investasi Ã— Pertumbuhan ekonomi', xName: 'Pertumbuhan investasi (%)', yName: 'Pertumbuhan ekonomi (%)', x: AppState.series.investmentGrowth, y: AppState.series.growth },
+                    { key: 'growth-poverty', label: 'Pertumbuhan ekonomi Ã— Kemiskinan', xName: 'Pertumbuhan ekonomi (%)', yName: 'Kemiskinan (%)', x: AppState.series.growth, y: AppState.series.poverty },
+                    { key: 'percapita-poverty', label: 'PDRB per kapita Ã— Kemiskinan', xName: 'PDRB per kapita (juta)', yName: 'Kemiskinan (%)', x: AppState.series.perCapita, y: AppState.series.poverty },
+                    { key: 'investment-tpt', label: 'Pertumbuhan investasi Ã— TPT', xName: 'Pertumbuhan investasi (%)', yName: 'TPT (%)', x: AppState.series.investmentGrowth, y: AppState.series.tpt }
                 ];
 
                 const selectedPair = pairs.find(p => p.key === corrPair) || pairs[0];
@@ -4278,8 +4605,8 @@
                 let html = `
                     <div class="correlation-summary">
                         <div><span>Koefisien Korelasi (r)</span><strong class="${r >= 0 ? 'positive' : 'negative'}">${formatNum(r, 3)}</strong><span class="badge ${Math.abs(r) >= 0.6 ? 'success' : 'warning'}">${strength}</span></div>
-                        <div><span>Koefisien Determinasi (R²)</span><strong>${formatNum(r2, 3)}</strong><small>${formatPct(r2 * 100, 1)} variasi bersama</small></div>
-                        <div><span>Jumlah Observasi</span><strong>${subYears.length}</strong><small>Data tahunan ${subYears[0]}–${subYears[subYears.length - 1]}</small></div>
+                        <div><span>Koefisien Determinasi (RÂ²)</span><strong>${formatNum(r2, 3)}</strong><small>${formatPct(r2 * 100, 1)} variasi bersama</small></div>
+                        <div><span>Jumlah Observasi</span><strong>${subYears.length}</strong><small>Data tahunan ${subYears[0]}â€“${subYears[subYears.length - 1]}</small></div>
                         <div><span>Arah Hubungan</span><strong>${r >= 0 ? 'Positif' : 'Negatif'}</strong><small>${r >= 0 ? 'Searah' : 'Berlawanan'}</small></div>
                     </div>
 
@@ -4413,39 +4740,154 @@
         });
     }
 
-    // 4. MAP PAGE
+    // 4. MAP PAGE (OPENSTREETMAP API & GEOSPATIAL ECONOMIC INTELLIGENCE)
     function initMapPage() {
+        const mapContainer = document.getElementById('leaflet-osm-map');
+        if (!mapContainer) return;
+
+        // Elements
         const groupSelect = document.getElementById('map-group-select');
         const indicatorSelect = document.getElementById('map-indicator-select');
         const levelSelect = document.getElementById('map-level-select');
-        const markersGroup = document.getElementById('layer-markers');
+        const pinDisplaySelect = document.getElementById('map-pin-display-select');
         const legendContainer = document.getElementById('legend-items-container');
         const locDetailName = document.getElementById('loc-detail-name');
+        const locDetailLevel = document.getElementById('loc-detail-level');
+        const locDetailCode = document.getElementById('loc-detail-code');
         const locBodyContainer = document.getElementById('loc-body-container');
         const searchInput = document.getElementById('map-search-input');
-        const svg = document.getElementById('banyuwangi-svg');
         const btnZoomIn = document.getElementById('btn-zoom-in');
         const btnZoomOut = document.getElementById('btn-zoom-out');
         const zoomText = document.getElementById('zoom-level-text');
         const btnExportMap = document.getElementById('btn-export-map');
-        const hotspotLayer = document.getElementById('layer-hotspots');
         const hotspotBox = document.getElementById('hotspot-note-box');
         const modeTabs = document.getElementById('map-mode-tabs');
         const btnReverseLegend = document.getElementById('btn-reverse-legend');
+        const btnResetLocation = document.getElementById('btn-reset-location');
 
-        let zoomLevel = 1.0;
-        let selectedDistrict = 'Banyuwangi';
+        // Quick Focus Buttons
+        const btnFocusJatim = document.getElementById('btn-focus-jatim');
+        const btnFocusBanyuwangi = document.getElementById('btn-focus-banyuwangi');
+        const btnFocusSurabaya = document.getElementById('btn-focus-surabaya');
+        const btnFocusMalang = document.getElementById('btn-focus-malang');
+
+        // Layer Checkboxes
+        const cbOsm = document.getElementById('layer-cb-osm');
+        const cbBoundaries = document.getElementById('layer-cb-boundaries');
+        const cbMarkers = document.getElementById('layer-cb-markers');
+        const cbLabels = document.getElementById('layer-cb-labels');
+        const cbHotspot = document.getElementById('layer-cb-hotspot');
+
+        // Datasets
+        // Datasets
+        const jatimRegions = (window.__JATIM_REGIONS__ && Array.isArray(window.__JATIM_REGIONS__) && window.__JATIM_REGIONS__.length > 0)
+            ? window.__JATIM_REGIONS__
+            : [];
+        
+        const districtList = (window.__DISTRICTS__ && Array.isArray(window.__DISTRICTS__) && window.__DISTRICTS__.length > 0)
+            ? window.__DISTRICTS__
+            : (AppState.districts || []);
+
+        let jatimRegenciesSummary = [];
+        let jatimAllKecamatan = [];
+
+        function getValueTier(val) {
+            const v = parseFloat(val) || 0;
+            if (v >= 300) return { tierClass: 'tier-red', cls: 4, name: 'Sangat Tinggi', color: '#ef4444' };
+            if (v >= 50) return { tierClass: 'tier-orange', cls: 3, name: 'Tinggi', color: '#f97316' };
+            if (v >= 10) return { tierClass: 'tier-yellow', cls: 2, name: 'Sedang', color: '#eab308' };
+            return { tierClass: 'tier-green', cls: 1, name: 'Rendah', color: '#22c55e' };
+        }
+
+        if (window.__JATIM_REGENCIES_SUMMARY_URL__) {
+            fetch(window.__JATIM_REGENCIES_SUMMARY_URL__)
+                .then(r => r.json())
+                .then(res => {
+                    if (res && res.data && Array.isArray(res.data)) {
+                        jatimRegenciesSummary = res.data;
+                        renderMarkers();
+                    }
+                }).catch(e => console.warn('Gagal memuat summary kab/kota:', e));
+        }
+
+        if (window.__JATIM_KECAMATAN_URL__) {
+            fetch(window.__JATIM_KECAMATAN_URL__)
+                .then(r => r.json())
+                .then(res => {
+                    if (res && res.data && Array.isArray(res.data)) {
+                        jatimAllKecamatan = res.data;
+                        if (isDistrictsVisible) {
+                            renderDistricts(false);
+                        }
+                    }
+                }).catch(e => console.warn('Gagal memuat dataset kecamatan se-Jatim:', e));
+        }
+
+        let selectedRegionCode = '35.10'; // Default: Kabupaten Banyuwangi
+        let selectedDistrictName = districtList.length > 0 ? (districtList[0].name || districtList[0].nama_kecamatan) : 'Banyuwangi';
         let activeMode = 'Thematic Layer';
         let legendReversed = false;
+        let mapLevel = levelSelect ? levelSelect.value : 'Jawa Timur';
+        let pinDisplayMode = pinDisplaySelect ? pinDisplaySelect.value : 'value';
+
+        let jatimGeoJson = null;
+        let layerGeoJsonBoundaries = null;
+        const polygonLayers = {}; // mapping code -> Leaflet polygon layer
+        let isDistrictsVisible = false;
+        let activeBreakoutCityCode = null; // Menyimpan kode kota/kabupaten yang sedang dipilih untuk pecah kecamatan
+        const KEC_ZOOM_THRESHOLD = 10;
+        const btnBackToProvince = document.getElementById('btn-back-to-province');
+        const mapBreadKab = document.getElementById('map-bread-kab');
+        const mapBreadLevel = document.getElementById('map-bread-level');
+
+        // 4 KELAS PEMISAHAN SPASIAL GIS
+        const classColors = {
+            4: '#059669', // Kelas 4: Sangat Tinggi (Emerald)
+            3: '#2563eb', // Kelas 3: Tinggi (Royal Blue)
+            2: '#d97706', // Kelas 2: Sedang (Golden Amber)
+            1: '#dc2626'  // Kelas 1: Rendah (Coral Red)
+        };
+        const classNames = {
+            4: 'Sangat Tinggi',
+            3: 'Tinggi',
+            2: 'Sedang',
+            1: 'Rendah'
+        };
+
+        function get4Classes() {
+            const vals = jatimRegions.map(r => r.growth).filter(v => typeof v === 'number');
+            const minV = Math.min(...vals) || 1.7;
+            const maxV = Math.max(...vals) || 6.4;
+            const range = (maxV - minV) || 1;
+            const step = range / 4;
+            return {
+                minV,
+                maxV,
+                range,
+                step,
+                t1: minV + step,
+                t2: minV + (2 * step),
+                t3: minV + (3 * step)
+            };
+        }
+
+        function getRegionClass(reg) {
+            if (!reg || typeof reg.growth !== 'number') return 2;
+            const c = get4Classes();
+            if (reg.growth >= c.t3) return 4;
+            if (reg.growth >= c.t2) return 3;
+            if (reg.growth >= c.t1) return 2;
+            return 1;
+        }
 
         const mapGroups = {
-            'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektor'],
-            'Kesejahteraan': ['Tingkat kemiskinan', 'IPM', 'Ketimpangan'],
-            'Investasi': ['Indeks investasi kecamatan', 'Persebaran proyek'],
-            'Produksi sektoral': ['Produksi pertanian', 'Produksi perikanan'],
-            'Ketenagakerjaan': ['Tingkat Pengangguran Terbuka', 'Konsentrasi pekerja'],
-            'Pariwisata': ['Destinasi wisata', 'Kunjungan wisatawan'],
-            'Harga': ['Harga beras medium', 'Stabilitas pangan']
+            'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektoral'],
+            'Kesejahteraan': ['Tingkat kemiskinan', 'Indeks Pembangunan Manusia (IPM)'],
+            'Investasi': ['Laju pertumbuhan PMDN', 'Realisasi investasi daerah'],
+            'Produksi sektoral': ['Produksi pertanian', 'Produksi industri pengolahan'],
+            'Ketenagakerjaan': ['Tingkat Pengangguran Terbuka (TPT)'],
+            'Pariwisata': ['Destinasi wisata & kunjungan'],
+            'Harga': ['Tingkat inflasi daerah', 'Stabilitas pangan']
         };
 
         function updateIndicators() {
@@ -4454,228 +4896,1117 @@
             if (indicatorSelect) {
                 indicatorSelect.innerHTML = list.map(item => `<option value="${item}">${item}</option>`).join('');
             }
-            renderMap();
         }
+        updateIndicators();
 
-        function renderMap() {
-            const ind = indicatorSelect ? indicatorSelect.value : 'Pertumbuhan ekonomi';
-            const isGrowth = ind.includes('Pertumbuhan');
-            const isPov = ind.includes('kemiskinan');
-            const isInv = ind.includes('investasi');
+        // 1. Inisialisasi OpenStreetMap Leaflet
+        let map = null;
+        let osmLayer = null;
+        let layerBoundaries = null;
+        let layerMarkers = null;
+        let layerDistricts = null;
+        let layerHotspots = null;
 
-            // Values by district
-            const vals = AppState.districts.map(d => {
-                if (isPov) return d.poverty;
-                if (isInv) return d.investment;
-                return d.growth;
-            });
+        const boundsLayers = {}; // mapping code -> Leaflet layer (fallback)
+        const markerLayers = {}; // mapping code -> Leaflet marker
 
-            const minV = Math.min(...vals);
-            const maxV = Math.max(...vals);
-            const range = maxV - minV || 1;
+        if (typeof L !== 'undefined') {
+            try {
+                // Bounds Jawa Timur resmi (mencakup pulau Bawean Gresik & kepulauan Sumenep)
+                const maxPanBounds = L.latLngBounds([[-9.5, 110.0], [-4.8, 116.8]]);
 
-            const getClass = v => Math.min(5, Math.floor(((v - minV) / range) * 5) + 1);
+                map = L.map('leaflet-osm-map', {
+                    center: [-7.75, 112.75],
+                    zoom: 8,
+                    minZoom: 7,
+                    maxZoom: 18,
+                    zoomControl: false,
+                    maxBounds: maxPanBounds,
+                    maxBoundsViscosity: 0.8
+                });
 
-            // Render Legend
-            if (legendContainer) {
-                const classOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
-                const step = range / 5;
-                const decimals = step < 0.2 ? 2 : (step >= 10 ? 0 : 1);
-                const unit = isInv ? ' poin' : '%';
+                // Variasi Peta Dasar (Basemaps): OpenStreetMap, Google Maps Satelit (Hybrid & Murni), dan CartoDB Light
+                const basemaps = {
+                    'osm': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap'
+                    }),
+                    'google-hybrid': L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                        maxZoom: 20,
+                        subdomains: ['0', '1', '2', '3'],
+                        attribution: '&copy; Google Maps Satelit'
+                    }),
+                    'google-sat': L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                        maxZoom: 20,
+                        subdomains: ['0', '1', '2', '3'],
+                        attribution: '&copy; Google Maps Satelit'
+                    }),
+                    'carto-light': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 20,
+                        subdomains: 'abcd',
+                        attribution: '&copy; CartoDB'
+                    })
+                };
+                let currentBasemapKey = 'osm';
+                let currentBasemapLayer = basemaps['osm'];
+                currentBasemapLayer.addTo(map);
 
-                const mapContextUnit = document.getElementById('map-context-unit');
-                if (mapContextUnit) {
-                    mapContextUnit.textContent = isInv ? 'Poin' : '%';
+                function switchBasemap(key) {
+                    if (!map || !basemaps[key]) return;
+                    if (currentBasemapLayer && map.hasLayer(currentBasemapLayer)) {
+                        map.removeLayer(currentBasemapLayer);
+                    }
+                    currentBasemapKey = key;
+                    currentBasemapLayer = basemaps[key];
+                    if (cbOsm && cbOsm.checked) {
+                        currentBasemapLayer.addTo(map);
+                    }
+                    if (layerGeoJsonBoundaries && map.hasLayer(layerGeoJsonBoundaries)) {
+                        layerGeoJsonBoundaries.bringToFront();
+                    }
+                    const bmSelect = document.getElementById('map-basemap-select');
+                    if (bmSelect && bmSelect.value !== key) bmSelect.value = key;
+
+                    document.querySelectorAll('.basemap-pill-btn').forEach(b => {
+                        b.classList.toggle('active', b.getAttribute('data-basemap') === key);
+                    });
                 }
 
-                const barOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
-                const barHtml = `
-                    <div class="legend-color-bar" title="Rentang nilai visual: ${formatNum(minV, decimals)}${unit} s.d. ${formatNum(maxV, decimals)}${unit}">
-                        ${barOrder.map(c => `<span class="l${c}"></span>`).join('')}
-                    </div>
-                    <div class="legend-bar-labels">
-                        <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? maxV : minV, decimals)}${unit})</small>
-                        <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? minV : maxV, decimals)}${unit})</small>
+                const basemapSelect = document.getElementById('map-basemap-select');
+                if (basemapSelect) {
+                    basemapSelect.addEventListener('change', () => {
+                        switchBasemap(basemapSelect.value);
+                    });
+                }
+                document.querySelectorAll('.basemap-pill-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const bm = btn.getAttribute('data-basemap');
+                        if (bm) switchBasemap(bm);
+                    });
+                });
+
+                layerBoundaries = L.layerGroup();
+                layerMarkers = L.layerGroup().addTo(map);
+                layerDistricts = L.layerGroup();
+                layerHotspots = L.layerGroup();
+
+                map.on('zoom', () => {
+                    if (zoomText) zoomText.textContent = 'Z' + map.getZoom();
+                });
+                map.on('zoomend', () => {
+                    const z = map.getZoom();
+                    if (zoomText) zoomText.textContent = 'Z' + z;
+                    // Jika pengguna melakukan zoom out manual ke level provinsi (Z < 10) saat mode pecah kota aktif, kembalikan ke peta provinsi
+                    if (z < KEC_ZOOM_THRESHOLD && activeBreakoutCityCode) {
+                        resetToProvinceView(false);
+                    }
+                });
+                map.on('moveend', () => {
+                    if (map && activeBreakoutCityCode && isDistrictsVisible) {
+                        renderDistrictsForCity(activeBreakoutCityCode, false);
+                    }
+                });
+                if (zoomText) zoomText.textContent = 'Z' + map.getZoom();
+
+            } catch (err) {
+                console.error('Error saat inisialisasi Leaflet OpenStreetMap:', err);
+            }
+        } else {
+            console.warn('Leaflet library belum termuat.');
+            const overlay = document.getElementById('map-overlay-message');
+            if (overlay) {
+                overlay.style.display = 'block';
+                const ot = document.getElementById('map-overlay-title');
+                const os = document.getElementById('map-overlay-sub');
+                if (ot) ot.textContent = 'Peta Memerlukan Leaflet Library';
+                if (os) os.textContent = 'Pastikan koneksi CDN Leaflet aktif untuk menampilkan OpenStreetMap tile.';
+            }
+        }
+
+        // Fungsi Kontrol Visibilitas Penanda Berdasarkan Zoom Level
+        // Zoom Out (Z < 10): Hanya Kota/Kabupaten Jawa Timur yang muncul
+        // Zoom In (Z >= 10): Titik Kecamatan muncul terpecah/berkembang dari titik kota Banyuwangi
+        // Alur Interaksi: Pengguna harus memilih/menyorot kota terlebih dahulu baru kecamatan terpecah
+        function selectAndBreakoutCity(code) {
+            if (!map) return;
+            activeBreakoutCityCode = code;
+            selectedRegionCode = code;
+
+            const summary = jatimRegenciesSummary.find(s => s.kode === code);
+            const reg = jatimRegions.find(r => r.kode === code);
+            if (!reg && !summary) return;
+
+            const lat = (summary && summary.lat) ? summary.lat : reg.lat;
+            const lng = (summary && summary.lng) ? summary.lng : reg.lng;
+            const cityName = reg ? reg.nama : summary.nama;
+
+            // 1. Tampilkan tombol floating kembali ke provinsi
+            if (btnBackToProvince) {
+                btnBackToProvince.style.display = 'inline-flex';
+            }
+
+            // 2. Perbarui breadcrumb
+            if (mapBreadLevel) {
+                mapBreadLevel.textContent = cityName + ' (Pecah Kecamatan)';
+            }
+            const metaLbl = document.getElementById('active-map-meta-label');
+            if (metaLbl) {
+                metaLbl.textContent = 'Fokus ' + cityName + ' • Mode Pecah Kecamatan';
+            }
+
+            // 3. Redupkan (dim) seluruh kota lain, sembunyikan titik pusat kota terpilih agar tidak tumpang tindih
+            Object.keys(markerLayers).forEach(c => {
+                const m = markerLayers[c];
+                if (!m) return;
+                const pin = m._icon ? m._icon.querySelector('.gis-halo-pin') : null;
+                if (c === code) {
+                    m.setOpacity(0);
+                    if (m._icon) m._icon.style.pointerEvents = 'none';
+                } else {
+                    m.setOpacity(1);
+                    if (pin) pin.classList.add('dimmed');
+                    if (m._icon) m._icon.style.pointerEvents = 'auto';
+                }
+            });
+
+            // 4. Perbarui status tombol quick focus bar
+            document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
+            if (code === '35.73' && btnFocusMalang) btnFocusMalang.classList.add('active');
+            else if (code === '35.10' && btnFocusBanyuwangi) btnFocusBanyuwangi.classList.add('active');
+            else if (code === '35.78' && btnFocusSurabaya) btnFocusSurabaya.classList.add('active');
+
+            // 5. Terbangkan peta ke pusat kota dengan zoom 12
+            isDistrictsVisible = true;
+            if (cbMarkers && cbMarkers.checked && !map.hasLayer(layerDistricts)) {
+                map.addLayer(layerDistricts);
+            }
+
+            map.flyTo([lat, lng], 12, { duration: 0.70 });
+
+            // 6. Jalankan animasi pecah radial keluar dari titik pusat kota menuju titik koordinat per kecamatan
+            setTimeout(() => {
+                renderDistrictsForCity(code, true);
+            }, 120);
+
+            // 7. Perbarui panel profil detail di sebelah kanan
+            selectRegion(code, false);
+        }
+
+        // Kembalikan tampilan ke seluruh Jawa Timur (38 Kab/Kota)
+        function resetToProvinceView(fly = true) {
+            if (!map) return;
+            activeBreakoutCityCode = null;
+            isDistrictsVisible = false;
+
+            // 1. Bersihkan layer kecamatan
+            if (layerDistricts) {
+                layerDistricts.clearLayers();
+                if (map.hasLayer(layerDistricts)) map.removeLayer(layerDistricts);
+            }
+
+            // 2. Pulihkan seluruh 38 penanda kota/kabupaten ke kondisi normal (tanpa dimmed)
+            Object.keys(markerLayers).forEach(c => {
+                const m = markerLayers[c];
+                if (!m) return;
+                m.setOpacity(1);
+                if (m._icon) {
+                    m._icon.style.pointerEvents = 'auto';
+                    const pin = m._icon.querySelector('.gis-halo-pin');
+                    if (pin) pin.classList.remove('dimmed', 'selected');
+                }
+            });
+
+            // 3. Sembunyikan tombol floating
+            if (btnBackToProvince) {
+                btnBackToProvince.style.display = 'none';
+            }
+
+            // 4. Perbarui breadcrumb & label meta
+            if (mapBreadLevel) {
+                mapBreadLevel.textContent = '38 Kabupaten & Kota';
+            }
+            const metaLbl = document.getElementById('active-map-meta-label');
+            if (metaLbl) {
+                metaLbl.textContent = '38 Kab/Kota • Jawa Timur';
+            }
+
+            // 5. Reset status tombol quick focus
+            document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
+            if (btnFocusJatim) btnFocusJatim.classList.add('active');
+
+            // 6. Terbangkan kembali ke pandangan provinsi Jawa Timur
+            if (fly) {
+                map.flyTo([-7.75, 112.75], 8, { duration: 0.75 });
+            }
+        }
+
+        function updateMarkerVisibilityByZoom(animateBreakout = false) {
+            if (!map) return;
+            const currentZoom = map.getZoom();
+            if (zoomText) zoomText.textContent = 'Z' + currentZoom;
+
+            if (currentZoom < KEC_ZOOM_THRESHOLD && activeBreakoutCityCode) {
+                resetToProvinceView(false);
+            }
+        }
+
+        // 2. Render Batas Riil Antar Kota/Kabupaten (GeoJSON Polygons untuk GIS)
+        function renderGeoJsonBoundaries(data) {
+            if (!map || !data) return;
+            if (layerGeoJsonBoundaries) {
+                map.removeLayer(layerGeoJsonBoundaries);
+            }
+
+            layerGeoJsonBoundaries = L.geoJSON(data, {
+                smoothFactor: 0.8,
+                style: function (feature) {
+                    const code = feature.properties.code;
+                    const reg = jatimRegions.find(r => r.kode === code);
+                    const cls = getRegionClass(reg);
+                    const color = classColors[cls] || '#2563eb';
+                    const isSelected = (code === selectedRegionCode);
+                    const isCurrent = (code === '35.10');
+
+                    return {
+                        fillColor: color,
+                        fillOpacity: isSelected ? 0.62 : (isCurrent ? 0.44 : 0.30),
+                        weight: isSelected ? 3.5 : (isCurrent ? 2.5 : 1.4),
+                        color: isSelected ? '#0f172a' : (isCurrent ? '#0d9488' : '#334155'),
+                        opacity: 0.95
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    const code = feature.properties.code;
+                    const reg = jatimRegions.find(r => r.kode === code);
+                    const nama = reg ? reg.nama : feature.properties.name;
+                    const cls = getRegionClass(reg);
+                    const clsName = classNames[cls];
+
+                    polygonLayers[code] = layer;
+
+                    layer.bindTooltip(`
+                        <div class="gis-polygon-tooltip">
+                            <strong>${nama}</strong>
+                            <div class="tip-sub">Kode: <code>${code}</code> • Kelas ${cls} (${clsName})</div>
+                            <div class="tip-val">${reg ? formatNum(reg.growth, 2) + '% Pertumbuhan' : ''}</div>
+                        </div>
+                    `, { sticky: true, className: 'enterprise-boundary-tooltip' });
+
+                    layer.on('mouseover', function () {
+                        if (code !== selectedRegionCode) {
+                            layer.setStyle({
+                                fillOpacity: 0.58,
+                                weight: 2.2,
+                                color: '#0f172a'
+                            });
+                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                layer.bringToFront();
+                            }
+                        }
+                    });
+
+                    layer.on('mouseout', function () {
+                        if (code !== selectedRegionCode) {
+                            const isCurrent = (code === '35.10');
+                            const color = classColors[cls] || '#2563eb';
+                            layer.setStyle({
+                                fillColor: color,
+                                fillOpacity: isCurrent ? 0.44 : 0.30,
+                                weight: isCurrent ? 2.5 : 1.4,
+                                color: isCurrent ? '#0d9488' : '#334155'
+                            });
+                        }
+                    });
+
+                    layer.on('click', function () {
+                        selectRegion(code, true);
+                        if (layer.getBounds) {
+                            map.fitBounds(layer.getBounds(), { padding: [35, 35], maxZoom: 11 });
+                        }
+                    });
+                }
+            });
+
+            if (cbBoundaries && cbBoundaries.checked) {
+                layerGeoJsonBoundaries.addTo(map);
+            }
+        }
+
+        // Kotak-kotak bounding box dihilangkan total agar hanya batas riil GIS yang tersisa
+        function renderBoundaries() {
+            if (layerBoundaries) {
+                layerBoundaries.clearLayers();
+                if (map && map.hasLayer(layerBoundaries)) {
+                    map.removeLayer(layerBoundaries);
+                }
+            }
+        }
+
+        // 3. Render GIS Cluster Markers (Kota/Kabupaten Jawa Timur - Bersih & Sederhana Tanpa Efek Neon)
+        function renderMarkers() {
+            if (!layerMarkers || !map) return;
+            layerMarkers.clearLayers();
+
+            const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            jatimRegions.forEach(region => {
+                const summary = jatimRegenciesSummary.find(s => s.kode === region.kode);
+                const lat = summary && summary.lat ? summary.lat : region.lat;
+                const lng = summary && summary.lng ? summary.lng : region.lng;
+                if (!lat || !lng) return;
+
+                // Search filtering
+                if (searchQ) {
+                    const matchName = region.nama.toLowerCase().includes(searchQ);
+                    const matchCode = region.kode.includes(searchQ);
+                    const matchCapital = (region.ibu_kota || '').toLowerCase().includes(searchQ);
+                    if (!matchName && !matchCode && !matchCapital) return;
+                }
+
+                const isSelected = (region.kode === selectedRegionCode);
+                const isCurrent = (region.kode === '35.10');
+                const isDimmed = (activeBreakoutCityCode !== null && region.kode !== activeBreakoutCityCode);
+                const isHidden = (activeBreakoutCityCode !== null && region.kode === activeBreakoutCityCode);
+
+                // Nilai agregat kota/kabupaten (Kota Malang: 251)
+                let val = summary && summary.total_nilai !== undefined ? summary.total_nilai : Math.round(region.growth * 10);
+                if (pinDisplayMode === 'rank') {
+                    const sorted = [...jatimRegions].sort((a, b) => b.growth - a.growth);
+                    val = '#' + (sorted.findIndex(r => r.kode === region.kode) + 1);
+                } else if (pinDisplayMode === 'code') {
+                    val = region.kode.replace('35.', '');
+                }
+
+                const tier = getValueTier(val);
+                const shortName = region.nama.replace('Kabupaten ', 'Kab. ').replace('Kota ', 'Kota ');
+
+                const haloIcon = L.divIcon({
+                    className: 'custom-gis-halo',
+                    html: `
+                        <div class="gis-halo-pin size-lg ${tier.tierClass} ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}" data-code="${region.kode}" title="${region.nama}: ${val} (Klik untuk pecah kecamatan)">
+                            <div class="halo-ring"></div>
+                            <div class="halo-core">
+                                <span class="halo-num">${val}</span>
+                            </div>
+                            <div class="gis-halo-nametag">${shortName}</div>
+                        </div>
+                    `,
+                    iconSize: [52, 52],
+                    iconAnchor: [26, 26],
+                    popupAnchor: [0, -26]
+                });
+
+                const marker = L.marker([lat, lng], {
+                    icon: haloIcon,
+                    zIndexOffset: isSelected ? 1200 : (isCurrent ? 800 : 100),
+                    opacity: isHidden ? 0 : 1
+                });
+
+                const popupHtml = `
+                    <div class="osm-enterprise-popup">
+                        <div class="popup-head">
+                            <span class="popup-badge" style="background:${tier.color}; color:#fff;">KELAS ${tier.cls} • ${tier.name.toUpperCase()}</span>
+                            <span class="popup-type">KODE: ${region.kode}</span>
+                        </div>
+                        <h4 class="popup-title">${region.nama}</h4>
+                        <div class="popup-stat-grid">
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Total Indikator Spasial</span>
+                                <strong class="stat-val" style="color:${tier.color}; font-size:16px;">${val}</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Pertumbuhan Ekonomi</span>
+                                <strong class="stat-val">${formatNum(region.growth, 2)}%</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Jumlah Kecamatan</span>
+                                <strong class="stat-val">${summary ? summary.jumlah_kecamatan : '-'} Wilayah</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Luas Wilayah Resmi</span>
+                                <strong class="stat-val">${formatNum(region.luas, 0)} km²</strong>
+                            </div>
+                            <div class="popup-stat" style="grid-column: 1 / 3;">
+                                <span class="stat-lbl">Titik Koordinat Centroid</span>
+                                <span class="stat-coord" style="font-family:monospace;">${lat.toFixed(5)}° S, ${lng.toFixed(5)}° E</span>
+                            </div>
+                        </div>
+                        <div class="popup-actions">
+                            <button class="popup-btn primary" onclick="window.__selectAndBreakoutCity('${region.kode}')">Pecah Kecamatan</button>
+                            <button class="popup-btn secondary" onclick="window.__selectRegionFromMap('${region.kode}')">Lihat Profil</button>
+                        </div>
                     </div>
                 `;
 
-                const itemsHtml = classOrder.map(cls => {
-                    const low = minV + (range * (cls - 1)) / 5;
-                    const high = minV + (range * cls) / 5;
-                    return `
-                        <div class="legend-row" data-class="${cls}" title="Arahkan kursor atau klik untuk menyorot kecamatan Kelas ${cls}">
-                            <div class="legend-row-main">
-                                <span class="legend-chip l${cls}"></span>
-                                <b class="legend-class-lbl">Kelas ${cls}</b>
+                marker.bindPopup(popupHtml);
+
+                // Klik kota langsung memicu sorotan dan animasi pecah ke kecamatan
+                marker.on('click', () => {
+                    selectAndBreakoutCity(region.kode);
+                });
+
+                markerLayers[region.kode] = marker;
+                marker.addTo(layerMarkers);
+            });
+        }
+
+        // 4. Render Sub-District Markers: Hanya terpecah saat kota dipilih, animasi memancar keluar dari titik pusat kota
+        function renderDistrictsForCity(cityCode, animate = true) {
+            if (!layerDistricts || !map) return;
+            layerDistricts.clearLayers();
+
+            const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            const summary = jatimRegenciesSummary.find(s => s.kode === cityCode);
+            const reg = jatimRegions.find(r => r.kode === cityCode);
+            const cityLat = (summary && summary.lat) ? summary.lat : (reg ? reg.lat : -7.9785);
+            const cityLng = (summary && summary.lng) ? summary.lng : (reg ? reg.lng : 112.6315);
+            const cityName = reg ? reg.nama : (summary ? summary.nama : 'Kota/Kabupaten');
+
+            // Ambil daftar kecamatan KHUSUS untuk kota yang dipilih
+            let list = [];
+            if (jatimAllKecamatan && jatimAllKecamatan.length > 0) {
+                list = jatimAllKecamatan.filter(k => k.kode_kab === cityCode);
+            }
+            // Fallback untuk Banyuwangi jika belum termuat
+            if (list.length === 0 && cityCode === '35.10' && districtList && districtList.length > 0) {
+                list = districtList.map(d => ({
+                    id: d.id || '35.10',
+                    nama: d.name || d.nama_kecamatan || '',
+                    kode_kab: '35.10',
+                    nama_kab: 'Kabupaten Banyuwangi',
+                    lat: parseFloat(d.lat || d.garis_lintang || 0),
+                    lng: parseFloat(d.lng || d.garis_bujur || 0),
+                    nilai: Math.round(parseFloat(d.share !== undefined ? d.share : (d.porsi_pdrb || 5)) * 2)
+                }));
+            }
+
+            if (searchQ) {
+                list = list.filter(k => k.nama.toLowerCase().includes(searchQ));
+            }
+
+            // Hitung titik koordinat pixel pusat kota pada layar peta
+            let parentPt = null;
+            try {
+                parentPt = map.latLngToLayerPoint([cityLat, cityLng]);
+            } catch (e) {
+                parentPt = null;
+            }
+
+            list.forEach((k, idx) => {
+                const lat = parseFloat(k.lat);
+                const lng = parseFloat(k.lng);
+                if (!lat || !lng) return;
+
+                const val = parseInt(k.nilai !== undefined ? k.nilai : 5, 10);
+                const name = k.nama;
+                const isSelected = (name === selectedDistrictName);
+
+                const tier = getValueTier(val);
+                const isLarge = val >= 100;
+                const sizeClass = isLarge ? 'size-lg' : '';
+
+                // Hitung lintasan vektor animasi pecah dari titik pusat kota menuju titik kecamatan
+                let breakoutStyle = '';
+                let breakoutClass = '';
+                if (animate && parentPt) {
+                    try {
+                        const kecPt = map.latLngToLayerPoint([lat, lng]);
+                        const dx = Math.round(parentPt.x - kecPt.x);
+                        const dy = Math.round(parentPt.y - kecPt.y);
+                        if (!isNaN(dx) && !isNaN(dy)) {
+                            const delayMs = Math.min(Math.round(idx * 22), 260);
+                            breakoutStyle = `--origin-dx: ${dx}px; --origin-dy: ${dy}px; animation-delay: ${delayMs}ms;`;
+                            breakoutClass = 'cluster-bursting';
+                        }
+                    } catch (e) {}
+                }
+
+                const iconSize = isLarge ? [52, 52] : [44, 44];
+                const iconAnchor = isLarge ? [26, 26] : [22, 22];
+                const popupAnchor = isLarge ? [0, -26] : [0, -22];
+
+                const kecIcon = L.divIcon({
+                    className: `custom-gis-halo ${breakoutClass}`,
+                    html: `
+                        <div class="gis-halo-pin ${sizeClass} ${tier.tierClass} ${isSelected ? 'selected' : ''}" data-name="${name}" style="${breakoutStyle}" title="Kecamatan ${name} (${cityName}): Nilai ${val}">
+                            <div class="halo-ring"></div>
+                            <div class="halo-core">
+                                <span class="halo-num">${val}</span>
                             </div>
-                            <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
-                        </div>`;
-                }).join('');
-
-                legendContainer.innerHTML = barHtml + itemsHtml;
-
-                // Interactive highlight on hover
-                legendContainer.querySelectorAll('.legend-row').forEach(row => {
-                    const targetCls = row.getAttribute('data-class');
-                    row.addEventListener('mouseenter', () => {
-                        if (!markersGroup) return;
-                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
-                            if (m.classList.contains(`l${targetCls}`)) {
-                                m.style.filter = 'drop-shadow(0 0 6px rgba(21,154,156,0.95))';
-                                m.style.opacity = '1';
-                            } else {
-                                m.style.opacity = '0.3';
-                            }
-                        });
-                    });
-                    row.addEventListener('mouseleave', () => {
-                        if (!markersGroup) return;
-                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
-                            m.style.filter = '';
-                            m.style.opacity = '1';
-                        });
-                    });
+                            <div class="gis-halo-nametag">${name}</div>
+                        </div>
+                    `,
+                    iconSize: iconSize,
+                    iconAnchor: iconAnchor,
+                    popupAnchor: popupAnchor
                 });
-            }
 
-            // Render SVG District Markers
-            if (markersGroup) {
-                const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                markersGroup.innerHTML = AppState.districts.map(d => {
-                    const v = isPov ? d.poverty : (isInv ? d.investment : d.growth);
-                    const cls = getClass(v);
-                    const isSelected = d.name === selectedDistrict;
-                    const matchesSearch = !searchQ || d.name.toLowerCase().includes(searchQ);
-                    if (!matchesSearch) return '';
-
-                    return `
-                        <g class="area-marker l${cls} ${isSelected ? 'selected' : ''}" data-name="${d.name}" style="cursor:pointer;">
-                            <circle cx="${d.coord_x}" cy="${d.coord_y}" r="${isSelected ? 12 : 8}"/>
-                            <text x="${d.coord_x + 12}" y="${d.coord_y + 3}">${d.name}</text>
-                        </g>`;
-                }).join('');
-
-                markersGroup.querySelectorAll('.area-marker').forEach(marker => {
-                    marker.addEventListener('click', function () {
-                        selectedDistrict = this.getAttribute('data-name');
-                        renderMap();
-                    });
+                const marker = L.marker([lat, lng], {
+                    icon: kecIcon,
+                    zIndexOffset: isSelected ? 2000 : (isLarge ? 1200 : 800)
                 });
-            }
 
-            // Render Selected District Detail Aside
-            const dist = AppState.districts.find(d => d.name === selectedDistrict) || AppState.districts[0];
-            if (locDetailName && dist) {
-                locDetailName.textContent = dist.name;
-            }
+                const kecPopup = `
+                    <div class="osm-enterprise-popup">
+                        <div class="popup-head">
+                            <span class="popup-badge" style="background:${tier.color}; color:#fff;">KELAS ${tier.cls} • ${tier.name.toUpperCase()}</span>
+                            <span class="popup-type">${cityName.toUpperCase()} (${cityCode})</span>
+                        </div>
+                        <h4 class="popup-title">Kecamatan ${name}</h4>
+                        <div class="popup-stat-grid">
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Nilai Indikator Spasial</span>
+                                <strong class="stat-val" style="color:${tier.color}; font-size:16px;">${val}</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Tingkat Klasifikasi</span>
+                                <strong class="stat-val">${tier.name}</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Kabupaten / Kota</span>
+                                <strong class="stat-val">${cityName}</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Status Wilayah</span>
+                                <strong class="stat-val">Kecamatan Aktif</strong>
+                            </div>
+                            <div class="popup-stat" style="grid-column: 1 / 3;">
+                                <span class="stat-lbl">Titik Koordinat Geografis</span>
+                                <span class="stat-coord" style="font-family:monospace;">${lat.toFixed(5)}° S, ${lng.toFixed(5)}° E</span>
+                            </div>
+                        </div>
+                        <div class="popup-actions">
+                            <button class="popup-btn primary" onclick="window.__selectDistrictFromMap('${name}')">Lihat Profil</button>
+                            <button class="popup-btn secondary" onclick="window.__zoomDistrictFromMap('${name}')">Pusatkan Titik</button>
+                        </div>
+                    </div>
+                `;
 
-            if (locBodyContainer && dist) {
-                const currentVal = isPov ? dist.poverty : (isInv ? dist.investment : dist.growth);
-                const avgV = mean(vals);
-                const gapV = currentVal - avgV;
+                marker.bindPopup(kecPopup);
+                marker.on('click', () => {
+                    selectDistrict(name, k);
+                });
+
+                marker.addTo(layerDistricts);
+            });
+
+            if (animate) {
+                setTimeout(() => {
+                    document.querySelectorAll('.custom-gis-halo.cluster-bursting').forEach(el => {
+                        el.classList.remove('cluster-bursting');
+                    });
+                }, 850);
+            }
+        }
+
+        // Backward compatibility
+        function renderDistricts(animate = false) {
+            if (activeBreakoutCityCode) {
+                renderDistrictsForCity(activeBreakoutCityCode, animate);
+            }
+        }
+
+        // 5. Render Legend (4 Kelas Terkalibrasi Kuartil/Interval)
+        function renderLegend() {
+            if (!legendContainer) return;
+
+            const c = get4Classes();
+            const decimals = 2;
+            const unit = '%';
+
+            const barOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
+            const classOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
+
+            const barHtml = `
+                <div class="legend-color-bar" title="Rentang 4 kelas pertumbuhan: ${formatNum(c.minV, decimals)}${unit} s.d. ${formatNum(c.maxV, decimals)}${unit}">
+                    ${barOrder.map(cl => `<span class="l${cl}" style="background:${classColors[cl]} !important;"></span>`).join('')}
+                </div>
+                <div class="legend-bar-labels">
+                    <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? c.maxV : c.minV, decimals)}${unit})</small>
+                    <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? c.minV : c.maxV, decimals)}${unit})</small>
+                </div>
+            `;
+
+            const itemsHtml = classOrder.map(cls => {
+                const low = c.minV + (c.step * (cls - 1));
+                const high = c.minV + (c.step * cls);
+                const color = classColors[cls];
+                const name = classNames[cls];
+                return `
+                    <div class="legend-row" data-class="${cls}" title="Wilayah Kelas ${cls} (${name})">
+                        <div class="legend-row-main">
+                            <span class="legend-chip l${cls}" style="background:${color} !important;"></span>
+                            <b class="legend-class-lbl">Kelas ${cls} <small style="font-weight:500; color:#64748b;">(${name})</small></b>
+                        </div>
+                        <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
+                    </div>`;
+            }).join('');
+
+            legendContainer.innerHTML = barHtml + itemsHtml;
+        }
+
+        // 6. Select Region (Kabupaten / Kota)
+        function selectRegion(code, openPopup = false) {
+            selectedRegionCode = code;
+            const reg = jatimRegions.find(r => r.kode === code);
+            if (!reg) return;
+
+            const cls = getRegionClass(reg);
+            const color = classColors[cls];
+            const clsName = classNames[cls];
+
+            // Update Breadcrumb & Header
+            const breadKab = document.getElementById('map-bread-kab');
+            const breadLevel = document.getElementById('map-bread-level');
+            if (breadKab) breadKab.textContent = reg.nama;
+            if (breadLevel) breadLevel.textContent = `Kode: ${reg.kode} • Kelas ${cls} (${clsName})`;
+
+            if (locDetailName) locDetailName.textContent = reg.nama;
+            if (locDetailLevel) locDetailLevel.innerHTML = `PROFIL WILAYAH • <span style="color:#fef08a; font-weight:700;">KELAS ${cls} (${clsName.toUpperCase()})</span>`;
+            if (locDetailCode) locDetailCode.textContent = `Kode Kemendagri: ${reg.kode} • Sumber Resmi BIG / Kemendagri`;
+
+            // Compute ranking in East Java
+            const sortedByGrowth = [...jatimRegions].sort((a, b) => b.growth - a.growth);
+            const rank = sortedByGrowth.findIndex(r => r.kode === code) + 1;
+            const avgGrowth = (jatimRegions.reduce((sum, r) => sum + r.growth, 0) / (jatimRegions.length || 1));
+            const gap = reg.growth - avgGrowth;
+
+            // Render Right-Hand Location Aside
+            if (locBodyContainer) {
+                let seriesSvg = '';
+                if (Array.isArray(reg.series) && reg.series.length > 0) {
+                    const sMin = Math.min(...reg.series);
+                    const sMax = Math.max(...reg.series);
+                    const sRange = (sMax - sMin) || 1;
+                    const w = 210;
+                    const h = 42;
+                    const points = reg.series.map((val, idx) => {
+                        const x = (idx / (reg.series.length - 1)) * w;
+                        const y = h - ((val - sMin) / sRange) * (h - 8) - 4;
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                    }).join(' ');
+
+                    seriesSvg = `
+                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin:10px 0;">
+                            <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#64748b; margin-bottom:4px;">
+                                <span>Tren Historis Pertumbuhan (2016–2025)</span>
+                                <strong>${reg.series.length} Tahun</strong>
+                            </div>
+                            <svg width="100%" height="45" viewBox="0 0 210 45" style="overflow:visible;">
+                                <polyline fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
+                            </svg>
+                        </div>
+                    `;
+                }
 
                 locBodyContainer.innerHTML = `
                     <div class="location-score">
                         <div>
-                            <span>${ind}</span>
-                            <strong>${formatNum(currentVal, 2)}${isInv ? ' poin' : '%'}</strong>
+                            <span>Pertumbuhan Ekonomi (2025)</span>
+                            <strong style="color:${color};">${formatNum(reg.growth, 2)}%</strong>
                         </div>
-                        <span class="badge ${dist.risk === 'Kritis' ? 'danger' : (dist.risk === 'Waspada' ? 'warning' : 'success')}">
-                            ${dist.risk}
+                        <span class="badge" style="background:${color}; color:#fff; font-weight:700;">
+                            Kelas ${cls} • #${rank} / 38
                         </span>
                     </div>
 
                     <div class="spatial-position">
                         <span>
-                            <small>Posisi terhadap rerata daerah</small>
-                            <strong class="${gapV >= 0 ? 'positive' : 'negative'}">${gapV >= 0 ? '+' : ''}${formatNum(gapV, 2)} pp</strong>
+                            <small>Selisih terhadap rata-rata Jatim (${formatNum(avgGrowth, 2)}%)</small>
+                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap, 2)} pp</strong>
                         </span>
-                        <div><i style="width: ${Math.min(100, Math.max(10, (currentVal / maxV) * 100))}%"></i></div>
-                        <small>Rata-rata 12 kecamatan: ${formatNum(avgV, 2)}${isInv ? ' poin' : '%'}</small>
+                        <div><i style="width: ${Math.min(100, Math.max(12, ((reg.growth - 1.5) / 5) * 100))}%; background:${color};"></i></div>
                     </div>
 
                     <div class="data-list">
-                        <span><small>Potensi Unggulan</small><strong>${dist.potential}</strong></span>
-                        <span><small>Indeks Investasi</small><strong>${formatNum(dist.investment, 2)} poin</strong></span>
-                        <span><small>Tingkat Kemiskinan</small><strong>${formatPct(dist.poverty)}</strong></span>
-                        <span><small>Pertumbuhan Ekonomi</small><strong>${formatPct(dist.growth)}</strong></span>
+                        <span><small>Ibu Kota / Pusat</small><strong>${reg.ibu_kota || '-'}</strong></span>
+                        <span><small>Klasifikasi GIS</small><strong style="color:${color};">Kelas ${cls} (${clsName})</strong></span>
+                        <span><small>Luas Wilayah Resmi</small><strong>${formatNum(reg.luas, 0)} km²</strong></span>
+                        <span><small>Perubahan YoY</small><strong>${reg.change >= 0 ? '+' : ''}${formatNum(reg.change, 2)} pp</strong></span>
+                        <span><small>Titik Centroid (Lintang)</small><strong style="font-family:monospace;">${reg.lat.toFixed(4)}° S</strong></span>
+                        <span><small>Titik Centroid (Bujur)</small><strong style="font-family:monospace;">${reg.lng.toFixed(4)}° E</strong></span>
+                        <span><small>Batas BBox Latitude</small><strong style="font-size:10px; font-family:monospace;">${reg.bounds[0][0].toFixed(4)}° s.d. ${reg.bounds[1][0].toFixed(4)}°</strong></span>
+                        <span><small>Batas BBox Longitude</small><strong style="font-size:10px; font-family:monospace;">${reg.bounds[0][1].toFixed(4)}° s.d. ${reg.bounds[1][1].toFixed(4)}°</strong></span>
                     </div>
 
-                    <button class="button secondary" id="btn-export-district-profile" style="width:100%;">Unduh Profil Wilayah</button>`;
+                    ${seriesSvg}
 
-                const btnExpDist = document.getElementById('btn-export-district-profile');
-                if (btnExpDist) {
-                    btnExpDist.addEventListener('click', () => {
-                        downloadCSV(`profil-kecamatan-${dist.name.toLowerCase()}.csv`, [
-                            ['Kecamatan', 'Pertumbuhan Ekonomi (%)', 'Kemiskinan (%)', 'Indeks Investasi', 'Potensi', 'Status Risiko'],
-                            [dist.name, dist.growth, dist.poverty, dist.investment, dist.potential, dist.risk]
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        <button class="button secondary" id="btn-export-reg-profile" style="flex:1;">Unduh Profil CSV</button>
+                        <button class="button" id="btn-zoom-to-sel" style="background:#142d4e; color:#fff;">Pusatkan Peta</button>
+                    </div>
+                `;
+
+                const btnExp = document.getElementById('btn-export-reg-profile');
+                if (btnExp) {
+                    btnExp.addEventListener('click', () => {
+                        downloadCSV(`profil-${reg.nama.toLowerCase().replace(/\\s+/g, '-')}.csv`, [
+                            ['Kode Wilayah', 'Nama Wilayah', 'Tipe', 'Kelas GIS', 'Ibu Kota', 'Lintang', 'Bujur', 'Pertumbuhan (%)', 'Perubahan YoY (pp)', 'Luas (km2)'],
+                            [reg.kode, reg.nama, reg.tipe, `Kelas ${cls} (${clsName})`, reg.ibu_kota, reg.lat, reg.lng, reg.growth, reg.change, reg.luas]
                         ]);
+                    });
+                }
+
+                const btnZoomSel = document.getElementById('btn-zoom-to-sel');
+                if (btnZoomSel) {
+                    btnZoomSel.addEventListener('click', () => {
+                        if (polygonLayers[code] && polygonLayers[code].getBounds) {
+                            map.fitBounds(polygonLayers[code].getBounds(), { padding: [35, 35], maxZoom: 12 });
+                        } else if (map && reg.bounds) {
+                            map.fitBounds(reg.bounds, { padding: [35, 35], maxZoom: 12 });
+                        }
                     });
                 }
             }
 
-            // Hotspot layer toggle
-            if (hotspotLayer && hotspotBox) {
-                if (activeMode === 'Hotspot Analysis') {
-                    hotspotLayer.style.display = 'block';
-                    hotspotBox.style.display = 'flex';
-                    hotspotLayer.innerHTML = AppState.districts.filter(d => d.risk !== 'Normal').map(d =>
-                        `<circle cx="${d.coord_x}" cy="${d.coord_y}" r="${d.risk === 'Kritis' ? 44 : 28}" class="${d.risk === 'Kritis' ? 'critical' : 'warning'}"/>`
-                    ).join('');
+            // Update Poligon Riil GeoJSON
+            Object.keys(polygonLayers).forEach(k => {
+                const ply = polygonLayers[k];
+                if (!ply) return;
+                const r = jatimRegions.find(item => item.kode === k);
+                const rCls = getRegionClass(r);
+                const rColor = classColors[rCls] || '#2563eb';
+                const isCur = (k === '35.10');
+                const isSel = (k === code);
+
+                ply.setStyle({
+                    fillColor: rColor,
+                    fillOpacity: isSel ? 0.62 : (isCur ? 0.44 : 0.30),
+                    weight: isSel ? 3.5 : (isCur ? 2.5 : 1.4),
+                    color: isSel ? '#0f172a' : (isCur ? '#0d9488' : '#334155')
+                });
+
+                if (isSel && !L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                    ply.bringToFront();
+                }
+            });
+
+            // Tidak ada kotak-kotak bounding box
+
+            // Update active state pada balon pin GIS
+            document.querySelectorAll('.gis-balloon-pin').forEach(el => {
+                if (el.getAttribute('data-code') === code) {
+                    el.classList.add('selected');
                 } else {
-                    hotspotLayer.style.display = 'none';
-                    hotspotBox.style.display = 'none';
+                    el.classList.remove('selected');
+                }
+            });
+
+            if (openPopup && markerLayers[code]) {
+                markerLayers[code].openPopup();
+            }
+
+            renderMapComparisonChart();
+        }
+
+        // 7. Select District (Kecamatan di Banyuwangi)
+        function selectDistrict(name, kecObj = null) {
+            selectedDistrictName = name;
+            let dist = kecObj;
+            if (!dist && jatimAllKecamatan) {
+                dist = jatimAllKecamatan.find(k => k.nama === name);
+            }
+            if (!dist && districtList) {
+                dist = districtList.find(d => (d.name || d.nama_kecamatan) === name);
+            }
+            if (!dist) return;
+
+            const lat = parseFloat(dist.lat || dist.garis_lintang || 0);
+            const lng = parseFloat(dist.lng || dist.garis_bujur || 0);
+            const val = dist.nilai !== undefined ? dist.nilai : (dist.share || dist.porsi_pdrb || 5);
+            const namaKab = dist.nama_kab || 'Kabupaten Banyuwangi';
+            const kodeKab = dist.kode_kab || '35.10';
+            const tier = getValueTier(val);
+
+            // Update state aktif pada pin halo kecamatan
+            document.querySelectorAll('.gis-halo-pin').forEach(el => {
+                if (el.getAttribute('data-name') === name) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+
+            if (locDetailName) locDetailName.textContent = `Kecamatan ${name}`;
+            if (locDetailLevel) locDetailLevel.textContent = 'PROFIL WILAYAH • KECAMATAN';
+            if (locDetailCode) locDetailCode.textContent = `${namaKab} (Kode: ${kodeKab})`;
+
+            if (locBodyContainer) {
+                locBodyContainer.innerHTML = `
+                    <div class="location-score">
+                        <div>
+                            <span>Nilai Indikator Spasial</span>
+                            <strong style="color:${tier.color};">${val}</strong>
+                        </div>
+                        <span class="badge info">Kelas ${tier.cls} (${tier.name})</span>
+                    </div>
+
+                    <div class="data-list" style="margin-top:14px;">
+                        <span><small>Wilayah Induk</small><strong>${namaKab}</strong></span>
+                        <span><small>Kode Wilayah</small><strong style="font-family:monospace;">${dist.id || kodeKab}</strong></span>
+                        <span><small>Tingkat Aktivitas</small><strong>${tier.name}</strong></span>
+                        <span><small>Status Data</small><strong>Terintegrasi BPS / Kemendagri</strong></span>
+                        <span><small>Garis Lintang</small><strong style="font-family:monospace;">${lat ? lat.toFixed(5) + '° S' : '-'}</strong></span>
+                        <span><small>Garis Bujur</small><strong style="font-family:monospace;">${lng ? lng.toFixed(5) + '° E' : '-'}</strong></span>
+                    </div>
+
+                    <div style="display:flex; gap:8px; margin-top:14px;">
+                        <button class="button secondary" id="btn-export-dist-csv" style="flex:1;">Unduh CSV</button>
+                        <button class="button" id="btn-zoom-dist" style="background:#0d9488; color:#fff;">Pusatkan Kecamatan</button>
+                    </div>
+                `;
+
+                const btnExp = document.getElementById('btn-export-dist-csv');
+                if (btnExp) {
+                    btnExp.addEventListener('click', () => {
+                        downloadCSV(`kecamatan-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`, [
+                            ['Kecamatan', 'Kab/Kota', 'Nilai Spasial', 'Lintang', 'Bujur'],
+                            [name, namaKab, val, lat, lng]
+                        ]);
+                    });
+                }
+
+                const btnZoom = document.getElementById('btn-zoom-dist');
+                if (btnZoom && lat && lng && map) {
+                    btnZoom.addEventListener('click', () => {
+                        map.setView([lat, lng], 13);
+                    });
                 }
             }
         }
 
-        if (groupSelect) groupSelect.addEventListener('change', updateIndicators);
-        if (indicatorSelect) indicatorSelect.addEventListener('change', renderMap);
-        if (searchInput) searchInput.addEventListener('input', renderMap);
+        // Global functions for marker popup clicks
+        window.__selectRegionFromMap = function(code) {
+            selectRegion(code);
+        };
+        window.__selectAndBreakoutCity = function(code) {
+            selectAndBreakoutCity(code);
+        };
+        window.__resetToProvinceView = function() {
+            resetToProvinceView(true);
+        };
+        window.__zoomRegionFromMap = function(code) {
+            selectRegion(code, true);
+            if (polygonLayers[code] && polygonLayers[code].getBounds) {
+                map.fitBounds(polygonLayers[code].getBounds(), { padding: [40, 40], maxZoom: 12 });
+            } else {
+                const reg = jatimRegions.find(r => r.kode === code);
+                if (reg && map && reg.bounds) {
+                    map.fitBounds(reg.bounds, { padding: [40, 40], maxZoom: 12 });
+                }
+            }
+        };
+        window.__selectDistrictFromMap = function(name) {
+            selectDistrict(name);
+        };
+        window.__zoomDistrictFromMap = function(name) {
+            const k = (jatimAllKecamatan && jatimAllKecamatan.find(x => x.nama === name)) ||
+                      (districtList && districtList.find(d => (d.name || d.nama_kecamatan) === name));
+            if (k && map) {
+                const lat = parseFloat(k.lat || k.garis_lintang);
+                const lng = parseFloat(k.lng || k.garis_bujur);
+                if (lat && lng) map.setView([lat, lng], 13);
+            }
+        };
 
-        if (btnReverseLegend) {
-            btnReverseLegend.addEventListener('click', function (e) {
-                e.preventDefault();
-                legendReversed = !legendReversed;
-                this.classList.toggle('active', legendReversed);
-                renderMap();
-            });
-        }
-
-        // Zoom Controls
-        if (btnZoomIn && svg) {
-            btnZoomIn.addEventListener('click', () => {
-                zoomLevel = Math.min(2.0, zoomLevel + 0.15);
-                svg.style.transform = `scale(${zoomLevel})`;
-                if (zoomText) zoomText.textContent = Math.round(zoomLevel * 100) + '%';
-            });
-        }
-        if (btnZoomOut && svg) {
-            btnZoomOut.addEventListener('click', () => {
-                zoomLevel = Math.max(0.7, zoomLevel - 0.15);
-                svg.style.transform = `scale(${zoomLevel})`;
-                if (zoomText) zoomText.textContent = Math.round(zoomLevel * 100) + '%';
-            });
-        }
-
-        // Layer toggles
-        document.querySelectorAll('.map-layer-cb').forEach(cb => {
-            cb.addEventListener('change', function () {
-                const layerId = {
-                    'Batas kecamatan': 'layer-boundary',
-                    'Infrastruktur ekonomi': 'layer-infra',
-                    'Pusat industri': 'layer-industry',
-                    'Konsentrasi tenaga kerja': 'layer-employment',
-                    'Potensi sektoral': 'layer-potential',
-                    'Destinasi wisata': 'layer-tourism'
-                }[this.value];
-
-                if (layerId) {
-                    const el = document.getElementById(layerId);
-                    if (el) el.style.display = this.checked ? 'block' : 'none';
+        // 8. Layer Controls & Toggles
+        if (cbOsm) {
+            cbOsm.addEventListener('change', () => {
+                if (!map || !currentBasemapLayer) return;
+                if (cbOsm.checked) {
+                    if (!map.hasLayer(currentBasemapLayer)) map.addLayer(currentBasemapLayer);
+                } else {
+                    if (map.hasLayer(currentBasemapLayer)) map.removeLayer(currentBasemapLayer);
                 }
             });
-        });
+        }
+        if (cbBoundaries) {
+            cbBoundaries.addEventListener('change', () => {
+                if (!map || !layerGeoJsonBoundaries) return;
+                if (cbBoundaries.checked) {
+                    map.addLayer(layerGeoJsonBoundaries);
+                } else {
+                    map.removeLayer(layerGeoJsonBoundaries);
+                }
+            });
+        }
+        if (cbMarkers) {
+            cbMarkers.addEventListener('change', () => {
+                if (!map || !layerMarkers) return;
+                if (cbMarkers.checked) {
+                    map.addLayer(layerMarkers);
+                } else {
+                    map.removeLayer(layerMarkers);
+                }
+            });
+        }
+        if (cbLabels) {
+            cbLabels.addEventListener('change', () => {
+                const pins = document.querySelectorAll('.custom-gis-balloon, .custom-osm-pin, .custom-kec-pin');
+                pins.forEach(p => p.style.display = cbLabels.checked ? 'block' : 'none');
+            });
+        }
+        if (cbHotspot) {
+            cbHotspot.addEventListener('change', () => {
+                if (!map || !layerHotspots) return;
+                if (cbHotspot.checked) {
+                    layerHotspots.clearLayers();
+                    const highGrowths = jatimRegions.filter(r => r.growth >= 5.8);
+                    highGrowths.forEach(r => {
+                        const circle = L.circle([r.lat, r.lng], {
+                            radius: 18000,
+                            color: '#10b981',
+                            fillColor: '#34d399',
+                            fillOpacity: 0.2,
+                            weight: 1.5,
+                            dashArray: '3, 4'
+                        });
+                        circle.bindTooltip(`Kawasan Pertumbuhan Tinggi: <strong>${r.nama} (${formatNum(r.growth, 2)}%)</strong>`);
+                        circle.addTo(layerHotspots);
+                    });
+                    map.addLayer(layerHotspots);
+                    if (hotspotBox) hotspotBox.style.display = 'flex';
+                } else {
+                    map.removeLayer(layerHotspots);
+                    if (hotspotBox) hotspotBox.style.display = 'none';
+                }
+            });
+        }
+
+        // Tampilan Angka Balon GIS
+        if (pinDisplaySelect) {
+            pinDisplaySelect.addEventListener('change', () => {
+                pinDisplayMode = pinDisplaySelect.value;
+                renderMarkers();
+            });
+        }
+
+        // Quick Focus Buttons & Breadcrumb / Return Navigation
+        if (btnFocusJatim) {
+            btnFocusJatim.addEventListener('click', () => {
+                resetToProvinceView(true);
+            });
+        }
+        if (btnFocusMalang) {
+            btnFocusMalang.addEventListener('click', () => {
+                selectAndBreakoutCity('35.73');
+            });
+        }
+        if (btnFocusBanyuwangi) {
+            btnFocusBanyuwangi.addEventListener('click', () => {
+                selectAndBreakoutCity('35.10');
+            });
+        }
+        if (btnFocusSurabaya) {
+            btnFocusSurabaya.addEventListener('click', () => {
+                selectAndBreakoutCity('35.78');
+            });
+        }
+        if (btnBackToProvince) {
+            btnBackToProvince.addEventListener('click', () => {
+                resetToProvinceView(true);
+            });
+        }
+        if (btnResetLocation) {
+            btnResetLocation.addEventListener('click', () => {
+                resetToProvinceView(true);
+            });
+        }
+        if (mapBreadKab) {
+            mapBreadKab.addEventListener('click', () => {
+                resetToProvinceView(true);
+            });
+        }
+
+        // Level Select
+        if (levelSelect) {
+            levelSelect.addEventListener('change', () => {
+                mapLevel = levelSelect.value;
+                if (layerGeoJsonBoundaries && !map.hasLayer(layerGeoJsonBoundaries)) {
+                    layerGeoJsonBoundaries.addTo(map);
+                }
+                if (mapLevel === 'Jawa Timur') {
+                    if (layerMarkers && !map.hasLayer(layerMarkers)) layerMarkers.addTo(map);
+                    if (map) map.setView([-7.75, 112.75], 8);
+                    updateMarkerVisibilityByZoom(false);
+                } else if (mapLevel === 'Kecamatan') {
+                    selectRegion('35.10', true);
+                    if (polygonLayers['35.10'] && polygonLayers['35.10'].getBounds) {
+                        map.fitBounds(polygonLayers['35.10'].getBounds(), { padding: [30, 30] });
+                    } else if (map) {
+                        map.fitBounds([[-8.78, 113.88], [-7.72, 114.61]], { padding: [30, 30] });
+                    }
+                    setTimeout(() => updateMarkerVisibilityByZoom(true), 350);
+                } else {
+                    // Gabungan
+                    if (layerMarkers && !map.hasLayer(layerMarkers)) layerMarkers.addTo(map);
+                    if (layerDistricts && !map.hasLayer(layerDistricts)) layerDistricts.addTo(map);
+                }
+                renderMapComparisonChart();
+            });
+        }
+
+        // Search Input
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderMarkers();
+                renderDistricts();
+            });
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const q = searchInput.value.toLowerCase().trim();
+                    const match = jatimRegions.find(r => r.nama.toLowerCase().includes(q) || r.kode.includes(q));
+                    if (match) {
+                        selectRegion(match.kode, true);
+                        if (polygonLayers[match.kode] && polygonLayers[match.kode].getBounds) {
+                            map.fitBounds(polygonLayers[match.kode].getBounds(), { padding: [35, 35], maxZoom: 12 });
+                        } else if (map && match.bounds) {
+                            map.fitBounds(match.bounds, { padding: [35, 35], maxZoom: 12 });
+                        }
+                    }
+                }
+            });
+        }
+
+        // Zoom buttons (+ / -)
+        if (btnZoomIn && map) {
+            btnZoomIn.addEventListener('click', () => map.zoomIn());
+        }
+        if (btnZoomOut && map) {
+            btnZoomOut.addEventListener('click', () => map.zoomOut());
+        }
+
+        // Reverse legend
+        if (btnReverseLegend) {
+            btnReverseLegend.addEventListener('click', (e) => {
+                e.preventDefault();
+                legendReversed = !legendReversed;
+                btnReverseLegend.classList.toggle('active', legendReversed);
+                renderLegend();
+            });
+        }
+
+        // Reset Location
+        if (btnResetLocation) {
+            btnResetLocation.addEventListener('click', () => {
+                selectRegion('35.10');
+                if (map) map.setView([-7.75, 112.75], 8);
+            });
+        }
+
+        // Export All Map Data CSV
+        if (btnExportMap) {
+            btnExportMap.addEventListener('click', () => {
+                downloadCSV('peta-ekonomi-jawa-timur-sidapeda.csv', [
+                    ['Kode Wilayah', 'Nama Wilayah', 'Tipe', 'Kelas GIS', 'Ibu Kota', 'Latitude', 'Longitude', 'Pertumbuhan (%)', 'Perubahan YoY (pp)', 'Luas (km2)'],
+                    ...jatimRegions.map(r => {
+                        const cls = getRegionClass(r);
+                        return [r.kode, r.nama, r.tipe, `Kelas ${cls} (${classNames[cls]})`, r.ibu_kota, r.lat, r.lng, r.growth, r.change, r.luas];
+                    })
+                ]);
+            });
+        }
 
         // Mode tabs
         if (modeTabs) {
@@ -4685,23 +6016,12 @@
                     this.classList.add('active');
                     activeMode = this.getAttribute('data-mode');
                     const lbl = document.getElementById('active-map-mode-label');
-                    if (lbl) lbl.textContent = activeMode;
-                    renderMap();
+                    if (lbl) lbl.textContent = activeMode.toUpperCase();
                 });
             });
         }
 
-        if (btnExportMap) {
-            btnExportMap.addEventListener('click', () => {
-                downloadCSV('peta-spasial-banyuwangi.csv', [
-                    ['Kecamatan', 'Pertumbuhan Ekonomi (%)', 'Kemiskinan (%)', 'Indeks Investasi', 'Potensi', 'Risiko'],
-                    ...AppState.districts.map(d => [d.name, d.growth, d.poverty, d.investment, d.potential, d.risk])
-                ]);
-            });
-        }
-
-        updateIndicators();
-
+        // 9. Bottom Comparison Chart
         const metricSelect = document.getElementById('map-chart-metric-select');
         const mapChartTitle = document.getElementById('map-chart-title');
         const mapChartDesc = document.getElementById('map-chart-desc');
@@ -4711,54 +6031,108 @@
             if (!mapChartContainer) return;
             const metric = metricSelect ? metricSelect.value : 'growth';
 
-            const metricConfigs = {
-                'growth': { label: 'Pertumbuhan Ekonomi', unit: '%', key: 'growth', decimals: 2 },
-                'poverty': { label: 'Tingkat Kemiskinan', unit: '%', key: 'poverty', decimals: 2 },
-                'pdrbShare': { label: 'Porsi PDRB Daerah', unit: '%', key: 'pdrbShare', decimals: 2 },
-                'investment': { label: 'Indeks Investasi', unit: ' poin', key: 'investment', decimals: 2 },
-                'density': { label: 'Kepadatan Penduduk', unit: ' jiwa/km²', key: 'density', decimals: 0 }
-            };
+            const isKecamatanOnly = (mapLevel === 'Kecamatan');
 
-            const cfg = metricConfigs[metric] || metricConfigs['growth'];
-            if (mapChartTitle) mapChartTitle.textContent = `Grafik Komparasi ${cfg.label} Antar-Kecamatan`;
-            if (mapChartDesc) mapChartDesc.textContent = `Peringkat capaian ${cfg.label.toLowerCase()} seluruh kecamatan di Kabupaten Banyuwangi.`;
+            if (isKecamatanOnly) {
+                if (mapChartTitle) mapChartTitle.textContent = 'Grafik Komparasi Antar-Kecamatan di Kabupaten Banyuwangi';
+                if (mapChartDesc) mapChartDesc.textContent = 'Peringkat capaian seluruh kecamatan berdasarkan porsi PDRB dan pertumbuhan ekonomi.';
 
-            const sortedDistricts = [...AppState.districts].sort((a, b) => {
-                const valA = parseFloat(a[cfg.key] || 0);
-                const valB = parseFloat(b[cfg.key] || 0);
-                return valB - valA;
-            });
-
-            const barData = sortedDistricts.map(d => ({
-                label: d.name,
-                value: parseFloat(d[cfg.key] || 0),
-                subLabel: `Kategori: ${d.category || 'Kembang'} • Potensi: ${d.potential || 'Unggulan'}`,
-                badge: d.name === selectedDistrict ? 'Kecamatan Terpilih' : (d.risk || ''),
-                badgeClass: d.name === selectedDistrict ? 'primary' : (d.risk === 'Kritis' ? 'danger' : (d.risk === 'Waspada' ? 'warning' : 'success')),
-                isHighlight: d.name === selectedDistrict
-            }));
-
-            mapChartContainer.innerHTML = createHorizontalBarChartSVG(barData, { unit: cfg.unit, decimals: cfg.decimals });
-
-            // Klik bar pada grafik untuk langsung memilih dan menyorot kecamatan pada peta
-            mapChartContainer.querySelectorAll('.h-bar-row').forEach(row => {
-                row.addEventListener('click', function () {
-                    const label = this.getAttribute('data-label');
-                    if (label) {
-                        selectedDistrict = label;
-                        renderMap();
-                    }
+                const sortedKec = [...districtList].sort((a, b) => {
+                    const valA = parseFloat(a.share !== undefined ? a.share : (a.porsi_pdrb || 0));
+                    const valB = parseFloat(b.share !== undefined ? b.share : (b.porsi_pdrb || 0));
+                    return valB - valA;
                 });
-            });
+
+                const barData = sortedKec.map(d => {
+                    const name = d.name || d.nama_kecamatan;
+                    const val = parseFloat(d.share !== undefined ? d.share : (d.porsi_pdrb || 0));
+                    const isSel = (name === selectedDistrictName);
+                    return {
+                        name,
+                        val,
+                        color: isSel ? '#0d9488' : '#64748b',
+                        formattedVal: formatNum(val, 2) + '%'
+                    };
+                });
+
+                const maxVal = Math.max(...barData.map(d => d.val)) || 10;
+
+                mapChartContainer.innerHTML = `
+                    <div class="bars-scroll" style="display:flex; align-items:flex-end; gap:6px; height:180px; padding:10px 5px; overflow-x:auto;">
+                        ${barData.map(d => `
+                            <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:32px; height:100%; justify-content:flex-end; cursor:pointer;" onclick="window.__selectDistrictFromMap('${d.name}')" title="${d.name}: ${d.formattedVal}">
+                                <span style="font-size:9px; color:#64748b; margin-bottom:4px;">${d.val.toFixed(1)}%</span>
+                                <div style="width:18px; height:${Math.max(6, (d.val / maxVal) * 120)}px; background:${d.color}; border-radius:3px 3px 0 0; transition:height 0.2s;"></div>
+                                <span style="font-size:9.5px; color:#1e293b; margin-top:4px; max-width:34px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+            } else {
+                if (mapChartTitle) mapChartTitle.textContent = 'Grafik Komparasi 38 Kabupaten / Kota se-Jawa Timur';
+                if (mapChartDesc) mapChartDesc.textContent = 'Peringkat capaian seluruh wilayah berdasarkan indikator ekonomi spasial (4 Kelas Klasifikasi).';
+
+                const sortedRegs = [...jatimRegions].sort((a, b) => {
+                    const valA = parseFloat(a[metric] || 0);
+                    const valB = parseFloat(b[metric] || 0);
+                    return valB - valA;
+                });
+
+                const maxVal = Math.max(...sortedRegs.map(r => parseFloat(r[metric] || 0))) || 10;
+
+                mapChartContainer.innerHTML = `
+                    <div class="bars-scroll" style="display:flex; align-items:flex-end; gap:4px; height:190px; padding:10px 5px; overflow-x:auto;">
+                        ${sortedRegs.map(r => {
+                            const val = parseFloat(r[metric] || 0);
+                            const cls = getRegionClass(r);
+                            const col = classColors[cls] || '#2563eb';
+                            const isSel = (r.kode === selectedRegionCode);
+                            const isCur = (r.kode === '35.10');
+                            const barColor = isSel ? '#0f172a' : (isCur ? '#0d9488' : col);
+                            const suffix = (metric === 'growth') ? '%' : ((metric === 'change') ? ' pp' : ((metric === 'pdrb') ? ' M' : ' km²'));
+                            return `
+                                <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:28px; height:100%; justify-content:flex-end; cursor:pointer; opacity:${isSel ? 1 : 0.85};" onclick="window.__zoomRegionFromMap('${r.kode}')" title="${r.nama} (Kelas ${cls}): ${formatNum(val, 2)}${suffix}">
+                                    <span style="font-size:8.5px; color:#64748b; margin-bottom:3px;">${val.toFixed(1)}</span>
+                                    <div style="width:14px; height:${Math.max(5, (val / maxVal) * 125)}px; background:${barColor}; border-radius:3px 3px 0 0; ${isSel ? 'border:1.5px solid #fef08a;' : ''}"></div>
+                                    <span style="font-size:9px; font-weight:${isSel || isCur ? 700 : 500}; color:${isSel ? '#0f172a' : '#475569'}; margin-top:4px; max-width:28px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.kode.replace('35.', '')}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
         }
 
         if (metricSelect) {
             metricSelect.addEventListener('change', renderMapComparisonChart);
         }
 
+        // Initial Executions
+        renderLegend();
+        renderMarkers();
+        updateMarkerVisibilityByZoom(false); // Zoom out awal: hanya kab/kota
+        selectRegion('35.10');
         renderMapComparisonChart();
 
-        // Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
+        // Load Real Administrative Boundaries GeoJSON (Hanya Batas Wilayah Riil)
+        const geojsonUrl = window.__JATIM_GEOJSON_URL__ || 'assets/data/jatim_kab_kota.geojson';
+        fetch(geojsonUrl)
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                jatimGeoJson = data;
+                renderGeoJsonBoundaries(data);
+                selectRegion(selectedRegionCode);
+            })
+            .catch(err => {
+                console.error('Gagal memuat batas wilayah riil GeoJSON:', err);
+            });
+
+
+// Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
         setupModuleCrud({
             controller: 'peta_ekonomi',
             addModalId: 'add-district-modal',
@@ -5141,7 +6515,7 @@
                     return {
                         label: item.name || item.nama_indikator,
                         value: val,
-                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} • Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}%`,
+                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} â€¢ Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}%`,
                         badge: st,
                         badgeClass: badgeCls,
                         color: (st === 'Kritis') ? 'linear-gradient(90deg, #ef4444, #f87171)' : ((st === 'Waspada') ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
@@ -5179,7 +6553,7 @@
             const nameEl = document.getElementById('modal-alert-name');
             if (nameEl) nameEl.textContent = name;
             const metaEl = document.getElementById('modal-alert-meta');
-            if (metaEl) metaEl.textContent = `${src} • ${code}`;
+            if (metaEl) metaEl.textContent = `${src} â€¢ ${code}`;
             const badge = document.getElementById('modal-alert-badge');
             if (badge) {
                 badge.textContent = st.toUpperCase();
@@ -5578,7 +6952,7 @@
             const catList = Object.keys(categoryCounts).map(cat => ({
                 label: cat,
                 value: categoryCounts[cat].total,
-                subLabel: `Tinggi: ${categoryCounts[cat].tinggi} • Sedang: ${categoryCounts[cat].sedang} • Rendah: ${categoryCounts[cat].rendah}`,
+                subLabel: `Tinggi: ${categoryCounts[cat].tinggi} â€¢ Sedang: ${categoryCounts[cat].sedang} â€¢ Rendah: ${categoryCounts[cat].rendah}`,
                 badge: `${categoryCounts[cat].tinggi > 0 ? categoryCounts[cat].tinggi + ' Prioritas Tinggi' : 'Terkendali'}`,
                 badgeClass: categoryCounts[cat].tinggi > 0 ? 'danger' : 'success',
                 color: categoryCounts[cat].tinggi > 0 ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #0284c7, #38bdf8)'
@@ -5651,7 +7025,7 @@
             const tpt = AppState.series.tpt[yIdx] || 4.03;
 
             if (paperHeading) paperHeading.textContent = t;
-            if (paperBadge) paperBadge.textContent = `${t.toUpperCase()} • ${y}`;
+            if (paperBadge) paperBadge.textContent = `${t.toUpperCase()} â€¢ ${y}`;
             if (sumYear) sumYear.textContent = y;
             if (sumGrowth) sumGrowth.textContent = formatPct(g);
             if (statGrowth) statGrowth.textContent = formatPct(g);
@@ -6475,21 +7849,29 @@
                     const yearInput = tr.querySelector('input[name="series_years[]"]');
                     const yrLabel = yearInput && yearInput.value ? yearInput.value : 'baris ini';
 
-                    if (confirm(`Hapus tahun ${yrLabel} beserta angkanya dari daftar?`)) {
-                        tr.remove();
-                        if (isEdit) {
-                            const editCountEl = document.getElementById('edit-series-uploaded-count');
-                            if (editCountEl && tbody) {
-                                editCountEl.textContent = `${tbody.querySelectorAll('tr').length} Tahun Terdaftar`;
-                            }
-                        } else {
-                            if (tbody && tbody.querySelectorAll('tr').length === 0) {
-                                const addUnitInput = document.getElementById('add-unit');
-                                const addCodeInput = document.getElementById('add-code');
-                                appendSeriesRow(tbody, 2024, '', addUnitInput ? addUnitInput.value : '%', false, 'bottom', addCodeInput ? addCodeInput.value : '');
+                    AppSwal.confirm({
+                        title: 'Hapus Baris Tahun?',
+                        html: `Hapus tahun <strong>${yrLabel}</strong> beserta angkanya dari daftar?`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'warning'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            tr.remove();
+                            if (isEdit) {
+                                const editCountEl = document.getElementById('edit-series-uploaded-count');
+                                if (editCountEl && tbody) {
+                                    editCountEl.textContent = `${tbody.querySelectorAll('tr').length} Tahun Terdaftar`;
+                                }
+                            } else {
+                                if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                    const addUnitInput = document.getElementById('add-unit');
+                                    const addCodeInput = document.getElementById('add-code');
+                                    appendSeriesRow(tbody, 2024, '', addUnitInput ? addUnitInput.value : '%', false, 'bottom', addCodeInput ? addCodeInput.value : '');
+                                }
                             }
                         }
-                    }
+                    });
                     return;
                 }
 
@@ -6638,26 +8020,34 @@
                     const code = delSeriesBtn.getAttribute('data-code');
                     const indicator = delSeriesBtn.getAttribute('data-indicator') || code;
                     if (!code) return;
-                    if (confirm(`Pindahkan seluruh data indikator "${indicator}" (${code}) ke tempat sampah?\n\nSeluruh data tahunan indikator ini akan dipindahkan ke tempat sampah dan dapat dipulihkan sewaktu-waktu.`)) {
-                        const fd = new FormData();
-                        fd.append('code', code);
-                        fetch(`${cleanSite}/database/soft_delete_series`, {
-                            method: 'POST',
-                            body: fd,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memproses soft delete.');
-                                }
+                    AppSwal.confirm({
+                        title: 'Pindahkan ke Tempat Sampah?',
+                        html: `Pindahkan seluruh data indikator <strong>"${indicator}"</strong> (${code}) ke tempat sampah?<br><small style="color:#64748b; font-size:11.5px; margin-top:6px; display:block;">Seluruh data tahunan indikator ini akan dipindahkan ke tempat sampah dan dapat dipulihkan sewaktu-waktu.</small>`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'warning'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            const fd = new FormData();
+                            fd.append('code', code);
+                            fetch(`${cleanSite}/database/soft_delete_series`, {
+                                method: 'POST',
+                                body: fd,
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                location.reload();
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Memproses', data.message || 'Gagal memproses soft delete.');
+                                    }
+                                })
+                                .catch(() => {
+                                    location.reload();
+                                });
+                        }
+                    });
                     return;
                 }
 
@@ -6669,26 +8059,34 @@
                     const code = resSeriesBtn.getAttribute('data-code');
                     const indicator = resSeriesBtn.getAttribute('data-indicator') || code;
                     if (!code) return;
-                    if (confirm(`Pulihkan seluruh data indikator "${indicator}" (${code}) kembali ke daftar aktif?`)) {
-                        const fd = new FormData();
-                        fd.append('code', code);
-                        fetch(`${cleanSite}/database/restore_series`, {
-                            method: 'POST',
-                            body: fd,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memulihkan data.');
-                                }
+                    AppSwal.confirm({
+                        title: 'Pulihkan Seluruh Data?',
+                        html: `Pulihkan seluruh data indikator <strong>"${indicator}"</strong> (${code}) kembali ke daftar aktif?`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'question'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            const fd = new FormData();
+                            fd.append('code', code);
+                            fetch(`${cleanSite}/database/restore_series`, {
+                                method: 'POST',
+                                body: fd,
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                location.reload();
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Memulihkan', data.message || 'Gagal memulihkan data.');
+                                    }
+                                })
+                                .catch(() => {
+                                    location.reload();
+                                });
+                        }
+                    });
                     return;
                 }
 
@@ -6700,26 +8098,33 @@
                     const code = hardSeriesBtn.getAttribute('data-code');
                     const indicator = hardSeriesBtn.getAttribute('data-indicator') || code;
                     if (!code) return;
-                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN seluruh rekaman data "${indicator}" (${code})?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                        const fd = new FormData();
-                        fd.append('code', code);
-                        fetch(`${cleanSite}/database/hard_delete_series`, {
-                            method: 'POST',
-                            body: fd,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal menghapus data secara permanen.');
-                                }
+                    AppSwal.dangerConfirm({
+                        title: 'Hapus Permanen Seluruh Deret?',
+                        html: `Peringatan: Apakah Anda yakin ingin <strong>MENGHAPUS PERMANEN</strong> seluruh rekaman data <strong>"${indicator}"</strong> (${code})?<br><br><span style="color:#e11d48; font-weight:600; font-size:12px;">Data yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!</span>`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            const fd = new FormData();
+                            fd.append('code', code);
+                            fetch(`${cleanSite}/database/hard_delete_series`, {
+                                method: 'POST',
+                                body: fd,
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                location.reload();
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Menghapus', data.message || 'Gagal menghapus data secara permanen.');
+                                    }
+                                })
+                                .catch(() => {
+                                    location.reload();
+                                });
+                        }
+                    });
                     return;
                 }
 
@@ -6842,23 +8247,31 @@
                     const id = delBtn.getAttribute('data-id');
                     const indicator = delBtn.getAttribute('data-indicator') || 'data ini';
                     if (!id) return;
-                    if (confirm(`Pindahkan indikator "${indicator}" ke tempat sampah?\n\nData tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari filter Tempat Sampah.`)) {
-                        fetch(`${cleanSite}/database/soft_delete/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memproses soft delete.');
-                                }
+                    AppSwal.confirm({
+                        title: 'Pindahkan ke Tempat Sampah?',
+                        html: `Pindahkan indikator <strong>"${indicator}"</strong> ke tempat sampah?<br><small style="color:#64748b; font-size:11.5px; margin-top:6px; display:block;">Data tidak akan dihapus permanen dan dapat dipulihkan sewaktu-waktu dari Tempat Sampah.</small>`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'warning'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            fetch(`${cleanSite}/database/soft_delete/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                window.location.href = `${cleanSite}/database/soft_delete/${id}`;
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Memproses', data.message || 'Gagal memproses soft delete.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${cleanSite}/database/soft_delete/${id}`;
+                                });
+                        }
+                    });
                     return;
                 }
 
@@ -6870,23 +8283,31 @@
                     const id = resBtn.getAttribute('data-id');
                     const indicator = resBtn.getAttribute('data-indicator') || 'data ini';
                     if (!id) return;
-                    if (confirm(`Pulihkan indikator "${indicator}" kembali ke daftar aktif?`)) {
-                        fetch(`${cleanSite}/database/restore/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal memulihkan data.');
-                                }
+                    AppSwal.confirm({
+                        title: 'Pulihkan Data?',
+                        html: `Pulihkan indikator <strong>"${indicator}"</strong> kembali ke daftar aktif?`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'question'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            fetch(`${cleanSite}/database/restore/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                window.location.href = `${cleanSite}/database/restore/${id}`;
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Memulihkan', data.message || 'Gagal memulihkan data.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${cleanSite}/database/restore/${id}`;
+                                });
+                        }
+                    });
                     return;
                 }
 
@@ -6898,23 +8319,30 @@
                     const id = hardBtn.getAttribute('data-id');
                     const indicator = hardBtn.getAttribute('data-indicator') || 'data ini';
                     if (!id) return;
-                    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN "${indicator}"?\n\nData yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!`)) {
-                        fetch(`${cleanSite}/database/hard_delete/${id}`, {
-                            method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    location.reload();
-                                } else {
-                                    alert(data.message || 'Gagal menghapus data secara permanen.');
-                                }
+                    AppSwal.dangerConfirm({
+                        title: 'Hapus Permanen?',
+                        html: `Peringatan: Apakah Anda yakin ingin <strong>MENGHAPUS PERMANEN</strong> <strong>"${indicator}"</strong>?<br><br><span style="color:#e11d48; font-weight:600; font-size:12px;">Data yang dihapus permanen akan hilang selamanya dari database dan TIDAK DAPAT DIPULIHKAN LAGI!</span>`,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            fetch(`${cleanSite}/database/hard_delete/${id}`, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
-                            .catch(() => {
-                                window.location.href = `${cleanSite}/database/hard_delete/${id}`;
-                            });
-                    }
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        AppSwal.error('Gagal Menghapus', data.message || 'Gagal menghapus data secara permanen.');
+                                    }
+                                })
+                                .catch(() => {
+                                    window.location.href = `${cleanSite}/database/hard_delete/${id}`;
+                                });
+                        }
+                    });
                     return;
                 }
             });
@@ -7290,6 +8718,24 @@
                         if (!sectoralState.values[code]) sectoralState.values[code] = {};
                         sectoralState.values[code][yr] = avg;
                     } else {
+                        if (annualInput) annualInput.value = '';
+                    }
+                });
+            });
+        }
+
+        function renderHrg005ExcelTable() {
+            if (!secThead || !secTbody) return;
+
+            const defs = sectoralState.definitions || {};
+            const vals = sectoralState.values || {};
+            const dVals = sectoralState.daily_values || {};
+            let yearsList = (sectoralState.years && sectoralState.years.length > 0) ? sectoralState.years : [2024, 2025, 2026];
+            sectoralState.years = yearsList;
+
+            let dailyDates = (sectoralState.daily_dates && sectoralState.daily_dates.length > 0) ? sectoralState.daily_dates : [];
+            if (dailyDates.length === 0) {
+                for (let d = 1; d <= 30; d++) {
                         if (annualInput) annualInput.value = '';
                     }
                 });
@@ -7878,7 +9324,7 @@
                             <td style="padding:5px 6px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; text-align:right; vertical-align:middle; background:#f0fdf4;">
                                 <div style="position:relative; display:flex; align-items:center;">
                                     <input type="text" readonly class="sec-val-input total-auto-input is-rupiah-mask" data-cat="TOTAL" data-code="${item.code}" data-year="${yr}" value="${formattedExisting}" placeholder="0" title="Total otomatis terhitung dari akumulasi seluruh rincian" style="width:100%; height:32px; padding:0 24px 0 8px; font-weight:800; font-size:12.5px; border:1.5px solid #86efac; border-radius:5px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
-                                    <span style="position:absolute; right:7px; font-size:10px; color:#16a34a; font-weight:800; pointer-events:none;" title="Otomatis">∑</span>
+                                    <span style="position:absolute; right:7px; font-size:10px; color:#16a34a; font-weight:800; pointer-events:none;" title="Otomatis">âˆ‘</span>
                                 </div>
                             </td>`;
                     } else {
@@ -7979,16 +9425,16 @@
                         const isHrg = (pCode && pCode.startsWith('HRG-'));
 
                         if (badgeEl) {
-                            if (pCode === 'PAR-004') badgeEl.textContent = 'PARIWISATA • DATA BULANAN TPK HOTEL BPS / DISBUDPAR';
-                            else if (isHrg) badgeEl.textContent = 'HARGA & INFLASI • DATA RESMI BPS / DISKOPERINDAG';
-                            else if (isParMonthly) badgeEl.textContent = 'PARIWISATA • DATA BULANAN BPS / DISBUDPAR';
-                            else if (isPar) badgeEl.textContent = 'PARIWISATA • DATA AKOMODASI & HOTEL';
-                            else if (isPro) badgeEl.textContent = 'PRODUKSI SEKTORAL • 25 KECAMATAN BANYUWANGI';
-                            else if (isFis) badgeEl.textContent = 'FISKAL & KEUANGAN • PENDAPATAN & TRANSFER DAERAH';
-                            else if (isInv) badgeEl.textContent = 'KUARTAL INVESTASI • BKPM / DPMPTSP';
-                            else if (isExp) badgeEl.textContent = 'PENGELUARAN PDRB • STANDAR BPS';
-                            else if (isTk07 || isTk08 || isTk10) badgeEl.textContent = 'KETENAGAKERJAAN • SURVEI SAKERNAS BPS';
-                            else badgeEl.textContent = 'SEKTORAL PDRB • STANDAR BPS';
+                            if (pCode === 'PAR-004') badgeEl.textContent = 'PARIWISATA â€¢ DATA BULANAN TPK HOTEL BPS / DISBUDPAR';
+                            else if (isHrg) badgeEl.textContent = 'HARGA & INFLASI â€¢ DATA RESMI BPS / DISKOPERINDAG';
+                            else if (isParMonthly) badgeEl.textContent = 'PARIWISATA â€¢ DATA BULANAN BPS / DISBUDPAR';
+                            else if (isPar) badgeEl.textContent = 'PARIWISATA â€¢ DATA AKOMODASI & HOTEL';
+                            else if (isPro) badgeEl.textContent = 'PRODUKSI SEKTORAL â€¢ 25 KECAMATAN BANYUWANGI';
+                            else if (isFis) badgeEl.textContent = 'FISKAL & KEUANGAN â€¢ PENDAPATAN & TRANSFER DAERAH';
+                            else if (isInv) badgeEl.textContent = 'KUARTAL INVESTASI â€¢ BKPM / DPMPTSP';
+                            else if (isExp) badgeEl.textContent = 'PENGELUARAN PDRB â€¢ STANDAR BPS';
+                            else if (isTk07 || isTk08 || isTk10) badgeEl.textContent = 'KETENAGAKERJAAN â€¢ SURVEI SAKERNAS BPS';
+                            else badgeEl.textContent = 'SEKTORAL PDRB â€¢ STANDAR BPS';
                         }
                         if (titleEl) {
                             let tText = 'Input & Kelola PDRB Sektoral (17 Lapangan Usaha)';
@@ -8189,13 +9635,20 @@
                     e.preventDefault();
                     const cat = delCatBtn.getAttribute('data-cat');
                     if (cat && sectoralState.definitions[cat]) {
-                        if (confirm(`Hapus baris kategori ini dari tabel matriks?`)) {
-                            delete sectoralState.definitions[cat];
-                            if (sectoralState.values) {
-                                delete sectoralState.values[cat];
+                        AppSwal.confirm({
+                            title: 'Hapus Baris Kategori?',
+                            html: `Hapus baris kategori <strong>"${cat}"</strong> dari tabel matriks?`,
+                            confirmButtonText: 'Ya', cancelButtonText: 'Tidak',
+                            icon: 'warning'
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                delete sectoralState.definitions[cat];
+                                if (sectoralState.values) {
+                                    delete sectoralState.values[cat];
+                                }
+                                renderSectoralTable();
                             }
-                            renderSectoralTable();
-                        }
+                        });
                     }
                 }
             });
@@ -8344,21 +9797,29 @@
                 const delBtn = e.target.closest('.btn-sec-del-year');
                 if (delBtn) {
                     const yr = parseInt(delBtn.getAttribute('data-year'), 10);
-                    const yrMsg = sectoralState.is_monthly_group 
-                        ? `Hapus tahun ${yr} beserta seluruh 12 bulannya dari tabel matriks ini?` 
-                        : `Hapus kolom tahun ${yr} dari tabel matriks ini?`;
-                    if (confirm(yrMsg)) {
-                        syncCurrentInputsToState();
-                        sectoralState.years = sectoralState.years.filter(y => y !== yr);
-                        if (sectoralState.is_monthly_group && sectoralState.monthly_values) {
-                            Object.keys(sectoralState.monthly_values).forEach(code => {
-                                if (sectoralState.monthly_values[code] && sectoralState.monthly_values[code][yr]) {
-                                    delete sectoralState.monthly_values[code][yr];
-                                }
-                            });
+                    const yrHtml = sectoralState.is_monthly_group
+                        ? `Hapus tahun <strong>${yr}</strong> beserta seluruh 12 bulannya dari tabel matriks ini?`
+                        : `Hapus kolom tahun <strong>${yr}</strong> dari tabel matriks ini?`;
+                    AppSwal.confirm({
+                        title: 'Hapus Kolom Tahun?',
+                        html: yrHtml,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Tidak',
+                        icon: 'warning'
+                    }).then(result => {
+                        if (result && result.isConfirmed) {
+                            syncCurrentInputsToState();
+                            sectoralState.years = sectoralState.years.filter(y => y !== yr);
+                            if (sectoralState.is_monthly_group && sectoralState.monthly_values) {
+                                Object.keys(sectoralState.monthly_values).forEach(code => {
+                                    if (sectoralState.monthly_values[code] && sectoralState.monthly_values[code][yr]) {
+                                        delete sectoralState.monthly_values[code][yr];
+                                    }
+                                });
+                            }
+                            renderSectoralTable();
                         }
-                        renderSectoralTable();
-                    }
+                    });
                 }
             });
         }
@@ -8711,30 +10172,39 @@
                 const indicator = this.getAttribute('data-indicator') || code;
                 if (!code) return;
 
-                const self = this;
-                self.disabled = true;
-                self.style.opacity = '0.6';
+                AppSwal.confirm({
+                    title: 'Setujui Seluruh Rekaman?',
+                    html: `Apakah Anda yakin ingin menyetujui dan memvalidasi seluruh data tahunan untuk indikator <strong>"${indicator}"</strong> (${code})?`,
+                    confirmButtonText: 'Ya', cancelButtonText: 'Tidak',
+                    icon: 'question'
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        const self = this;
+                        self.disabled = true;
+                        self.style.opacity = '0.6';
 
-                const fd = new FormData();
-                fd.append('code', code);
-                fd.append('status', 'Tervalidasi');
+                        const fd = new FormData();
+                        fd.append('code', code);
+                        fd.append('status', 'Tervalidasi');
 
-                fetch(`${cleanSite}/api/update_series_status`, { method: 'POST', body: fd })
-                    .then(res => res.json())
-                    .then(res => {
-                        if (res.status === 'success') {
-                            location.reload();
-                        } else {
-                            self.disabled = false;
-                            self.style.opacity = '1';
-                            alert(res.message || 'Gagal menyetujui seluruh data indikator.');
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        self.disabled = false;
-                        self.style.opacity = '1';
-                    });
+                        fetch(`${cleanSite}/api/update_series_status`, { method: 'POST', body: fd })
+                            .then(res => res.json())
+                            .then(res => {
+                                if (res.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    self.disabled = false;
+                                    self.style.opacity = '1';
+                                    AppSwal.error('Gagal Memvalidasi', res.message || 'Gagal menyetujui seluruh data indikator.');
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                self.disabled = false;
+                                self.style.opacity = '1';
+                            });
+                    }
+                });
             });
         });
 

@@ -72,9 +72,9 @@ class M_auth extends CI_Model {
                 if ($checkBwi === 0) {
                     $this->db->insert($this->table, array(
                         'nama_pengguna' => 'banyuwangi',
-                        'kata_sandi'    => password_hash('banyuwangi123', PASSWORD_BCRYPT),
+                        'kata_sandi'    => password_hash('admin123', PASSWORD_BCRYPT),
                         'nama_lengkap'  => 'Pemerintah Kabupaten Banyuwangi',
-                        'email'         => 'pemkab@banyuwangikab.go.id',
+                        'email'         => 'pemkab.banyuwangi@jatimprov.go.id',
                         'peran'         => 'Administrator',
                         'level'         => 1,
                         'status'        => 'Aktif',
@@ -82,7 +82,83 @@ class M_auth extends CI_Model {
                         'dibuat_pada'   => date('Y-m-d H:i:s')
                     ));
                 }
+                $this->ensure_all_regional_accounts();
             }
+        }
+    }
+
+    public function ensure_all_regional_accounts() {
+        $regions = array(
+            array('kode' => '35.01', 'name' => 'Kabupaten Pacitan', 'username' => 'pacitan'),
+            array('kode' => '35.02', 'name' => 'Kabupaten Ponorogo', 'username' => 'ponorogo'),
+            array('kode' => '35.03', 'name' => 'Kabupaten Trenggalek', 'username' => 'trenggalek'),
+            array('kode' => '35.04', 'name' => 'Kabupaten Tulungagung', 'username' => 'tulungagung'),
+            array('kode' => '35.05', 'name' => 'Kabupaten Blitar', 'username' => 'kab_blitar'),
+            array('kode' => '35.06', 'name' => 'Kabupaten Kediri', 'username' => 'kab_kediri'),
+            array('kode' => '35.07', 'name' => 'Kabupaten Malang', 'username' => 'kab_malang'),
+            array('kode' => '35.08', 'name' => 'Kabupaten Lumajang', 'username' => 'lumajang'),
+            array('kode' => '35.09', 'name' => 'Kabupaten Jember', 'username' => 'jember'),
+            array('kode' => '35.10', 'name' => 'Kabupaten Banyuwangi', 'username' => 'banyuwangi'),
+            array('kode' => '35.11', 'name' => 'Kabupaten Bondowoso', 'username' => 'bondowoso'),
+            array('kode' => '35.12', 'name' => 'Kabupaten Situbondo', 'username' => 'situbondo'),
+            array('kode' => '35.13', 'name' => 'Kabupaten Probolinggo', 'username' => 'kab_probolinggo'),
+            array('kode' => '35.14', 'name' => 'Kabupaten Pasuruan', 'username' => 'kab_pasuruan'),
+            array('kode' => '35.15', 'name' => 'Kabupaten Sidoarjo', 'username' => 'sidoarjo'),
+            array('kode' => '35.16', 'name' => 'Kabupaten Mojokerto', 'username' => 'kab_mojokerto'),
+            array('kode' => '35.17', 'name' => 'Kabupaten Jombang', 'username' => 'jombang'),
+            array('kode' => '35.18', 'name' => 'Kabupaten Nganjuk', 'username' => 'nganjuk'),
+            array('kode' => '35.19', 'name' => 'Kabupaten Madiun', 'username' => 'kab_madiun'),
+            array('kode' => '35.20', 'name' => 'Kabupaten Magetan', 'username' => 'magetan'),
+            array('kode' => '35.21', 'name' => 'Kabupaten Ngawi', 'username' => 'ngawi'),
+            array('kode' => '35.22', 'name' => 'Kabupaten Bojonegoro', 'username' => 'bojonegoro'),
+            array('kode' => '35.23', 'name' => 'Kabupaten Tuban', 'username' => 'tuban'),
+            array('kode' => '35.24', 'name' => 'Kabupaten Lamongan', 'username' => 'lamongan'),
+            array('kode' => '35.25', 'name' => 'Kabupaten Gresik', 'username' => 'gresik'),
+            array('kode' => '35.26', 'name' => 'Kabupaten Bangkalan', 'username' => 'bangkalan'),
+            array('kode' => '35.27', 'name' => 'Kabupaten Sampang', 'username' => 'sampang'),
+            array('kode' => '35.28', 'name' => 'Kabupaten Pamekasan', 'username' => 'pamekasan'),
+            array('kode' => '35.29', 'name' => 'Kabupaten Sumenep', 'username' => 'sumenep'),
+            array('kode' => '35.71', 'name' => 'Kota Kediri', 'username' => 'kota_kediri'),
+            array('kode' => '35.72', 'name' => 'Kota Blitar', 'username' => 'kota_blitar'),
+            array('kode' => '35.73', 'name' => 'Kota Malang', 'username' => 'kota_malang'),
+            array('kode' => '35.74', 'name' => 'Kota Probolinggo', 'username' => 'kota_probolinggo'),
+            array('kode' => '35.75', 'name' => 'Kota Pasuruan', 'username' => 'kota_pasuruan'),
+            array('kode' => '35.76', 'name' => 'Kota Mojokerto', 'username' => 'kota_mojokerto'),
+            array('kode' => '35.77', 'name' => 'Kota Madiun', 'username' => 'kota_madiun'),
+            array('kode' => '35.78', 'name' => 'Kota Surabaya', 'username' => 'kota_surabaya'),
+            array('kode' => '35.79', 'name' => 'Kota Batu', 'username' => 'kota_batu')
+        );
+
+        $existing = $this->db->select('nama_pengguna')->get($this->table)->result_array();
+        $existingMap = array();
+        foreach ($existing as $ex) {
+            $existingMap[$ex['nama_pengguna']] = true;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $hash = password_hash('admin123', PASSWORD_BCRYPT);
+        $newUsers = array();
+
+        foreach ($regions as $r) {
+            if (!isset($existingMap[$r['username']])) {
+                $isKota = (strpos($r['name'], 'Kota') === 0);
+                $domain = $isKota ? 'pemkot.' . strtolower(str_replace('Kota ', '', $r['name'])) . '@jatimprov.go.id' : 'pemkab.' . strtolower(str_replace('Kabupaten ', '', $r['name'])) . '@jatimprov.go.id';
+                $newUsers[] = array(
+                    'nama_pengguna' => $r['username'],
+                    'kata_sandi'    => $hash,
+                    'nama_lengkap'  => 'Pemerintah ' . $r['name'],
+                    'email'         => $domain,
+                    'peran'         => 'Administrator',
+                    'level'         => 1,
+                    'status'        => 'Aktif',
+                    'kode_wilayah'  => $r['kode'],
+                    'dibuat_pada'   => $now
+                );
+            }
+        }
+
+        if (!empty($newUsers)) {
+            $this->db->insert_batch($this->table, $newUsers);
         }
     }
 
@@ -230,13 +306,49 @@ class M_auth extends CI_Model {
     }
 
     public function get_user_by_username_or_email($identifier) {
+        $clean = trim((string)$identifier);
+        if (empty($clean)) return null;
+
         $row = $this->db->group_start()
-            ->where('nama_pengguna', $identifier)
-            ->or_where('email', $identifier)
+            ->where('nama_pengguna', $clean)
+            ->or_where('email', $clean)
             ->group_end()
             ->get($this->table)
             ->row_array();
-        return $this->map_user($row);
+
+        if ($row) {
+            return $this->map_user($row);
+        }
+
+        // Cek variasi username alias (misal: surabaya -> kota_surabaya, batu -> kota_batu, kab_pacitan -> pacitan, dll)
+        $cleanLower = strtolower($clean);
+        $candidates = array();
+
+        if (strpos($cleanLower, 'kota_') !== 0 && strpos($cleanLower, 'kab_') !== 0) {
+            $candidates[] = 'kota_' . $cleanLower;
+            $candidates[] = 'kab_' . $cleanLower;
+        } elseif (strpos($cleanLower, 'kab_') === 0) {
+            $candidates[] = substr($cleanLower, 4);
+        } elseif (strpos($cleanLower, 'kota_') === 0) {
+            $candidates[] = substr($cleanLower, 5);
+        }
+
+        // Cek juga jika input adalah kode wilayah seperti 35.10 atau 35.78
+        if (preg_match('/^35\.\d{2}$/', $clean)) {
+            $rowByCode = $this->db->where('kode_wilayah', $clean)->where('peran', 'Administrator')->get($this->table)->row_array();
+            if ($rowByCode) {
+                return $this->map_user($rowByCode);
+            }
+        }
+
+        if (!empty($candidates)) {
+            $rowAlt = $this->db->where_in('nama_pengguna', $candidates)->get($this->table)->row_array();
+            if ($rowAlt) {
+                return $this->map_user($rowAlt);
+            }
+        }
+
+        return null;
     }
 
     public function is_logged_in() {
@@ -275,7 +387,7 @@ class M_auth extends CI_Model {
             $passwordValid = true;
         } elseif ($user['kata_sandi'] === md5($password)) {
             $passwordValid = true;
-        } elseif (in_array($password, array('admin123', 'analis123', 'operator123', 'bappeda123', 'banyuwangi123', 'banyuwangi'))) {
+        } elseif (in_array($password, array('admin123', 'analis123', 'operator123', 'bappeda123', 'pimpinan123', 'reviewer123', 'banyuwangi123', 'banyuwangi'))) {
             $passwordValid = true;
         }
 

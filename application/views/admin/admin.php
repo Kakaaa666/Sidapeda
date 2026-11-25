@@ -132,6 +132,7 @@
 
             <div class="task-list">
                 <?php
+                $canValidate = !empty($user) && in_array((int)($user['level'] ?? 1), array(1, 2));
                 $pending = array_filter($records, function($item) {
                     return $item['status'] !== 'Tervalidasi';
                 });
@@ -143,7 +144,11 @@
                     </div>
                 <?php else: ?>
                     <?php foreach (array_slice($pending, 0, 5) as $item): ?>
+                        <?php if ($canValidate): ?>
                         <button class="btn-quick-verify" data-code="<?= $item['code'] ?>" data-year="<?= $item['year'] ?>" style="width:100%; border:0; border-bottom:1px solid #edf0f4; background:white; display:flex; align-items:center; text-align:left; gap:9px; padding:10px 2px; cursor:pointer;">
+                        <?php else: ?>
+                        <div style="width:100%; border:0; border-bottom:1px solid #edf0f4; background:white; display:flex; align-items:center; text-align:left; gap:9px; padding:10px 2px;">
+                        <?php endif; ?>
                             <span class="task-icon">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
                             </span>
@@ -155,7 +160,7 @@
                                 <?php endif; ?>
                             </div>
                             <span class="badge warning"><?= $item['status'] ?></span>
-                        </button>
+                        <?= $canValidate ? '</button>' : '</div>' ?>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
