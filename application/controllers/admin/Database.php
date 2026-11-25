@@ -159,12 +159,14 @@ class Database extends MY_Controller {
     public function save_sectoral_matrix() {
         $years = $this->input->post('years');
         $matrixValues = $this->input->post('matrix');
+        $monthlyValues = $this->input->post('monthly_matrix');
+        $dailyValues = $this->input->post('daily_matrix');
         $names = $this->input->post('names');
         $catLabels = $this->input->post('cat_labels');
         $kodeWilayah = $this->input->post('kode_wilayah', true);
         $parentCode = $this->input->post('parent_code', true) ?: 'EKO-003';
 
-        if (empty($years) || !is_array($years) || empty($matrixValues) || !is_array($matrixValues)) {
+        if ((empty($years) || !is_array($years)) && empty($monthlyValues) && empty($dailyValues)) {
             $this->output
                 ->set_status_header(400)
                 ->set_content_type('application/json')
@@ -172,7 +174,7 @@ class Database extends MY_Controller {
             return;
         }
 
-        $res = $this->M_economy->save_sectoral_matrix_data($matrixValues, $years, $kodeWilayah, $parentCode, $names, $catLabels);
+        $res = $this->M_economy->save_sectoral_matrix_data($matrixValues, $years, $kodeWilayah, $parentCode, $names, $catLabels, $monthlyValues, $dailyValues);
         if ($res) {
             $this->output
                 ->set_content_type('application/json')

@@ -400,6 +400,13 @@ tr.threshold-admin-row.matrix-sub-row td {
 #edit-data-modal .admin-data-modal {
     width: min(840px, 96vw) !important;
 }
+#modal-sectoral-matrix .admin-data-modal {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    max-height: 96vh !important;
+    height: 96vh !important;
+    padding: 0 !important;
+}
 .admin-data-modal .modal-head {
     padding-bottom: 14px;
     border-bottom: 1px solid #f1f5f9;
@@ -2888,7 +2895,8 @@ select:focus {
 
 .clickable-indicator-cell {
     cursor: pointer;
-    min-width: 320px;
+    min-width: 350px;
+    max-width: 460px;
     transition: background 0.15s ease;
 }
 .clickable-indicator-cell:hover {
@@ -2911,9 +2919,16 @@ select:focus {
     cursor: pointer;
     flex-shrink: 0;
     white-space: nowrap;
-    max-width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
     transition: all 0.15s ease;
     user-select: none;
+    overflow: hidden;
+}
+.btn-toggle-subcategories .sub-toggle-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .btn-toggle-subcategories:hover {
     background: #dcfce7 !important;

@@ -61,3 +61,38 @@ if (!function_exists('format_indicator_value')) {
         return $prefix . $formatted;
     }
 }
+
+if (!function_exists('get_hrg005_excel_row_meta')) {
+    /**
+     * Metadata struktur hierarki HRG-005 (20 Kelompok Bahan Pokok / 48 Komoditas) sesuai Excel.
+     * - group_header: judul kelompok (1..20) hanya untuk kelompok yang memiliki header terpisah
+     * - sub_header: sub-judul di dalam kelompok (misal: Kental Manis & Susu Bubuk di bawah 6. SUSU)
+     * - direct_no: nomor kelompok langsung pada item tunggal (7, 14, 15, 16, 17) tanpa header duplikat
+     */
+    function get_hrg005_excel_row_meta($subKey) {
+        static $metaMap = array(
+            '01' => array('group_header' => array('no' => 1, 'name' => 'BERAS')),
+            '03' => array('group_header' => array('no' => 2, 'name' => 'GULA')),
+            '04' => array('group_header' => array('no' => 3, 'name' => 'MINYAK GORENG')),
+            '08' => array('group_header' => array('no' => 4, 'name' => 'DAGING')),
+            '11' => array('group_header' => array('no' => 5, 'name' => 'TELUR AYAM')),
+            '13' => array('group_header' => array('no' => 6, 'name' => 'SUSU'), 'sub_header' => 'Kental Manis'),
+            '15' => array('sub_header' => 'Susu Bubuk'),
+            '17' => array('direct_no' => 7),
+            '18' => array('group_header' => array('no' => 8, 'name' => 'GARAM BERYODIUM')),
+            '20' => array('group_header' => array('no' => 9, 'name' => 'TEPUNG TERIGU')),
+            '21' => array('group_header' => array('no' => 10, 'name' => 'KACANG KEDELAI')),
+            '23' => array('group_header' => array('no' => 11, 'name' => 'MIE INSTANT')),
+            '24' => array('group_header' => array('no' => 12, 'name' => 'CABE')),
+            '27' => array('group_header' => array('no' => 13, 'name' => 'BAWANG')),
+            '29' => array('direct_no' => 14),
+            '30' => array('direct_no' => 15),
+            '31' => array('direct_no' => 16),
+            '32' => array('direct_no' => 17),
+            '33' => array('group_header' => array('no' => 18, 'name' => 'SAYUR MAYUR')),
+            '38' => array('group_header' => array('no' => 19, 'name' => 'SEMEN')),
+            '44' => array('group_header' => array('no' => 20, 'name' => 'IKAN SEGAR')),
+        );
+        return $metaMap[(string)$subKey] ?? array();
+    }
+}

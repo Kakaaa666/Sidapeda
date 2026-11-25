@@ -63,8 +63,16 @@
     $grouped = [];
     $subGrouped = [];
 
-    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral & kuartal
-    $sectoralParents = ['EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003'];
+    // Daftar resmi parent yang benar-benar memiliki sub-indikator sektoral, kuartal & kategori
+    $sectoralParents = [
+        'EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 
+        'INV-001', 'INV-002', 'INV-003', 
+        'TK-007', 'TK-008', 'TK-010',
+        'PAR-001', 'PAR-002', 'PAR-003', 'PAR-004', 'PAR-005', 'PAR-006',
+        'PRO-001', 'PRO-002', 'PRO-004',
+        'FIS-001', 'FIS-002', 'FIS-003',
+        'HRG-001', 'HRG-002', 'HRG-003', 'HRG-004', 'HRG-005', 'HRG-006'
+    ];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
     foreach ($ews as $item) {
@@ -76,9 +84,9 @@
             continue;
         }
 
-        $isSub = (strpos($code, '.') !== false);
-        $parentCode = $isSub ? explode('.', $code)[0] : $code;
-        $subKey = $isSub ? explode('.', $code)[1] : null;
+        $isSub = (strpos($code, '.') !== false || $code === 'FIS-004');
+        $parentCode = $isSub ? ($code === 'FIS-004' ? 'FIS-003' : explode('.', $code)[0]) : $code;
+        $subKey = $isSub ? ($code === 'FIS-004' ? 'MOD' : explode('.', $code)[1]) : null;
 
         if ($isSub && in_array($parentCode, $sectoralParents)) {
             $item['sub_key'] = $subKey;
@@ -92,18 +100,26 @@
 
     $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
 
+    $monthOrder = array('JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MEI' => 5, 'JUN' => 6, 'JUL' => 7, 'AGS' => 8, 'SEP' => 9, 'OKT' => 10, 'NOV' => 11, 'DES' => 12);
+
     // Sambungkan sub-indikator HANYA ke parent yang ada di $sectoralParents
     foreach ($subGrouped as $pCode => $subs) {
         if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
             continue;
         }
         $isInv = (strpos($pCode, 'INV-') === 0);
-        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
+        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $monthOrder, $isInv, $pCode) {
             $kA = $a['sub_key'] ?? '';
             $kB = $b['sub_key'] ?? '';
             if ($isInv) {
                 $posA = $quarterOrder[$kA] ?? 99;
                 $posB = $quarterOrder[$kB] ?? 99;
+            } elseif (in_array($pCode, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
+                $posA = $monthOrder[$kA] ?? 99;
+                $posB = $monthOrder[$kB] ?? 99;
+            } elseif (in_array($pCode, ['HRG-002', 'HRG-005', 'HRG-006'])) {
+                $posA = is_numeric($kA) ? (int)$kA : 99;
+                $posB = is_numeric($kB) ? (int)$kB : 99;
             } else {
                 $posA = $sectorOrder[$kA] ?? 99;
                 $posB = $sectorOrder[$kB] ?? 99;
@@ -163,6 +179,19 @@
     ];
 
     $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
+    // Wajib memilih salah 1 kategori (tanpa opsi "Semua"): default ke kategori pertama yang tersedia (misal EKO)
+    if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPrefixCounts))) {
+        foreach ($categoryMeta as $pref => $label) {
+            if (isset($catPrefixCounts[$pref]) && $catPrefixCounts[$pref] > 0) {
+                $activeCat = $pref;
+                break;
+            }
+        }
+        if (empty($activeCat)) {
+            $catKeys = array_keys($catPrefixCounts);
+            $activeCat = !empty($catKeys) ? $catKeys[0] : 'EKO';
+        }
+    }
     ?>
 
     <!-- SLIDE FILTER KATEGORI (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA) -->
@@ -175,10 +204,6 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div class="category-slide-track" id="category-slide-track">
-            <button type="button" class="category-slide-tab <?= empty($activeCat) ? 'active' : '' ?>" data-prefix="" onclick="applyCategoryFilter('', this)">
-                <span>Semua</span>
-                <span class="cat-count-pill"><?= count($grouped) ?></span>
-            </button>
             <?php foreach ($categoryMeta as $pref => $label): ?>
                 <?php if (isset($catPrefixCounts[$pref]) || empty($ews)): ?>
                     <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
@@ -257,8 +282,10 @@
                             <?php
                             $hasSub = (!empty($item['sub_indicators']) && in_array($item['code'], $sectoralParents));
                             $badgeCls = ($item['status'] === 'Kritis') ? 'badge danger' : (($item['status'] === 'Waspada') ? 'badge warning' : 'badge success');
+                            $itemPrefix = strtoupper(explode('-', $item['code'])[0]);
+                            $isMatchCat = ($itemPrefix === $activeCat);
                             ?>
-                            <tr class="threshold-admin-row matrix-row <?= $hasSub ? 'has-subcategories' : '' ?>" data-code="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" <?= $hasSub ? 'data-has-sub="true" title="Klik baris ini untuk membuka/menutup rincian sub-indikator" onclick="if(!event.target.closest(\'input, select, a, button:not(.btn-toggle-subcategories)\')) toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?> style="display: table-row;">
+                            <tr class="threshold-admin-row matrix-row <?= $hasSub ? 'has-subcategories' : '' ?>" data-code="<?= $item['code'] ?>" data-prefix="<?= $itemPrefix ?>" <?= $hasSub ? 'data-has-sub="true" title="Klik baris ini untuk membuka/menutup rincian sub-indikator" onclick="if(!event.target.closest(\'input, select, a, button:not(.btn-toggle-subcategories)\')) toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?> style="display: <?= $isMatchCat ? 'table-row' : 'none' ?>;">
                                 <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="vertical-align: middle; padding: 12px 14px; cursor: <?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:2px 6px; border-radius:4px; white-space:nowrap;"><?= htmlspecialchars($item['code']) ?></code>
@@ -278,7 +305,7 @@
                                                 $openLabel = 'Rincian Formal & Informal';
                                             } elseif ($isTk10) {
                                                 $openLabel = 'Rincian Setengah Pengangguran';
-                                            } elseif (in_array($item['code'], ['PAR-001', 'PAR-002'])) {
+                                            } elseif (in_array($item['code'], ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
                                                 $openLabel = 'Rincian 12 Bulan';
                                             } elseif (in_array($item['code'], ['PRO-001', 'PRO-002', 'PRO-004'])) {
                                                 $openLabel = 'Rincian 25 Kecamatan';
@@ -286,6 +313,12 @@
                                                 $openLabel = 'Rincian 4 Komponen PAD';
                                             } elseif ($item['code'] === 'FIS-002') {
                                                 $openLabel = 'Rincian Transfer Daerah';
+                                            } elseif ($item['code'] === 'FIS-003') {
+                                                $openLabel = 'Rincian Komponen';
+                                            } elseif (in_array($item['code'], ['HRG-002', 'HRG-006'])) {
+                                                $openLabel = 'Rincian 11 Kelompok';
+                                            } elseif ($item['code'] === 'HRG-005') {
+                                                $openLabel = 'Rincian 20 Kelompok Pangan (48 Komoditas)';
                                             } else {
                                                 $openLabel = 'Rincian 17 Sektor';
                                             }
@@ -353,14 +386,38 @@
                                         elseif ($dispKey === 'RSTU') $dispKey = 'R,S,T,U';
                                         if ($isSubInv) {
                                             $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
+                                        } elseif ($item['code'] === 'HRG-005') {
+                                            $cleanSubName = '- ' . preg_replace('/^Harga:\s*/i', '', $sub['name']);
                                         } else {
                                             $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name']);
                                         }
+                                        $hrgMeta = ($item['code'] === 'HRG-005') ? get_hrg005_excel_row_meta($dispKey) : array();
                                     ?>
+                                    <?php if (!empty($hrgMeta['group_header'])): ?>
+                                        <?php $gH = $hrgMeta['group_header']; ?>
+                                        <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#e2e8f0; border-top:2px solid #cbd5e1; border-bottom:1px solid #cbd5e1;">
+                                            <td colspan="5" style="padding:7px 14px 7px 24px; font-weight:800; font-size:12.5px; color:#0f172a; text-transform:uppercase;">
+                                                <span style="display:inline-flex; align-items:center; gap:8px;">
+                                                    <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:2px 8px; border-radius:5px;"><?= $gH['no'] ?></span>
+                                                    <span><?= htmlspecialchars($gH['name']) ?></span>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                    <?php if (!empty($hrgMeta['sub_header'])): ?>
+                                        <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#f1f5f9; border-bottom:1px solid #e2e8f0;">
+                                            <td colspan="5" style="padding:5px 14px 5px 42px; font-weight:700; font-style:italic; font-size:12px; color:#334155;">
+                                                <?= htmlspecialchars($hrgMeta['sub_header']) ?>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
                                     <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
                                         <td style="vertical-align: middle; padding: 9px 14px 9px 24px;">
                                             <div style="display:flex; align-items:center; gap:6px;">
                                                 <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                                <?php if (!empty($hrgMeta['direct_no'])): ?>
+                                                    <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:1px 7px; border-radius:4px;"><?= $hrgMeta['direct_no'] ?></span>
+                                                <?php endif; ?>
                                                 <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
                                                 <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                                 <span style="color:#1e293b; font-size:12px; font-weight:600;"><?= htmlspecialchars($cleanSubName) ?></span>

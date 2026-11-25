@@ -2,7 +2,16 @@
 // Grouping logic untuk Indikator Utama dan Sub-Indikator Sektoral (A s.d. U)
 $sectorOrder = array('A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6, 'G' => 7, 'H' => 8, 'I' => 9, 'J' => 10, 'K' => 11, 'L' => 12, 'MN' => 13, 'O' => 14, 'P' => 15, 'Q' => 16, 'RSTU' => 17, 'TM' => 18);
 $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
-$sectoralParents = array('EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 'INV-001', 'INV-002', 'INV-003');
+$sectoralParents = array(
+    'EKO-003', 'EKO-004', 'EKO-006', 'EKO-007', 
+    'INV-001', 'INV-002', 'INV-003', 
+    'TK-007', 'TK-008', 'TK-010',
+    'PAR-001', 'PAR-002', 'PAR-003', 'PAR-004', 'PAR-005', 'PAR-006',
+    'PRO-001', 'PRO-002', 'PRO-004',
+    'FIS-001', 'FIS-002', 'FIS-003',
+    'HRG-001', 'HRG-002', 'HRG-003', 'HRG-004', 'HRG-005', 'HRG-006'
+);
+$monthOrder = array('JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MEI' => 5, 'JUN' => 6, 'JUL' => 7, 'AGS' => 8, 'SEP' => 9, 'OKT' => 10, 'NOV' => 11, 'DES' => 12);
 $indicatorPrefixOrder = array(
     'EKO' => 1, 'NAK' => 2, 'TK' => 3, 'INV' => 4,
     'HRG' => 5, 'KES' => 6, 'PAR' => 7, 'PRO' => 8,
@@ -16,9 +25,9 @@ foreach ($ews as $item) {
     $code = $item['code'] ?? $item['kode_indikator'] ?? '';
     if (empty($code)) continue;
 
-    $isSub = (strpos($code, '.') !== false);
-    $parentCode = $isSub ? explode('.', $code)[0] : $code;
-    $subKey = $isSub ? explode('.', $code)[1] : null;
+    $isSub = (strpos($code, '.') !== false || $code === 'FIS-004');
+    $parentCode = $isSub ? ($code === 'FIS-004' ? 'FIS-003' : explode('.', $code)[0]) : $code;
+    $subKey = $isSub ? ($code === 'FIS-004' ? 'MOD' : explode('.', $code)[1]) : null;
 
     if ($isSub && in_array($parentCode, $sectoralParents)) {
         $item['sub_key'] = $subKey;
@@ -36,12 +45,18 @@ foreach ($subGrouped as $pCode => $subs) {
         continue;
     }
     $isInv = (strpos($pCode, 'INV-') === 0);
-    uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $isInv) {
+    uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $monthOrder, $isInv, $pCode) {
         $kA = $a['sub_key'] ?? '';
         $kB = $b['sub_key'] ?? '';
         if ($isInv) {
             $posA = $quarterOrder[$kA] ?? 99;
             $posB = $quarterOrder[$kB] ?? 99;
+        } elseif (in_array($pCode, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
+            $posA = $monthOrder[$kA] ?? 99;
+            $posB = $monthOrder[$kB] ?? 99;
+        } elseif (in_array($pCode, ['HRG-002', 'HRG-005', 'HRG-006'])) {
+            $posA = is_numeric($kA) ? (int)$kA : 99;
+            $posB = is_numeric($kB) ? (int)$kB : 99;
         } else {
             $posA = $sectorOrder[$kA] ?? 99;
             $posB = $sectorOrder[$kB] ?? 99;
@@ -99,6 +114,19 @@ $categoryMeta = array(
 );
 
 $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
+// Wajib memilih salah 1 kategori (tanpa opsi "Semua"): default ke kategori pertama yang tersedia (misal EKO)
+if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPrefixCounts))) {
+    foreach ($categoryMeta as $pref => $label) {
+        if (isset($catPrefixCounts[$pref]) && $catPrefixCounts[$pref] > 0) {
+            $activeCat = $pref;
+            break;
+        }
+    }
+    if (empty($activeCat)) {
+        $catKeys = array_keys($catPrefixCounts);
+        $activeCat = !empty($catKeys) ? $catKeys[0] : 'EKO';
+    }
+}
 ?>
 <div class="page">
     <?php if ($this->session->flashdata('success')): ?>
@@ -174,10 +202,6 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div class="category-slide-track" id="category-slide-track">
-            <button type="button" class="category-slide-tab <?= empty($activeCat) ? 'active' : '' ?>" data-prefix="" onclick="applyCategoryFilter('', this)">
-                <span>Semua</span>
-                <span class="cat-count-pill"><?= count($grouped) ?></span>
-            </button>
             <?php foreach ($categoryMeta as $pref => $label): ?>
                 <?php if (isset($catPrefixCounts[$pref]) || empty($grouped)): ?>
                     <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
@@ -275,7 +299,8 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                          data-category="<?= htmlspecialchars($cl) ?>" 
                          <?= $hasSub ? 'data-has-sub="true"' : '' ?>
                          role="button" tabindex="0" 
-                         title="<?= $hasSub ? 'Klik baris ini untuk membuka/menutup rincian sub-indikator atau sesuaikan threshold' : 'Klik untuk analisis & penyesuaian threshold' ?>">
+                         title="<?= $hasSub ? 'Klik baris ini untuk membuka/menutup rincian sub-indikator atau sesuaikan threshold' : 'Klik untuk analisis & penyesuaian threshold' ?>"
+                         style="display: <?= ($pPrefix === $activeCat) ? 'grid' : 'none' ?>;">
                         <div class="risk-indicator">
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
                                 <span class="badge info" style="display:inline-block; font-size: 12px; padding:2px 8px; font-weight:600; text-transform:none;">
@@ -295,7 +320,7 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                             $openLabel = 'Rincian Formal & Informal';
                                         } elseif ($isTk10) {
                                             $openLabel = 'Rincian Setengah Pengangguran';
-                                        } elseif (in_array($code, ['PAR-001', 'PAR-002'])) {
+                                        } elseif (in_array($code, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
                                             $openLabel = 'Rincian 12 Bulan';
                                         } elseif (in_array($code, ['PRO-001', 'PRO-002', 'PRO-004'])) {
                                             $openLabel = 'Rincian 25 Kecamatan';
@@ -303,6 +328,12 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                             $openLabel = 'Rincian 4 Komponen PAD';
                                         } elseif ($code === 'FIS-002') {
                                             $openLabel = 'Rincian Transfer Daerah';
+                                        } elseif ($code === 'FIS-003') {
+                                            $openLabel = 'Rincian Komponen';
+                                        } elseif (in_array($code, ['HRG-002', 'HRG-006'])) {
+                                            $openLabel = 'Rincian 11 Kelompok';
+                                        } elseif ($code === 'HRG-005') {
+                                            $openLabel = 'Rincian 20 Kelompok Pangan (48 Komoditas)';
                                         } else {
                                             $openLabel = 'Rincian 17 Sektor';
                                         }
@@ -357,11 +388,31 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                             if ($isSubInv) {
                                 $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
                                 $subTypeDesc = 'Kuartal ' . htmlspecialchars($dispKey);
+                            } elseif ($code === 'HRG-005') {
+                                $cleanSubName = '- ' . preg_replace('/^Harga:\s*/i', '', $sub['name'] ?? '');
+                                $subTypeDesc = 'Komoditas ' . htmlspecialchars($dispKey);
                             } else {
                                 $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name'] ?? '');
                                 $subTypeDesc = 'Sektor ' . htmlspecialchars($dispKey);
                             }
+                            $hrgMeta = ($code === 'HRG-005') ? get_hrg005_excel_row_meta($dispKey) : array();
                         ?>
+                            <?php if (!empty($hrgMeta['group_header'])): ?>
+                                <?php $gH = $hrgMeta['group_header']; ?>
+                                <div class="risk-row risk-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#e2e8f0; border-left:5px solid #0284c7; padding:8px 14px;">
+                                    <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:8px; font-weight:800; font-size:12.5px; color:#0f172a; text-transform:uppercase;">
+                                        <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:2px 8px; border-radius:5px;"><?= $gH['no'] ?></span>
+                                        <span><?= htmlspecialchars($gH['name']) ?></span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($hrgMeta['sub_header'])): ?>
+                                <div class="risk-row risk-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#f1f5f9; border-left:5px solid #94a3b8; padding:6px 14px 6px 32px;">
+                                    <div style="grid-column: 1 / -1; font-weight:700; font-style:italic; font-size:12px; color:#334155;">
+                                        <?= htmlspecialchars($hrgMeta['sub_header']) ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                             <div class="risk-row btn-alert-row risk-sub-row sub-row-<?= htmlspecialchars($code) ?> <?= $subRowStateCls ?>" 
                                  data-code="<?= htmlspecialchars($subCode) ?>" 
                                  data-parent="<?= htmlspecialchars($code) ?>" 
@@ -373,6 +424,9 @@ $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) :
                                 <div class="risk-indicator" style="padding-left:14px;">
                                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">
                                         <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                        <?php if (!empty($hrgMeta['direct_no'])): ?>
+                                            <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:1px 7px; border-radius:4px;"><?= $hrgMeta['direct_no'] ?></span>
+                                        <?php endif; ?>
                                         <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($subCode) ?></code>
                                         <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
                                     </div>

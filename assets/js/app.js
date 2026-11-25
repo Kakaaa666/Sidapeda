@@ -140,7 +140,21 @@
     // Global Helper: Slide Filter Kategori Indikator (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
     window._activeCategoryFilter = '';
     window.applyCategoryFilter = function (targetPrefix, triggerEl) {
-        const cleanPrefix = (targetPrefix || '').trim().toUpperCase();
+        let cleanPrefix = (targetPrefix || '').trim().toUpperCase();
+        // Selalu wajib memilih salah 1 kategori (tanpa opsi "Semua")
+        if (!cleanPrefix || cleanPrefix === 'ALL' || cleanPrefix === 'SEMUA') {
+            const activeTab = document.querySelector('.category-slide-tab.active');
+            if (activeTab && activeTab.getAttribute('data-prefix')) {
+                cleanPrefix = activeTab.getAttribute('data-prefix').trim().toUpperCase();
+            } else {
+                const firstTab = document.querySelector('.category-slide-tab');
+                if (firstTab && firstTab.getAttribute('data-prefix')) {
+                    cleanPrefix = firstTab.getAttribute('data-prefix').trim().toUpperCase();
+                } else {
+                    cleanPrefix = 'EKO';
+                }
+            }
+        }
         window._activeCategoryFilter = cleanPrefix;
 
         // 1. Update UI tabs on category slide track
@@ -153,7 +167,7 @@
                 if (isActive) {
                     try {
                         tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    } catch (e) {}
+                    } catch (e) { }
                 }
             });
         });
@@ -170,7 +184,7 @@
             const masterRows = tbody.querySelectorAll('tr.matrix-row:not(.matrix-sub-row)');
             masterRows.forEach(row => {
                 const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
-                const isMatch = (!cleanPrefix || rowPrefix === cleanPrefix);
+                const isMatch = (rowPrefix === cleanPrefix);
 
                 if (isMatch) {
                     row.style.setProperty('display', 'table-row', 'important');
@@ -224,17 +238,9 @@
             const countLabel = document.getElementById('cat-filtered-count-label');
             if (countLabel) {
                 if (tbody.id === 'threshold-admin-rows') {
-                    if (cleanPrefix) {
-                        countLabel.textContent = `Total: ${visibleCount} Indikator Kategori ${cleanPrefix}`;
-                    } else {
-                        countLabel.textContent = `Total: ${visibleCount} Indikator Tervalidasi`;
-                    }
+                    countLabel.textContent = `Total: ${visibleCount} Indikator Kategori ${cleanPrefix}`;
                 } else {
-                    if (cleanPrefix) {
-                        countLabel.textContent = `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}`;
-                    } else {
-                        countLabel.textContent = `Menampilkan seluruh ${visibleCount} indikator`;
-                    }
+                    countLabel.textContent = `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}`;
                 }
             }
         });
@@ -272,7 +278,7 @@
             masterRows.forEach(row => {
                 const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
                 const rowStatus = row.getAttribute('data-status') || '';
-                const matchPrefix = (!cleanPrefix || rowPrefix === cleanPrefix);
+                const matchPrefix = (rowPrefix === cleanPrefix);
                 const matchStatus = (!window._activeEwsStatusFilter || window._activeEwsStatusFilter === 'Semua' || rowStatus === window._activeEwsStatusFilter);
                 const isMatch = matchPrefix && matchStatus;
 
@@ -317,7 +323,7 @@
                 url.searchParams.delete('prefix');
             }
             window.history.replaceState({}, '', url.toString());
-        } catch (e) {}
+        } catch (e) { }
     };
 
     // Global listener for slide navigation buttons
@@ -776,14 +782,24 @@
             pr.classList.remove('is-expanded');
         });
 
-        // Auto-apply category filter from URL if present
+        // Auto-apply category filter (from URL or active tab or first category tab)
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const catParam = urlParams.get('category') || urlParams.get('prefix');
             if (catParam) {
                 applyCategoryFilter(catParam);
+            } else {
+                const activeTab = document.querySelector('.category-slide-tab.active');
+                if (activeTab && activeTab.getAttribute('data-prefix')) {
+                    applyCategoryFilter(activeTab.getAttribute('data-prefix'));
+                } else {
+                    const firstTab = document.querySelector('.category-slide-tab');
+                    if (firstTab && firstTab.getAttribute('data-prefix')) {
+                        applyCategoryFilter(firstTab.getAttribute('data-prefix'));
+                    }
+                }
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     if (document.readyState === 'loading') {
@@ -974,7 +990,7 @@
             if (window.innerWidth > 780 && localStorage.getItem('sidapeda_sidebar_collapsed') === '1') {
                 document.body.classList.add('sidebar-collapsed');
             }
-        } catch (e) {}
+        } catch (e) { }
 
         const toggleSidebar = () => {
             if (window.innerWidth <= 780) {
@@ -994,7 +1010,7 @@
                 const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
                 try {
                     localStorage.setItem('sidapeda_sidebar_collapsed', isCollapsed ? '1' : '0');
-                } catch (e) {}
+                } catch (e) { }
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 270);
             }
         };
@@ -1647,13 +1663,13 @@
         }
 
         if (modalOverlay) {
-            modalOverlay.addEventListener('click', function(e) {
+            modalOverlay.addEventListener('click', function (e) {
                 if (e.target === modalOverlay) {
                     closeKpiDetailModal();
                 }
             });
         }
-        window.addEventListener('keydown', function(e) {
+        window.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && modalOverlay && modalOverlay.style.display !== 'none') {
                 closeKpiDetailModal();
             }
@@ -1717,13 +1733,13 @@
                     heatTitle: 'Peta panas pertumbuhan sektoral',
                     heatDesc: 'Perubahan laju pertumbuhan sektor selama lima tahun terakhir pada data resmi BPS.',
                     heatRows: [
-                        { name: 'Akomodasi & Makan Minum', values: [ -8.0, 5.9, 9.2, 7.0, 7.3 ] },
-                        { name: 'Perdagangan', values: [ -4.2, 4.3, 5.0, 5.2, 5.4 ] },
-                        { name: 'Transportasi', values: [ -7.2, 4.2, 7.8, 5.3, 5.1 ] },
-                        { name: 'Konstruksi', values: [ -3.9, 3.3, 4.5, 4.6, 4.8 ] },
-                        { name: 'Pertanian', values: [ 2.1, 3.0, 3.6, 4.0, 4.3 ] },
-                        { name: 'Industri Pengolahan', values: [ -2.8, 3.1, 4.0, 4.0, 4.1 ] },
-                        { name: 'Jasa Lainnya', values: [ -1.8, 3.7, 4.8, 4.9, 5.0 ] }
+                        { name: 'Akomodasi & Makan Minum', values: [-8.0, 5.9, 9.2, 7.0, 7.3] },
+                        { name: 'Perdagangan', values: [-4.2, 4.3, 5.0, 5.2, 5.4] },
+                        { name: 'Transportasi', values: [-7.2, 4.2, 7.8, 5.3, 5.1] },
+                        { name: 'Konstruksi', values: [-3.9, 3.3, 4.5, 4.6, 4.8] },
+                        { name: 'Pertanian', values: [2.1, 3.0, 3.6, 4.0, 4.3] },
+                        { name: 'Industri Pengolahan', values: [-2.8, 3.1, 4.0, 4.0, 4.1] },
+                        { name: 'Jasa Lainnya', values: [-1.8, 3.7, 4.8, 4.9, 5.0] }
                     ],
                     annualSeries: [
                         { year: 2015, value: 5.02, change: null },
@@ -1769,9 +1785,9 @@
                     heatTitle: 'Peta panas tren PDRB per kapita',
                     heatDesc: 'Tren nominal PDRB per kapita pada seri tahun yang tersedia.',
                     heatRows: [
-                        { name: 'Kab. Banyuwangi', values: [ 43.7, 47.6, 53.2, 58.4, 62.4 ] },
-                        { name: 'Jawa Timur', values: [ 49.8, 54.2, 60.6, 66.5, 70.8 ] },
-                        { name: 'Nasional', values: [ 57.2, 62.3, 67.5, 74.2, 78.6 ] }
+                        { name: 'Kab. Banyuwangi', values: [43.7, 47.6, 53.2, 58.4, 62.4] },
+                        { name: 'Jawa Timur', values: [49.8, 54.2, 60.6, 66.5, 70.8] },
+                        { name: 'Nasional', values: [57.2, 62.3, 67.5, 74.2, 78.6] }
                     ],
                     annualSeries: [
                         { year: 2015, value: 35.2, change: null },
@@ -2384,8 +2400,8 @@
                     }
                     case 7: { // Pertumbuhan Investasi
                         const numVal = parseFloat(String(cleanCurVal).replace(',', '.'));
-                        const note = numVal >= 0 
-                            ? 'mencerminkan ekspansi positif minat pemodal dan perluasan skala usaha di daerah' 
+                        const note = numVal >= 0
+                            ? 'mencerminkan ekspansi positif minat pemodal dan perluasan skala usaha di daerah'
                             : 'mencerminkan dinamika siklus penyelesaian proyek modal fisik dan evaluasi perizinan usaha di daerah';
                         return `Laju pertumbuhan investasi tahunan Kabupaten Banyuwangi pada tahun ${curYear} tercatat sebesar ${curVal}% (status ${curStatus}). Pergerakan laju investasi ini ${note}.`;
                     }
@@ -2847,7 +2863,7 @@
             // Live Search in Tab 1
             const searchInput = document.getElementById('input-search-comp');
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
+                searchInput.addEventListener('input', function () {
                     const q = this.value.toLowerCase().trim();
                     const rows = modalBox.querySelectorAll('.comp-table-row');
                     let count = 0;
@@ -2868,7 +2884,7 @@
             // Period Filter in Tab 3
             const histSelect = document.getElementById('select-history-period');
             if (histSelect) {
-                histSelect.addEventListener('change', function() {
+                histSelect.addEventListener('change', function () {
                     const limit = parseInt(this.value, 10) || 10;
                     const rows = modalBox.querySelectorAll('.hist-row');
                     const total = rows.length;
@@ -2982,7 +2998,7 @@
                         url.searchParams.delete('category');
                     }
                     window.history.replaceState({}, '', url.toString());
-                } catch (e) {}
+                } catch (e) { }
             });
 
             // Initial check if pre-selected via server / URL
@@ -3029,7 +3045,7 @@
         const btnReset = document.getElementById('btn-reset-regions');
         const btnExport = document.getElementById('btn-export-comparison');
 
-        function bindRegionalActionButtons() {}
+        function bindRegionalActionButtons() { }
 
         // Setup CRUD & Soft Delete for Perbandingan Daerah
         setupModuleCrud({
@@ -3247,7 +3263,7 @@
                 tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi wilayah pembanding yang dipilih.';
 
                 const jatimSeries = (AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : [];
-                
+
                 // Bangun deret grafik yang sesuai HANYA dengan wilayah yang dicentang pengguna
                 const benchmarkSeries = [
                     { name: 'Jawa Timur', values: jatimSeries, className: 'series-1' }
@@ -3570,7 +3586,7 @@
                 const baseRegion = hasBwi ? bwi : rows[0];
                 const baseName = baseRegion.name;
                 const peerList = rows.filter(r => r.name !== baseName);
-                
+
                 let peerHtml = `
                     <div style="background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div style="display:flex; align-items:center; gap:12px;">
@@ -3695,7 +3711,7 @@
             }
         }
 
-        window.toggleRegionDropdown = function(e) {
+        window.toggleRegionDropdown = function (e) {
             if (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -3850,188 +3866,18 @@
         const assistantEl = document.getElementById('economic-ai-assistant');
         if (!assistantEl) return;
 
-        const cleanSite = (typeof SITE_URL !== 'undefined' ? SITE_URL : '').replace(/\/+$/, '');
         const tabs = assistantEl.querySelectorAll('.ai-tab-btn');
         const panels = assistantEl.querySelectorAll('.ai-tab-panel');
-        const methodBtns = assistantEl.querySelectorAll('.ai-method-btn, .ai-method-card');
-        const focusSelect = document.getElementById('ai-focus-select');
-        const sectorSelect = document.getElementById('ai-sector-select');
         const chips = assistantEl.querySelectorAll('.ai-prompt-chip');
         const input = document.getElementById('ai-query-input');
         const btnSubmit = document.getElementById('btn-submit-ai');
-        const btnReset = document.getElementById('btn-reset-ai');
         const resBox = document.getElementById('ai-response-container');
         const resLoading = document.getElementById('ai-response-loading');
         const resContent = document.getElementById('ai-response-content');
-        const loadingStepText = document.getElementById('ai-loading-step-text');
-
-        const metaMethod = document.getElementById('ai-meta-method');
-        const metaFocus = document.getElementById('ai-meta-focus');
-        const metaTime = document.getElementById('ai-meta-time');
-        const metaWilayah = document.getElementById('ai-meta-wilayah');
-
-        const btnCopy = document.getElementById('btn-copy-ai');
-        const btnDownload = document.getElementById('btn-download-ai');
-        const btnPrint = document.getElementById('btn-print-ai');
-        const copyBtnLabel = document.getElementById('copy-btn-label');
-
-        let currentMethod = 'all';
-        let lastAiMarkdown = '';
-        let loadingInterval = null;
 
         // Helper to sanitize HTML
         function esc(str) {
             return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        // Markdown to Uniform Executive Document Formatter
-        function parseMarkdownToHtml(md) {
-            if (!md) return '';
-            let raw = String(md);
-
-            // Sembunyikan dan ganti semua istilah Gemini / Google / LLM jika ada
-            raw = raw.replace(/\b(gemini|google\s+gemini|model\s+bahasa|large\s+language\s+model|llm)\b/gi, 'Sistem Analisis Sidapeda');
-
-            // Hapus emoji dekoratif agar tampilan seragam dan berstandar enterprise
-            raw = raw.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-
-            // Escape tag HTML mentah
-            raw = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-            // Pisahkan bagian-bagian laporan berdasarkan judul seksi standar (tanpa emoji)
-            const sectionPatterns = [
-                { id: 'summary', regex: /(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:MEMORANDUM EKSEKUTIF|RINGKASAN EKSEKUTIF)[^\n]*\*{0,2}/i, title: '1. RINGKASAN EKSEKUTIF UNTUK PIMPINAN' },
-                { id: 'diagnosis', regex: /(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:DIAGNOSIS MENDALAM|DIAGNOSIS METODE|TEMUAN DATA)[^\n]*\*{0,2}/i, title: '2. HASIL DIAGNOSIS DATA & EKONOMETRIK' },
-                { id: 'risk', regex: /(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:IMPLIKASI SOSIAL-EKONOMI|IMPLIKASI STRATEGIS|TANTANGAN|RISIKO)[^\n]*\*{0,2}/i, title: '3. TANTANGAN, IMPLIKASI & RISIKO PEMBANGUNAN' },
-                { id: 'recommendation', regex: /(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:REKOMENDASI KEBIJAKAN|ARAH KEBIJAKAN)[^\n]*\*{0,2}/i, title: '4. REKOMENDASI KEBIJAKAN OPERASIONAL' },
-                { id: 'qa', regex: /(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:JAWABAN ATAS PERTANYAAN|JAWABAN PERTANYAAN)[^\n]*\*{0,2}/i, title: '5. JAWABAN ATAS PERTANYAAN KHUSUS' }
-            ];
-
-            // Helper untuk memformat blok teks umum dengan gaya seragam
-            function formatBlockContent(text) {
-                let content = text.trim();
-
-                // Hapus sisa tanda horizontal rules
-                content = content.replace(/^(?:---|\*\*\*|___)\s*$/gm, '');
-
-                // Code blocks
-                content = content.replace(/```([\s\S]*?)```/g, function(match, code) {
-                    return '<pre style="background:#0f172a; color:#f8fafc; padding:10px 12px; border-radius:6px; overflow-x:auto; font-size:11.5px; margin:8px 0;"><code>' + code.trim() + '</code></pre>';
-                });
-
-                // Sub-headings (H4 / H5)
-                content = content.replace(/^#### (.*?)$/gm, '<h4 style="font-size:13px; color:#0f2942; margin:12px 0 4px; font-weight:700;">$1</h4>');
-                content = content.replace(/^### (.*?)$/gm, '<h3 style="font-size:13.5px; color:#0f2942; margin:12px 0 6px; font-weight:700;">$1</h3>');
-
-                // Bold & Italic
-                content = content.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
-                content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-                // Highlight metric numerik dengan tag netral seragam
-                content = content.replace(/(\b\d+[.,]\d+%\b|\bLQ:?\s*\d+[.,]\d+\b|\br\s*=\s*-?\d+[.,]\d+\b)/g, '<span class="data-metric-tag">$1</span>');
-
-                // Inline code
-                content = content.replace(/`([^`]+)`/g, '<code style="background:#f1f5f9; color:#0f2942; padding:1px 5px; border-radius:4px; font-size:11.5px; border:1px solid #e2e8f0;">$1</code>');
-
-                // Tables seragam
-                content = content.replace(/((?:\|[^\n]+\|\r?\n)+)/g, function(match) {
-                    const lines = match.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
-                    if (lines.length < 2) return match;
-                    let tableHtml = '<div style="overflow-x:auto; margin:10px 0;"><table class="result-table" style="width:100%; border-collapse:collapse; background:#ffffff; font-size:12px;">';
-                    lines.forEach((line, idx) => {
-                        if (line.match(/^\|?\s*[-:]+[-| :]*\|?$/)) return;
-                        const cells = line.split('|').slice(1, -1);
-                        if (cells.length === 0) return;
-                        const tag = (idx === 0) ? 'th' : 'td';
-                        const style = (idx === 0) ? 'background:#f8fafc; color:#0f2942; font-weight:700;' : '';
-                        tableHtml += '<tr>';
-                        cells.forEach(c => {
-                            tableHtml += `<${tag} style="border:1px solid #e2e8f0; padding:6px 10px; ${style}">${c.trim()}</${tag}>`;
-                        });
-                        tableHtml += '</tr>';
-                    });
-                    tableHtml += '</table></div>';
-                    return tableHtml;
-                });
-
-                // Unordered lists (- or *)
-                content = content.replace(/^[\*\-] (.*?)$/gm, '<li>$1</li>');
-                content = content.replace(/((?:<li>.*?<\/li>\s*)+)/g, '<ul style="margin:6px 0 10px 18px; line-height:1.7;">$1</ul>');
-
-                // Ordered lists (1. 2.)
-                content = content.replace(/^\d+\. (.*?)$/gm, '<oli>$1</oli>');
-                content = content.replace(/((?:<oli>.*?<\/oli>\s*)+)/g, function(match) {
-                    return '<ol style="margin:6px 0 10px 18px; line-height:1.7;">' + match.replace(/<\/?oli>/g, function(t) { return t === '<oli>' ? '<li>' : '</li>'; }) + '</ol>';
-                });
-
-                // Paragraphs
-                const paras = content.split(/\n{2,}/);
-                content = paras.map(p => {
-                    p = p.trim();
-                    if (!p) return '';
-                    if (/^<(h[1-6]|ul|ol|table|blockquote|pre|hr|div)/i.test(p)) {
-                        return p;
-                    }
-                    return '<p style="margin-bottom:10px; line-height:1.75;">' + p.replace(/\n/g, '<br>') + '</p>';
-                }).join('\n');
-
-                return content;
-            }
-
-            // Coba parsing struktur laporan bersegmen
-            const splitRegex = /(?=(?:^|\n)(?:###?\s*)?(?:[1-5]\.\s*)?\*{0,2}(?:MEMORANDUM EKSEKUTIF|RINGKASAN EKSEKUTIF|DIAGNOSIS MENDALAM|DIAGNOSIS METODE|IMPLIKASI SOSIAL-EKONOMI|IMPLIKASI STRATEGIS|TANTANGAN|REKOMENDASI KEBIJAKAN|JAWABAN ATAS PERTANYAAN|JAWABAN PERTANYAAN))/i;
-            const segments = raw.split(splitRegex);
-
-            if (segments.length > 1) {
-                let structuredHtml = '';
-
-                segments.forEach(seg => {
-                    let s = seg.trim();
-                    if (!s) return;
-
-                    // Cek apakah ini bagian kop / memorandum pembuka
-                    if (s.includes('MEMORANDUM INTERNAL') || s.includes('KEPADA:') || s.includes('PERIHAL:') || s.includes('DOKUMEN INTELIJEN')) {
-                        const cleanHeader = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-                        structuredHtml += `
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; color:#475569; line-height:1.65;">
-                                ${cleanHeader}
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    // Cocokkan dengan salah satu section
-                    let matchedSection = null;
-                    for (const sec of sectionPatterns) {
-                        if (sec.regex.test(s)) {
-                            matchedSection = sec;
-                            s = s.replace(sec.regex, '').trim();
-                            break;
-                        }
-                    }
-
-                    if (matchedSection) {
-                        structuredHtml += `
-                            <div class="report-section">
-                                <div class="section-title">${matchedSection.title}</div>
-                                ${formatBlockContent(s)}
-                            </div>
-                        `;
-                    } else {
-                        structuredHtml += `
-                            <div class="report-section">
-                                ${formatBlockContent(s)}
-                            </div>
-                        `;
-                    }
-                });
-
-                return structuredHtml;
-            }
-
-            // Fallback seragam
-            return `<div class="report-section">${formatBlockContent(raw)}</div>`;
         }
 
         // Tab switching
@@ -4047,277 +3893,103 @@
             });
         });
 
-        // Method Selection (Buttons / Cards)
-        methodBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const method = this.getAttribute('data-method');
-                currentMethod = method;
-                methodBtns.forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                const radio = this.querySelector('input[type="radio"]');
-                if (radio) radio.checked = true;
-            });
-        });
-
-        // Prompt Chips Click
+        // Prompt Chips
         chips.forEach(chip => {
             chip.addEventListener('click', function () {
                 const promptText = this.getAttribute('data-prompt') || this.textContent.trim();
-                const chipMethod = this.getAttribute('data-method');
-                const chipFocus = this.getAttribute('data-focus');
-
-                if (chipMethod) {
-                    currentMethod = chipMethod;
-                    methodBtns.forEach(c => {
-                        if (c.getAttribute('data-method') === chipMethod) {
-                            c.classList.add('active');
-                            const radio = c.querySelector('input[type="radio"]');
-                            if (radio) radio.checked = true;
-                        } else {
-                            c.classList.remove('active');
-                        }
-                    });
-                }
-
-                if (chipFocus && focusSelect) {
-                    focusSelect.value = chipFocus;
-                }
-
                 if (input) {
                     input.value = promptText;
+                    input.focus();
                 }
-
-                // Switch to generator tab if not active
-                const genTab = assistantEl.querySelector('.ai-tab-btn[data-tab="generator"]');
-                if (genTab && !genTab.classList.contains('active')) {
-                    genTab.click();
-                }
-
-                // Trigger generation
-                executeAiGeneration();
+                processAiQuery(promptText);
             });
         });
 
         // Submit query button
         if (btnSubmit) {
             btnSubmit.addEventListener('click', function () {
-                executeAiGeneration();
+                const query = input ? input.value.trim() : '';
+                if (!query) {
+                    if (input) input.focus();
+                    return;
+                }
+                processAiQuery(query);
             });
         }
 
-        // Reset button
-        if (btnReset) {
-            btnReset.addEventListener('click', function() {
-                currentMethod = 'all';
-                methodBtns.forEach(c => {
-                    if (c.getAttribute('data-method') === 'all') {
-                        c.classList.add('active');
-                        const radio = c.querySelector('input[type="radio"]');
-                        if (radio) radio.checked = true;
-                    } else {
-                        c.classList.remove('active');
-                    }
-                });
-                if (focusSelect) focusSelect.value = 'kebijakan';
-                if (sectorSelect) sectorSelect.value = '';
-                if (input) input.value = '';
-                if (resBox) resBox.style.display = 'none';
-                if (resLoading) resLoading.style.display = 'none';
-            });
-        }
-
-        // Copy button
-        if (btnCopy) {
-            btnCopy.addEventListener('click', function() {
-                if (!lastAiMarkdown) return;
-                navigator.clipboard.writeText(lastAiMarkdown).then(() => {
-                    if (copyBtnLabel) {
-                        const origText = copyBtnLabel.textContent;
-                        copyBtnLabel.textContent = 'Tersalin!';
-                        setTimeout(() => {
-                            copyBtnLabel.textContent = origText;
-                        }, 2000);
-                    }
-                }).catch(() => {
-                    alert('Gagal menyalin teks ke clipboard.');
-                });
-            });
-        }
-
-        // Download button (.md)
-        if (btnDownload) {
-            btnDownload.addEventListener('click', function() {
-                if (!lastAiMarkdown) return;
-                const blob = new Blob([lastAiMarkdown], { type: 'text/markdown;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                const dateStr = new Date().toISOString().slice(0, 10);
-                a.href = url;
-                a.download = `Laporan_Analisis_Ekonomi_Banyuwangi_${currentMethod}_${dateStr}.md`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-        }
-
-        // Print button
-        if (btnPrint) {
-            btnPrint.addEventListener('click', function() {
-                window.print();
-            });
-        }
-
-        // Enter key in textarea (Ctrl+Enter or Cmd+Enter to submit)
+        // Enter key in textarea
         if (input) {
             input.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    executeAiGeneration();
+                    if (btnSubmit) btnSubmit.click();
                 }
             });
         }
 
-        // Synchronize with sidebar method clicks
-        const analysisLinks = document.querySelectorAll('#analysis-menu-links .analysis-link');
-        analysisLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                const mode = this.getAttribute('data-mode') || '';
-                let mappedMethod = null;
-                if (mode.includes('Location Quotient') || mode.includes('LQ')) mappedMethod = 'lq';
-                else if (mode.includes('Shift Share')) mappedMethod = 'shift_share';
-                else if (mode.includes('Klassen')) mappedMethod = 'klassen';
-                else if (mode.includes('Korelasi')) mappedMethod = 'korelasi';
-
-                if (mappedMethod) {
-                    currentMethod = mappedMethod;
-                    methodBtns.forEach(c => {
-                        if (c.getAttribute('data-method') === mappedMethod) {
-                            c.classList.add('active');
-                            const radio = c.querySelector('input[type="radio"]');
-                            if (radio) radio.checked = true;
-                        } else {
-                            c.classList.remove('active');
-                        }
-                    });
-                }
-            });
-        });
-
-        // EXECUTE AI GENERATION CORE FUNCTION
-        function executeAiGeneration() {
+        function processAiQuery(query) {
             if (!resBox || !resContent || !resLoading) return;
+            resBox.style.display = 'block';
+            resLoading.style.display = 'flex';
+            resContent.style.display = 'none';
+            resContent.innerHTML = '';
 
-            // Pastikan tab generator aktif
-            const genTab = assistantEl.querySelector('.ai-tab-btn[data-tab="generator"]');
-            if (genTab && !genTab.classList.contains('active')) {
-                genTab.click();
-            }
-
-            const focusVal = focusSelect ? focusSelect.value : 'kebijakan';
-            const sectorVal = sectorSelect ? sectorSelect.value : '';
-            const queryVal = input ? input.value.trim() : '';
-
-            // Tampilkan status loading
-            resBox.style.display = 'none';
-            resLoading.style.display = 'block';
-            if (btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.style.opacity = '0.7';
-                btnSubmit.querySelector('span').textContent = 'Sedang Memproses...';
-            }
-
-            // Teks progres bertahap yang tenang dan profesional
-            const loadingSteps = [
-                'Mengekstrak data riil pembangunan Banyuwangi...',
-                'Menghitung parameter ekonometrik dan daya saing daerah...',
-                'Menganalisis matriks posisi sektoral daerah...',
-                'Menyusun memorandum eksekutif dan rekomendasi kebijakan operasional...'
-            ];
-            let stepIdx = 0;
-            if (loadingStepText) loadingStepText.textContent = loadingSteps[0];
-            clearInterval(loadingInterval);
-            loadingInterval = setInterval(() => {
-                stepIdx = (stepIdx + 1) % loadingSteps.length;
-                if (loadingStepText) loadingStepText.textContent = loadingSteps[stepIdx];
-            }, 1800);
-
-            // POST params
-            const params = new URLSearchParams();
-            params.append('method_choice', currentMethod);
-            params.append('focus_choice', focusVal);
-            params.append('selected_sector', sectorVal);
-            params.append('custom_query', queryVal);
-
-            fetch(`${cleanSite}/analisis_ekonomi/generate_ai`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: params.toString()
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-                return res.json();
-            })
-            .then(data => {
-                clearInterval(loadingInterval);
+            setTimeout(() => {
                 resLoading.style.display = 'none';
+                resContent.style.display = 'block';
 
-                if (btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.style.opacity = '1';
-                    btnSubmit.querySelector('span').textContent = 'Generate Analisis';
-                }
+                const q = query.toLowerCase();
+                let answer = '';
 
-                if (data.status === 'success') {
-                    lastAiMarkdown = data.result || '';
-
-                    // Perbarui metadata laporan
-                    if (metaMethod) metaMethod.textContent = data.method_label || 'Semua Metode';
-                    if (metaFocus) metaFocus.textContent = data.focus_label || 'Bahan Perencanaan Daerah';
-                    if (metaTime) metaTime.textContent = data.timestamp || '-';
-                    if (metaWilayah) metaWilayah.textContent = data.wilayah || 'Kabupaten Banyuwangi';
-
-                    // Render hasil dengan format seragam
-                    resContent.innerHTML = parseMarkdownToHtml(lastAiMarkdown);
-                    resBox.style.display = 'block';
-
-                    // Gulir halus ke hasil laporan
-                    resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    resBox.style.display = 'block';
-                    resContent.innerHTML = `
-                        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:16px; color:#991b1b;">
-                            <strong style="font-size:13px; display:block; margin-bottom:4px;">Gagal Membuat Laporan:</strong>
-                            <p style="margin:0; font-size:12px;">${esc(data.message || 'Terjadi kendala pada sistem analisis. Silakan coba kembali.')}</p>
-                            <button type="button" onclick="document.getElementById('btn-submit-ai').click()" style="margin-top:10px; background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Coba Lagi</button>
+                if (q.includes('penting') || q.includes('perubahan')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#0284c7; font-size:13px;">Analisis Perubahan Penting Perekonomian Banyuwangi:</strong>
                         </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Pertumbuhan Ekonomi Stabil:</strong> Laju PDRB mencapai <strong>5.03%</strong>, mencerminkan pemulihan kuat sektor basis lokal dan konsumsi domestik.</li>
+                            <li><strong>Penguatan Sektor Pariwisata & Jasa:</strong> Terjadi percepatan indeks Location Quotient (LQ) pada sektor penyediaan akomodasi & makanan minuman mendekati kriteria sektor basis (> 1.0).</li>
+                            <li><strong>Dekomposisi Pertumbuhan Sektoral:</strong> Komponen keunggulan kompetitif lokal (<em>regional shift</em>) menyumbang dampak positif signifikan (+5.255), membuktikan ketahanan ekonomi Banyuwangi berada di atas rata-rata provinsi.</li>
+                        </ul>
+                    `;
+                } else if (q.includes('waspada') || q.includes('risiko') || q.includes('bahaya')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#dc2626; font-size:13px;">Titik Kritis & Indikator yang Perlu Diwaspadai:</strong>
+                        </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Industry Mix Negatif (-380):</strong> Struktur lapangan usaha daerah masih terkonsentrasi pada sektor-sektor yang di level Jawa Timur mengalami perlambatan pertumbuhan.</li>
+                            <li><strong>Sensitivitas Inflasi Volatile Food:</strong> Meskipun inflasi umum terkendali (2.8%), fluktuasi harga komoditas pangan pokok berpotensi menekan daya beli masyarakat desil terbawah.</li>
+                            <li><strong>Elastisitas Penyerapan Tenaga Kerja:</strong> Penyerapan tenaga kerja baru terkonsentrasi di sektor informal perkotaan, perlu percepatan hilirisasi padat karya di pedesaan.</li>
+                        </ul>
+                    `;
+                } else if (q.includes('rekomendasi') || q.includes('tindak lanjut') || q.includes('langkah')) {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#16a34a; font-size:13px;">Rekomendasi Kebijakan Tindak Lanjut:</strong>
+                        </div>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Integrasi Rantai Pasok Lokal:</strong> Hubungkan produsen pangan pertanian & perikanan lokal langsung dengan jaringan hotel/restoran pariwisata Banyuwangi.</li>
+                            <li><strong>Optimalisasi Sektor Kuadran Klassen:</strong> Berikan insentif kemudahan usaha bagi pelaku usaha di Kuadran IV guna mengakselerasi transformasi menuju sektor potensial (Kuadran III).</li>
+                            <li><strong>Fasilitasi Akses Permodalan UMKM:</strong> Perkuat klasterisasi usaha mikro dan perluas pasar ekspor produk unggulan daerah ke kawasan Tapal Kuda dan Bali.</li>
+                        </ul>
+                    `;
+                } else {
+                    answer = `
+                        <div style="margin-bottom:8px;">
+                            <strong style="color:#0f2942; font-size:13px;">Hasil Analisis Cerdas Asisten AI:</strong>
+                        </div>
+                        <p style="margin:0 0 8px 0; color:#334155;">Berdasarkan pemrosesan model ekonometrik lokal terhadap pertanyaan <em>"${esc(query)}"</em>:</p>
+                        <ul style="margin:0; padding-left:18px; line-height:1.65; color:#334155;">
+                            <li><strong>Korelasi Antar Indikator:</strong> Analisis korelasi Pearson menunjukkan korelasi negatif yang sangat kuat antara Pertumbuhan Ekonomi dan TPT (r = -0.84), membuktikan pertumbuhan berkontribusi langsung menurunkan pengangguran seiring jeda waktu (<em>time lag</em>).</li>
+                            <li><strong>Performa Relatif Daerah:</strong> Posisi Kabupaten Banyuwangi berada pada kelompok atas daya saing regional di Jawa Timur bagian timur.</li>
+                            <li><strong>Fokus Rekomendasi:</strong> Pertahankan stabilitas iklim investasi dan prioritaskan belanja infrastruktur konektivitas logistik antar-wilayah.</li>
+                        </ul>
                     `;
                 }
-            })
-            .catch(err => {
-                clearInterval(loadingInterval);
-                resLoading.style.display = 'none';
 
-                if (btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.style.opacity = '1';
-                    btnSubmit.querySelector('span').textContent = 'Generate Analisis';
-                }
-
-                resBox.style.display = 'block';
-                resContent.innerHTML = `
-                    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:16px; color:#991b1b;">
-                        <strong style="font-size:13px; display:block; margin-bottom:4px;">Kendala Koneksi Server:</strong>
-                        <p style="margin:0; font-size:12px;">${esc(err.message || 'Tidak dapat terhubung ke server analisis. Pastikan koneksi aktif.')}</p>
-                        <button type="button" onclick="document.getElementById('btn-submit-ai').click()" style="margin-top:10px; background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Coba Ulang</button>
-                    </div>
-                `;
-            });
+                resContent.innerHTML = answer;
+            }, 350);
         }
     }
 
@@ -4353,7 +4025,7 @@
                     activeMethod = savedMethod;
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
 
         const methodDescriptions = {
             'Location Quotient (LQ)': 'Identifikasi sektor basis dan keunggulan komparatif ekonomi daerah Kabupaten Banyuwangi.',
@@ -4638,9 +4310,9 @@
                                     </div>
                                     <span class="relation-icon ${r >= 0 ? 'up' : 'down'}" title="${r >= 0 ? 'Arah Korelasi Positif (Searah)' : 'Arah Korelasi Negatif (Berlawanan)'}">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            ${r >= 0 
-                                                ? '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>' 
-                                                : '<line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/>'}
+                                            ${r >= 0
+                        ? '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>'
+                        : '<line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/>'}
                                         </svg>
                                     </span>
                                 </div>
@@ -4667,7 +4339,7 @@
                 menuLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 activeMethod = this.getAttribute('data-mode');
-                try { localStorage.setItem('sidapeda_active_analysis', activeMethod); } catch (e) {}
+                try { localStorage.setItem('sidapeda_active_analysis', activeMethod); } catch (e) { }
                 renderAnalysis();
             });
         });
@@ -4680,7 +4352,7 @@
                 targetLink.classList.add('active');
                 renderAnalysis();
             }
-        } catch (e) {}
+        } catch (e) { }
 
         if (btnExport) {
             btnExport.addEventListener('click', () => {
@@ -4741,114 +4413,39 @@
         });
     }
 
-    // 4. MAP PAGE (OPENSTREETMAP API & GEOSPATIAL ECONOMIC INTELLIGENCE)
+    // 4. MAP PAGE
     function initMapPage() {
-        const mapContainer = document.getElementById('leaflet-osm-map');
-        if (!mapContainer) return;
-
-        // Elements
         const groupSelect = document.getElementById('map-group-select');
         const indicatorSelect = document.getElementById('map-indicator-select');
         const levelSelect = document.getElementById('map-level-select');
-        const pinDisplaySelect = document.getElementById('map-pin-display-select');
+        const markersGroup = document.getElementById('layer-markers');
         const legendContainer = document.getElementById('legend-items-container');
         const locDetailName = document.getElementById('loc-detail-name');
-        const locDetailLevel = document.getElementById('loc-detail-level');
-        const locDetailCode = document.getElementById('loc-detail-code');
         const locBodyContainer = document.getElementById('loc-body-container');
         const searchInput = document.getElementById('map-search-input');
+        const svg = document.getElementById('banyuwangi-svg');
         const btnZoomIn = document.getElementById('btn-zoom-in');
         const btnZoomOut = document.getElementById('btn-zoom-out');
         const zoomText = document.getElementById('zoom-level-text');
         const btnExportMap = document.getElementById('btn-export-map');
+        const hotspotLayer = document.getElementById('layer-hotspots');
         const hotspotBox = document.getElementById('hotspot-note-box');
         const modeTabs = document.getElementById('map-mode-tabs');
         const btnReverseLegend = document.getElementById('btn-reverse-legend');
-        const btnResetLocation = document.getElementById('btn-reset-location');
 
-        // Quick Focus Buttons
-        const btnFocusJatim = document.getElementById('btn-focus-jatim');
-        const btnFocusBanyuwangi = document.getElementById('btn-focus-banyuwangi');
-        const btnFocusSurabaya = document.getElementById('btn-focus-surabaya');
-        const btnFocusMalang = document.getElementById('btn-focus-malang');
-
-        // Layer Checkboxes
-        const cbOsm = document.getElementById('layer-cb-osm');
-        const cbBoundaries = document.getElementById('layer-cb-boundaries');
-        const cbMarkers = document.getElementById('layer-cb-markers');
-        const cbLabels = document.getElementById('layer-cb-labels');
-        const cbHotspot = document.getElementById('layer-cb-hotspot');
-
-        // Datasets
-        const jatimRegions = (window.__JATIM_REGIONS__ && Array.isArray(window.__JATIM_REGIONS__) && window.__JATIM_REGIONS__.length > 0)
-            ? window.__JATIM_REGIONS__
-            : [];
-        
-        const districtList = (window.__DISTRICTS__ && Array.isArray(window.__DISTRICTS__) && window.__DISTRICTS__.length > 0)
-            ? window.__DISTRICTS__
-            : (AppState.districts || []);
-
-        let selectedRegionCode = '35.10'; // Default: Kabupaten Banyuwangi
-        let selectedDistrictName = districtList.length > 0 ? (districtList[0].name || districtList[0].nama_kecamatan) : 'Banyuwangi';
+        let zoomLevel = 1.0;
+        let selectedDistrict = 'Banyuwangi';
         let activeMode = 'Thematic Layer';
         let legendReversed = false;
-        let mapLevel = levelSelect ? levelSelect.value : 'Jawa Timur';
-        let pinDisplayMode = pinDisplaySelect ? pinDisplaySelect.value : 'value';
-
-        let jatimGeoJson = null;
-        let layerGeoJsonBoundaries = null;
-        const polygonLayers = {}; // mapping code -> Leaflet polygon layer
-        let isDistrictsVisible = false;
-        const KEC_ZOOM_THRESHOLD = 10;
-
-        // 4 KELAS PEMISAHAN SPASIAL GIS
-        const classColors = {
-            4: '#059669', // Kelas 4: Sangat Tinggi (Emerald)
-            3: '#2563eb', // Kelas 3: Tinggi (Royal Blue)
-            2: '#d97706', // Kelas 2: Sedang (Golden Amber)
-            1: '#dc2626'  // Kelas 1: Rendah (Coral Red)
-        };
-        const classNames = {
-            4: 'Sangat Tinggi',
-            3: 'Tinggi',
-            2: 'Sedang',
-            1: 'Rendah'
-        };
-
-        function get4Classes() {
-            const vals = jatimRegions.map(r => r.growth).filter(v => typeof v === 'number');
-            const minV = Math.min(...vals) || 1.7;
-            const maxV = Math.max(...vals) || 6.4;
-            const range = (maxV - minV) || 1;
-            const step = range / 4;
-            return {
-                minV,
-                maxV,
-                range,
-                step,
-                t1: minV + step,
-                t2: minV + (2 * step),
-                t3: minV + (3 * step)
-            };
-        }
-
-        function getRegionClass(reg) {
-            if (!reg || typeof reg.growth !== 'number') return 2;
-            const c = get4Classes();
-            if (reg.growth >= c.t3) return 4;
-            if (reg.growth >= c.t2) return 3;
-            if (reg.growth >= c.t1) return 2;
-            return 1;
-        }
 
         const mapGroups = {
-            'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektoral'],
-            'Kesejahteraan': ['Tingkat kemiskinan', 'Indeks Pembangunan Manusia (IPM)'],
-            'Investasi': ['Laju pertumbuhan PMDN', 'Realisasi investasi daerah'],
-            'Produksi sektoral': ['Produksi pertanian', 'Produksi industri pengolahan'],
-            'Ketenagakerjaan': ['Tingkat Pengangguran Terbuka (TPT)'],
-            'Pariwisata': ['Destinasi wisata & kunjungan'],
-            'Harga': ['Tingkat inflasi daerah', 'Stabilitas pangan']
+            'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektor'],
+            'Kesejahteraan': ['Tingkat kemiskinan', 'IPM', 'Ketimpangan'],
+            'Investasi': ['Indeks investasi kecamatan', 'Persebaran proyek'],
+            'Produksi sektoral': ['Produksi pertanian', 'Produksi perikanan'],
+            'Ketenagakerjaan': ['Tingkat Pengangguran Terbuka', 'Konsentrasi pekerja'],
+            'Pariwisata': ['Destinasi wisata', 'Kunjungan wisatawan'],
+            'Harga': ['Harga beras medium', 'Stabilitas pangan']
         };
 
         function updateIndicators() {
@@ -4857,1039 +4454,228 @@
             if (indicatorSelect) {
                 indicatorSelect.innerHTML = list.map(item => `<option value="${item}">${item}</option>`).join('');
             }
-        }
-        updateIndicators();
-
-        // 1. Inisialisasi OpenStreetMap Leaflet
-        let map = null;
-        let osmLayer = null;
-        let layerBoundaries = null;
-        let layerMarkers = null;
-        let layerDistricts = null;
-        let layerHotspots = null;
-
-        const boundsLayers = {}; // mapping code -> Leaflet layer (fallback)
-        const markerLayers = {}; // mapping code -> Leaflet marker
-
-        if (typeof L !== 'undefined') {
-            try {
-                // Bounds Jawa Timur resmi (mencakup pulau Bawean Gresik & kepulauan Sumenep)
-                const maxPanBounds = L.latLngBounds([[-9.5, 110.0], [-4.8, 116.8]]);
-
-                map = L.map('leaflet-osm-map', {
-                    center: [-7.75, 112.75],
-                    zoom: 8,
-                    minZoom: 7,
-                    maxZoom: 18,
-                    zoomControl: false,
-                    maxBounds: maxPanBounds,
-                    maxBoundsViscosity: 0.8
-                });
-
-                // Variasi Peta Dasar (Basemaps): OpenStreetMap, Google Maps Satelit (Hybrid & Murni), dan CartoDB Light
-                const basemaps = {
-                    'osm': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '&copy; OpenStreetMap'
-                    }),
-                    'google-hybrid': L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                        maxZoom: 20,
-                        subdomains: ['0', '1', '2', '3'],
-                        attribution: '&copy; Google Maps Satelit'
-                    }),
-                    'google-sat': L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-                        maxZoom: 20,
-                        subdomains: ['0', '1', '2', '3'],
-                        attribution: '&copy; Google Maps Satelit'
-                    }),
-                    'carto-light': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 20,
-                        subdomains: 'abcd',
-                        attribution: '&copy; CartoDB'
-                    })
-                };
-                let currentBasemapKey = 'osm';
-                let currentBasemapLayer = basemaps['osm'];
-                currentBasemapLayer.addTo(map);
-
-                function switchBasemap(key) {
-                    if (!map || !basemaps[key]) return;
-                    if (currentBasemapLayer && map.hasLayer(currentBasemapLayer)) {
-                        map.removeLayer(currentBasemapLayer);
-                    }
-                    currentBasemapKey = key;
-                    currentBasemapLayer = basemaps[key];
-                    if (cbOsm && cbOsm.checked) {
-                        currentBasemapLayer.addTo(map);
-                    }
-                    if (layerGeoJsonBoundaries && map.hasLayer(layerGeoJsonBoundaries)) {
-                        layerGeoJsonBoundaries.bringToFront();
-                    }
-                    const bmSelect = document.getElementById('map-basemap-select');
-                    if (bmSelect && bmSelect.value !== key) bmSelect.value = key;
-
-                    document.querySelectorAll('.basemap-pill-btn').forEach(b => {
-                        b.classList.toggle('active', b.getAttribute('data-basemap') === key);
-                    });
-                }
-
-                const basemapSelect = document.getElementById('map-basemap-select');
-                if (basemapSelect) {
-                    basemapSelect.addEventListener('change', () => {
-                        switchBasemap(basemapSelect.value);
-                    });
-                }
-                document.querySelectorAll('.basemap-pill-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const bm = btn.getAttribute('data-basemap');
-                        if (bm) switchBasemap(bm);
-                    });
-                });
-
-                layerBoundaries = L.layerGroup();
-                layerMarkers = L.layerGroup().addTo(map);
-                layerDistricts = L.layerGroup();
-                layerHotspots = L.layerGroup();
-
-                map.on('zoom', () => {
-                    if (zoomText) zoomText.textContent = 'Z' + map.getZoom();
-                });
-                map.on('zoomend', () => {
-                    if (zoomText) zoomText.textContent = 'Z' + map.getZoom();
-                    updateMarkerVisibilityByZoom(true);
-                });
-                if (zoomText) zoomText.textContent = 'Z' + map.getZoom();
-
-            } catch (err) {
-                console.error('Error saat inisialisasi Leaflet OpenStreetMap:', err);
-            }
-        } else {
-            console.warn('Leaflet library belum termuat.');
-            const overlay = document.getElementById('map-overlay-message');
-            if (overlay) {
-                overlay.style.display = 'block';
-                const ot = document.getElementById('map-overlay-title');
-                const os = document.getElementById('map-overlay-sub');
-                if (ot) ot.textContent = 'Peta Memerlukan Leaflet Library';
-                if (os) os.textContent = 'Pastikan koneksi CDN Leaflet aktif untuk menampilkan OpenStreetMap tile.';
-            }
+            renderMap();
         }
 
-        // Fungsi Kontrol Visibilitas Penanda Berdasarkan Zoom Level
-        // Zoom Out (Z < 10): Hanya Kota/Kabupaten Jawa Timur yang muncul
-        // Zoom In (Z >= 10): Titik Kecamatan muncul terpecah/berkembang dari titik kota Banyuwangi
-        function updateMarkerVisibilityByZoom(animateBreakout = false) {
-            if (!map) return;
-            const currentZoom = map.getZoom();
-            if (zoomText) zoomText.textContent = 'Z' + currentZoom;
+        function renderMap() {
+            const ind = indicatorSelect ? indicatorSelect.value : 'Pertumbuhan ekonomi';
+            const isGrowth = ind.includes('Pertumbuhan');
+            const isPov = ind.includes('kemiskinan');
+            const isInv = ind.includes('investasi');
 
-            const shouldShowKec = (currentZoom >= KEC_ZOOM_THRESHOLD || mapLevel === 'Kecamatan');
+            // Values by district
+            const vals = AppState.districts.map(d => {
+                if (isPov) return d.poverty;
+                if (isInv) return d.investment;
+                return d.growth;
+            });
 
-            if (shouldShowKec) {
-                if (!isDistrictsVisible) {
-                    isDistrictsVisible = true;
-                    renderDistricts(animateBreakout);
-                    if (cbMarkers && cbMarkers.checked && !map.hasLayer(layerDistricts)) {
-                        map.addLayer(layerDistricts);
-                    }
-                    // Sembunyikan pin Kabupaten Banyuwangi saat zoom in agar tidak tumpang tindih dengan kecamatan
-                    if (markerLayers['35.10']) {
-                        markerLayers['35.10'].setOpacity(0);
-                    }
+            const minV = Math.min(...vals);
+            const maxV = Math.max(...vals);
+            const range = maxV - minV || 1;
+
+            const getClass = v => Math.min(5, Math.floor(((v - minV) / range) * 5) + 1);
+
+            // Render Legend
+            if (legendContainer) {
+                const classOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
+                const step = range / 5;
+                const decimals = step < 0.2 ? 2 : (step >= 10 ? 0 : 1);
+                const unit = isInv ? ' poin' : '%';
+
+                const mapContextUnit = document.getElementById('map-context-unit');
+                if (mapContextUnit) {
+                    mapContextUnit.textContent = isInv ? 'Poin' : '%';
                 }
-            } else {
-                if (isDistrictsVisible) {
-                    isDistrictsVisible = false;
-                    if (layerDistricts) {
-                        map.removeLayer(layerDistricts);
-                        layerDistricts.clearLayers();
-                    }
-                    // Tampilkan kembali pin Kabupaten Banyuwangi saat zoom out
-                    if (markerLayers['35.10']) {
-                        markerLayers['35.10'].setOpacity(1);
-                    }
-                }
-            }
-        }
 
-        // 2. Render Batas Riil Antar Kota/Kabupaten (GeoJSON Polygons untuk GIS)
-        function renderGeoJsonBoundaries(data) {
-            if (!map || !data) return;
-            if (layerGeoJsonBoundaries) {
-                map.removeLayer(layerGeoJsonBoundaries);
-            }
+                const barOrder = legendReversed ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
+                const barHtml = `
+                    <div class="legend-color-bar" title="Rentang nilai visual: ${formatNum(minV, decimals)}${unit} s.d. ${formatNum(maxV, decimals)}${unit}">
+                        ${barOrder.map(c => `<span class="l${c}"></span>`).join('')}
+                    </div>
+                    <div class="legend-bar-labels">
+                        <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? maxV : minV, decimals)}${unit})</small>
+                        <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? minV : maxV, decimals)}${unit})</small>
+                    </div>
+                `;
 
-            layerGeoJsonBoundaries = L.geoJSON(data, {
-                smoothFactor: 0.8,
-                style: function (feature) {
-                    const code = feature.properties.code;
-                    const reg = jatimRegions.find(r => r.kode === code);
-                    const cls = getRegionClass(reg);
-                    const color = classColors[cls] || '#2563eb';
-                    const isSelected = (code === selectedRegionCode);
-                    const isCurrent = (code === '35.10');
+                const itemsHtml = classOrder.map(cls => {
+                    const low = minV + (range * (cls - 1)) / 5;
+                    const high = minV + (range * cls) / 5;
+                    return `
+                        <div class="legend-row" data-class="${cls}" title="Arahkan kursor atau klik untuk menyorot kecamatan Kelas ${cls}">
+                            <div class="legend-row-main">
+                                <span class="legend-chip l${cls}"></span>
+                                <b class="legend-class-lbl">Kelas ${cls}</b>
+                            </div>
+                            <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
+                        </div>`;
+                }).join('');
 
-                    return {
-                        fillColor: color,
-                        fillOpacity: isSelected ? 0.62 : (isCurrent ? 0.44 : 0.30),
-                        weight: isSelected ? 3.5 : (isCurrent ? 2.5 : 1.4),
-                        color: isSelected ? '#0f172a' : (isCurrent ? '#0d9488' : '#334155'),
-                        opacity: 0.95
-                    };
-                },
-                onEachFeature: function (feature, layer) {
-                    const code = feature.properties.code;
-                    const reg = jatimRegions.find(r => r.kode === code);
-                    const nama = reg ? reg.nama : feature.properties.name;
-                    const cls = getRegionClass(reg);
-                    const clsName = classNames[cls];
+                legendContainer.innerHTML = barHtml + itemsHtml;
 
-                    polygonLayers[code] = layer;
-
-                    layer.bindTooltip(`
-                        <div class="gis-polygon-tooltip">
-                            <strong>${nama}</strong>
-                            <div class="tip-sub">Kode: <code>${code}</code> • Kelas ${cls} (${clsName})</div>
-                            <div class="tip-val">${reg ? formatNum(reg.growth, 2) + '% Pertumbuhan' : ''}</div>
-                        </div>
-                    `, { sticky: true, className: 'enterprise-boundary-tooltip' });
-
-                    layer.on('mouseover', function () {
-                        if (code !== selectedRegionCode) {
-                            layer.setStyle({
-                                fillOpacity: 0.58,
-                                weight: 2.2,
-                                color: '#0f172a'
-                            });
-                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                                layer.bringToFront();
+                // Interactive highlight on hover
+                legendContainer.querySelectorAll('.legend-row').forEach(row => {
+                    const targetCls = row.getAttribute('data-class');
+                    row.addEventListener('mouseenter', () => {
+                        if (!markersGroup) return;
+                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
+                            if (m.classList.contains(`l${targetCls}`)) {
+                                m.style.filter = 'drop-shadow(0 0 6px rgba(21,154,156,0.95))';
+                                m.style.opacity = '1';
+                            } else {
+                                m.style.opacity = '0.3';
                             }
-                        }
+                        });
                     });
-
-                    layer.on('mouseout', function () {
-                        if (code !== selectedRegionCode) {
-                            const isCurrent = (code === '35.10');
-                            const color = classColors[cls] || '#2563eb';
-                            layer.setStyle({
-                                fillColor: color,
-                                fillOpacity: isCurrent ? 0.44 : 0.30,
-                                weight: isCurrent ? 2.5 : 1.4,
-                                color: isCurrent ? '#0d9488' : '#334155'
-                            });
-                        }
+                    row.addEventListener('mouseleave', () => {
+                        if (!markersGroup) return;
+                        markersGroup.querySelectorAll('.area-marker').forEach(m => {
+                            m.style.filter = '';
+                            m.style.opacity = '1';
+                        });
                     });
-
-                    layer.on('click', function () {
-                        selectRegion(code, true);
-                        if (layer.getBounds) {
-                            map.fitBounds(layer.getBounds(), { padding: [35, 35], maxZoom: 11 });
-                        }
-                    });
-                }
-            });
-
-            if (cbBoundaries && cbBoundaries.checked) {
-                layerGeoJsonBoundaries.addTo(map);
-            }
-        }
-
-        // Kotak-kotak bounding box dihilangkan total agar hanya batas riil GIS yang tersisa
-        function renderBoundaries() {
-            if (layerBoundaries) {
-                layerBoundaries.clearLayers();
-                if (map && map.hasLayer(layerBoundaries)) {
-                    map.removeLayer(layerBoundaries);
-                }
-            }
-        }
-
-        // 3. Render GIS Balloon Markers (Icon Balon Berangka + Detail saat Klik)
-        function renderMarkers() {
-            if (!layerMarkers || !map) return;
-            layerMarkers.clearLayers();
-
-            const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            const sortedByGrowth = [...jatimRegions].sort((a, b) => b.growth - a.growth);
-
-            jatimRegions.forEach(region => {
-                if (!region.lat || !region.lng) return;
-
-                // Search filtering
-                if (searchQ) {
-                    const matchName = region.nama.toLowerCase().includes(searchQ);
-                    const matchCode = region.kode.includes(searchQ);
-                    const matchCapital = (region.ibu_kota || '').toLowerCase().includes(searchQ);
-                    if (!matchName && !matchCode && !matchCapital) return;
-                }
-
-                const isCurrent = (region.kode === '35.10');
-                const isSelected = (region.kode === selectedRegionCode);
-                const cls = getRegionClass(region);
-                const color = classColors[cls] || '#2563eb';
-                const rank = sortedByGrowth.findIndex(r => r.kode === region.kode) + 1;
-
-                // Hitung angka di tengah balon GIS sesuai preferensi
-                let numText = '';
-                if (pinDisplayMode === 'rank') {
-                    numText = '#' + rank;
-                } else if (pinDisplayMode === 'class') {
-                    numText = 'K' + cls;
-                } else if (pinDisplayMode === 'code') {
-                    numText = region.kode.replace('35.', '');
-                } else {
-                    // Default 'value': e.g. 5.7% or 5.7
-                    numText = formatNum(region.growth, 1) + '%';
-                }
-
-                const safeId = region.kode.replace(/[^a-zA-Z0-9]/g, '-');
-
-                const balloonIcon = L.divIcon({
-                    className: 'custom-gis-balloon',
-                    html: `
-                        <div class="gis-balloon-pin class-${cls} ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}" data-code="${region.kode}" title="${region.nama}: ${formatNum(region.growth, 2)}% (Peringkat #${rank})">
-                            <div class="balloon-stem">
-                                <svg viewBox="0 0 30 38" width="30" height="38" class="balloon-svg">
-                                    <filter id="b-sh-${safeId}" x="-30%" y="-20%" width="160%" height="150%">
-                                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(15, 23, 42, 0.28)"/>
-                                    </filter>
-                                    <path class="balloon-path" fill="${color}" stroke="#ffffff" stroke-width="1.8" filter="url(#b-sh-${safeId})"
-                                          d="M15 2 C7.8 2 2 7.8 2 15 C2 23.5 13.5 35.5 14.4 36.6 C14.7 37 15.3 37 15.6 36.6 C16.5 35.5 28 23.5 28 15 C28 7.8 22.2 2 15 2 Z" />
-                                    <circle cx="15" cy="14.8" r="8.8" fill="#ffffff" stroke="${color}" stroke-width="1.2" />
-                                    <text x="15" y="17.8" text-anchor="middle" font-size="${numText.length > 4 ? '7.5px' : (numText.length > 3 ? '8.5px' : '9.5px')}" font-weight="800" fill="${color}" font-family="'Plus Jakarta Sans', system-ui, sans-serif">${numText}</text>
-                                </svg>
-                            </div>
-                            <div class="gis-balloon-pulse"></div>
-                        </div>
-                    `,
-                    iconSize: [30, 38],
-                    iconAnchor: [15, 37],
-                    popupAnchor: [0, -36]
                 });
-
-                const marker = L.marker([region.lat, region.lng], {
-                    icon: balloonIcon,
-                    zIndexOffset: isSelected ? 1200 : (isCurrent ? 800 : 100)
-                });
-
-                const popupHtml = `
-                    <div class="osm-enterprise-popup">
-                        <div class="popup-head">
-                            <span class="popup-badge" style="background:${color}; color:#fff;">KELAS ${cls} • ${classNames[cls].toUpperCase()}</span>
-                            <span class="popup-type">KODE: ${region.kode}</span>
-                        </div>
-                        <h4 class="popup-title">${region.nama}</h4>
-                        <div class="popup-stat-grid">
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Pertumbuhan Ekonomi</span>
-                                <strong class="stat-val" style="color:${color}; font-size:14px;">${formatNum(region.growth, 2)}%</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Peringkat Se-Jatim</span>
-                                <strong class="stat-val">#${rank} <small style="font-weight:500; font-size:10px;">/ 38 Wilayah</small></strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Dinamika YoY</span>
-                                <strong class="stat-val">${region.change >= 0 ? '+' : ''}${formatNum(region.change, 2)} pp</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Luas Wilayah Resmi</span>
-                                <strong class="stat-val">${formatNum(region.luas, 0)} km²</strong>
-                            </div>
-                            <div class="popup-stat" style="grid-column: 1 / 3;">
-                                <span class="stat-lbl">Titik Koordinat Centroid</span>
-                                <span class="stat-coord" style="font-family:monospace;">${region.lat.toFixed(4)}° S, ${region.lng.toFixed(4)}° E</span>
-                            </div>
-                        </div>
-                        <div class="popup-actions">
-                            <button class="popup-btn primary" onclick="window.__selectRegionFromMap('${region.kode}')">Lihat Profil</button>
-                            <button class="popup-btn secondary" onclick="window.__zoomRegionFromMap('${region.kode}')">Fokus Wilayah</button>
-                        </div>
-                    </div>
-                `;
-
-                marker.bindPopup(popupHtml);
-                marker.on('click', () => {
-                    selectRegion(region.kode, false);
-                });
-
-                markerLayers[region.kode] = marker;
-                marker.addTo(layerMarkers);
-            });
-        }
-
-        // 4. Render Banyuwangi Sub-District Markers (Kecamatan - Model Balon GIS Seragam & Efek Terpecah dari Titik Kota)
-        function renderDistricts(animateBreakout = false) {
-            if (!layerDistricts || !map) return;
-            layerDistricts.clearLayers();
-
-            const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-            // Hitung 4 kelas pemisahan berdasarkan porsi PDRB kecamatan
-            const sortedByShare = [...districtList].sort((a, b) => {
-                const sA = parseFloat(a.share !== undefined ? a.share : (a.porsi_pdrb || 0));
-                const sB = parseFloat(b.share !== undefined ? b.share : (b.porsi_pdrb || 0));
-                return sB - sA;
-            });
-            const totalDist = sortedByShare.length || 1;
-
-            // Titik Centroid Kabupaten Banyuwangi untuk efek pin terpecah dari pusat kota
-            const banyuwangiCentroid = [-8.3145, 114.2312];
-            let bPoint = null;
-            if (animateBreakout && map) {
-                try {
-                    bPoint = map.latLngToLayerPoint(banyuwangiCentroid);
-                } catch (e) {
-                    bPoint = null;
-                }
             }
 
-            districtList.forEach((d, idx) => {
-                const lat = parseFloat(d.lat || d.garis_lintang || 0);
-                const lng = parseFloat(d.lng || d.garis_bujur || 0);
-                const name = d.name || d.nama_kecamatan || '';
-                if (!lat || !lng) return;
+            // Render SVG District Markers
+            if (markersGroup) {
+                const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                markersGroup.innerHTML = AppState.districts.map(d => {
+                    const v = isPov ? d.poverty : (isInv ? d.investment : d.growth);
+                    const cls = getClass(v);
+                    const isSelected = d.name === selectedDistrict;
+                    const matchesSearch = !searchQ || d.name.toLowerCase().includes(searchQ);
+                    if (!matchesSearch) return '';
 
-                if (searchQ && !name.toLowerCase().includes(searchQ)) return;
+                    return `
+                        <g class="area-marker l${cls} ${isSelected ? 'selected' : ''}" data-name="${d.name}" style="cursor:pointer;">
+                            <circle cx="${d.coord_x}" cy="${d.coord_y}" r="${isSelected ? 12 : 8}"/>
+                            <text x="${d.coord_x + 12}" y="${d.coord_y + 3}">${d.name}</text>
+                        </g>`;
+                }).join('');
 
-                const share = parseFloat(d.share !== undefined ? d.share : (d.porsi_pdrb || 0));
-                const growth = parseFloat(d.growth !== undefined ? d.growth : (d.pertumbuhan || 0));
-                const poverty = parseFloat(d.poverty !== undefined ? d.poverty : (d.kemiskinan || 0));
-                const density = parseInt(d.density !== undefined ? d.density : (d.kepadatan || 0));
-
-                // Ranking & 4 Kelas
-                const rank = sortedByShare.findIndex(item => (item.name || item.nama_kecamatan) === name) + 1;
-                let cls = 1;
-                if (rank <= Math.ceil(totalDist * 0.25)) {
-                    cls = 4; // Sangat Tinggi
-                } else if (rank <= Math.ceil(totalDist * 0.50)) {
-                    cls = 3; // Tinggi
-                } else if (rank <= Math.ceil(totalDist * 0.75)) {
-                    cls = 2; // Sedang
-                } else {
-                    cls = 1; // Rendah
-                }
-                const color = classColors[cls] || '#2563eb';
-                const isSelected = (name === selectedDistrictName);
-
-                // Angka di tengah balon pin
-                let numText = '';
-                if (pinDisplayMode === 'rank') {
-                    numText = '#' + rank;
-                } else if (pinDisplayMode === 'class') {
-                    numText = 'K' + cls;
-                } else if (pinDisplayMode === 'code') {
-                    numText = String(idx + 1);
-                } else {
-                    numText = formatNum(share, 1) + '%';
-                }
-
-                // Hitung offset dari titik kota Banyuwangi untuk efek animasi "terpecah"
-                let breakoutStyle = '';
-                let breakoutClass = '';
-                if (animateBreakout && bPoint && map) {
-                    try {
-                        const kPoint = map.latLngToLayerPoint([lat, lng]);
-                        const dx = Math.round(bPoint.x - kPoint.x);
-                        const dy = Math.round(bPoint.y - kPoint.y);
-                        if (!isNaN(dx) && !isNaN(dy)) {
-                            breakoutStyle = `--origin-dx: ${dx}px; --origin-dy: ${dy}px;`;
-                            breakoutClass = 'kec-bursting';
-                        }
-                    } catch (e) {
-                        breakoutStyle = '';
-                        breakoutClass = '';
-                    }
-                }
-
-                const safeId = 'kec-' + name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '-');
-
-                // Model Balon GIS Seragam dengan Kabupaten/Kota (30x38px) + Label Nama Kecamatan
-                const kecBalloonIcon = L.divIcon({
-                    className: `custom-gis-balloon kec-balloon-marker ${breakoutClass}`,
-                    html: `
-                        <div class="gis-balloon-pin class-${cls} ${isSelected ? 'selected' : ''}" data-name="${name}" style="${breakoutStyle}" title="Kecamatan ${name}: ${formatNum(share, 2)}% PDRB (Peringkat #${rank})">
-                            <div class="balloon-stem">
-                                <svg viewBox="0 0 30 38" width="30" height="38" class="balloon-svg">
-                                    <filter id="b-sh-${safeId}" x="-30%" y="-20%" width="160%" height="150%">
-                                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(15, 23, 42, 0.28)"/>
-                                    </filter>
-                                    <path class="balloon-path" fill="${color}" stroke="#ffffff" stroke-width="1.8" filter="url(#b-sh-${safeId})"
-                                          d="M15 2 C7.8 2 2 7.8 2 15 C2 23.5 13.5 35.5 14.4 36.6 C14.7 37 15.3 37 15.6 36.6 C16.5 35.5 28 23.5 28 15 C28 7.8 22.2 2 15 2 Z" />
-                                    <circle cx="15" cy="14.8" r="8.8" fill="#ffffff" stroke="${color}" stroke-width="1.2" />
-                                    <text x="15" y="17.8" text-anchor="middle" font-size="${numText.length > 4 ? '7.2px' : (numText.length > 3 ? '8.2px' : '9.2px')}" font-weight="800" fill="${color}" font-family="'Plus Jakarta Sans', system-ui, sans-serif">${numText}</text>
-                                </svg>
-                            </div>
-                            <div class="kec-balloon-name-tag">${name}</div>
-                            <div class="gis-balloon-pulse"></div>
-                        </div>
-                    `,
-                    iconSize: [30, 38],
-                    iconAnchor: [15, 37],
-                    popupAnchor: [0, -36]
-                });
-
-                const marker = L.marker([lat, lng], {
-                    icon: kecBalloonIcon,
-                    zIndexOffset: isSelected ? 1500 : 700
-                });
-
-                const kecPopup = `
-                    <div class="osm-enterprise-popup">
-                        <div class="popup-head">
-                            <span class="popup-badge" style="background:${color}; color:#fff;">KELAS ${cls} • ${classNames[cls].toUpperCase()}</span>
-                            <span class="popup-type">KECAMATAN • KAB. BANYUWANGI (35.10)</span>
-                        </div>
-                        <h4 class="popup-title">Kecamatan ${name}</h4>
-                        <div class="popup-stat-grid">
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Porsi PDRB Kabupaten</span>
-                                <strong class="stat-val" style="color:${color}; font-size:14px;">${formatNum(share, 2)}%</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Peringkat se-Banyuwangi</span>
-                                <strong class="stat-val">#${rank} <small style="font-weight:500; font-size:10px;">/ ${districtList.length} Wilayah</small></strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Pertumbuhan Ekonomi</span>
-                                <strong class="stat-val">${formatNum(growth, 2)}%</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Tingkat Kemiskinan</span>
-                                <strong class="stat-val">${formatNum(poverty, 2)}%</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Kepadatan Penduduk</span>
-                                <strong class="stat-val">${density.toLocaleString('id-ID')} jiwa/km²</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Kategori Sektoral</span>
-                                <strong class="stat-val">${dist.category || dist.kategori || 'Ekonomi'}</strong>
-                            </div>
-                            <div class="popup-stat" style="grid-column: 1 / 3;">
-                                <span class="stat-lbl">Titik Koordinat Geografis</span>
-                                <span class="stat-coord" style="font-family:monospace;">${lat.toFixed(4)}° S, ${lng.toFixed(4)}° E</span>
-                            </div>
-                        </div>
-                        <div class="popup-actions">
-                            <button class="popup-btn primary" onclick="window.__selectDistrictFromMap('${name}')">Lihat Profil</button>
-                            <button class="popup-btn secondary" onclick="window.__zoomDistrictFromMap('${name}')">Pusatkan Peta</button>
-                        </div>
-                    </div>
-                `;
-
-                marker.bindPopup(kecPopup);
-                marker.on('click', () => {
-                    selectDistrict(name);
-                });
-
-                marker.addTo(layerDistricts);
-            });
-
-            if (animateBreakout) {
-                setTimeout(() => {
-                    document.querySelectorAll('.kec-balloon-marker.kec-bursting').forEach(el => {
-                        el.classList.remove('kec-bursting');
+                markersGroup.querySelectorAll('.area-marker').forEach(marker => {
+                    marker.addEventListener('click', function () {
+                        selectedDistrict = this.getAttribute('data-name');
+                        renderMap();
                     });
-                }, 750);
+                });
             }
-        }
 
-        // 5. Render Legend (4 Kelas Terkalibrasi Kuartil/Interval)
-        function renderLegend() {
-            if (!legendContainer) return;
+            // Render Selected District Detail Aside
+            const dist = AppState.districts.find(d => d.name === selectedDistrict) || AppState.districts[0];
+            if (locDetailName && dist) {
+                locDetailName.textContent = dist.name;
+            }
 
-            const c = get4Classes();
-            const decimals = 2;
-            const unit = '%';
-
-            const barOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
-            const classOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
-
-            const barHtml = `
-                <div class="legend-color-bar" title="Rentang 4 kelas pertumbuhan: ${formatNum(c.minV, decimals)}${unit} s.d. ${formatNum(c.maxV, decimals)}${unit}">
-                    ${barOrder.map(cl => `<span class="l${cl}" style="background:${classColors[cl]} !important;"></span>`).join('')}
-                </div>
-                <div class="legend-bar-labels">
-                    <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? c.maxV : c.minV, decimals)}${unit})</small>
-                    <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? c.minV : c.maxV, decimals)}${unit})</small>
-                </div>
-            `;
-
-            const itemsHtml = classOrder.map(cls => {
-                const low = c.minV + (c.step * (cls - 1));
-                const high = c.minV + (c.step * cls);
-                const color = classColors[cls];
-                const name = classNames[cls];
-                return `
-                    <div class="legend-row" data-class="${cls}" title="Wilayah Kelas ${cls} (${name})">
-                        <div class="legend-row-main">
-                            <span class="legend-chip l${cls}" style="background:${color} !important;"></span>
-                            <b class="legend-class-lbl">Kelas ${cls} <small style="font-weight:500; color:#64748b;">(${name})</small></b>
-                        </div>
-                        <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
-                    </div>`;
-            }).join('');
-
-            legendContainer.innerHTML = barHtml + itemsHtml;
-        }
-
-        // 6. Select Region (Kabupaten / Kota)
-        function selectRegion(code, openPopup = false) {
-            selectedRegionCode = code;
-            const reg = jatimRegions.find(r => r.kode === code);
-            if (!reg) return;
-
-            const cls = getRegionClass(reg);
-            const color = classColors[cls];
-            const clsName = classNames[cls];
-
-            // Update Breadcrumb & Header
-            const breadKab = document.getElementById('map-bread-kab');
-            const breadLevel = document.getElementById('map-bread-level');
-            if (breadKab) breadKab.textContent = reg.nama;
-            if (breadLevel) breadLevel.textContent = `Kode: ${reg.kode} • Kelas ${cls} (${clsName})`;
-
-            if (locDetailName) locDetailName.textContent = reg.nama;
-            if (locDetailLevel) locDetailLevel.innerHTML = `PROFIL WILAYAH • <span style="color:#fef08a; font-weight:700;">KELAS ${cls} (${clsName.toUpperCase()})</span>`;
-            if (locDetailCode) locDetailCode.textContent = `Kode Kemendagri: ${reg.kode} • Sumber Resmi BIG / Kemendagri`;
-
-            // Compute ranking in East Java
-            const sortedByGrowth = [...jatimRegions].sort((a, b) => b.growth - a.growth);
-            const rank = sortedByGrowth.findIndex(r => r.kode === code) + 1;
-            const avgGrowth = (jatimRegions.reduce((sum, r) => sum + r.growth, 0) / (jatimRegions.length || 1));
-            const gap = reg.growth - avgGrowth;
-
-            // Render Right-Hand Location Aside
-            if (locBodyContainer) {
-                let seriesSvg = '';
-                if (Array.isArray(reg.series) && reg.series.length > 0) {
-                    const sMin = Math.min(...reg.series);
-                    const sMax = Math.max(...reg.series);
-                    const sRange = (sMax - sMin) || 1;
-                    const w = 210;
-                    const h = 42;
-                    const points = reg.series.map((val, idx) => {
-                        const x = (idx / (reg.series.length - 1)) * w;
-                        const y = h - ((val - sMin) / sRange) * (h - 8) - 4;
-                        return `${x.toFixed(1)},${y.toFixed(1)}`;
-                    }).join(' ');
-
-                    seriesSvg = `
-                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin:10px 0;">
-                            <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#64748b; margin-bottom:4px;">
-                                <span>Tren Historis Pertumbuhan (2016–2025)</span>
-                                <strong>${reg.series.length} Tahun</strong>
-                            </div>
-                            <svg width="100%" height="45" viewBox="0 0 210 45" style="overflow:visible;">
-                                <polyline fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
-                            </svg>
-                        </div>
-                    `;
-                }
+            if (locBodyContainer && dist) {
+                const currentVal = isPov ? dist.poverty : (isInv ? dist.investment : dist.growth);
+                const avgV = mean(vals);
+                const gapV = currentVal - avgV;
 
                 locBodyContainer.innerHTML = `
                     <div class="location-score">
                         <div>
-                            <span>Pertumbuhan Ekonomi (2025)</span>
-                            <strong style="color:${color};">${formatNum(reg.growth, 2)}%</strong>
+                            <span>${ind}</span>
+                            <strong>${formatNum(currentVal, 2)}${isInv ? ' poin' : '%'}</strong>
                         </div>
-                        <span class="badge" style="background:${color}; color:#fff; font-weight:700;">
-                            Kelas ${cls} • #${rank} / 38
+                        <span class="badge ${dist.risk === 'Kritis' ? 'danger' : (dist.risk === 'Waspada' ? 'warning' : 'success')}">
+                            ${dist.risk}
                         </span>
                     </div>
 
                     <div class="spatial-position">
                         <span>
-                            <small>Selisih terhadap rata-rata Jatim (${formatNum(avgGrowth, 2)}%)</small>
-                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap, 2)} pp</strong>
+                            <small>Posisi terhadap rerata daerah</small>
+                            <strong class="${gapV >= 0 ? 'positive' : 'negative'}">${gapV >= 0 ? '+' : ''}${formatNum(gapV, 2)} pp</strong>
                         </span>
-                        <div><i style="width: ${Math.min(100, Math.max(12, ((reg.growth - 1.5) / 5) * 100))}%; background:${color};"></i></div>
+                        <div><i style="width: ${Math.min(100, Math.max(10, (currentVal / maxV) * 100))}%"></i></div>
+                        <small>Rata-rata 12 kecamatan: ${formatNum(avgV, 2)}${isInv ? ' poin' : '%'}</small>
                     </div>
 
                     <div class="data-list">
-                        <span><small>Ibu Kota / Pusat</small><strong>${reg.ibu_kota || '-'}</strong></span>
-                        <span><small>Klasifikasi GIS</small><strong style="color:${color};">Kelas ${cls} (${clsName})</strong></span>
-                        <span><small>Luas Wilayah Resmi</small><strong>${formatNum(reg.luas, 0)} km²</strong></span>
-                        <span><small>Perubahan YoY</small><strong>${reg.change >= 0 ? '+' : ''}${formatNum(reg.change, 2)} pp</strong></span>
-                        <span><small>Titik Centroid (Lintang)</small><strong style="font-family:monospace;">${reg.lat.toFixed(4)}° S</strong></span>
-                        <span><small>Titik Centroid (Bujur)</small><strong style="font-family:monospace;">${reg.lng.toFixed(4)}° E</strong></span>
-                        <span><small>Batas BBox Latitude</small><strong style="font-size:10px; font-family:monospace;">${reg.bounds[0][0].toFixed(4)}° s.d. ${reg.bounds[1][0].toFixed(4)}°</strong></span>
-                        <span><small>Batas BBox Longitude</small><strong style="font-size:10px; font-family:monospace;">${reg.bounds[0][1].toFixed(4)}° s.d. ${reg.bounds[1][1].toFixed(4)}°</strong></span>
+                        <span><small>Potensi Unggulan</small><strong>${dist.potential}</strong></span>
+                        <span><small>Indeks Investasi</small><strong>${formatNum(dist.investment, 2)} poin</strong></span>
+                        <span><small>Tingkat Kemiskinan</small><strong>${formatPct(dist.poverty)}</strong></span>
+                        <span><small>Pertumbuhan Ekonomi</small><strong>${formatPct(dist.growth)}</strong></span>
                     </div>
 
-                    ${seriesSvg}
+                    <button class="button secondary" id="btn-export-district-profile" style="width:100%;">Unduh Profil Wilayah</button>`;
 
-                    <div style="display:flex; gap:8px; margin-top:12px;">
-                        <button class="button secondary" id="btn-export-reg-profile" style="flex:1;">Unduh Profil CSV</button>
-                        <button class="button" id="btn-zoom-to-sel" style="background:#142d4e; color:#fff;">Pusatkan Peta</button>
-                    </div>
-                `;
-
-                const btnExp = document.getElementById('btn-export-reg-profile');
-                if (btnExp) {
-                    btnExp.addEventListener('click', () => {
-                        downloadCSV(`profil-${reg.nama.toLowerCase().replace(/\\s+/g, '-')}.csv`, [
-                            ['Kode Wilayah', 'Nama Wilayah', 'Tipe', 'Kelas GIS', 'Ibu Kota', 'Lintang', 'Bujur', 'Pertumbuhan (%)', 'Perubahan YoY (pp)', 'Luas (km2)'],
-                            [reg.kode, reg.nama, reg.tipe, `Kelas ${cls} (${clsName})`, reg.ibu_kota, reg.lat, reg.lng, reg.growth, reg.change, reg.luas]
+                const btnExpDist = document.getElementById('btn-export-district-profile');
+                if (btnExpDist) {
+                    btnExpDist.addEventListener('click', () => {
+                        downloadCSV(`profil-kecamatan-${dist.name.toLowerCase()}.csv`, [
+                            ['Kecamatan', 'Pertumbuhan Ekonomi (%)', 'Kemiskinan (%)', 'Indeks Investasi', 'Potensi', 'Status Risiko'],
+                            [dist.name, dist.growth, dist.poverty, dist.investment, dist.potential, dist.risk]
                         ]);
                     });
                 }
-
-                const btnZoomSel = document.getElementById('btn-zoom-to-sel');
-                if (btnZoomSel) {
-                    btnZoomSel.addEventListener('click', () => {
-                        if (polygonLayers[code] && polygonLayers[code].getBounds) {
-                            map.fitBounds(polygonLayers[code].getBounds(), { padding: [35, 35], maxZoom: 12 });
-                        } else if (map && reg.bounds) {
-                            map.fitBounds(reg.bounds, { padding: [35, 35], maxZoom: 12 });
-                        }
-                    });
-                }
             }
 
-            // Update Poligon Riil GeoJSON
-            Object.keys(polygonLayers).forEach(k => {
-                const ply = polygonLayers[k];
-                if (!ply) return;
-                const r = jatimRegions.find(item => item.kode === k);
-                const rCls = getRegionClass(r);
-                const rColor = classColors[rCls] || '#2563eb';
-                const isCur = (k === '35.10');
-                const isSel = (k === code);
-
-                ply.setStyle({
-                    fillColor: rColor,
-                    fillOpacity: isSel ? 0.62 : (isCur ? 0.44 : 0.30),
-                    weight: isSel ? 3.5 : (isCur ? 2.5 : 1.4),
-                    color: isSel ? '#0f172a' : (isCur ? '#0d9488' : '#334155')
-                });
-
-                if (isSel && !L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                    ply.bringToFront();
-                }
-            });
-
-            // Tidak ada kotak-kotak bounding box
-
-            // Update active state pada balon pin GIS
-            document.querySelectorAll('.gis-balloon-pin').forEach(el => {
-                if (el.getAttribute('data-code') === code) {
-                    el.classList.add('selected');
+            // Hotspot layer toggle
+            if (hotspotLayer && hotspotBox) {
+                if (activeMode === 'Hotspot Analysis') {
+                    hotspotLayer.style.display = 'block';
+                    hotspotBox.style.display = 'flex';
+                    hotspotLayer.innerHTML = AppState.districts.filter(d => d.risk !== 'Normal').map(d =>
+                        `<circle cx="${d.coord_x}" cy="${d.coord_y}" r="${d.risk === 'Kritis' ? 44 : 28}" class="${d.risk === 'Kritis' ? 'critical' : 'warning'}"/>`
+                    ).join('');
                 } else {
-                    el.classList.remove('selected');
-                }
-            });
-
-            if (openPopup && markerLayers[code]) {
-                markerLayers[code].openPopup();
-            }
-
-            renderMapComparisonChart();
-        }
-
-        // 7. Select District (Kecamatan di Banyuwangi)
-        function selectDistrict(name) {
-            selectedDistrictName = name;
-            const dist = districtList.find(d => (d.name || d.nama_kecamatan) === name);
-            if (!dist) return;
-
-            const lat = parseFloat(dist.lat || dist.garis_lintang || 0);
-            const lng = parseFloat(dist.lng || dist.garis_bujur || 0);
-            const share = parseFloat(dist.share !== undefined ? dist.share : (dist.porsi_pdrb || 0));
-            const growth = parseFloat(dist.growth !== undefined ? dist.growth : (dist.pertumbuhan || 0));
-            const poverty = parseFloat(dist.poverty !== undefined ? dist.poverty : (dist.kemiskinan || 0));
-            const density = parseInt(dist.density !== undefined ? dist.density : (dist.kepadatan || 0));
-
-            // Update state aktif pada pin balon kecamatan
-            document.querySelectorAll('.kec-balloon-marker .gis-balloon-pin').forEach(el => {
-                if (el.getAttribute('data-name') === name) {
-                    el.classList.add('selected');
-                } else {
-                    el.classList.remove('selected');
-                }
-            });
-
-            if (locDetailName) locDetailName.textContent = `Kecamatan ${name}`;
-            if (locDetailLevel) locDetailLevel.textContent = 'PROFIL WILAYAH • KECAMATAN';
-            if (locDetailCode) locDetailCode.textContent = 'Kabupaten Banyuwangi (Kode: 35.10)';
-
-            if (locBodyContainer) {
-                locBodyContainer.innerHTML = `
-                    <div class="location-score">
-                        <div>
-                            <span>Porsi PDRB Kabupaten</span>
-                            <strong>${formatNum(share, 2)}%</strong>
-                        </div>
-                        <span class="badge info">Kecamatan Aktif</span>
-                    </div>
-
-                    <div class="data-list" style="margin-top:14px;">
-                        <span><small>Pertumbuhan Ekonomi</small><strong>${formatNum(growth, 2)}%</strong></span>
-                        <span><small>Tingkat Kemiskinan</small><strong>${formatNum(poverty, 2)}%</strong></span>
-                        <span><small>Kepadatan Penduduk</small><strong>${density.toLocaleString('id-ID')} jiwa/km²</strong></span>
-                        <span><small>Kategori Spasial</small><strong>${dist.category || dist.kategori || 'Ekonomi'}</strong></span>
-                        <span><small>Garis Lintang</small><strong style="font-family:monospace;">${lat ? lat.toFixed(4) + '° S' : '-'}</strong></span>
-                        <span><small>Garis Bujur</small><strong style="font-family:monospace;">${lng ? lng.toFixed(4) + '° E' : '-'}</strong></span>
-                    </div>
-
-                    <div style="display:flex; gap:8px; margin-top:14px;">
-                        <button class="button secondary" id="btn-export-dist-csv" style="flex:1;">Unduh CSV</button>
-                        <button class="button" id="btn-zoom-dist" style="background:#0d9488; color:#fff;">Pusatkan Kecamatan</button>
-                    </div>
-                `;
-
-                const btnExp = document.getElementById('btn-export-dist-csv');
-                if (btnExp) {
-                    btnExp.addEventListener('click', () => {
-                        downloadCSV(`kecamatan-${name.toLowerCase()}.csv`, [
-                            ['Kecamatan', 'Porsi PDRB (%)', 'Pertumbuhan (%)', 'Kemiskinan (%)', 'Kepadatan (jiwa/km2)', 'Lintang', 'Bujur'],
-                            [name, share, growth, poverty, density, lat, lng]
-                        ]);
-                    });
-                }
-
-                const btnZoom = document.getElementById('btn-zoom-dist');
-                if (btnZoom && lat && lng && map) {
-                    btnZoom.addEventListener('click', () => {
-                        map.setView([lat, lng], 13);
-                    });
+                    hotspotLayer.style.display = 'none';
+                    hotspotBox.style.display = 'none';
                 }
             }
         }
 
-        // Global functions for marker popup clicks
-        window.__selectRegionFromMap = function(code) {
-            selectRegion(code);
-        };
-        window.__zoomRegionFromMap = function(code) {
-            selectRegion(code, true);
-            if (polygonLayers[code] && polygonLayers[code].getBounds) {
-                map.fitBounds(polygonLayers[code].getBounds(), { padding: [40, 40], maxZoom: 12 });
-            } else {
-                const reg = jatimRegions.find(r => r.kode === code);
-                if (reg && map && reg.bounds) {
-                    map.fitBounds(reg.bounds, { padding: [40, 40], maxZoom: 12 });
-                }
-            }
-        };
-        window.__selectDistrictFromMap = function(name) {
-            selectDistrict(name);
-        };
+        if (groupSelect) groupSelect.addEventListener('change', updateIndicators);
+        if (indicatorSelect) indicatorSelect.addEventListener('change', renderMap);
+        if (searchInput) searchInput.addEventListener('input', renderMap);
 
-        // 8. Layer Controls & Toggles
-        if (cbOsm) {
-            cbOsm.addEventListener('change', () => {
-                if (!map || !currentBasemapLayer) return;
-                if (cbOsm.checked) {
-                    if (!map.hasLayer(currentBasemapLayer)) map.addLayer(currentBasemapLayer);
-                } else {
-                    if (map.hasLayer(currentBasemapLayer)) map.removeLayer(currentBasemapLayer);
-                }
-            });
-        }
-        if (cbBoundaries) {
-            cbBoundaries.addEventListener('change', () => {
-                if (!map || !layerGeoJsonBoundaries) return;
-                if (cbBoundaries.checked) {
-                    map.addLayer(layerGeoJsonBoundaries);
-                } else {
-                    map.removeLayer(layerGeoJsonBoundaries);
-                }
-            });
-        }
-        if (cbMarkers) {
-            cbMarkers.addEventListener('change', () => {
-                if (!map || !layerMarkers) return;
-                if (cbMarkers.checked) {
-                    map.addLayer(layerMarkers);
-                } else {
-                    map.removeLayer(layerMarkers);
-                }
-            });
-        }
-        if (cbLabels) {
-            cbLabels.addEventListener('change', () => {
-                const pins = document.querySelectorAll('.custom-gis-balloon, .custom-osm-pin, .custom-kec-pin');
-                pins.forEach(p => p.style.display = cbLabels.checked ? 'block' : 'none');
-            });
-        }
-        if (cbHotspot) {
-            cbHotspot.addEventListener('change', () => {
-                if (!map || !layerHotspots) return;
-                if (cbHotspot.checked) {
-                    layerHotspots.clearLayers();
-                    const highGrowths = jatimRegions.filter(r => r.growth >= 5.8);
-                    highGrowths.forEach(r => {
-                        const circle = L.circle([r.lat, r.lng], {
-                            radius: 18000,
-                            color: '#10b981',
-                            fillColor: '#34d399',
-                            fillOpacity: 0.2,
-                            weight: 1.5,
-                            dashArray: '3, 4'
-                        });
-                        circle.bindTooltip(`Kawasan Pertumbuhan Tinggi: <strong>${r.nama} (${formatNum(r.growth, 2)}%)</strong>`);
-                        circle.addTo(layerHotspots);
-                    });
-                    map.addLayer(layerHotspots);
-                    if (hotspotBox) hotspotBox.style.display = 'flex';
-                } else {
-                    map.removeLayer(layerHotspots);
-                    if (hotspotBox) hotspotBox.style.display = 'none';
-                }
-            });
-        }
-
-        // Tampilan Angka Balon GIS
-        if (pinDisplaySelect) {
-            pinDisplaySelect.addEventListener('change', () => {
-                pinDisplayMode = pinDisplaySelect.value;
-                renderMarkers();
-            });
-        }
-
-        // Quick Focus Buttons
-        if (btnFocusJatim) {
-            btnFocusJatim.addEventListener('click', () => {
-                document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
-                btnFocusJatim.classList.add('active');
-                if (map) map.setView([-7.75, 112.75], 8);
-                const el = document.getElementById('active-map-meta-label');
-                if (el) el.textContent = '38 Kab/Kota • Jawa Timur';
-            });
-        }
-        if (btnFocusBanyuwangi) {
-            btnFocusBanyuwangi.addEventListener('click', () => {
-                document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
-                btnFocusBanyuwangi.classList.add('active');
-                selectRegion('35.10', true);
-                if (polygonLayers['35.10'] && polygonLayers['35.10'].getBounds) {
-                    map.fitBounds(polygonLayers['35.10'].getBounds(), { padding: [30, 30] });
-                } else if (map) {
-                    map.fitBounds([[-8.78, 113.88], [-7.72, 114.61]], { padding: [30, 30] });
-                }
-                const el = document.getElementById('active-map-meta-label');
-                if (el) el.textContent = 'Fokus Kabupaten Banyuwangi (35.10)';
-            });
-        }
-        if (btnFocusSurabaya) {
-            btnFocusSurabaya.addEventListener('click', () => {
-                document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
-                btnFocusSurabaya.classList.add('active');
-                selectRegion('35.78', true);
-                if (polygonLayers['35.78'] && polygonLayers['35.78'].getBounds) {
-                    map.fitBounds(polygonLayers['35.78'].getBounds(), { padding: [30, 30] });
-                } else if (map) {
-                    map.fitBounds([[-7.60, 112.45], [-7.15, 112.95]], { padding: [30, 30] });
-                }
-                const el = document.getElementById('active-map-meta-label');
-                if (el) el.textContent = 'Kawasan Surabaya Raya (35.78)';
-            });
-        }
-        if (btnFocusMalang) {
-            btnFocusMalang.addEventListener('click', () => {
-                document.querySelectorAll('.quick-focus-bar button').forEach(b => b.classList.remove('active'));
-                btnFocusMalang.classList.add('active');
-                selectRegion('35.73', true);
-                if (polygonLayers['35.73'] && polygonLayers['35.73'].getBounds) {
-                    map.fitBounds(polygonLayers['35.73'].getBounds(), { padding: [30, 30] });
-                } else if (map) {
-                    map.fitBounds([[-8.45, 112.30], [-7.75, 112.90]], { padding: [30, 30] });
-                }
-                const el = document.getElementById('active-map-meta-label');
-                if (el) el.textContent = 'Kawasan Malang Raya (35.73)';
-            });
-        }
-
-        // Level Select
-        if (levelSelect) {
-            levelSelect.addEventListener('change', () => {
-                mapLevel = levelSelect.value;
-                if (layerGeoJsonBoundaries && !map.hasLayer(layerGeoJsonBoundaries)) {
-                    layerGeoJsonBoundaries.addTo(map);
-                }
-                if (mapLevel === 'Jawa Timur') {
-                    if (layerMarkers && !map.hasLayer(layerMarkers)) layerMarkers.addTo(map);
-                    if (map) map.setView([-7.75, 112.75], 8);
-                    updateMarkerVisibilityByZoom(false);
-                } else if (mapLevel === 'Kecamatan') {
-                    selectRegion('35.10', true);
-                    if (polygonLayers['35.10'] && polygonLayers['35.10'].getBounds) {
-                        map.fitBounds(polygonLayers['35.10'].getBounds(), { padding: [30, 30] });
-                    } else if (map) {
-                        map.fitBounds([[-8.78, 113.88], [-7.72, 114.61]], { padding: [30, 30] });
-                    }
-                    setTimeout(() => updateMarkerVisibilityByZoom(true), 350);
-                } else {
-                    // Gabungan
-                    if (layerMarkers && !map.hasLayer(layerMarkers)) layerMarkers.addTo(map);
-                    if (layerDistricts && !map.hasLayer(layerDistricts)) layerDistricts.addTo(map);
-                }
-                renderMapComparisonChart();
-            });
-        }
-
-        // Search Input
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                renderMarkers();
-                renderDistricts();
-            });
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const q = searchInput.value.toLowerCase().trim();
-                    const match = jatimRegions.find(r => r.nama.toLowerCase().includes(q) || r.kode.includes(q));
-                    if (match) {
-                        selectRegion(match.kode, true);
-                        if (polygonLayers[match.kode] && polygonLayers[match.kode].getBounds) {
-                            map.fitBounds(polygonLayers[match.kode].getBounds(), { padding: [35, 35], maxZoom: 12 });
-                        } else if (map && match.bounds) {
-                            map.fitBounds(match.bounds, { padding: [35, 35], maxZoom: 12 });
-                        }
-                    }
-                }
-            });
-        }
-
-        // Zoom buttons (+ / -)
-        if (btnZoomIn && map) {
-            btnZoomIn.addEventListener('click', () => map.zoomIn());
-        }
-        if (btnZoomOut && map) {
-            btnZoomOut.addEventListener('click', () => map.zoomOut());
-        }
-
-        // Reverse legend
         if (btnReverseLegend) {
-            btnReverseLegend.addEventListener('click', (e) => {
+            btnReverseLegend.addEventListener('click', function (e) {
                 e.preventDefault();
                 legendReversed = !legendReversed;
-                btnReverseLegend.classList.toggle('active', legendReversed);
-                renderLegend();
+                this.classList.toggle('active', legendReversed);
+                renderMap();
             });
         }
 
-        // Reset Location
-        if (btnResetLocation) {
-            btnResetLocation.addEventListener('click', () => {
-                selectRegion('35.10');
-                if (map) map.setView([-7.75, 112.75], 8);
+        // Zoom Controls
+        if (btnZoomIn && svg) {
+            btnZoomIn.addEventListener('click', () => {
+                zoomLevel = Math.min(2.0, zoomLevel + 0.15);
+                svg.style.transform = `scale(${zoomLevel})`;
+                if (zoomText) zoomText.textContent = Math.round(zoomLevel * 100) + '%';
+            });
+        }
+        if (btnZoomOut && svg) {
+            btnZoomOut.addEventListener('click', () => {
+                zoomLevel = Math.max(0.7, zoomLevel - 0.15);
+                svg.style.transform = `scale(${zoomLevel})`;
+                if (zoomText) zoomText.textContent = Math.round(zoomLevel * 100) + '%';
             });
         }
 
-        // Export All Map Data CSV
-        if (btnExportMap) {
-            btnExportMap.addEventListener('click', () => {
-                downloadCSV('peta-ekonomi-jawa-timur-sidapeda.csv', [
-                    ['Kode Wilayah', 'Nama Wilayah', 'Tipe', 'Kelas GIS', 'Ibu Kota', 'Latitude', 'Longitude', 'Pertumbuhan (%)', 'Perubahan YoY (pp)', 'Luas (km2)'],
-                    ...jatimRegions.map(r => {
-                        const cls = getRegionClass(r);
-                        return [r.kode, r.nama, r.tipe, `Kelas ${cls} (${classNames[cls]})`, r.ibu_kota, r.lat, r.lng, r.growth, r.change, r.luas];
-                    })
-                ]);
+        // Layer toggles
+        document.querySelectorAll('.map-layer-cb').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const layerId = {
+                    'Batas kecamatan': 'layer-boundary',
+                    'Infrastruktur ekonomi': 'layer-infra',
+                    'Pusat industri': 'layer-industry',
+                    'Konsentrasi tenaga kerja': 'layer-employment',
+                    'Potensi sektoral': 'layer-potential',
+                    'Destinasi wisata': 'layer-tourism'
+                }[this.value];
+
+                if (layerId) {
+                    const el = document.getElementById(layerId);
+                    if (el) el.style.display = this.checked ? 'block' : 'none';
+                }
             });
-        }
+        });
 
         // Mode tabs
         if (modeTabs) {
@@ -5899,12 +4685,23 @@
                     this.classList.add('active');
                     activeMode = this.getAttribute('data-mode');
                     const lbl = document.getElementById('active-map-mode-label');
-                    if (lbl) lbl.textContent = activeMode.toUpperCase();
+                    if (lbl) lbl.textContent = activeMode;
+                    renderMap();
                 });
             });
         }
 
-        // 9. Bottom Comparison Chart
+        if (btnExportMap) {
+            btnExportMap.addEventListener('click', () => {
+                downloadCSV('peta-spasial-banyuwangi.csv', [
+                    ['Kecamatan', 'Pertumbuhan Ekonomi (%)', 'Kemiskinan (%)', 'Indeks Investasi', 'Potensi', 'Risiko'],
+                    ...AppState.districts.map(d => [d.name, d.growth, d.poverty, d.investment, d.potential, d.risk])
+                ]);
+            });
+        }
+
+        updateIndicators();
+
         const metricSelect = document.getElementById('map-chart-metric-select');
         const mapChartTitle = document.getElementById('map-chart-title');
         const mapChartDesc = document.getElementById('map-chart-desc');
@@ -5914,108 +4711,54 @@
             if (!mapChartContainer) return;
             const metric = metricSelect ? metricSelect.value : 'growth';
 
-            const isKecamatanOnly = (mapLevel === 'Kecamatan');
+            const metricConfigs = {
+                'growth': { label: 'Pertumbuhan Ekonomi', unit: '%', key: 'growth', decimals: 2 },
+                'poverty': { label: 'Tingkat Kemiskinan', unit: '%', key: 'poverty', decimals: 2 },
+                'pdrbShare': { label: 'Porsi PDRB Daerah', unit: '%', key: 'pdrbShare', decimals: 2 },
+                'investment': { label: 'Indeks Investasi', unit: ' poin', key: 'investment', decimals: 2 },
+                'density': { label: 'Kepadatan Penduduk', unit: ' jiwa/km²', key: 'density', decimals: 0 }
+            };
 
-            if (isKecamatanOnly) {
-                if (mapChartTitle) mapChartTitle.textContent = 'Grafik Komparasi Antar-Kecamatan di Kabupaten Banyuwangi';
-                if (mapChartDesc) mapChartDesc.textContent = 'Peringkat capaian seluruh kecamatan berdasarkan porsi PDRB dan pertumbuhan ekonomi.';
+            const cfg = metricConfigs[metric] || metricConfigs['growth'];
+            if (mapChartTitle) mapChartTitle.textContent = `Grafik Komparasi ${cfg.label} Antar-Kecamatan`;
+            if (mapChartDesc) mapChartDesc.textContent = `Peringkat capaian ${cfg.label.toLowerCase()} seluruh kecamatan di Kabupaten Banyuwangi.`;
 
-                const sortedKec = [...districtList].sort((a, b) => {
-                    const valA = parseFloat(a.share !== undefined ? a.share : (a.porsi_pdrb || 0));
-                    const valB = parseFloat(b.share !== undefined ? b.share : (b.porsi_pdrb || 0));
-                    return valB - valA;
+            const sortedDistricts = [...AppState.districts].sort((a, b) => {
+                const valA = parseFloat(a[cfg.key] || 0);
+                const valB = parseFloat(b[cfg.key] || 0);
+                return valB - valA;
+            });
+
+            const barData = sortedDistricts.map(d => ({
+                label: d.name,
+                value: parseFloat(d[cfg.key] || 0),
+                subLabel: `Kategori: ${d.category || 'Kembang'} • Potensi: ${d.potential || 'Unggulan'}`,
+                badge: d.name === selectedDistrict ? 'Kecamatan Terpilih' : (d.risk || ''),
+                badgeClass: d.name === selectedDistrict ? 'primary' : (d.risk === 'Kritis' ? 'danger' : (d.risk === 'Waspada' ? 'warning' : 'success')),
+                isHighlight: d.name === selectedDistrict
+            }));
+
+            mapChartContainer.innerHTML = createHorizontalBarChartSVG(barData, { unit: cfg.unit, decimals: cfg.decimals });
+
+            // Klik bar pada grafik untuk langsung memilih dan menyorot kecamatan pada peta
+            mapChartContainer.querySelectorAll('.h-bar-row').forEach(row => {
+                row.addEventListener('click', function () {
+                    const label = this.getAttribute('data-label');
+                    if (label) {
+                        selectedDistrict = label;
+                        renderMap();
+                    }
                 });
-
-                const barData = sortedKec.map(d => {
-                    const name = d.name || d.nama_kecamatan;
-                    const val = parseFloat(d.share !== undefined ? d.share : (d.porsi_pdrb || 0));
-                    const isSel = (name === selectedDistrictName);
-                    return {
-                        name,
-                        val,
-                        color: isSel ? '#0d9488' : '#64748b',
-                        formattedVal: formatNum(val, 2) + '%'
-                    };
-                });
-
-                const maxVal = Math.max(...barData.map(d => d.val)) || 10;
-
-                mapChartContainer.innerHTML = `
-                    <div class="bars-scroll" style="display:flex; align-items:flex-end; gap:6px; height:180px; padding:10px 5px; overflow-x:auto;">
-                        ${barData.map(d => `
-                            <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:32px; height:100%; justify-content:flex-end; cursor:pointer;" onclick="window.__selectDistrictFromMap('${d.name}')" title="${d.name}: ${d.formattedVal}">
-                                <span style="font-size:9px; color:#64748b; margin-bottom:4px;">${d.val.toFixed(1)}%</span>
-                                <div style="width:18px; height:${Math.max(6, (d.val / maxVal) * 120)}px; background:${d.color}; border-radius:3px 3px 0 0; transition:height 0.2s;"></div>
-                                <span style="font-size:9.5px; color:#1e293b; margin-top:4px; max-width:34px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.name}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-
-            } else {
-                if (mapChartTitle) mapChartTitle.textContent = 'Grafik Komparasi 38 Kabupaten / Kota se-Jawa Timur';
-                if (mapChartDesc) mapChartDesc.textContent = 'Peringkat capaian seluruh wilayah berdasarkan indikator ekonomi spasial (4 Kelas Klasifikasi).';
-
-                const sortedRegs = [...jatimRegions].sort((a, b) => {
-                    const valA = parseFloat(a[metric] || 0);
-                    const valB = parseFloat(b[metric] || 0);
-                    return valB - valA;
-                });
-
-                const maxVal = Math.max(...sortedRegs.map(r => parseFloat(r[metric] || 0))) || 10;
-
-                mapChartContainer.innerHTML = `
-                    <div class="bars-scroll" style="display:flex; align-items:flex-end; gap:4px; height:190px; padding:10px 5px; overflow-x:auto;">
-                        ${sortedRegs.map(r => {
-                            const val = parseFloat(r[metric] || 0);
-                            const cls = getRegionClass(r);
-                            const col = classColors[cls] || '#2563eb';
-                            const isSel = (r.kode === selectedRegionCode);
-                            const isCur = (r.kode === '35.10');
-                            const barColor = isSel ? '#0f172a' : (isCur ? '#0d9488' : col);
-                            const suffix = (metric === 'growth') ? '%' : ((metric === 'change') ? ' pp' : ((metric === 'pdrb') ? ' M' : ' km²'));
-                            return `
-                                <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:28px; height:100%; justify-content:flex-end; cursor:pointer; opacity:${isSel ? 1 : 0.85};" onclick="window.__zoomRegionFromMap('${r.kode}')" title="${r.nama} (Kelas ${cls}): ${formatNum(val, 2)}${suffix}">
-                                    <span style="font-size:8.5px; color:#64748b; margin-bottom:3px;">${val.toFixed(1)}</span>
-                                    <div style="width:14px; height:${Math.max(5, (val / maxVal) * 125)}px; background:${barColor}; border-radius:3px 3px 0 0; ${isSel ? 'border:1.5px solid #fef08a;' : ''}"></div>
-                                    <span style="font-size:9px; font-weight:${isSel || isCur ? 700 : 500}; color:${isSel ? '#0f172a' : '#475569'}; margin-top:4px; max-width:28px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.kode.replace('35.', '')}</span>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-            }
+            });
         }
 
         if (metricSelect) {
             metricSelect.addEventListener('change', renderMapComparisonChart);
         }
 
-        // Initial Executions
-        renderLegend();
-        renderMarkers();
-        updateMarkerVisibilityByZoom(false); // Zoom out awal: hanya kab/kota
-        selectRegion('35.10');
         renderMapComparisonChart();
 
-        // Load Real Administrative Boundaries GeoJSON (Hanya Batas Wilayah Riil)
-        const geojsonUrl = window.__JATIM_GEOJSON_URL__ || 'assets/data/jatim_kab_kota.geojson';
-        fetch(geojsonUrl)
-            .then(res => {
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return res.json();
-            })
-            .then(data => {
-                jatimGeoJson = data;
-                renderGeoJsonBoundaries(data);
-                selectRegion(selectedRegionCode);
-            })
-            .catch(err => {
-                console.error('Gagal memuat batas wilayah riil GeoJSON:', err);
-            });
-
-
-// Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
+        // Setup CRUD & Soft Delete for Peta Ekonomi (Kecamatan)
         setupModuleCrud({
             controller: 'peta_ekonomi',
             addModalId: 'add-district-modal',
@@ -7079,7 +5822,7 @@
             btn.addEventListener('click', function () {
                 const code = this.getAttribute('data-code');
                 const year = this.getAttribute('data-year');
-                
+
                 const self = this;
                 self.disabled = true;
                 self.style.opacity = '0.6';
@@ -7135,7 +5878,7 @@
             const st = filterStatus ? encodeURIComponent(filterStatus.value) : '';
             const cl = filterCluster && filterCluster.value ? encodeURIComponent(filterCluster.value) : '';
             const yr = filterYear && filterYear.value ? encodeURIComponent(filterYear.value) : '';
-            const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : '';
+            const cat = window._activeCategoryFilter ? encodeURIComponent(window._activeCategoryFilter) : 'EKO';
             window.location.href = `${cleanSite}/database?q=${q}&status=${st}${cl ? '&cluster=' + cl : ''}${yr ? '&year=' + yr : ''}${cat ? '&category=' + cat : ''}`;
         }
 
@@ -7567,7 +6310,7 @@
             if (!tbody) return;
             const tr = document.createElement('tr');
             tr.className = 'series-table-row is-new-row';
-            
+
             const yearVal = (year !== undefined && year !== null) ? year : '';
             const numVal = (value !== undefined && value !== null) ? value : '';
             const isRp = isIndicatorRupiah(unit, code);
@@ -7779,7 +6522,7 @@
                                 const codeDisp = document.getElementById('edit-code-display');
                                 if (codeDisp) codeDisp.value = d.code;
                                 if (document.getElementById('edit-indicator')) document.getElementById('edit-indicator').value = d.indicator || '';
-                                
+
                                 const editClusterEl = document.getElementById('edit-cluster');
                                 if (editClusterEl) {
                                     const cVal = (d.cluster || '').trim();
@@ -7987,11 +6730,11 @@
                     e.stopPropagation();
                     const code = quickAddBtn.getAttribute('data-code');
                     const yr = quickAddBtn.getAttribute('data-year');
-                    
+
                     if (btnOpenModal) {
                         btnOpenModal.click();
                     }
-                    
+
                     setTimeout(() => {
                         if (code) {
                             const addCodeEl = document.getElementById('add-code');
@@ -8039,7 +6782,7 @@
                                 document.getElementById('edit-id').value = d.id;
                                 document.getElementById('edit-code').value = d.code || d.kode_indikator || '';
                                 document.getElementById('edit-indicator').value = d.indicator || d.nama_indikator || '';
-                                
+
                                 const clusterVal = (d.cluster || d.klaster || 'Output dan pertumbuhan').trim();
                                 const editClusterEl = document.getElementById('edit-cluster');
                                 if (editClusterEl) {
@@ -8241,6 +6984,10 @@
             years: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
             definitions: {},
             values: {},
+            daily_dates: [],
+            daily_values: {},
+            hrg005_structure: null,
+            is_hrg005: false,
             kode_wilayah: '35.10',
             parent_code: 'EKO-003',
             category_type: 'sectoral',
@@ -8261,7 +7008,7 @@
         }
 
         // Buka Modal Matriks langsung dari tombol di dalam Modal Edit
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const btn = e.target.closest('.btn-open-matrix-from-edit');
             if (btn) {
                 e.preventDefault();
@@ -8322,12 +7069,698 @@
             });
         }
 
+        function calculateMonthlyGroupTotals() {
+            if (!sectoralState.is_monthly_group) return;
+            const defs = sectoralState.definitions;
+            const yearsList = sectoralState.years || [2024, 2025, 2026];
+            const standardMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            if (!sectoralState.monthly_values) sectoralState.monthly_values = {};
+
+            // 1. Hitung Tahunan (Rata-rata 12 bulan) untuk setiap baris kelompok
+            Object.keys(defs).forEach(k => {
+                if (k === 'TOTAL') return;
+                const code = defs[k].code;
+                if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+
+                yearsList.forEach(yr => {
+                    if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                    let sum = 0;
+                    let count = 0;
+
+                    standardMonths.forEach(m => {
+                        const inp = document.querySelector(`.sec-monthly-input[data-code="${code}"][data-year="${yr}"][data-month="${m}"]`);
+                        let val = (inp && inp.value !== '') ? parseRupiahNumber(inp.value) : (sectoralState.monthly_values[code][yr][m] !== undefined ? sectoralState.monthly_values[code][yr][m] : null);
+                        if (val !== null && val !== '' && !isNaN(val)) {
+                            sum += val;
+                            count++;
+                        }
+                    });
+
+                    const annVal = count > 0 ? (Math.round((sum / count) * 100) / 100) : '';
+                    sectoralState.monthly_values[code][yr]['Tahunan'] = annVal;
+                    const annInp = document.querySelector(`.sec-monthly-annual-auto[data-code="${code}"][data-year="${yr}"]`);
+                    if (annInp) {
+                        annInp.value = (annVal !== '') ? formatRupiahNumber(annVal) : '';
+                    }
+                });
+            });
+
+            // 2. Hitung baris TOTAL (Rata-rata 11 kelompok) untuk setiap bulan dan tahun
+            if (!sectoralState.monthly_values['TOTAL']) sectoralState.monthly_values['TOTAL'] = {};
+            const allMonths = standardMonths.concat(['Tahunan']);
+
+            yearsList.forEach(yr => {
+                if (!sectoralState.monthly_values['TOTAL'][yr]) sectoralState.monthly_values['TOTAL'][yr] = {};
+                allMonths.forEach(m => {
+                    let mSum = 0;
+                    let mCount = 0;
+                    Object.keys(defs).forEach(k => {
+                        if (k === 'TOTAL') return;
+                        const code = defs[k].code;
+                        const val = sectoralState.monthly_values[code] && sectoralState.monthly_values[code][yr] ? sectoralState.monthly_values[code][yr][m] : null;
+                        if (val !== null && val !== undefined && val !== '' && !isNaN(val)) {
+                            mSum += val;
+                            mCount++;
+                        }
+                    });
+                    const totVal = mCount > 0 ? (Math.round((mSum / mCount) * 100) / 100) : '';
+                    sectoralState.monthly_values['TOTAL'][yr][m] = totVal;
+                    const totInp = document.querySelector(`.sec-monthly-total-auto[data-code="TOTAL"][data-year="${yr}"][data-month="${m}"]`);
+                    if (totInp) {
+                        totInp.value = (totVal !== '') ? formatRupiahNumber(totVal) : '';
+                    }
+                });
+            });
+        }
+
+        function renderPar004MonthlyTable() {
+            if (!secThead || !secTbody) return;
+
+            const mVals = sectoralState.monthly_values || {};
+            const standardMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const parCols = [
+                { key: 'BIN', code: 'PAR-004.BIN', label: 'Bintang', width: '105px' },
+                { key: 'NON', code: 'PAR-004.NON', label: 'Non Bintang', width: '115px' },
+                { key: 'ALL', code: 'PAR-004', label: 'Seluruh Jenis Hotel', width: '140px', isTotal: true }
+            ];
+
+            let yearsList = (sectoralState.years && sectoralState.years.length > 0) ? sectoralState.years : [2023, 2024, 2025, 2026];
+            if (yearsList.includes(2018) && yearsList.length > 6) {
+                yearsList = [2023, 2024, 2025, 2026];
+            }
+            sectoralState.years = yearsList;
+
+            const defaultMonthlyThemes = [
+                { bg: '#ffedd5', text: '#9a3412', border: '#cbd5e1' }, // Orange (2023)
+                { bg: '#e0f2fe', text: '#0369a1', border: '#cbd5e1' }, // Sky (2024)
+                { bg: '#f0fdf4', text: '#166534', border: '#cbd5e1' }, // Emerald (2025)
+                { bg: '#fef3c7', text: '#92400e', border: '#cbd5e1' }, // Amber (2026)
+                { bg: '#f3e8ff', text: '#6b21a8', border: '#cbd5e1' }, // Purple (2027)
+                { bg: '#ffe4e6', text: '#9f1239', border: '#cbd5e1' }  // Rose (2028)
+            ];
+            const getYearTheme = function (yr) {
+                if (yr === 2023) return defaultMonthlyThemes[0];
+                if (yr === 2024) return defaultMonthlyThemes[1];
+                if (yr === 2025) return defaultMonthlyThemes[2];
+                if (yr === 2026) return defaultMonthlyThemes[3];
+                if (yr === 2027) return defaultMonthlyThemes[4];
+                if (yr === 2028) return defaultMonthlyThemes[5];
+                return defaultMonthlyThemes[Math.abs(yr % defaultMonthlyThemes.length)];
+            };
+
+            // THEAD
+            let theadHtml = `<tr>
+                <th rowspan="2" style="width:45px; min-width:45px; max-width:45px; position:sticky; left:0; top:0; background:#f1f5f9; z-index:30; text-align:center; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:1px solid #e2e8f0; font-size:11.5px; font-weight:800; padding:8px 4px;">No</th>
+                <th rowspan="2" style="width:140px; min-width:140px; max-width:160px; position:sticky; left:45px; top:0; background:#f1f5f9; z-index:30; text-align:left; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:2px solid #94a3b8; font-size:11.5px; font-weight:800; padding:8px 12px;">Bulan</th>`;
+
+            yearsList.forEach(yr => {
+                const theme = getYearTheme(yr);
+                const canDel = (yearsList.length > 1);
+                theadHtml += `<th colspan="3" style="text-align:center; background:${theme.bg}; color:${theme.text}; font-weight:800; font-size:12.5px; padding:7px 10px; border-bottom:1px solid #cbd5e1; border-right:2px solid #94a3b8; position:sticky; top:0; z-index:20;">
+                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                        <span>Tahun ${yr}</span>
+                        ${canDel ? `<button type="button" class="btn-sec-del-year" data-year="${yr}" title="Hapus Tahun ${yr} dari tabel" style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid rgba(239,68,68,0.3); border-radius:4px; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; line-height:1; font-weight:bold; padding:0; transition:all 0.15s ease;" onmouseover="this.style.background='#dc2626';this.style.color='#fff';" onmouseout="this.style.background='rgba(239,68,68,0.12)';this.style.color='#dc2626';">&times;</button>` : ''}
+                    </div>
+                </th>`;
+            });
+            theadHtml += `</tr><tr>`;
+
+            yearsList.forEach(yr => {
+                parCols.forEach(col => {
+                    const isTotalCol = col.isTotal;
+                    const colBg = isTotalCol ? '#dcfce7' : '#f8fafc';
+                    const colColor = isTotalCol ? '#166534' : '#1e293b';
+                    const borderR = isTotalCol ? '2px solid #94a3b8' : '1px solid #e2e8f0';
+                    theadHtml += `<th style="width:${col.width}; min-width:${col.width}; padding:6px 6px; font-weight:800; font-size:11px; color:${colColor}; border-bottom:1.5px solid #cbd5e1; border-right:${borderR}; text-align:center; background:${colBg}; position:sticky; top:36px; z-index:20;" title="${col.label} ${yr} (%)">${col.label}</th>`;
+                });
+            });
+            theadHtml += `</tr>`;
+            secThead.innerHTML = theadHtml;
+
+            // TBODY
+            let tbodyHtml = '';
+            standardMonths.forEach((m, idx) => {
+                tbodyHtml += `<tr>`;
+                tbodyHtml += `<td style="position:sticky; left:0; background:#ffffff; z-index:10; padding:6px 4px; font-weight:800; font-size:11.5px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:center; vertical-align:middle; width:45px;">
+                    <span style="display:inline-block; min-width:24px; padding:2px 4px; font-size:11px; font-weight:800; border-radius:5px; background:#f1f5f9; color:#0369a1; border:1px solid #cbd5e1;">${idx + 1}</span>
+                </td>`;
+                tbodyHtml += `<td style="position:sticky; left:45px; background:#ffffff; z-index:10; padding:6px 12px; font-weight:700; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:2px solid #94a3b8; vertical-align:middle; color:#0f172a; width:140px;">
+                    ${m}
+                </td>`;
+
+                yearsList.forEach(yr => {
+                    parCols.forEach(col => {
+                        const existingVal = (mVals[col.code] && mVals[col.code][yr] && mVals[col.code][yr][m] !== undefined) ? mVals[col.code][yr][m] : '';
+                        const formattedVal = (existingVal !== '' && existingVal !== null) ? formatRupiahNumber(existingVal) : '';
+                        const isTotalCol = col.isTotal;
+                        const cellBg = isTotalCol ? '#f0fdf4' : '#ffffff';
+                        const inputStyle = isTotalCol 
+                            ? 'width:100%; height:28px; padding:0 6px; font-weight:800; font-size:11.5px; border:1.5px solid #86efac; border-radius:4px; text-align:right; background:#dcfce7; color:#15803d;'
+                            : 'width:100%; height:28px; padding:0 6px; font-weight:600; font-size:11.5px; border:1px solid #cbd5e1; border-radius:4px; text-align:right; background:#ffffff; color:#0f172a;';
+                        const borderR = isTotalCol ? '2px solid #94a3b8' : '1px solid #e2e8f0';
+
+                        tbodyHtml += `<td style="padding:4px 4px; border-bottom:1px solid #e2e8f0; border-right:${borderR}; text-align:right; vertical-align:middle; background:${cellBg};">
+                            <input type="text" inputmode="decimal" class="sec-monthly-input is-rupiah-mask" data-code="${col.code}" data-year="${yr}" data-month="${m}" value="${formattedVal}" placeholder="-" style="${inputStyle}">
+                        </td>`;
+                    });
+                });
+
+                tbodyHtml += `</tr>`;
+            });
+
+            // ROW TAHUNAN (RATA-RATA TAHUNAN)
+            tbodyHtml += `<tr style="background:#f0fdf4; border-top:2px solid #86efac;">`;
+            tbodyHtml += `<td style="position:sticky; left:0; background:#dcfce7; z-index:10; padding:6px 4px; font-weight:800; font-size:10px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; text-align:center; vertical-align:middle;">
+                <span class="badge success" style="font-size:9px; font-weight:800; padding:3px 5px; border-radius:4px;">AVG</span>
+            </td>`;
+            tbodyHtml += `<td style="position:sticky; left:45px; background:#dcfce7; z-index:10; padding:6px 12px; font-weight:800; font-size:12px; border-bottom:1px solid #86efac; border-right:2px solid #94a3b8; vertical-align:middle; color:#166534;">
+                Rata-rata Tahunan
+            </td>`;
+
+            yearsList.forEach(yr => {
+                parCols.forEach(col => {
+                    const existingAnn = (mVals[col.code] && mVals[col.code][yr] && mVals[col.code][yr]['Tahunan'] !== undefined) ? mVals[col.code][yr]['Tahunan'] : '';
+                    const formattedAnn = (existingAnn !== '' && existingAnn !== null) ? formatRupiahNumber(existingAnn) : '';
+                    const isTotalCol = col.isTotal;
+                    const borderR = isTotalCol ? '2px solid #94a3b8' : '1px solid #86efac';
+
+                    tbodyHtml += `<td style="padding:4px 4px; border-bottom:1px solid #86efac; border-right:${borderR}; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                        <input type="text" readonly class="sec-monthly-annual-auto is-rupiah-mask" data-code="${col.code}" data-year="${yr}" data-month="Tahunan" value="${formattedAnn}" placeholder="-" title="Rata-rata Tahunan ${col.label} ${yr}" style="width:100%; height:28px; padding:0 6px; font-weight:800; font-size:11.5px; border:1.5px solid #86efac; border-radius:4px; text-align:right; background:#dcfce7; color:#166534; cursor:not-allowed;">
+                    </td>`;
+                });
+            });
+            tbodyHtml += `</tr>`;
+
+            secTbody.innerHTML = tbodyHtml;
+            calculatePar004Totals();
+        }
+
+        function calculatePar004Totals() {
+            if (sectoralState.parent_code !== 'PAR-004') return;
+            const years = sectoralState.years || [];
+            const parCodes = ['PAR-004.BIN', 'PAR-004.NON', 'PAR-004'];
+
+            years.forEach(yr => {
+                parCodes.forEach(code => {
+                    const monthInputs = document.querySelectorAll(`.sec-monthly-input[data-code="${code}"][data-year="${yr}"]`);
+                    let sum = 0;
+                    let count = 0;
+                    monthInputs.forEach(inp => {
+                        const val = inp.value.trim();
+                        if (val !== '' && val !== '-') {
+                            const num = parseRupiahNumber(val);
+                            if (!isNaN(num)) {
+                                sum += num;
+                                count++;
+                            }
+                        }
+                    });
+
+                    const annualInput = document.querySelector(`.sec-monthly-annual-auto[data-code="${code}"][data-year="${yr}"][data-month="Tahunan"]`);
+                    if (count > 0) {
+                        const avg = Math.round((sum / count) * 100) / 100;
+                        if (annualInput) annualInput.value = formatRupiahNumber(avg);
+                        if (!sectoralState.monthly_values) sectoralState.monthly_values = {};
+                        if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+                        if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                        sectoralState.monthly_values[code][yr]['Tahunan'] = avg;
+                        if (!sectoralState.values) sectoralState.values = {};
+                        if (!sectoralState.values[code]) sectoralState.values[code] = {};
+                        sectoralState.values[code][yr] = avg;
+                    } else {
+                        if (annualInput) annualInput.value = '';
+                    }
+                });
+            });
+        }
+
+        function renderHrg005ExcelTable() {
+            if (!secThead || !secTbody) return;
+
+            const defs = sectoralState.definitions || {};
+            const vals = sectoralState.values || {};
+            const dVals = sectoralState.daily_values || {};
+            let yearsList = (sectoralState.years && sectoralState.years.length > 0) ? sectoralState.years : [2024, 2025, 2026];
+            sectoralState.years = yearsList;
+
+            let dailyDates = (sectoralState.daily_dates && sectoralState.daily_dates.length > 0) ? sectoralState.daily_dates : [];
+            if (dailyDates.length === 0) {
+                for (let d = 1; d <= 30; d++) {
+                    dailyDates.push(`2026-11-${String(d).padStart(2, '0')}`);
+                }
+                sectoralState.daily_dates = dailyDates;
+            }
+
+            const escapeAttr = function (str) {
+                if (!str) return '';
+                return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            };
+
+            const monthNamesId = {
+                '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
+                '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Agustus',
+                '09': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+            };
+
+            // Kelompokkan tanggal harian menurut bulan (YYYY-MM)
+            const dateGroups = [];
+            const dateGroupMap = {};
+            dailyDates.forEach(dStr => {
+                const ym = dStr.slice(0, 7);
+                if (!dateGroupMap[ym]) {
+                    const [yPart, mPart] = ym.split('-');
+                    const grp = { ym, label: `${monthNamesId[mPart] || mPart} ${yPart}`, dates: [] };
+                    dateGroupMap[ym] = grp;
+                    dateGroups.push(grp);
+                }
+                dateGroupMap[ym].dates.push(dStr);
+            });
+
+            // THEAD (2 baris: Sticky NO, NAMA BAHAN POKOK, SATUAN + Ringkasan Tahunan + Pemantauan Harian)
+            let theadHtml = `<tr>
+                <th rowspan="2" style="width:46px; min-width:46px; max-width:46px; position:sticky; left:0; top:0; background:#f1f5f9; z-index:30; text-align:center; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:1px solid #e2e8f0; font-size:11px; font-weight:800; padding:8px 4px; color:#334155;">NO</th>
+                <th rowspan="2" style="width:280px; min-width:280px; max-width:300px; position:sticky; left:46px; top:0; background:#f1f5f9; z-index:30; text-align:left; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:1px solid #e2e8f0; font-size:11px; font-weight:800; padding:8px 10px; color:#334155;">NAMA BAHAN POKOK</th>
+                <th rowspan="2" style="width:92px; min-width:92px; max-width:92px; position:sticky; left:326px; top:0; background:#f1f5f9; z-index:30; text-align:center; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:2px solid #94a3b8; font-size:11px; font-weight:800; padding:8px 6px; color:#334155;">SATUAN</th>
+                <th colspan="${yearsList.length}" style="text-align:center; background:#e0f2fe; color:#0369a1; font-weight:800; font-size:12px; padding:6px 8px; border-bottom:1px solid #cbd5e1; border-right:2px solid #94a3b8; position:sticky; top:0; z-index:20;">Ringkasan Tahunan (Rp)</th>`;
+
+            dateGroups.forEach(dg => {
+                theadHtml += `<th colspan="${dg.dates.length}" style="text-align:center; background:#fef3c7; color:#92400e; font-weight:800; font-size:12px; padding:6px 10px; border-bottom:1px solid #cbd5e1; border-right:2px solid #94a3b8; position:sticky; top:0; z-index:20;">Pemantauan Harian: ${escapeAttr(dg.label)}</th>`;
+            });
+            theadHtml += `</tr><tr>`;
+
+            yearsList.forEach((yr, yIdx) => {
+                const isLastYr = (yIdx === yearsList.length - 1);
+                const canDel = (yearsList.length > 1);
+                theadHtml += `<th style="width:105px; min-width:105px; padding:6px 4px; font-weight:800; font-size:11px; color:#0369a1; border-bottom:1.5px solid #cbd5e1; border-right:${isLastYr ? '2px solid #94a3b8' : '1px solid #e2e8f0'}; text-align:center; background:#f0f9ff; position:sticky; top:35px; z-index:20;">
+                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+                        <span>${yr}</span>
+                        ${canDel ? `<button type="button" class="btn-sec-del-year" data-year="${yr}" title="Hapus Kolom Tahun ${yr}" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px; line-height:1; padding:0 2px;">&times;</button>` : ''}
+                    </div>
+                </th>`;
+            });
+
+            dateGroups.forEach(dg => {
+                dg.dates.forEach((dStr, dIdx) => {
+                    const isLastD = (dIdx === dg.dates.length - 1);
+                    theadHtml += `<th style="width:94px; min-width:94px; padding:6px 4px; font-weight:800; font-size:10.5px; color:#1e293b; border-bottom:1.5px solid #cbd5e1; border-right:${isLastD ? '2px solid #94a3b8' : '1px solid #e2e8f0'}; text-align:center; background:#f8fafc; position:sticky; top:35px; z-index:20; white-space:nowrap;">${dStr}</th>`;
+                });
+            });
+            theadHtml += `</tr>`;
+            secThead.innerHTML = theadHtml;
+
+            const structure = sectoralState.hrg005_structure || {};
+            const groupKeys = Object.keys(structure).sort((a, b) => Number(a) - Number(b));
+
+            const buildGroupHeaderRow = (noVal, title, isSubHeader) => {
+                const bg = isSubHeader ? '#f8fafc' : '#e2e8f0';
+                const stickyBg = isSubHeader ? '#f8fafc' : '#e2e8f0';
+                const txtColor = isSubHeader ? '#334155' : '#0f172a';
+                const fontStyle = isSubHeader ? 'font-weight:700; font-style:italic;' : 'font-weight:800; text-transform:uppercase;';
+                let rowHtml = `<tr style="background:${bg};">
+                    <td style="position:sticky; left:0; background:${stickyBg}; z-index:10; padding:6px 4px; font-weight:800; font-size:11.5px; border-bottom:1px solid #cbd5e1; border-right:1px solid #cbd5e1; text-align:center; color:#0369a1;">${noVal ? escapeAttr(noVal) : ''}</td>
+                    <td style="position:sticky; left:46px; background:${stickyBg}; z-index:10; padding:6px 10px; ${fontStyle} font-size:12px; border-bottom:1px solid #cbd5e1; border-right:1px solid #cbd5e1; color:${txtColor};">${escapeAttr(title)}</td>
+                    <td style="position:sticky; left:326px; background:${stickyBg}; z-index:10; padding:6px 6px; border-bottom:1px solid #cbd5e1; border-right:2px solid #94a3b8; text-align:center; color:#94a3b8; font-size:11px;"></td>`;
+                yearsList.forEach((yr, yIdx) => {
+                    const isLastYr = (yIdx === yearsList.length - 1);
+                    rowHtml += `<td style="padding:5px 6px; border-bottom:1px solid #cbd5e1; border-right:${isLastYr ? '2px solid #94a3b8' : '1px solid #cbd5e1'}; text-align:right; font-size:11px; color:#64748b; background:${bg};">0</td>`;
+                });
+                dateGroups.forEach(dg => {
+                    dg.dates.forEach((dStr, dIdx) => {
+                        const isLastD = (dIdx === dg.dates.length - 1);
+                        rowHtml += `<td style="padding:5px 6px; border-bottom:1px solid #cbd5e1; border-right:${isLastD ? '2px solid #94a3b8' : '1px solid #cbd5e1'}; text-align:right; font-size:11px; color:#64748b; background:${bg};">0</td>`;
+                    });
+                });
+                rowHtml += `</tr>`;
+                return rowHtml;
+            };
+
+            const buildItemRow = (itemKey, noOverride) => {
+                const item = defs[itemKey];
+                if (!item) return '';
+                const labelText = `- ${item.excel_label || item.short_name || item.name || ''}`;
+                const unitText = item.unit || 'kg';
+
+                let rowHtml = `<tr style="background:#ffffff;">
+                    <td style="position:sticky; left:0; background:#ffffff; z-index:10; padding:5px 4px; font-weight:800; font-size:11.5px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:center; vertical-align:middle; color:#0369a1;">${noOverride ? escapeAttr(noOverride) : ''}</td>
+                    <td style="position:sticky; left:46px; background:#ffffff; z-index:10; padding:5px 10px 5px ${noOverride ? '10px' : '16px'}; font-weight:600; font-size:12px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; vertical-align:middle; color:#0f172a;">${escapeAttr(labelText)}</td>
+                    <td style="position:sticky; left:326px; background:#ffffff; z-index:10; padding:5px 6px; font-weight:600; font-size:11.5px; border-bottom:1px solid #e2e8f0; border-right:2px solid #94a3b8; text-align:center; vertical-align:middle; color:#475569; white-space:nowrap;">${escapeAttr(unitText)}</td>`;
+
+                yearsList.forEach((yr, yIdx) => {
+                    const isLastYr = (yIdx === yearsList.length - 1);
+                    const existingVal = (vals[item.code] && vals[item.code][yr] !== undefined) ? vals[item.code][yr] : '';
+                    const formattedVal = (existingVal !== '' && existingVal !== null) ? formatRupiahNumber(existingVal) : '';
+                    rowHtml += `<td style="padding:4px 4px; border-bottom:1px solid #e2e8f0; border-right:${isLastYr ? '2px solid #94a3b8' : '1px solid #e2e8f0'}; text-align:right; vertical-align:middle; background:#f8fafc;">
+                        <input type="text" inputmode="decimal" class="sec-val-input is-rupiah-mask" data-cat="${itemKey}" data-code="${item.code}" data-year="${yr}" value="${formattedVal}" placeholder="-" style="width:100%; height:28px; padding:0 5px; font-weight:700; font-size:11.5px; border:1px solid #cbd5e1; border-radius:3px; text-align:right; background:#ffffff; color:#0f172a;">
+                    </td>`;
+                });
+
+                dateGroups.forEach(dg => {
+                    dg.dates.forEach((dStr, dIdx) => {
+                        const isLastD = (dIdx === dg.dates.length - 1);
+                        const existingDaily = (dVals[item.code] && dVals[item.code][dStr] !== undefined) ? dVals[item.code][dStr] : '';
+                        const formattedDaily = (existingDaily !== '' && existingDaily !== null) ? formatRupiahNumber(existingDaily) : '';
+                        rowHtml += `<td style="padding:4px 3px; border-bottom:1px solid #e2e8f0; border-right:${isLastD ? '2px solid #94a3b8' : '1px solid #e2e8f0'}; text-align:right; vertical-align:middle; background:#ffffff;">
+                            <input type="text" inputmode="decimal" class="sec-daily-input is-rupiah-mask" data-cat="${itemKey}" data-code="${item.code}" data-date="${dStr}" value="${formattedDaily}" placeholder="-" style="width:100%; height:28px; padding:0 4px; font-weight:600; font-size:11.5px; border:1px solid #cbd5e1; border-radius:3px; text-align:right; background:#ffffff; color:#0f172a;">
+                        </td>`;
+                    });
+                });
+
+                rowHtml += `</tr>`;
+                return rowHtml;
+            };
+
+            let tbodyHtml = '';
+            groupKeys.forEach(gNo => {
+                const grp = structure[gNo];
+                if (!grp) return;
+                if (grp.single && grp.items && grp.items.length === 1) {
+                    tbodyHtml += buildItemRow(grp.items[0], gNo);
+                } else {
+                    tbodyHtml += buildGroupHeaderRow(gNo, grp.name, false);
+                    if (Array.isArray(grp.subgroups) && grp.subgroups.length > 0) {
+                        grp.subgroups.forEach(subGrp => {
+                            tbodyHtml += buildGroupHeaderRow('', subGrp.name, true);
+                            (subGrp.items || []).forEach(k => {
+                                tbodyHtml += buildItemRow(k, '');
+                            });
+                        });
+                    } else {
+                        (grp.items || []).forEach(k => {
+                            tbodyHtml += buildItemRow(k, '');
+                        });
+                    }
+                }
+            });
+
+            // Summary Row (AVG)
+            const totalDef = defs['TOTAL'] || { code: 'HRG-005', short_name: 'RATA-RATA KOMODITAS PANGAN', unit: 'Rupiah' };
+            tbodyHtml += `<tr style="background:#f0fdf4; border-top:2px solid #86efac;">
+                <td style="position:sticky; left:0; background:#dcfce7; z-index:10; padding:6px 4px; font-weight:800; font-size:10px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; text-align:center; vertical-align:middle;">
+                    <span class="badge success" style="font-size:9px; font-weight:800; padding:3px 5px; border-radius:4px;">AVG</span>
+                </td>
+                <td style="position:sticky; left:46px; background:#dcfce7; z-index:10; padding:6px 10px; font-weight:800; font-size:12px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; vertical-align:middle; color:#15803d;">${escapeAttr(totalDef.short_name || 'RATA-RATA KOMODITAS PANGAN')}</td>
+                <td style="position:sticky; left:326px; background:#dcfce7; z-index:10; padding:6px 6px; font-weight:800; font-size:11.5px; border-bottom:1px solid #86efac; border-right:2px solid #94a3b8; text-align:center; vertical-align:middle; color:#15803d;">${escapeAttr(totalDef.unit || 'Rupiah')}</td>`;
+
+            yearsList.forEach((yr, yIdx) => {
+                const isLastYr = (yIdx === yearsList.length - 1);
+                const existingTot = (vals['TOTAL'] && vals['TOTAL'][yr] !== undefined) ? vals['TOTAL'][yr] : (vals['HRG-005'] && vals['HRG-005'][yr] !== undefined ? vals['HRG-005'][yr] : '');
+                const fmtTot = (existingTot !== '' && existingTot !== null) ? formatRupiahNumber(existingTot) : '';
+                tbodyHtml += `<td style="padding:4px 4px; border-bottom:1px solid #86efac; border-right:${isLastYr ? '2px solid #94a3b8' : '1px solid #86efac'}; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                    <input type="text" readonly class="sec-val-input sec-hrg005-avg-annual is-rupiah-mask" data-cat="TOTAL" data-code="HRG-005" data-year="${yr}" value="${fmtTot}" placeholder="-" style="width:100%; height:28px; padding:0 5px; font-weight:800; font-size:11.5px; border:1.5px solid #86efac; border-radius:3px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
+                </td>`;
+            });
+
+            dateGroups.forEach(dg => {
+                dg.dates.forEach((dStr, dIdx) => {
+                    const isLastD = (dIdx === dg.dates.length - 1);
+                    const existingDTot = (dVals['TOTAL'] && dVals['TOTAL'][dStr] !== undefined) ? dVals['TOTAL'][dStr] : '';
+                    const fmtDTot = (existingDTot !== '' && existingDTot !== null) ? formatRupiahNumber(existingDTot) : '';
+                    tbodyHtml += `<td style="padding:4px 3px; border-bottom:1px solid #86efac; border-right:${isLastD ? '2px solid #94a3b8' : '1px solid #86efac'}; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                        <input type="text" readonly class="sec-hrg005-avg-daily is-rupiah-mask" data-date="${dStr}" value="${fmtDTot}" placeholder="-" style="width:100%; height:28px; padding:0 4px; font-weight:800; font-size:11.5px; border:1.5px solid #86efac; border-radius:3px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
+                    </td>`;
+                });
+            });
+
+            tbodyHtml += `</tr>`;
+            secTbody.innerHTML = tbodyHtml;
+            calculateHrg005Totals(false);
+        }
+
+        function calculateHrg005Totals(syncYearFromDaily = true) {
+            if (sectoralState.parent_code !== 'HRG-005') return;
+            const defs = sectoralState.definitions || {};
+            const yearsList = sectoralState.years || [];
+            const dailyDates = sectoralState.daily_dates || [];
+
+            if (syncYearFromDaily) {
+                Object.keys(defs).forEach(k => {
+                    if (k === 'TOTAL') return;
+                    const code = defs[k].code;
+                    const byYr = {};
+                    dailyDates.forEach(dStr => {
+                        const yr = parseInt(dStr.slice(0, 4), 10);
+                        const inp = document.querySelector(`.sec-daily-input[data-code="${code}"][data-date="${dStr}"]`);
+                        const raw = inp ? inp.value.trim() : '';
+                        if (raw !== '' && raw !== '-') {
+                            const num = parseRupiahNumber(raw);
+                            if (!isNaN(num)) {
+                                if (!byYr[yr]) byYr[yr] = { sum: 0, count: 0 };
+                                byYr[yr].sum += num;
+                                byYr[yr].count++;
+                            }
+                        }
+                    });
+                    Object.keys(byYr).forEach(yrStr => {
+                        const yr = parseInt(yrStr, 10);
+                        const info = byYr[yr];
+                        if (info.count > 0) {
+                            const avg = Math.round((info.sum / info.count) * 100) / 100;
+                            const yrInp = document.querySelector(`.sec-val-input[data-code="${code}"][data-year="${yr}"]`);
+                            if (yrInp) yrInp.value = formatRupiahNumber(avg);
+                            if (!sectoralState.values[code]) sectoralState.values[code] = {};
+                            sectoralState.values[code][yr] = avg;
+                        }
+                    });
+                });
+            }
+
+            // Rata-rata per Tahun
+            yearsList.forEach(yr => {
+                let sum = 0;
+                let count = 0;
+                Object.keys(defs).forEach(k => {
+                    if (k === 'TOTAL') return;
+                    const code = defs[k].code;
+                    const inp = document.querySelector(`.sec-val-input[data-code="${code}"][data-year="${yr}"]`);
+                    const raw = inp ? inp.value.trim() : '';
+                    if (raw !== '' && raw !== '-') {
+                        const num = parseRupiahNumber(raw);
+                        if (!isNaN(num) && num > 0) {
+                            sum += num;
+                            count++;
+                        }
+                    }
+                });
+                const totInp = document.querySelector(`.sec-hrg005-avg-annual[data-year="${yr}"]`);
+                if (count > 0) {
+                    const avg = Math.round((sum / count) * 100) / 100;
+                    if (totInp) totInp.value = formatRupiahNumber(avg);
+                    if (!sectoralState.values['HRG-005']) sectoralState.values['HRG-005'] = {};
+                    sectoralState.values['HRG-005'][yr] = avg;
+                    if (!sectoralState.values['TOTAL']) sectoralState.values['TOTAL'] = {};
+                    sectoralState.values['TOTAL'][yr] = avg;
+                } else if (totInp) {
+                    totInp.value = '';
+                }
+            });
+
+            // Rata-rata per Tanggal Harian
+            dailyDates.forEach(dStr => {
+                let sum = 0;
+                let count = 0;
+                Object.keys(defs).forEach(k => {
+                    if (k === 'TOTAL') return;
+                    const code = defs[k].code;
+                    const inp = document.querySelector(`.sec-daily-input[data-code="${code}"][data-date="${dStr}"]`);
+                    const raw = inp ? inp.value.trim() : '';
+                    if (raw !== '' && raw !== '-') {
+                        const num = parseRupiahNumber(raw);
+                        if (!isNaN(num) && num > 0) {
+                            sum += num;
+                            count++;
+                        }
+                    }
+                });
+                const totInp = document.querySelector(`.sec-hrg005-avg-daily[data-date="${dStr}"]`);
+                if (count > 0) {
+                    const avg = Math.round((sum / count) * 100) / 100;
+                    if (totInp) totInp.value = formatRupiahNumber(avg);
+                    if (!sectoralState.daily_values['TOTAL']) sectoralState.daily_values['TOTAL'] = {};
+                    sectoralState.daily_values['TOTAL'][dStr] = avg;
+                } else if (totInp) {
+                    totInp.value = '';
+                }
+            });
+        }
+
         function renderSectoralTable() {
             if (!secThead || !secTbody) return;
+
+            const pCode = sectoralState.parent_code || '';
+            const isPar004 = (pCode === 'PAR-004');
+            const isHrgMonthly = ['HRG-002', 'HRG-006'].includes(pCode);
+            const isMonthlyGroup = (sectoralState.is_monthly_group === true || isHrgMonthly || isPar004);
+            sectoralState.is_monthly_group = isMonthlyGroup;
+
+            if (isMonthlyGroup) {
+                const btnAddCat = document.getElementById('btn-sec-add-cat-row');
+                if (btnAddCat) btnAddCat.style.display = 'none';
+            }
+
+            if (isPar004) {
+                renderPar004MonthlyTable();
+                return;
+            }
+
+            if (pCode === 'HRG-005') {
+                renderHrg005ExcelTable();
+                return;
+            }
+
+            if (isMonthlyGroup) {
+                const btnAddCat = document.getElementById('btn-sec-add-cat-row');
+                if (btnAddCat) btnAddCat.style.display = 'none';
+
+                let defs = sectoralState.definitions || {};
+                const mVals = sectoralState.monthly_values || {};
+                const standardMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let defKeys = Object.keys(defs);
+
+                // Fallback jika definisi belum terload dari server
+                if (defKeys.length === 0) {
+                    defs = {};
+                    const fallbackKelompoks = [
+                        { k: '01', name: 'Makanan, Minuman, dan Tembakau' },
+                        { k: '02', name: 'Pakaian dan Alas Kaki' },
+                        { k: '03', name: 'Perumahan, Air, Listrik, dan Bahan Bakar Rumah Tangga' },
+                        { k: '04', name: 'Perlengkapan, Peralatan, dan Pemeliharaan Rutin Rumah Tangga' },
+                        { k: '05', name: 'Kesehatan' },
+                        { k: '06', name: 'Transportasi' },
+                        { k: '07', name: 'Informasi, Komunikasi, dan Jasa Keuangan' },
+                        { k: '08', name: 'Rekreasi, Olahraga, dan Budaya' },
+                        { k: '09', name: 'Pendidikan' },
+                        { k: '10', name: 'Penyediaan Makanan dan Minuman/Restoran' },
+                        { k: '11', name: 'Perawatan Pribadi dan Jasa Lainnya' },
+                        { k: 'TOTAL', name: 'TOTAL / UMUM' }
+                    ];
+                    fallbackKelompoks.forEach(item => {
+                        defs[item.k] = {
+                            code: item.k === 'TOTAL' ? sectoralState.parent_code : `${sectoralState.parent_code}.${item.k}`,
+                            cat_label: item.k,
+                            name: item.name,
+                            short_name: item.name
+                        };
+                    });
+                    sectoralState.definitions = defs;
+                    defKeys = Object.keys(defs);
+                }
+
+                const escapeAttr = function (str) {
+                    if (!str) return '';
+                    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                };
+
+                // ALL YEARS VIEW (Format Spreadsheet Excel: seluruh tahun berdampingan beserta 12 bulan lengkap)
+                let yearsList = (sectoralState.years && sectoralState.years.length > 0) ? sectoralState.years : [2024, 2025, 2026];
+                if (yearsList.includes(2018) && yearsList.length > 5) {
+                    yearsList = [2024, 2025, 2026];
+                }
+                sectoralState.years = yearsList;
+
+                const defaultMonthlyThemes = [
+                    { bg: '#e0f2fe', text: '#0369a1', border: '#94a3b8' }, // Sky (2024)
+                    { bg: '#f0fdf4', text: '#166534', border: '#94a3b8' }, // Emerald (2025)
+                    { bg: '#fef3c7', text: '#92400e', border: '#94a3b8' }, // Amber (2026)
+                    { bg: '#f3e8ff', text: '#6b21a8', border: '#94a3b8' }, // Purple (2027)
+                    { bg: '#ffe4e6', text: '#9f1239', border: '#94a3b8' }, // Rose (2028)
+                    { bg: '#ffedd5', text: '#9a3412', border: '#94a3b8' }, // Orange (2023)
+                    { bg: '#e0e7ff', text: '#3730a3', border: '#94a3b8' }, // Indigo (2022)
+                    { bg: '#ccfbf1', text: '#115e59', border: '#cbd5e1' }  // Teal
+                ];
+                const getMonthlyYearTheme = function (yr) {
+                    if (yr === 2024) return defaultMonthlyThemes[0];
+                    if (yr === 2025) return defaultMonthlyThemes[1];
+                    if (yr === 2026) return defaultMonthlyThemes[2];
+                    if (yr === 2027) return defaultMonthlyThemes[3];
+                    if (yr === 2028) return defaultMonthlyThemes[4];
+                    if (yr === 2023) return defaultMonthlyThemes[5];
+                    if (yr === 2022) return defaultMonthlyThemes[6];
+                    return defaultMonthlyThemes[Math.abs(yr % defaultMonthlyThemes.length)];
+                };
+
+                let theadHtml = `<tr>
+                    <th rowspan="2" style="width:50px; min-width:50px; max-width:50px; position:sticky; left:0; top:0; background:#f1f5f9; z-index:30; text-align:center; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:1px solid #e2e8f0; font-size:11.5px; font-weight:800; padding:8px 4px;">No</th>
+                    <th rowspan="2" style="width:280px; min-width:280px; max-width:320px; position:sticky; left:50px; top:0; background:#f1f5f9; z-index:30; text-align:left; vertical-align:middle; border-bottom:1.5px solid #cbd5e1; border-right:2px solid #94a3b8; font-size:11.5px; font-weight:800; padding:8px 12px;">Kelompok Pengeluaran</th>`;
+                
+                yearsList.forEach(yr => {
+                    const colTheme = getMonthlyYearTheme(yr);
+                    const canDelete = (yearsList.length > 1);
+                    theadHtml += `<th colspan="13" style="text-align:center; background:${colTheme.bg}; color:${colTheme.text}; font-weight:800; font-size:12.5px; padding:6px 8px; border-bottom:1px solid #cbd5e1; border-right:2px solid ${colTheme.border}; position:sticky; top:0; z-index:20;">
+                        <div style="display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                            <span>Tahun ${yr}</span>
+                            ${canDelete ? `<button type="button" class="btn-sec-del-year" data-year="${yr}" title="Hapus Tahun ${yr} beserta seluruh 12 bulannya dari tabel" style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid rgba(239,68,68,0.3); border-radius:4px; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; line-height:1; font-weight:bold; padding:0; transition:all 0.15s ease;" onmouseover="this.style.background='#dc2626';this.style.color='#fff';" onmouseout="this.style.background='rgba(239,68,68,0.12)';this.style.color='#dc2626';">&times;</button>` : ''}
+                        </div>
+                    </th>`;
+                });
+                theadHtml += `</tr><tr>`;
+
+                yearsList.forEach(yr => {
+                    const colTheme = getMonthlyYearTheme(yr);
+                    standardMonths.forEach(m => {
+                        theadHtml += `<th style="width:80px; min-width:80px; padding:6px 3px; font-weight:800; font-size:11px; color:#1e293b; border-bottom:1.5px solid #cbd5e1; border-right:1px solid #e2e8f0; text-align:center; background:#f8fafc; position:sticky; top:36px; z-index:20;" title="${m} ${yr}">${m}</th>`;
+                    });
+                    theadHtml += `<th style="width:85px; min-width:85px; padding:6px 3px; font-weight:800; font-size:11px; color:#166534; border-bottom:1.5px solid #86efac; border-right:2px solid ${colTheme.border}; text-align:center; background:#dcfce7; position:sticky; top:36px; z-index:20;" title="Rata-rata Tahunan ${yr}">Tahunan</th>`;
+                });
+                theadHtml += `</tr>`;
+                secThead.innerHTML = theadHtml;
+
+                let tbodyHtml = '';
+                defKeys.forEach(k => {
+                    const item = defs[k];
+                    if (!item) return;
+                    const isTotal = (k === 'TOTAL');
+                    const rowBg = isTotal ? '#f0fdf4' : '#ffffff';
+                    const codeBg = isTotal ? '#dcfce7' : '#ffffff';
+                    const rowWeight = isTotal ? '800' : '600';
+                    const textColor = isTotal ? '#15803d' : '#0f172a';
+
+                    tbodyHtml += `<tr style="background:${rowBg};">`;
+                    tbodyHtml += `<td style="position:sticky; left:0; background:${codeBg}; z-index:10; padding:6px 4px; font-weight:800; font-size:11.5px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; text-align:center; vertical-align:middle; width:50px; min-width:50px; max-width:50px;">
+                        ${isTotal ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:3px 6px; border-radius:5px;">TOTAL</span>' : `<span style="display:inline-block; min-width:28px; padding:2px 4px; font-size:11.5px; font-weight:800; border-radius:5px; background:#f1f5f9; color:#0369a1; border:1px solid #cbd5e1;">${escapeAttr(item.cat_label || k)}</span>`}
+                    </td>`;
+
+                    const safeName = escapeAttr(item.short_name || item.name || '');
+                    tbodyHtml += `<td style="position:sticky; left:50px; background:${codeBg}; z-index:10; padding:6px 10px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:2px solid #94a3b8; vertical-align:middle; width:280px; min-width:280px; max-width:320px;">
+                        <span style="font-weight:${rowWeight}; font-size:12px; color:${textColor}; line-height:1.4;">${safeName}</span>
+                    </td>`;
+
+                    yearsList.forEach(yr => {
+                        const colTheme = getMonthlyYearTheme(yr);
+                        standardMonths.forEach(m => {
+                            const existingVal = (mVals[item.code] && mVals[item.code][yr] && mVals[item.code][yr][m] !== undefined) ? mVals[item.code][yr][m] : '';
+                            const formattedVal = (existingVal !== '' && existingVal !== null) ? formatRupiahNumber(existingVal) : '';
+
+                            if (isTotal) {
+                                tbodyHtml += `<td style="padding:4px 3px; border-bottom:1px solid #86efac; border-right:1px solid #86efac; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                                    <input type="text" readonly class="sec-monthly-total-auto is-rupiah-mask" data-code="TOTAL" data-year="${yr}" data-month="${m}" value="${formattedVal}" placeholder="0" style="width:100%; height:28px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #86efac; border-radius:3px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
+                                </td>`;
+                            } else {
+                                tbodyHtml += `<td style="padding:4px 3px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-align:right; vertical-align:middle; background:${rowBg};">
+                                    <input type="text" inputmode="decimal" class="sec-monthly-input is-rupiah-mask" data-code="${item.code}" data-year="${yr}" data-month="${m}" value="${formattedVal}" placeholder="-" style="width:100%; height:28px; padding:0 4px; font-weight:${rowWeight}; font-size:11.5px; border:1px solid #cbd5e1; border-radius:3px; text-align:right; background:#ffffff; color:${textColor};">
+                                </td>`;
+                            }
+                        });
+
+                        const existingAnn = (mVals[item.code] && mVals[item.code][yr] && mVals[item.code][yr]['Tahunan'] !== undefined) ? mVals[item.code][yr]['Tahunan'] : '';
+                        const formattedAnn = (existingAnn !== '' && existingAnn !== null) ? formatRupiahNumber(existingAnn) : '';
+                        tbodyHtml += `<td style="padding:4px 3px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:2px solid ${colTheme.border}; text-align:right; vertical-align:middle; background:#f0fdf4;">
+                            <input type="text" readonly class="${isTotal ? 'sec-monthly-total-auto' : 'sec-monthly-annual-auto'} is-rupiah-mask" data-code="${item.code}" data-year="${yr}" data-month="Tahunan" value="${formattedAnn}" placeholder="-" title="Rata-rata tahun ${yr}" style="width:100%; height:28px; padding:0 4px; font-weight:800; font-size:11.5px; border:1.5px solid #86efac; border-radius:3px; text-align:right; background:#dcfce7; color:#15803d; cursor:not-allowed;">
+                        </td>`;
+                    });
+
+                    tbodyHtml += `</tr>`;
+                });
+                secTbody.innerHTML = tbodyHtml;
+
+                calculateMonthlyGroupTotals();
+                return;
+            }
             const years = sectoralState.years;
             const defs = sectoralState.definitions;
             const vals = sectoralState.values;
-            const pCode = sectoralState.parent_code || '';
+            // pCode already declared above
             const isMonthly = (sectoralState.category_type === 'monthly' || pCode === 'PAR-001' || pCode === 'PAR-002');
             const isInv = (sectoralState.category_type === 'quarterly' || pCode.startsWith('INV-'));
             const isExp = (sectoralState.category_type === 'expenditure');
@@ -8411,13 +7844,13 @@
                 // Col 1: Kode / Kategori
                 tbodyHtml += `
                     <td style="position:sticky; left:0; background:${codeBg}; z-index:9; padding:6px 6px; font-weight:800; font-size:11.5px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; text-align:center; vertical-align:middle;">
-                        ${isTotal 
-                            ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL (OTOMATIS)</span>' 
-                            : (item.is_custom 
-                                ? `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
-                                : `<span style="display:inline-block; min-width:38px; padding:3px 7px; font-size:11.5px; font-weight:800; border-radius:5px; background:#f1f5f9; color:#0369a1; border:1px solid #cbd5e1;">${escapeAttr(item.cat_label || k)}</span>`
-                            )
-                        }
+                        ${isTotal
+                        ? '<span class="badge success" style="font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">TOTAL (OTOMATIS)</span>'
+                        : (item.is_custom
+                            ? `<input type="text" class="sec-cat-label-input" data-cat="${k}" value="${escapeAttr(item.cat_label || k)}" style="width:100%; min-width:44px; max-width:68px; height:32px; padding:0 4px; font-weight:800; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; text-align:center; background:#ffffff; color:#0369a1; outline:none;" title="Ubah Kode/Label Kategori">`
+                            : `<span style="display:inline-block; min-width:38px; padding:3px 7px; font-size:11.5px; font-weight:800; border-radius:5px; background:#f1f5f9; color:#0369a1; border:1px solid #cbd5e1;">${escapeAttr(item.cat_label || k)}</span>`
+                        )
+                    }
                     </td>`;
 
                 // Col 2: Nama Lapangan Usaha / Bulan / Komponen
@@ -8425,13 +7858,13 @@
                 tbodyHtml += `
                     <td style="position:sticky; left:90px; background:${codeBg}; z-index:9; padding:6px 10px; font-weight:${rowWeight}; font-size:12px; border-bottom:1px solid ${isTotal ? '#86efac' : '#e2e8f0'}; border-right:1.5px solid ${isTotal ? '#86efac' : '#cbd5e1'}; vertical-align:middle;">
                         <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-                            ${isTotal 
-                                ? `<span style="font-weight:800; font-size:12px; color:#15803d;">${safeName}</span>`
-                                : (item.is_custom
-                                    ? `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; background:#ffffff; color:${textColor}; outline:none;">`
-                                    : `<span style="font-weight:${rowWeight}; font-size:12px; color:${textColor}; line-height:1.4;">${safeName}</span>`
-                                )
-                            }
+                            ${isTotal
+                        ? `<span style="font-weight:800; font-size:12px; color:#15803d;">${safeName}</span>`
+                        : (item.is_custom
+                            ? `<input type="text" class="sec-name-input" data-cat="${k}" data-code="${item.code}" value="${safeName}" placeholder="Ketik nama rincian..." style="width:100%; min-width:240px; height:32px; padding:0 8px; font-weight:${rowWeight}; font-size:12px; border:1px solid #cbd5e1; border-radius:5px; background:#ffffff; color:${textColor}; outline:none;">`
+                            : `<span style="font-weight:${rowWeight}; font-size:12px; color:${textColor}; line-height:1.4;">${safeName}</span>`
+                        )
+                    }
                             ${item.is_custom ? `<button type="button" class="btn-sec-del-cat-row icon-button small danger" data-cat="${k}" title="Hapus Baris Kategori Ini" style="width:26px; height:26px; min-width:26px; padding:0; display:flex; align-items:center; justify-content:center; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; cursor:pointer;">&times;</button>` : ''}
                         </div>
                     </td>`;
@@ -8476,7 +7909,16 @@
                 .then(r => r.json())
                 .then(res => {
                     if (res.status === 'success' && res.data) {
-                        sectoralState.years = res.data.years || [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+                        const isPar004 = (sectoralState.parent_code === 'PAR-004');
+                        const isMonthly = (res.data.is_monthly_group === true || ['HRG-002', 'HRG-006'].includes(sectoralState.parent_code) || isPar004);
+                        sectoralState.is_monthly_group = isMonthly;
+                        if (isMonthly) {
+                            const defaultYrs = isPar004 ? [2023, 2024, 2025, 2026] : [2024, 2025, 2026];
+                            const resYears = (res.data.years && Array.isArray(res.data.years) && res.data.years.length > 0) ? res.data.years : defaultYrs;
+                            sectoralState.years = resYears;
+                        } else {
+                            sectoralState.years = res.data.years || [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+                        }
                         sectoralState.definitions = res.data.definitions || {};
                         sectoralState.values = res.data.values || {};
                         sectoralState.kode_wilayah = res.data.kode_wilayah || wil;
@@ -8484,6 +7926,15 @@
                         sectoralState.unit = res.data.unit || 'Miliar rupiah';
                         sectoralState.category_type = res.data.category_type || 'sectoral';
                         sectoralState.can_auto_sum = (res.data.can_auto_sum !== false);
+                        sectoralState.months = res.data.months || [];
+                        sectoralState.monthly_values = res.data.monthly_values || {};
+                        sectoralState.is_hrg005 = (res.data.is_hrg005 === true || pCode === 'HRG-005');
+                        sectoralState.hrg005_structure = res.data.hrg005_structure || null;
+                        sectoralState.daily_dates = res.data.daily_dates || [];
+                        sectoralState.daily_values = res.data.daily_values || {};
+                        if (sectoralState.is_monthly_group && !sectoralState.active_year) {
+                            sectoralState.active_year = isPar004 ? 2023 : 2024;
+                        }
 
                         // Update header badges & labels
                         const unitBadge = document.getElementById('sec-modal-unit-badge');
@@ -8498,10 +7949,22 @@
                             catSwitcher.value = sectoralState.parent_code;
                         }
 
-                        // Sembunyikan tombol tambah baris kategori untuk indikator terstandarisasi
                         const btnAddCat = document.getElementById('btn-sec-add-cat-row');
-                        if (btnAddCat) {
-                            btnAddCat.style.display = 'none';
+                        const btnPrevYr = document.getElementById('btn-sec-add-prev-year');
+                        const btnNextYr = document.getElementById('btn-sec-add-next-year');
+
+                        if (btnAddCat) btnAddCat.style.display = 'none';
+                        if (btnPrevYr) {
+                            btnPrevYr.style.display = 'inline-flex';
+                            btnPrevYr.title = sectoralState.is_monthly_group 
+                                ? 'Tambah kolom 1 tahun sebelumnya (lengkap dengan 12 bulan & tahunan)' 
+                                : 'Tambah kolom tahun sebelumnya';
+                        }
+                        if (btnNextYr) {
+                            btnNextYr.style.display = 'inline-flex';
+                            btnNextYr.title = sectoralState.is_monthly_group 
+                                ? 'Tambah kolom 1 tahun sesudahnya (lengkap dengan 12 bulan & tahunan)' 
+                                : 'Tambah kolom tahun sesudahnya';
                         }
 
                         const isInv = (sectoralState.category_type === 'quarterly' || (pCode && pCode.startsWith('INV-')));
@@ -8513,9 +7976,12 @@
                         const isPar = (pCode && pCode.startsWith('PAR-'));
                         const isPro = (pCode && pCode.startsWith('PRO-'));
                         const isFis = (pCode && pCode.startsWith('FIS-'));
+                        const isHrg = (pCode && pCode.startsWith('HRG-'));
 
                         if (badgeEl) {
-                            if (isParMonthly) badgeEl.textContent = 'PARIWISATA • DATA BULANAN BPS / DISBUDPAR';
+                            if (pCode === 'PAR-004') badgeEl.textContent = 'PARIWISATA • DATA BULANAN TPK HOTEL BPS / DISBUDPAR';
+                            else if (isHrg) badgeEl.textContent = 'HARGA & INFLASI • DATA RESMI BPS / DISKOPERINDAG';
+                            else if (isParMonthly) badgeEl.textContent = 'PARIWISATA • DATA BULANAN BPS / DISBUDPAR';
                             else if (isPar) badgeEl.textContent = 'PARIWISATA • DATA AKOMODASI & HOTEL';
                             else if (isPro) badgeEl.textContent = 'PRODUKSI SEKTORAL • 25 KECAMATAN BANYUWANGI';
                             else if (isFis) badgeEl.textContent = 'FISKAL & KEUANGAN • PENDAPATAN & TRANSFER DAERAH';
@@ -8526,10 +7992,16 @@
                         }
                         if (titleEl) {
                             let tText = 'Input & Kelola PDRB Sektoral (17 Lapangan Usaha)';
-                            if (pCode === 'PAR-001') tText = 'Input & Kelola Kunjungan Wisatawan Mancanegara (12 Bulan)';
+                            if (pCode === 'HRG-001') tText = 'Input & Kelola IHK Umum (12 Bulan)';
+                            else if (pCode === 'HRG-002') tText = 'Input & Kelola IHK Kelompok Pengeluaran (11 Kelompok)';
+                            else if (pCode === 'HRG-003') tText = 'Input & Kelola Inflasi Bulanan / mtm (12 Bulan)';
+                            else if (pCode === 'HRG-004') tText = 'Input & Kelola Inflasi Tahunan / yoy (12 Bulan)';
+                            else if (pCode === 'HRG-005') tText = 'Input & Kelola Harga Eceran Komoditas Pangan Strategis (20 Kelompok Bahan Pokok)';
+                            else if (pCode === 'HRG-006') tText = 'Input & Kelola Bobot Keranjang IHK (11 Kelompok)';
+                            else if (pCode === 'PAR-001') tText = 'Input & Kelola Kunjungan Wisatawan Mancanegara (12 Bulan)';
                             else if (pCode === 'PAR-002') tText = 'Input & Kelola Kunjungan Wisatawan Nusantara (12 Bulan)';
                             else if (pCode === 'PAR-003') tText = 'Input & Kelola Tamu Hotel (Domestik & Mancanegara)';
-                            else if (pCode === 'PAR-004') tText = 'Input & Kelola Tingkat Penghunian Kamar / TPK (Bintang & Non Bintang)';
+                            else if (pCode === 'PAR-004') tText = 'Input & Kelola Tingkat Penghunian Kamar / TPK (Bintang, Non Bintang & 12 Bulan)';
                             else if (pCode === 'PAR-005') tText = 'Input & Kelola Jumlah Kamar Hotel (Bintang & Non Bintang)';
                             else if (pCode === 'PAR-006') tText = 'Input & Kelola Usaha Hotel & Restoran (Bintang, Non Bintang, Restoran)';
                             else if (pCode === 'PRO-001') tText = 'Input & Kelola Produksi Pertanian (25 Kecamatan)';
@@ -8537,6 +8009,7 @@
                             else if (pCode === 'PRO-004') tText = 'Input & Kelola Produksi Perikanan (25 Kecamatan)';
                             else if (pCode === 'FIS-001') tText = 'Input & Kelola Pendapatan Asli Daerah / PAD (4 Komponen)';
                             else if (pCode === 'FIS-002') tText = 'Input & Kelola Pendapatan Transfer Pemerintah (2 Komponen)';
+                            else if (pCode === 'FIS-003') tText = 'Input & Kelola Belanja Daerah Menurut Komponen';
                             else if (pCode === 'INV-001') tText = 'Input & Kelola Realisasi Investasi Total PMA & PMDN (4 Kuartal)';
                             else if (pCode === 'INV-002') tText = 'Input & Kelola Realisasi Investasi PMA (4 Kuartal)';
                             else if (pCode === 'INV-003') tText = 'Input & Kelola Realisasi Investasi PMDN (4 Kuartal)';
@@ -8551,12 +8024,22 @@
                             titleEl.textContent = tText;
                         }
                         if (descEl) {
-                            if (isParMonthly) {
+                            if (pCode === 'HRG-001' || pCode === 'HRG-003' || pCode === 'HRG-004') {
+                                descEl.textContent = 'Kelola rincian data bulanan inflasi dan IHK (Januari s.d. Desember) per tahun dalam satu tabel matriks spreadsheet.';
+                            } else if (pCode === 'HRG-002' || pCode === 'HRG-006') {
+                                descEl.textContent = 'Kelola rincian data IHK dan bobot menurut 11 kelompok pengeluaran standar BPS per tahun.';
+                            } else if (pCode === 'HRG-005') {
+                                descEl.textContent = 'Kelola harga eceran harian (2026-11-01 s.d. 2026-11-30) dan ringkasan tahunan untuk 20 kelompok bahan pokok (48 komoditas) sesuai konsep Excel.';
+                            } else if (pCode === 'PAR-004') {
+                                descEl.textContent = 'Kelola rincian data bulanan (Januari s.d. Desember) Tingkat Penghunian Kamar (TPK) Hotel Bintang, Non Bintang, dan Seluruh Jenis Hotel per tahun.';
+                            } else if (isParMonthly) {
                                 descEl.textContent = 'Kelola rincian data bulanan (Januari s.d. Desember) per tahun dalam satu tabel matriks spreadsheet.';
                             } else if (isPar) {
                                 descEl.textContent = 'Kelola rincian data kategori perhotelan dan akomodasi pariwisata per tahun dalam satu tabel matriks spreadsheet.';
                             } else if (isPro) {
                                 descEl.textContent = 'Kelola rincian data seluruh 25 wilayah kecamatan di Kabupaten Banyuwangi per tahun dalam satu tabel matriks spreadsheet. Nilai total kabupaten otomatis terhitung.';
+                            } else if (pCode === 'FIS-003') {
+                                descEl.textContent = 'Kelola rincian data komponen belanja daerah per tahun dalam satu tabel matriks spreadsheet.';
                             } else if (isFis) {
                                 descEl.textContent = 'Kelola rincian data komponen pendapatan daerah dan transfer pemerintah per tahun dalam satu tabel matriks spreadsheet.';
                             } else if (isInv) {
@@ -8574,9 +8057,15 @@
                             }
                         }
                         if (helpEl) {
-                            if (sectoralState.can_auto_sum) {
+                            if (pCode === 'PAR-004') {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Rata-rata tahunan otomatis terhitung real-time`;
+                            } else if (sectoralState.can_auto_sum) {
                                 helpEl.style.display = 'inline-flex';
                                 helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Total otomatis terhitung real-time saat Anda mengetik nilai`;
+                            } else if (isHrg) {
+                                helpEl.style.display = 'inline-flex';
+                                helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Data harga dan inflasi resmi BPS / Pasar Daerah`;
                             } else if (isParMonthly) {
                                 helpEl.style.display = 'inline-flex';
                                 helpEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Data bulanan (Januari s.d. Desember) per tahun`;
@@ -8605,6 +8094,12 @@
         if (catSwitcher) {
             catSwitcher.addEventListener('change', function () {
                 sectoralState.parent_code = this.value;
+                const isPar004 = (this.value === 'PAR-004');
+                const isMonthly = ['HRG-002', 'HRG-006', 'PAR-004'].includes(this.value);
+                sectoralState.is_monthly_group = isMonthly;
+                if (isMonthly) {
+                    sectoralState.years = isPar004 ? [2023, 2024, 2025, 2026] : [2024, 2025, 2026];
+                }
                 const pInput = document.getElementById('sec-form-parent-code');
                 if (pInput) pInput.value = this.value;
                 loadSectoralMatrix();
@@ -8615,6 +8110,12 @@
             if (!modalSectoral) return;
             if (parentCode) {
                 sectoralState.parent_code = parentCode;
+                const isPar004 = (parentCode === 'PAR-004');
+                const isMonthly = ['HRG-002', 'HRG-006', 'PAR-004'].includes(parentCode);
+                sectoralState.is_monthly_group = isMonthly;
+                if (isMonthly) {
+                    sectoralState.years = isPar004 ? [2023, 2024, 2025, 2026] : [2024, 2025, 2026];
+                }
                 const catSwitcher = document.getElementById('sec-select-indicator-category');
                 if (catSwitcher) catSwitcher.value = parentCode;
                 const pInput = document.getElementById('sec-form-parent-code');
@@ -8628,13 +8129,14 @@
 
         // Open from row shortcut button
         document.addEventListener('click', e => {
-            const btn = e.target.closest('.btn-open-sectoral-from-row');
+            const btn = e.target.closest('.btn-open-sectoral-from-row, .btn-open-sectoral-direct');
             if (btn) {
                 e.preventDefault();
                 const pCode = btn.getAttribute('data-parent') || 'EKO-003';
                 openSectoralModal(pCode);
             }
         });
+
 
         // Live calculation and state preservation on input change
         if (secTbody) {
@@ -8646,22 +8148,41 @@
                         if (!sectoralState.values[code]) sectoralState.values[code] = {};
                         sectoralState.values[code][yr] = e.target.value !== '' ? parseRupiahNumber(e.target.value) : '';
                     }
-                    calculateSectoralTotals();
-                } else if (e.target.classList.contains('sec-name-input')) {
-                    const cat = e.target.getAttribute('data-cat');
-                    if (cat && sectoralState.definitions[cat]) {
-                        sectoralState.definitions[cat].name = e.target.value;
-                        sectoralState.definitions[cat].short_name = e.target.value;
+                    if (sectoralState.parent_code === 'HRG-005') {
+                        calculateHrg005Totals(false);
+                    } else {
+                        calculateSectoralTotals();
                     }
-                } else if (e.target.classList.contains('sec-cat-label-input')) {
-                    const cat = e.target.getAttribute('data-cat');
-                    if (cat && sectoralState.definitions[cat]) {
-                        sectoralState.definitions[cat].cat_label = e.target.value;
+                } else if (e.target.classList.contains('sec-daily-input')) {
+                    const code = e.target.getAttribute('data-code');
+                    const dStr = e.target.getAttribute('data-date');
+                    const rawVal = e.target.value.trim();
+                    const numVal = (rawVal !== '') ? parseRupiahNumber(rawVal) : '';
+                    if (code && dStr) {
+                        if (!sectoralState.daily_values) sectoralState.daily_values = {};
+                        if (!sectoralState.daily_values[code]) sectoralState.daily_values[code] = {};
+                        sectoralState.daily_values[code][dStr] = numVal;
+                    }
+                    calculateHrg005Totals(true);
+                } else if (e.target.classList.contains('sec-monthly-input')) {
+                    const code = e.target.getAttribute('data-code');
+                    const yr = parseInt(e.target.getAttribute('data-year'), 10);
+                    const month = e.target.getAttribute('data-month');
+                    const rawVal = e.target.value.trim();
+                    const numVal = (rawVal !== '') ? parseRupiahNumber(rawVal) : '';
+
+                    if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+                    if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                    sectoralState.monthly_values[code][yr][month] = numVal;
+
+                    if (sectoralState.parent_code === 'PAR-004') {
+                        calculatePar004Totals();
+                    } else {
+                        calculateMonthlyGroupTotals();
                     }
                 }
             });
 
-            // Hapus Baris Kategori Kustom
             secTbody.addEventListener('click', e => {
                 const delCatBtn = e.target.closest('.btn-sec-del-cat-row');
                 if (delCatBtn) {
@@ -8730,15 +8251,66 @@
             });
         }
 
+        // Helper untuk sinkronkan nilai input di DOM saat ini ke sectoralState sebelum re-render
+        function syncCurrentInputsToState() {
+            if (sectoralState.is_monthly_group) {
+                document.querySelectorAll('.sec-monthly-input').forEach(inp => {
+                    const code = inp.getAttribute('data-code');
+                    const yr = parseInt(inp.getAttribute('data-year'), 10);
+                    const m = inp.getAttribute('data-month');
+                    const v = inp.value !== '' ? parseRupiahNumber(inp.value) : '';
+                    if (code && yr && m) {
+                        if (!sectoralState.monthly_values) sectoralState.monthly_values = {};
+                        if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+                        if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                        sectoralState.monthly_values[code][yr][m] = v;
+                    }
+                });
+            } else {
+                document.querySelectorAll('.sec-val-input').forEach(inp => {
+                    const cat = inp.getAttribute('data-cat');
+                    const code = inp.getAttribute('data-code');
+                    const yr = parseInt(inp.getAttribute('data-year'), 10);
+                    const val = inp.value;
+                    if ((cat || code) && yr) {
+                        if (!sectoralState.values) sectoralState.values = {};
+                        const targetKey = (sectoralState.parent_code === 'HRG-005' && code) ? code : cat;
+                        if (!sectoralState.values[targetKey]) sectoralState.values[targetKey] = {};
+                        sectoralState.values[targetKey][yr] = (val !== '' && val !== null) ? parseRupiahNumber(val) : '';
+                    }
+                });
+                if (sectoralState.parent_code === 'HRG-005') {
+                    document.querySelectorAll('.sec-daily-input').forEach(inp => {
+                        const code = inp.getAttribute('data-code');
+                        const dStr = inp.getAttribute('data-date');
+                        const val = inp.value;
+                        if (code && dStr) {
+                            if (!sectoralState.daily_values) sectoralState.daily_values = {};
+                            if (!sectoralState.daily_values[code]) sectoralState.daily_values[code] = {};
+                            sectoralState.daily_values[code][dStr] = (val !== '' && val !== null) ? parseRupiahNumber(val) : '';
+                        }
+                    });
+                }
+            }
+        }
+
         // Add Previous Year button (Adds column to the left)
         if (btnSecAddPrev) {
             btnSecAddPrev.addEventListener('click', () => {
-                const currentYears = sectoralState.years;
-                const minYear = currentYears.length > 0 ? Math.min(...currentYears) : 2018;
+                syncCurrentInputsToState();
+                const isPar004 = (sectoralState.parent_code === 'PAR-004');
+                const isMonthly = (sectoralState.is_monthly_group === true || ['HRG-002', 'HRG-006'].includes(sectoralState.parent_code) || isPar004);
+                sectoralState.is_monthly_group = isMonthly;
+                let currentYears = sectoralState.years || [];
+                if (isMonthly && (currentYears.length === 0 || (currentYears.includes(2018) && currentYears.length > 5))) {
+                    currentYears = isPar004 ? [2023, 2024, 2025, 2026] : [2024, 2025, 2026];
+                }
+                const minYear = currentYears.length > 0 ? Math.min(...currentYears) : (isPar004 ? 2023 : 2024);
                 const newYear = minYear - 1;
                 if (!currentYears.includes(newYear)) {
                     currentYears.unshift(newYear);
                     currentYears.sort((a, b) => a - b);
+                    sectoralState.years = currentYears;
                     renderSectoralTable();
                 }
             });
@@ -8747,12 +8319,20 @@
         // Add Next Year button (Adds column to the right)
         if (btnSecAddNext) {
             btnSecAddNext.addEventListener('click', () => {
-                const currentYears = sectoralState.years;
-                const maxYear = currentYears.length > 0 ? Math.max(...currentYears) : 2025;
+                syncCurrentInputsToState();
+                const isPar004 = (sectoralState.parent_code === 'PAR-004');
+                const isMonthly = (sectoralState.is_monthly_group === true || ['HRG-002', 'HRG-006'].includes(sectoralState.parent_code) || isPar004);
+                sectoralState.is_monthly_group = isMonthly;
+                let currentYears = sectoralState.years || [];
+                if (isMonthly && (currentYears.length === 0 || (currentYears.includes(2018) && currentYears.length > 5))) {
+                    currentYears = isPar004 ? [2023, 2024, 2025, 2026] : [2024, 2025, 2026];
+                }
+                const maxYear = currentYears.length > 0 ? Math.max(...currentYears) : 2026;
                 const newYear = maxYear + 1;
                 if (!currentYears.includes(newYear)) {
                     currentYears.push(newYear);
                     currentYears.sort((a, b) => a - b);
+                    sectoralState.years = currentYears;
                     renderSectoralTable();
                 }
             });
@@ -8764,8 +8344,19 @@
                 const delBtn = e.target.closest('.btn-sec-del-year');
                 if (delBtn) {
                     const yr = parseInt(delBtn.getAttribute('data-year'), 10);
-                    if (confirm(`Hapus kolom tahun ${yr} dari tabel matriks ini?`)) {
+                    const yrMsg = sectoralState.is_monthly_group 
+                        ? `Hapus tahun ${yr} beserta seluruh 12 bulannya dari tabel matriks ini?` 
+                        : `Hapus kolom tahun ${yr} dari tabel matriks ini?`;
+                    if (confirm(yrMsg)) {
+                        syncCurrentInputsToState();
                         sectoralState.years = sectoralState.years.filter(y => y !== yr);
+                        if (sectoralState.is_monthly_group && sectoralState.monthly_values) {
+                            Object.keys(sectoralState.monthly_values).forEach(code => {
+                                if (sectoralState.monthly_values[code] && sectoralState.monthly_values[code][yr]) {
+                                    delete sectoralState.monthly_values[code][yr];
+                                }
+                            });
+                        }
                         renderSectoralTable();
                     }
                 }
@@ -8831,6 +8422,72 @@
                         formData.append(`matrix[${cat}][${yr}]`, matrix[cat][yr]);
                     });
                 });
+
+                if (sectoralState.is_monthly_group) {
+                    document.querySelectorAll('.sec-monthly-input').forEach(inp => {
+                        const code = inp.getAttribute('data-code');
+                        const yr = inp.getAttribute('data-year');
+                        const m = inp.getAttribute('data-month');
+                        const v = inp.value !== '' ? parseRupiahNumber(inp.value) : '';
+                        if (code && yr && m) {
+                            if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+                            if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                            sectoralState.monthly_values[code][yr][m] = v;
+                        }
+                    });
+
+                    document.querySelectorAll('.sec-monthly-annual-auto, .sec-monthly-total-auto').forEach(inp => {
+                        const code = inp.getAttribute('data-code');
+                        const yr = inp.getAttribute('data-year');
+                        const m = inp.getAttribute('data-month') || 'Tahunan';
+                        const v = inp.value !== '' ? parseRupiahNumber(inp.value) : '';
+                        if (code && yr && m) {
+                            if (!sectoralState.monthly_values[code]) sectoralState.monthly_values[code] = {};
+                            if (!sectoralState.monthly_values[code][yr]) sectoralState.monthly_values[code][yr] = {};
+                            sectoralState.monthly_values[code][yr][m] = v;
+                        }
+                    });
+
+                    if (sectoralState.monthly_values) {
+                        const mVals = sectoralState.monthly_values;
+                        Object.keys(mVals).forEach(code => {
+                            if (code === 'TOTAL') return;
+                            Object.keys(mVals[code]).forEach(yr => {
+                                Object.keys(mVals[code][yr]).forEach(m => {
+                                    const v = mVals[code][yr][m];
+                                    if (v !== '' && v !== null && v !== undefined) {
+                                        formData.append(`monthly_matrix[${code}][${yr}][${m}]`, v);
+                                    }
+                                });
+                            });
+                        });
+                    }
+                }
+
+                if (sectoralState.parent_code === 'HRG-005') {
+                    document.querySelectorAll('.sec-daily-input').forEach(inp => {
+                        const code = inp.getAttribute('data-code');
+                        const dStr = inp.getAttribute('data-date');
+                        const v = inp.value !== '' ? parseRupiahNumber(inp.value) : '';
+                        if (code && dStr) {
+                            if (!sectoralState.daily_values) sectoralState.daily_values = {};
+                            if (!sectoralState.daily_values[code]) sectoralState.daily_values[code] = {};
+                            sectoralState.daily_values[code][dStr] = v;
+                        }
+                    });
+                    if (sectoralState.daily_values) {
+                        const dVals = sectoralState.daily_values;
+                        Object.keys(dVals).forEach(code => {
+                            if (code === 'TOTAL') return;
+                            Object.keys(dVals[code]).forEach(dStr => {
+                                const v = dVals[code][dStr];
+                                if (v !== '' && v !== null && v !== undefined) {
+                                    formData.append(`daily_matrix[${code}][${dStr}]`, v);
+                                }
+                            });
+                        });
+                    }
+                }
 
                 fetch(`${cleanSite}/database/save_sectoral_matrix`, {
                     method: 'POST',
@@ -9622,4 +9279,3 @@
     }
 
 })();
-
