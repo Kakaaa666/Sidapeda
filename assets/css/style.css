@@ -4888,6 +4888,48 @@ select:focus {
     margin-top: 3px;
 }
 
+/* Batas Wilayah Riil Kecamatan & Smooth Animation */
+.leaflet-interactive.smooth-kecamatan-boundary {
+    transition: fill-opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.22s ease, stroke-width 0.22s ease !important;
+    cursor: pointer;
+}
+
+.gis-kecamatan-tooltip {
+    min-width: 240px;
+}
+
+.gis-kecamatan-tooltip .kec-coords-box {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin: 6px 0;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    line-height: 1.5;
+}
+
+.gis-kecamatan-tooltip .kec-coords-box .coord-lbl {
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gis-kecamatan-tooltip .kec-coords-box .coord-val {
+    color: #cbd5e1;
+}
+
+.gis-kecamatan-tooltip .kec-coords-box .coord-val b {
+    color: #38bdf8;
+    font-weight: 600;
+}
+
 /* ==========================================================================
    ENTERPRISE UI & GIS MAP ENHANCEMENTS (SYMMETRICAL & PROPORTIONAL)
    ========================================================================== */
@@ -5358,6 +5400,7 @@ select:focus {
     width: 100%;
     height: 100%;
     min-height: 600px;
+    background: #f8fafc;
 }
 
 /* Symmetrical Map Floating Overlays (Anchored top: 14px) */
@@ -5418,6 +5461,14 @@ select:focus {
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
     padding: 3px;
     box-sizing: border-box;
+    max-width: calc(100% - 130px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.economic-map-page .basemap-switcher-pills::-webkit-scrollbar {
+    display: none;
 }
 
 .economic-map-page .basemap-switcher-pills button {
@@ -5436,6 +5487,7 @@ select:focus {
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .economic-map-page .basemap-switcher-pills button:hover {
@@ -5447,6 +5499,81 @@ select:focus {
     background: #0f172a;
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+}
+
+/* Poligon Centroid Text Labels (Sesuai Gambar 1 & Gambar 2) */
+.map-polygon-label-wrap {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.map-polygon-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.map-polygon-label .lbl-name {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: -0.01em;
+}
+
+.map-polygon-label .lbl-val {
+    display: none !important; /* Angka hanya tampil di modal */
+}
+
+/* Gambar 1: MAPID Tematik Merah (Teks Putih Bersih dengan Drop Shadow Halus) */
+.map-polygon-label.theme-mapid-red .lbl-name {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.map-polygon-label.theme-mapid-red .lbl-val {
+    color: #fef08a;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* Gambar 2: Peta Kontras Kuning (Teks Hitam Pekat Tegas dengan Halo Putih) */
+.map-polygon-label.theme-yellow-contrast .lbl-name {
+    color: #000000;
+    font-weight: 800;
+    text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff, 0 1px 1px #ffffff;
+}
+
+.map-polygon-label.theme-yellow-contrast .lbl-val {
+    color: #713f12;
+    font-weight: 700;
+    text-shadow: 0 0 2px #ffffff;
+}
+
+/* Tema Dark Matter & Netral */
+.map-polygon-label.theme-carto-dark .lbl-name {
+    color: #e2e8f0;
+    text-shadow: 0 1px 3px #000000, 0 0 8px #0f172a;
+}
+
+.map-polygon-label.theme-carto-dark .lbl-val {
+    color: #38bdf8;
+    text-shadow: 0 1px 2px #000000;
+}
+
+.map-polygon-label.theme-standard .lbl-name {
+    color: #0f172a;
+    text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff;
+}
+
+.map-polygon-label.theme-standard .lbl-val {
+    color: #2563eb;
+    text-shadow: 0 0 2px #ffffff;
 }
 
 .economic-map-page .map-canvas .zoom {
@@ -5805,7 +5932,7 @@ select:focus {
     transition: all 0.2s ease;
 }
 
-/* Crisp solid core circle */
+/* Crisp solid core circle without numbers - clean modern GIS pin */
 .gis-halo-pin .halo-core {
     position: relative;
     z-index: 2;
@@ -5821,8 +5948,8 @@ select:focus {
 }
 
 .gis-halo-pin.size-lg .halo-core {
-    width: 35px;
-    height: 35px;
+    width: 32px;
+    height: 32px;
     border-width: 2.2px;
 }
 
@@ -5832,23 +5959,31 @@ select:focus {
     border-width: 1.5px;
 }
 
-.gis-halo-pin .halo-num {
+/* Balon GIS tanpa angka - ikon pin / dot bersih */
+.gis-halo-pin .halo-core svg {
     display: block;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    font-weight: 800;
-    font-size: 11.5px;
-    line-height: 1;
-    letter-spacing: -0.2px;
-    text-align: center;
-    color: #ffffff;
+    width: 15px;
+    height: 15px;
+    stroke: #ffffff;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.gis-halo-pin.size-lg .halo-num {
-    font-size: 13.5px;
+.gis-halo-pin:hover .halo-core svg {
+    transform: scale(1.18);
 }
 
-.gis-halo-pin.size-sm .halo-num {
-    font-size: 10px;
+.gis-halo-pin .halo-core .halo-dot {
+    width: 8px;
+    height: 8px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Angka di balon GIS disembunyikan total */
+.gis-halo-pin .halo-num {
+    display: none !important;
 }
 
 /* 4 CLEAN COLOR TIERS - FLAT & SOLID (NO NEON GLOW) */
@@ -6089,6 +6224,52 @@ select:focus {
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
+/* ========================================================
+   BENCHMARKING LINE CHART & TYPOGRAPHY REFINEMENTS
+   ======================================================== */
+.benchmarking-chart-card {
+    background: #ffffff !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    padding: 22px 20px 18px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+}
+
+.line-chart text {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+.benchmark-legend-pill {
+    transition: all 0.15s ease !important;
+    cursor: default;
+    user-select: none;
+}
+
+.benchmark-legend-pill:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.dynamic-chart-legend::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.dynamic-chart-legend::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.dynamic-chart-legend::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.dynamic-chart-legend::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 /* ==========================================================================
    SWEETALERT2 CUSTOM EXECUTIVE THEME (SIDAPEDA)
    ========================================================================== */
@@ -6245,6 +6426,25 @@ button:where(.swal2-styled.swal2-cancel):hover {
 
 .swal2-styled:focus {
     box-shadow: 0 0 0 3px rgba(48, 133, 214, 0.3) !important;
+}
+
+/* Modal Detail Angka Wilayah & Indikator GIS (Bebas Watermark & Presisi) */
+.gis-enterprise-modal-popup {
+    border-radius: 14px !important;
+    padding: 22px 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.gis-detail-modal-content code {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+}
+.gis-detail-modal-content table tr:hover td {
+    background: #f1f5f9;
 }
 
 

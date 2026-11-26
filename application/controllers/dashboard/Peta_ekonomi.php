@@ -48,6 +48,34 @@ class Peta_ekonomi extends MY_Controller {
         }
     }
 
+    public function kecamatan_geojson() {
+        $path = FCPATH . 'assets/data/jatim_kecamatan.geojson';
+        if (file_exists($path)) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(file_get_contents($path));
+        } else {
+            $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'File GeoJSON batas wilayah kecamatan tidak ditemukan.')));
+        }
+    }
+
+    public function kecamatan_json() {
+        $path = FCPATH . 'assets/data/jatim_kecamatan.json';
+        if (file_exists($path)) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(file_get_contents($path));
+        } else {
+            $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('status' => 'error', 'message' => 'File data kecamatan tidak ditemukan.')));
+        }
+    }
+
     public function get_data($id = null) {
         $id = (int)($id ?: $this->input->get('id'));
         $record = $this->M_economy->get_district_by_id($id);
@@ -213,16 +241,25 @@ class Peta_ekonomi extends MY_Controller {
             $db_map[$code] = $r;
         }
 
-        // 2. Ambil PDRB ADHB 2024 dari database_ekonomi jika ada
-        $pdrb_map = array();
-        $pdrb_rows = $this->db->select('kode_wilayah, nilai')
-            ->where('kode_indikator', 'EKO-001')
-            ->where('tahun', 2024)
+        // 2. Ambil data multi-indikator terbaru dari database_ekonomi (PDRB, Investasi, Kemiskinan, IPM, dll)
+        $target_indicators = array('EKO-001', 'EKO-002', 'EKO-005', 'EKO-008', 'INV-001', 'KES-001', 'KES-007', 'KES-008', 'KES-009', 'KES-010');
+        $indicator_rows = $this->db->select('kode_wilayah, kode_indikator, nilai, tahun')
+            ->where_in('kode_indikator', $target_indicators)
             ->where('is_deleted', 0)
+            ->order_by('tahun', 'DESC')
             ->get('database_ekonomi')
             ->result_array();
-        foreach ($pdrb_rows as $p) {
-            $pdrb_map[trim($p['kode_wilayah'])] = (float)$p['nilai'];
+
+        $indicator_map = array();
+        foreach ($indicator_rows as $row) {
+            $code = trim($row['kode_wilayah']);
+            $ind = trim($row['kode_indikator']);
+            if (!isset($indicator_map[$code])) {
+                $indicator_map[$code] = array();
+            }
+            if (!isset($indicator_map[$code][$ind])) {
+                $indicator_map[$code][$ind] = (float)$row['nilai'];
+            }
         }
 
         // 3. Gabungkan data resmi dan indikator riil
@@ -241,7 +278,35 @@ class Peta_ekonomi extends MY_Controller {
                 }
             }
 
-            $pdrb = isset($pdrb_map[$kode]) ? $pdrb_map[$kode] : 0;
+            // Fallback or override from database_ekonomi
+            $pdrb = isset($indicator_map[$kode]['EKO-001']) ? $indicator_map[$kode]['EKO-001'] : 0;
+            $pdrb_adhk = isset($indicator_map[$kode]['EKO-002']) ? $indicator_map[$kode]['EKO-002'] : 0;
+            $pdrb_growth = isset($indicator_map[$kode]['EKO-005']) ? $indicator_map[$kode]['EKO-005'] : $growth;
+            $pdrb_kapita = isset($indicator_map[$kode]['EKO-008']) ? round($indicator_map[$kode]['EKO-008'] / 1000, 2) : 0; // Juta Rp per kapita
+            $investasi = isset($indicator_map[$kode]['INV-001']) ? round($indicator_map[$kode]['INV-001'] / 1000000000, 2) : 0; // Miliar Rp
+            $kemiskinan = isset($indicator_map[$kode]['KES-001']) ? $indicator_map[$kode]['KES-001'] : 10.2;
+            $ipm = isset($indicator_map[$kode]['KES-007']) ? $indicator_map[$kode]['KES-007'] : 73.5;
+            $uhh = isset($indicator_map[$kode]['KES-008']) ? $indicator_map[$kode]['KES-008'] : 72.8;
+            $hls = isset($indicator_map[$kode]['KES-009']) ? $indicator_map[$kode]['KES-009'] : 13.2;
+            $rls = isset($indicator_map[$kode]['KES-010']) ? $indicator_map[$kode]['KES-010'] : 8.1;
+
+            if ($pdrb_growth > 0) {
+                $growth = $pdrb_growth;
+            }
+
+            $metrics = array(
+                'growth' => array('key' => 'growth', 'label' => 'Pertumbuhan Ekonomi (PDRB ADHK)', 'val' => $growth, 'unit' => '%', 'decimals' => 2),
+                'pdrb' => array('key' => 'pdrb', 'label' => 'PDRB ADHB Total', 'val' => $pdrb, 'unit' => 'Miliar Rp', 'decimals' => 1),
+                'pdrb_adhk' => array('key' => 'pdrb_adhk', 'label' => 'PDRB ADHK Total', 'val' => $pdrb_adhk, 'unit' => 'Miliar Rp', 'decimals' => 1),
+                'pdrb_kapita' => array('key' => 'pdrb_kapita', 'label' => 'PDRB per Kapita', 'val' => $pdrb_kapita, 'unit' => 'Juta Rp', 'decimals' => 2),
+                'investasi' => array('key' => 'investasi', 'label' => 'Realisasi Investasi Total', 'val' => $investasi, 'unit' => 'Miliar Rp', 'decimals' => 1),
+                'kemiskinan' => array('key' => 'kemiskinan', 'label' => 'Tingkat Kemiskinan', 'val' => $kemiskinan, 'unit' => '%', 'decimals' => 2),
+                'ipm' => array('key' => 'ipm', 'label' => 'Indeks Pembangunan Manusia (IPM)', 'val' => $ipm, 'unit' => 'Poin', 'decimals' => 2),
+                'uhh' => array('key' => 'uhh', 'label' => 'Umur Harapan Hidup (UHH)', 'val' => $uhh, 'unit' => 'Tahun', 'decimals' => 1),
+                'hls' => array('key' => 'hls', 'label' => 'Harapan Lama Sekolah (HLS)', 'val' => $hls, 'unit' => 'Tahun', 'decimals' => 1),
+                'rls' => array('key' => 'rls', 'label' => 'Rata-rata Lama Sekolah (RLS)', 'val' => $rls, 'unit' => 'Tahun', 'decimals' => 1),
+                'luas' => array('key' => 'luas', 'label' => 'Luas Wilayah', 'val' => $m['luas'], 'unit' => 'km²', 'decimals' => 0)
+            );
 
             $result[] = array(
                 'kode' => $kode,
@@ -262,6 +327,14 @@ class Peta_ekonomi extends MY_Controller {
                 'growth' => $growth,
                 'change' => $change,
                 'pdrb' => $pdrb,
+                'pdrb_kapita' => $pdrb_kapita,
+                'investasi' => $investasi,
+                'kemiskinan' => $kemiskinan,
+                'ipm' => $ipm,
+                'uhh' => $uhh,
+                'hls' => $hls,
+                'rls' => $rls,
+                'metrics' => $metrics,
                 'series' => $series,
                 'is_current' => ($kode === '35.10')
             );
