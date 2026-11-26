@@ -350,7 +350,7 @@
                     btn.style.borderColor = '#16a34a';
                     btn.style.color = '#14532d';
                 } else {
-                    const openText = btn.getAttribute('data-label-open') || 'Rincian Sektor (Aâ€“U)';
+                    const openText = btn.getAttribute('data-label-open') || 'Rincian Sektor (A\u2013U)';
                     lbl.textContent = openText;
                     btn.style.background = '#f0fdf4';
                     btn.style.borderColor = '#86efac';
@@ -480,6 +480,9 @@
                     countLabel.textContent = `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}`;
                 }
             }
+            if (tbody.id === 'threshold-admin-rows' && typeof window._refreshEwsAdminSummary === 'function') {
+                window._refreshEwsAdminSummary();
+            }
         });
 
         // 3. Filter KPI cards in Beranda (#kpi-container)
@@ -561,6 +564,10 @@
             }
             window.history.replaceState({}, '', url.toString());
         } catch (e) { }
+
+        if (ewsTable && typeof window._refreshEwsPublicVisuals === 'function') {
+            window._refreshEwsPublicVisuals();
+        }
     };
 
     // Global listener for slide navigation buttons
@@ -681,7 +688,7 @@
         if (!items || !items.length) {
             return `<div class="table-empty" style="padding:16px; text-align:center; color:var(--muted); font-size:11px;">Belum ada data untuk grafik.</div>`;
         }
-        const unit = opts.unit || '%';
+        const unit = (opts.unit !== undefined) ? opts.unit : '%';
         const showRank = opts.showRank !== false;
         const showLogo = Boolean(opts.showLogo || items.some(d => d.logo));
         const colLabelWidth = opts.labelWidth || (showLogo ? '195px' : '160px');
@@ -701,7 +708,7 @@
             const bgGradient = item.color || (isHighlight ? 'linear-gradient(90deg, #0284c7, #06b6d4)' : (isPos ? 'linear-gradient(90deg, #2463a6, #38bdf8)' : 'linear-gradient(90deg, #ef4444, #f87171)'));
             const borderStyle = isHighlight ? 'background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;' : 'background: #ffffff; border: 1px solid #f1f5f9; border-radius: 8px;';
 
-            const valFormatted = `${formatNum(v, opts.decimals ?? 2)}${unit}`.trim();
+            const valFormatted = item.formattedValue ? String(item.formattedValue) : `${formatNum(v, opts.decimals ?? 2)}${unit}`.trim();
             const hasDistinctBadge = item.badge && item.badge.trim() !== valFormatted && item.badge.trim() !== `${v}${unit}`.trim() && item.badge.trim() !== `${v}`.trim();
             const itemLogoUrl = item.logo || (showLogo && typeof getLogoPemdaUrl === 'function' ? getLogoPemdaUrl(item.label) : null);
 
@@ -6426,7 +6433,7 @@
             AppState.ews = window.__EWS_DATA__;
         }
 
-        function renderEWS() {
+        function renderEWS(skipCategoryApply = false) {
             let normalC = 0, warnC = 0, critC = 0, followedC = 0, totalMatching = 0;
             const currentCatFilter = window._activeCategoryFilter || '';
 
@@ -6467,8 +6474,8 @@
             if (statNormal) statNormal.textContent = normalC;
             if (statTotal) statTotal.textContent = totalMatching;
 
-            // Trigger category/status filtering across table rows
-            if (typeof window.applyCategoryFilter === 'function') {
+            // Trigger category/status filtering across table rows when not already invoked by applyCategoryFilter
+            if (!skipCategoryApply && typeof window.applyCategoryFilter === 'function') {
                 window.applyCategoryFilter(currentCatFilter);
             }
 
@@ -6485,10 +6492,12 @@
                     const dir = item.direction || item.arah_risiko || 'above';
                     const st = calcEwsStatus(val, th, dir);
                     const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
-                    const dist = Math.min(100, Math.max(5, item.distance || 20));
+                    const diffPct = th !== 0 ? Math.abs((val - th) / th) * 100 : (val !== 0 ? 100 : 5);
+                    const dist = Math.min(100, Math.max(6, Math.round(diffPct)));
+                    const nm = item.name || item.nama_indikator || '';
                     return `
                     <div>
-                        <span>${item.name || item.nama_indikator}</span>
+                        <span title="${nm}">${nm}</span>
                         <div><i class="${badgeCls}" style="width: ${dist}%"></i></div>
                         <span class="badge ${badgeCls}">${st}</span>
                     </div>
@@ -6504,7 +6513,18 @@
                     return (!currentCatFilter || prefix === currentCatFilter);
                 }).slice(0, 10);
 
+                const formatEwsVal = (numVal, unitStr, indCode) => {
+                    const isRp = isIndicatorRupiah(unitStr, indCode);
+                    if (isRp) {
+                        const rpFmt = formatRupiahNumber(numVal);
+                        return `Rp ${rpFmt || formatNum(numVal, 0)}`;
+                    }
+                    const u = (unitStr || '').trim();
+                    return u ? `${formatNum(numVal, 2)} ${u}` : formatNum(numVal, 2);
+                };
+
                 const ewsBars = chartFiltered.map(item => {
+                    const code = item.code || item.kode_indikator || '';
                     const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
                     const th = Number(item.threshold !== undefined ? item.threshold : (item.ambang_batas || 0));
                     const dir = item.direction || item.arah_risiko || 'above';
@@ -6514,24 +6534,27 @@
                     const badgeCls = (st === 'Kritis') ? 'danger' : ((st === 'Waspada') ? 'warning' : 'success');
                     return {
                         label: item.name || item.nama_indikator,
-                        value: val,
-                        subLabel: `Ambang: ${formatNum(th, 2)} ${unit} â€¢ Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}%`,
+                        value: Math.min(100, Math.max(4, Math.abs(diffPct))),
+                        formattedValue: formatEwsVal(val, unit, code),
+                        subLabel: `Ambang: ${formatEwsVal(th, unit, code)} \u2022 Deviasi: ${diffPct >= 0 ? '+' : ''}${formatNum(diffPct, 1)}%`,
                         badge: st,
                         badgeClass: badgeCls,
                         color: (st === 'Kritis') ? 'linear-gradient(90deg, #ef4444, #f87171)' : ((st === 'Waspada') ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)')
                     };
                 });
-                ewsChartContainer.innerHTML = createHorizontalBarChartSVG(ewsBars, { unit: '', decimals: 2 });
+                ewsChartContainer.innerHTML = createHorizontalBarChartSVG(ewsBars, { unit: '', decimals: 2, maxVal: 100 });
             }
 
             const pBar = document.getElementById('ews-progress-bar');
             const pTxt = document.getElementById('ews-progress-text');
             const pPct = document.getElementById('ews-progress-pct');
-            const pct = masterList.length ? Math.round((followedC / masterList.length) * 100) : 0;
+            const progressDenom = totalMatching || masterList.length;
+            const pct = progressDenom ? Math.round((followedC / progressDenom) * 100) : 0;
             if (pBar) pBar.style.width = pct + '%';
-            if (pTxt) pTxt.textContent = `${followedC} dari ${masterList.length} indikator ditandai`;
+            if (pTxt) pTxt.textContent = `${followedC} dari ${progressDenom} indikator ditandai`;
             if (pPct) pPct.textContent = pct + '%';
         }
+        window._refreshEwsPublicVisuals = () => renderEWS(true);
 
         function openAlertModal(code) {
             selectedAlertCode = code;
@@ -6553,7 +6576,7 @@
             const nameEl = document.getElementById('modal-alert-name');
             if (nameEl) nameEl.textContent = name;
             const metaEl = document.getElementById('modal-alert-meta');
-            if (metaEl) metaEl.textContent = `${src} â€¢ ${code}`;
+            if (metaEl) metaEl.textContent = `${src} \u2022 ${code}`;
             const badge = document.getElementById('modal-alert-badge');
             if (badge) {
                 badge.textContent = st.toUpperCase();
@@ -6751,13 +6774,17 @@
                                             badge.className = 'badge ' + (newSt === 'Kritis' ? 'danger' : (newSt === 'Waspada' ? 'warning' : 'success'));
                                             badge.textContent = newSt;
                                         }
+                                        const isRp = isIndicatorRupiah(unit, selectedAlertCode);
+                                        const rpPrefix = isRp ? 'Rp ' : '';
+                                        const fmtVal = isRp ? (formatRupiahNumber(finalVal) || formatNum(finalVal, 0)) : formatNum(finalVal, 2);
+                                        const fmtTh = isRp ? (formatRupiahNumber(th) || formatNum(th, 0)) : formatNum(th, 2);
                                         const valEl = row.querySelector('.risk-value strong');
                                         if (valEl) {
-                                            valEl.innerHTML = `${formatNum(finalVal, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span>`;
+                                            valEl.innerHTML = `${rpPrefix}${fmtVal} <span class="risk-unit-text">${unit}</span>`;
                                         }
                                         const thEl = row.querySelector('.risk-threshold strong');
                                         if (thEl) {
-                                            thEl.innerHTML = `${formatNum(th, 2)} <span style="font-size:11px; font-weight:500; color:var(--muted);">${unit}</span>`;
+                                            thEl.innerHTML = `${rpPrefix}${fmtTh} <span class="risk-unit-text">${unit}</span>`;
                                         }
                                         row.classList.remove('alerted', 'warning-row', 'normal-row');
                                         row.classList.add(newSt === 'Kritis' ? 'alerted' : (newSt === 'Waspada' ? 'warning-row' : 'normal-row'));
@@ -10320,6 +10347,28 @@
             }
         }
 
+        function updateAdminEwsSummaryPills() {
+            const tbody = document.getElementById('threshold-admin-rows');
+            if (!tbody) return;
+            let k = 0, w = 0, n = 0;
+            tbody.querySelectorAll('tr.threshold-admin-row:not(.matrix-sub-row)').forEach(row => {
+                if (row.style.display === 'none') return;
+                const badge = row.querySelector('.ews-status-pill, [id^="status-badge-"]');
+                const txt = badge ? badge.textContent.trim() : '';
+                if (txt === 'Kritis') k++;
+                else if (txt === 'Waspada') w++;
+                else if (txt === 'Normal') n++;
+            });
+            const kEl = document.querySelector('#admin-ews-kritis-pill strong');
+            const wEl = document.querySelector('#admin-ews-waspada-pill strong');
+            const nEl = document.querySelector('#admin-ews-normal-pill strong');
+            if (kEl) kEl.textContent = k;
+            if (wEl) wEl.textContent = w;
+            if (nEl) nEl.textContent = n;
+        }
+        window._refreshEwsAdminSummary = updateAdminEwsSummaryPills;
+        updateAdminEwsSummaryPills();
+
         // Live calculation of Status Risiko based on real value vs threshold and direction
         function updateRowStatus(row) {
             const code = row.getAttribute('data-code');
@@ -10345,9 +10394,11 @@
                 st = (val > th) ? 'Kritis' : 'Normal';
             }
 
-            const badgeCls = (st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success');
+            const isSub = row.classList.contains('matrix-sub-row');
+            const badgeCls = ((st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success')) + (isSub ? ' ews-status-pill is-sub' : ' ews-status-pill');
             badge.className = badgeCls;
             badge.textContent = st;
+            updateAdminEwsSummaryPills();
         }
 
         // Toggle Sub-Indikator Sektoral saat Baris / Tombol Indikator di Manajemen EWS Diklik
@@ -10425,9 +10476,12 @@
                                 const badge = document.getElementById(`status-badge-${code}`);
                                 if (badge) {
                                     const st = data.status_risiko;
-                                    badge.className = (st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success');
+                                    const parentTr = badge.closest('tr');
+                                    const isSub = parentTr && parentTr.classList.contains('matrix-sub-row');
+                                    badge.className = ((st === 'Kritis') ? 'badge danger' : ((st === 'Waspada') ? 'badge warning' : 'badge success')) + (isSub ? ' ews-status-pill is-sub' : ' ews-status-pill');
                                     badge.textContent = st;
                                 }
+                                updateAdminEwsSummaryPills();
                             }
                             if (count === inputs.length) {
                                 btnSaveAll.disabled = false;

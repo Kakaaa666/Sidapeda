@@ -274,8 +274,8 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
             <div class="risk-table" id="ews-table-rows">
                 <div class="risk-table-header">
                     <span>Indikator Pemantauan</span>
-                    <span>Nilai Riil</span>
-                    <span>Batas Ambang</span>
+                    <span style="text-align:right;">Nilai Riil</span>
+                    <span style="text-align:right;">Batas Ambang</span>
                     <span style="text-align:right;">Status Risiko</span>
                 </div>
                 <?php foreach ($grouped as $code => $item):
@@ -302,8 +302,8 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                          title="<?= $hasSub ? 'Klik baris ini untuk membuka/menutup rincian sub-indikator atau sesuaikan threshold' : 'Klik untuk analisis & penyesuaian threshold' ?>"
                          style="display: <?= ($pPrefix === $activeCat) ? 'grid' : 'none' ?>;">
                         <div class="risk-indicator">
-                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
-                                <span class="badge info" style="display:inline-block; font-size: 12px; padding:2px 8px; font-weight:600; text-transform:none;">
+                            <div class="risk-badge-row">
+                                <span class="badge info risk-cluster-pill">
                                     <?= htmlspecialchars($cl) ?>
                                 </span>
                                 <?php if ($hasSub): ?>
@@ -338,19 +338,19 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                                             $openLabel = 'Rincian 17 Sektor';
                                         }
                                     ?>
-                                    <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
-                                        <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+                                    <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" title="Klik untuk membuka/menutup <?= $openLabel ?>">
+                                        <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                                         <span class="sub-toggle-label"><?= $openLabel ?></span>
                                     </button>
                                 <?php endif; ?>
                             </div>
-                            <strong style="font-size:13px; color:var(--navy);"><?= htmlspecialchars($name) ?></strong>
-                            <small>
-                                <code style="white-space: nowrap;"><?= htmlspecialchars($code) ?></code>
+                            <strong class="risk-title"><?= htmlspecialchars($name) ?></strong>
+                            <small class="risk-meta">
+                                <code><?= htmlspecialchars($code) ?></code>
                                 <?php if (!empty($rowYr)): ?>
-                                    <span style="color:var(--navy); font-weight:600;">• Thn <?= $rowYr ?></span>
+                                    <span class="risk-meta-year">&bull; Thn <?= $rowYr ?></span>
                                 <?php endif; ?>
-                                <span style="color:var(--muted);">• <?= ($dir === 'above') ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></span>
+                                <span class="risk-meta-rule">&bull; <?= ($dir === 'above') ? 'Kritis jika &gt; Ambang' : 'Kritis jika &lt; Ambang' ?></span>
                             </small>
                         </div>
                         <?php
@@ -360,12 +360,12 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                             $formattedTh = format_indicator_value($th, $unit ?? '', $item['code'] ?? '', false);
                         ?>
                         <div class="risk-value">
-                            <span>Nilai Riil</span>
-                            <strong><?= $prefixRp ?><?= $formattedVal ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
+                            <span class="risk-mobile-label">Nilai Riil</span>
+                            <strong><?= $prefixRp ?><?= $formattedVal ?> <span class="risk-unit-text"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-threshold">
-                            <span>Batas Ambang</span>
-                            <strong><?= $prefixRp ?><?= $formattedTh ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($unit) ?></span></strong>
+                            <span class="risk-mobile-label">Batas Ambang</span>
+                            <strong><?= $prefixRp ?><?= $formattedTh ?> <span class="risk-unit-text"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-status">
                             <span class="badge <?= $badgeCls ?>"><?= htmlspecialchars($st) ?></span>
@@ -389,7 +389,7 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                                 $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
                                 $subTypeDesc = 'Kuartal ' . htmlspecialchars($dispKey);
                             } elseif ($code === 'HRG-005') {
-                                $cleanSubName = '- ' . preg_replace('/^Harga:\s*/i', '', $sub['name'] ?? '');
+                                $cleanSubName = preg_replace('/^Harga:\s*/i', '', $sub['name'] ?? '');
                                 $subTypeDesc = 'Komoditas ' . htmlspecialchars($dispKey);
                             } else {
                                 $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name'] ?? '');
@@ -399,16 +399,16 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                         ?>
                             <?php if (!empty($hrgMeta['group_header'])): ?>
                                 <?php $gH = $hrgMeta['group_header']; ?>
-                                <div class="risk-row risk-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#e2e8f0; border-left:5px solid #0284c7; padding:8px 14px;">
-                                    <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:8px; font-weight:800; font-size:12.5px; color:#0f172a; text-transform:uppercase;">
-                                        <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:2px 8px; border-radius:5px;"><?= $gH['no'] ?></span>
+                                <div class="risk-row risk-sub-row risk-sub-group-header sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none;">
+                                    <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:#0f172a; text-transform:uppercase;">
+                                        <span class="hrg-group-num-pill"><?= $gH['no'] ?></span>
                                         <span><?= htmlspecialchars($gH['name']) ?></span>
                                     </div>
                                 </div>
                             <?php endif; ?>
                             <?php if (!empty($hrgMeta['sub_header'])): ?>
-                                <div class="risk-row risk-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#f1f5f9; border-left:5px solid #94a3b8; padding:6px 14px 6px 32px;">
-                                    <div style="grid-column: 1 / -1; font-weight:700; font-style:italic; font-size:12px; color:#334155;">
+                                <div class="risk-row risk-sub-row risk-sub-subheader sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none;">
+                                    <div style="grid-column: 1 / -1; font-weight:700; font-style:italic; font-size:11.5px; color:#334155;">
                                         <?= htmlspecialchars($hrgMeta['sub_header']) ?>
                                     </div>
                                 </div>
@@ -419,19 +419,19 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                                  data-prefix="<?= $pPrefix ?>" 
                                  data-status="<?= htmlspecialchars($subSt) ?>" 
                                  data-category="<?= htmlspecialchars($cl) ?>" 
-                                 style="display:none; background:#f8fafc; border-left: 5px solid <?= ($subSt === 'Kritis') ? '#ef4444' : (($subSt === 'Waspada') ? '#f59e0b' : '#10b981') ?>;" 
+                                 style="display:none;" 
                                  role="button" tabindex="0" title="Klik untuk analisis & penyesuaian threshold sub-indikator <?= htmlspecialchars($subCode) ?>">
-                                <div class="risk-indicator" style="padding-left:14px;">
-                                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">
-                                        <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                <div class="risk-indicator risk-sub-indicator">
+                                    <div class="risk-sub-chips">
+                                        <span class="risk-sub-branch">└──</span>
                                         <?php if (!empty($hrgMeta['direct_no'])): ?>
-                                            <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:1px 7px; border-radius:4px;"><?= $hrgMeta['direct_no'] ?></span>
+                                            <span class="hrg-group-num-pill"><?= $hrgMeta['direct_no'] ?></span>
                                         <?php endif; ?>
-                                        <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($subCode) ?></code>
-                                        <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
+                                        <code class="risk-sub-code"><?= htmlspecialchars($subCode) ?></code>
+                                        <span class="risk-sub-key"><?= htmlspecialchars($dispKey) ?></span>
                                     </div>
-                                    <strong style="font-size:12px; color:#1e293b;"><?= htmlspecialchars($cleanSubName) ?></strong>
-                                    <small style="color:var(--muted);"><?= $subTypeDesc ?> • <?= ($sub['direction'] ?? 'above') === 'above' ? 'Kritis jika > Ambang' : 'Kritis jika < Ambang' ?></small>
+                                    <strong class="risk-sub-title"><?= htmlspecialchars($cleanSubName) ?></strong>
+                                    <small class="risk-meta"><?= $subTypeDesc ?> &bull; <?= ($sub['direction'] ?? 'above') === 'above' ? 'Kritis jika &gt; Ambang' : 'Kritis jika &lt; Ambang' ?></small>
                                 </div>
                                 <?php
                                     $subIsRupiah = is_indicator_rupiah($subUnit ?? '', $subCode ?? '');
@@ -440,12 +440,12 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                                     $subFormattedTh = format_indicator_value($subTh, $subUnit ?? '', $subCode ?? '', false);
                                 ?>
                                 <div class="risk-value">
-                                    <span>Nilai Riil</span>
-                                    <strong><?= $subPrefixRp ?><?= $subFormattedVal ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
+                                    <span class="risk-mobile-label">Nilai Riil</span>
+                                    <strong><?= $subPrefixRp ?><?= $subFormattedVal ?> <span class="risk-unit-text"><?= htmlspecialchars($subUnit) ?></span></strong>
                                 </div>
                                 <div class="risk-threshold">
-                                    <span>Batas Ambang</span>
-                                    <strong><?= $subPrefixRp ?><?= $subFormattedTh ?> <span style="font-size:11px; font-weight:500; color:var(--muted);"><?= htmlspecialchars($subUnit) ?></span></strong>
+                                    <span class="risk-mobile-label">Batas Ambang</span>
+                                    <strong><?= $subPrefixRp ?><?= $subFormattedTh ?> <span class="risk-unit-text"><?= htmlspecialchars($subUnit) ?></span></strong>
                                 </div>
                                 <div class="risk-status">
                                     <span class="badge <?= $subBadgeCls ?>"><?= htmlspecialchars($subSt) ?></span>
@@ -479,10 +479,14 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                 </div>
             </div>
 
-            <div id="ews-comparison-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:160px; margin-bottom:14px;">
+            <div id="ews-comparison-chart-container" class="chart-wrap dynamic-chart" style="height:auto; min-height:140px; margin-bottom:16px;">
                 <!-- Rendered dynamically by JS -->
             </div>
 
+            <div class="risk-dist-section-head">
+                <strong>Tingkat Jarak Terhadap Ambang</strong>
+                <small>Rasio kedekatan indikator pada kategori aktif</small>
+            </div>
             <div class="risk-distribution" id="ews-distribution-bars">
                 <!-- Injected by JS -->
             </div>

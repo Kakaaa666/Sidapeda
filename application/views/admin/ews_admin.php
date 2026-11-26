@@ -231,15 +231,20 @@
 
     <!-- KONFIGURASI AMBANG BATAS & DATA TERVALIDASI -->
     <article class="card threshold-admin">
-        <div class="card-head">
-            <div>
-                <span class="eyebrow">EARLY WARNING CONFIGURATION • <?= !empty($selected_year) ? "TAHUN {$selected_year}" : "SEMUA PERIODE" ?></span>
+        <div class="card-head" style="flex-wrap: wrap; gap: 14px;">
+            <div style="flex: 1; min-width: 280px;">
+                <span class="eyebrow">EARLY WARNING CONFIGURATION &bull; <?= !empty($selected_year) ? "TAHUN {$selected_year}" : "SEMUA PERIODE" ?></span>
                 <h3>Konfigurasi Ambang Batas Early Warning System</h3>
                 <p>Data indikator &amp; nilai riil bersumber langsung dari data tervalidasi. Anda hanya perlu menetapkan <strong>Ambang Batas</strong> dan <strong>Arah Kondisi Kritis</strong>.</p>
             </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <span id="cat-filtered-count-label" class="badge info" style="font-size:11px; padding:6px 14px; font-weight:700; border-radius:20px;">
-                    Total: <?= count($grouped) ?> Indikator Tervalidasi
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div id="admin-ews-summary-pills" class="ews-admin-summary-pills">
+                    <span class="ews-summary-pill danger" id="admin-ews-kritis-pill">Kritis: <strong>0</strong></span>
+                    <span class="ews-summary-pill warning" id="admin-ews-waspada-pill">Waspada: <strong>0</strong></span>
+                    <span class="ews-summary-pill success" id="admin-ews-normal-pill">Normal: <strong>0</strong></span>
+                </div>
+                <span id="cat-filtered-count-label" class="badge info" style="font-size:11.5px; padding:6px 12px; font-weight:700; border-radius:20px;">
+                    Total: <?= count($grouped) ?> Indikator
                 </span>
                 <button class="button primary" id="btn-save-all-thresholds">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -248,25 +253,28 @@
             </div>
         </div>
 
-        <div style="padding: 12px 18px; background: #f0f7ff; border-left: 4px solid var(--blue); border-radius: 6px; margin: 12px 0 20px 0; font-size: 11px; line-height: 1.6; color: var(--navy);">
-            <strong>Panduan Konfigurasi Ambang Batas EWS:</strong>
-            <ul style="margin: 4px 0 0 16px; padding: 0;">
-                <li><strong>Standar Kamus Data:</strong> Kode, Nama Indikator, Klaster, Satuan, dan Definisi Operasional adalah <em>Data Kamus Umum</em> yang seragam untuk semua wilayah.</li>
-                <li><strong>Nilai Riil Tervalidasi</strong> bersifat <em>read-only</em> dan langsung merujuk pada capaian riil daerah yang telah diverifikasi pada menu Validasi Data.</li>
-                <li><strong>Ambang Batas (Threshold) &amp; Arah Kondisi Kritis</strong> diisi dan disesuaikan secara manual per daerah sesuai target RPJMD atau standar toleransi risiko makro daerah.</li>
-                <li><strong>Sub-Indikator Sektoral &amp; Kuartal:</strong> Baris indikator yang memiliki sub-rincian (17 Sektor PDRB atau Kuartal Investasi Q1–Q4) dapat diklik langsung untuk membuka/menutup rincian sub-indikator.</li>
-            </ul>
+        <div class="ews-admin-guide">
+            <div class="ews-admin-guide-head">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <strong>Panduan Konfigurasi Ambang Batas EWS</strong>
+            </div>
+            <div class="ews-admin-guide-grid">
+                <div><strong>Standar Kamus Data:</strong> Kode, Nama, Klaster, dan Satuan seragam untuk seluruh wilayah.</div>
+                <div><strong>Nilai Riil Tervalidasi:</strong> Bersifat <em>read-only</em>, otomatis diambil dari data menu Validasi Data.</div>
+                <div><strong>Ambang Batas &amp; Arah Kritis:</strong> Disesuaikan manual per daerah sesuai target RPJMD / toleransi risiko.</div>
+                <div><strong>Sub-Indikator &amp; Rincian:</strong> Klik baris atau tombol hijau pada indikator untuk membuka rincian sub-indikator.</div>
+            </div>
         </div>
 
         <div class="result-table-wrap">
-            <table class="result-table" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+            <table class="result-table threshold-admin-table" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                 <thead>
                     <tr style="display: table-row;">
-                        <th style="width: 32%; text-align: left; vertical-align: middle; padding: 12px 14px;">Indikator</th>
-                        <th style="width: 16%; text-align: left; vertical-align: middle; padding: 12px 14px;">Nilai Riil Tervalidasi</th>
-                        <th style="width: 18%; text-align: left; vertical-align: middle; padding: 12px 14px;">Ambang Batas (Editable)</th>
-                        <th style="width: 22%; text-align: left; vertical-align: middle; padding: 12px 14px;">Arah Kondisi Kritis</th>
-                        <th style="width: 12%; text-align: center; vertical-align: middle; padding: 12px 14px;">Status Risiko</th>
+                        <th style="width: 34%; text-align: left; vertical-align: middle;">Indikator</th>
+                        <th style="width: 15%; text-align: right; vertical-align: middle;">Nilai Riil</th>
+                        <th style="width: 22%; text-align: left; vertical-align: middle;">Ambang Batas (Editable)</th>
+                        <th style="width: 18%; text-align: left; vertical-align: middle;">Arah Kondisi Kritis</th>
+                        <th style="width: 11%; text-align: center; vertical-align: middle;">Status Risiko</th>
                     </tr>
                 </thead>
                 <tbody id="threshold-admin-rows">
@@ -286,90 +294,88 @@
                             $isMatchCat = ($itemPrefix === $activeCat);
                             ?>
                             <tr class="threshold-admin-row matrix-row <?= $hasSub ? 'has-subcategories' : '' ?>" data-code="<?= $item['code'] ?>" data-prefix="<?= $itemPrefix ?>" <?= $hasSub ? 'data-has-sub="true" title="Klik baris ini untuk membuka/menutup rincian sub-indikator" onclick="if(!event.target.closest(\'input, select, a, button:not(.btn-toggle-subcategories)\')) toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?> style="display: <?= $isMatchCat ? 'table-row' : 'none' ?>;">
-                                <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="vertical-align: middle; padding: 12px 14px; cursor: <?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:2px 6px; border-radius:4px; white-space:nowrap;"><?= htmlspecialchars($item['code']) ?></code>
-                                        <strong class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>" style="color: var(--navy); font-size: 13px;"><?= htmlspecialchars($item['name']) ?></strong>
+                                <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="vertical-align: middle; cursor: <?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
+                                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                                        <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:3px 7px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:1px;"><?= htmlspecialchars($item['code']) ?></code>
+                                        <strong class="<?= $hasSub ? 'indicator-title-clickable' : '' ?>" style="color: var(--navy); font-size: 13px; line-height: 1.38;"><?= htmlspecialchars($item['name']) ?></strong>
                                     </div>
-                                    <?php if ($hasSub): ?>
-                                        <?php 
-                                            $isInv = (strpos($item['code'], 'INV-') === 0);
-                                            $isTk07 = ($item['code'] === 'TK-007');
-                                            $isTk08 = ($item['code'] === 'TK-008');
-                                            $isTk10 = ($item['code'] === 'TK-010');
-                                            if ($isInv) {
-                                                $openLabel = 'Rincian 4 Kuartal';
-                                            } elseif ($isTk07) {
-                                                $openLabel = 'Rincian Sektor & Status';
-                                            } elseif ($isTk08) {
-                                                $openLabel = 'Rincian Formal & Informal';
-                                            } elseif ($isTk10) {
-                                                $openLabel = 'Rincian Setengah Pengangguran';
-                                            } elseif (in_array($item['code'], ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
-                                                $openLabel = 'Rincian 12 Bulan';
-                                            } elseif (in_array($item['code'], ['PRO-001', 'PRO-002', 'PRO-004'])) {
-                                                $openLabel = 'Rincian 25 Kecamatan';
-                                            } elseif ($item['code'] === 'FIS-001') {
-                                                $openLabel = 'Rincian 4 Komponen PAD';
-                                            } elseif ($item['code'] === 'FIS-002') {
-                                                $openLabel = 'Rincian Transfer Daerah';
-                                            } elseif ($item['code'] === 'FIS-003') {
-                                                $openLabel = 'Rincian Komponen';
-                                            } elseif (in_array($item['code'], ['HRG-002', 'HRG-006'])) {
-                                                $openLabel = 'Rincian 11 Kelompok';
-                                            } elseif ($item['code'] === 'HRG-005') {
-                                                $openLabel = 'Rincian 20 Kelompok Pangan (48 Komoditas)';
-                                            } else {
-                                                $openLabel = 'Rincian 17 Sektor';
-                                            }
-                                        ?>
-                                        <div style="margin-top:5px;">
-                                            <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #86efac; border-radius:6px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;" title="Klik untuk membuka/menutup <?= $openLabel ?>">
-                                                <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-                                                <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                            </button>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($item['klaster']) && $item['klaster'] !== 'Umum'): ?>
-                                        <div style="margin-top:4px;">
-                                            <span class="badge secondary" style="font-size: 12px; padding:2px 6px;"><?= htmlspecialchars($item['klaster']) ?></span>
+                                    <?php if ($hasSub || (!empty($item['klaster']) && $item['klaster'] !== 'Umum')): ?>
+                                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:7px;">
+                                            <?php if ($hasSub): ?>
+                                                <?php 
+                                                    $isInv = (strpos($item['code'], 'INV-') === 0);
+                                                    $isTk07 = ($item['code'] === 'TK-007');
+                                                    $isTk08 = ($item['code'] === 'TK-008');
+                                                    $isTk10 = ($item['code'] === 'TK-010');
+                                                    if ($isInv) {
+                                                        $openLabel = 'Rincian 4 Kuartal';
+                                                    } elseif ($isTk07) {
+                                                        $openLabel = 'Rincian Sektor & Status';
+                                                    } elseif ($isTk08) {
+                                                        $openLabel = 'Rincian Formal & Informal';
+                                                    } elseif ($isTk10) {
+                                                        $openLabel = 'Rincian Setengah Pengangguran';
+                                                    } elseif (in_array($item['code'], ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
+                                                        $openLabel = 'Rincian 12 Bulan';
+                                                    } elseif (in_array($item['code'], ['PRO-001', 'PRO-002', 'PRO-004'])) {
+                                                        $openLabel = 'Rincian 25 Kecamatan';
+                                                    } elseif ($item['code'] === 'FIS-001') {
+                                                        $openLabel = 'Rincian 4 Komponen PAD';
+                                                    } elseif ($item['code'] === 'FIS-002') {
+                                                        $openLabel = 'Rincian Transfer Daerah';
+                                                    } elseif ($item['code'] === 'FIS-003') {
+                                                        $openLabel = 'Rincian Komponen';
+                                                    } elseif (in_array($item['code'], ['HRG-002', 'HRG-006'])) {
+                                                        $openLabel = 'Rincian 11 Kelompok';
+                                                    } elseif ($item['code'] === 'HRG-005') {
+                                                        $openLabel = 'Rincian 20 Kelompok Pangan (48 Komoditas)';
+                                                    } else {
+                                                        $openLabel = 'Rincian 17 Sektor';
+                                                    }
+                                                ?>
+                                                <button type="button" class="btn-toggle-subcategories" data-parent="<?= $item['code'] ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($item['code']) ?>', event);" title="Klik untuk membuka/menutup <?= $openLabel ?>">
+                                                    <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                                                    <span class="sub-toggle-label"><?= $openLabel ?></span>
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if (!empty($item['klaster']) && $item['klaster'] !== 'Umum'): ?>
+                                                <span class="badge secondary" style="font-size: 11px; padding:2px 8px; font-weight:600;"><?= htmlspecialchars($item['klaster']) ?></span>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td style="vertical-align: middle; padding: 12px 14px;">
+                                <td style="vertical-align: middle; text-align: right;">
                                     <?php
                                         $isRupiah = is_indicator_rupiah($item['unit'] ?? '', $item['code'] ?? '');
                                         $prefixRp = $isRupiah ? 'Rp ' : '';
                                         $formattedVal = format_indicator_value($item['value'], $item['unit'] ?? '', $item['code'] ?? '', false);
                                         $formattedTh = format_indicator_value($item['threshold'], $item['unit'] ?? '', $item['code'] ?? '', false);
                                     ?>
-                                    <div style="display: inline-flex; align-items: center; gap: 6px;">
-                                        <strong style="font-size: 13px; color: var(--navy); letter-spacing: -0.2px;">
+                                    <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                                        <strong style="font-size: 13px; color: var(--navy); letter-spacing: -0.2px; white-space: nowrap;">
                                             <?= $prefixRp ?><?= $formattedVal ?>
                                         </strong>
-                                        <span style="color: var(--muted); font-size: 11px; font-weight: 600;">
-                                            <?= htmlspecialchars($item['unit']) ?>
-                                        </span>
+                                        <span class="ews-unit-pill"><?= htmlspecialchars($item['unit']) ?></span>
                                     </div>
                                     <input type="hidden" class="value-input" data-code="<?= $item['code'] ?>" value="<?= $item['value'] ?>">
                                 </td>
-                                <td style="vertical-align: middle; padding: 12px 14px;">
-                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                <td style="vertical-align: middle;">
+                                    <div class="ews-threshold-field">
                                         <?php if ($isRupiah): ?>
-                                            <span style="font-size:11.5px; font-weight:700; color:#475569;">Rp</span>
+                                            <span class="ews-rp-prefix">Rp</span>
                                         <?php endif; ?>
-                                        <input type="text" inputmode="decimal" class="threshold-input <?= $isRupiah ? 'is-rupiah-mask' : '' ?>" data-code="<?= $item['code'] ?>" value="<?= $formattedTh ?>" style="width: 120px; height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; font-weight: 700; color: var(--navy); font-size: 12px; background: #ffffff; text-align: right;">
-                                        <small style="color: var(--muted); font-size: 12.5px; font-weight: 600;"><?= htmlspecialchars($item['unit']) ?></small>
+                                        <input type="text" inputmode="decimal" class="threshold-input <?= $isRupiah ? 'is-rupiah-mask' : '' ?>" data-code="<?= $item['code'] ?>" value="<?= $formattedTh ?>">
+                                        <span class="ews-unit-pill"><?= htmlspecialchars($item['unit']) ?></span>
                                     </div>
                                 </td>
-                                <td style="vertical-align: middle; padding: 12px 14px;">
-                                    <select class="direction-input" data-code="<?= $item['code'] ?>" style="width: 100%; max-width: 250px; height: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-size: 11px; color: var(--navy); background: #ffffff;">
+                                <td style="vertical-align: middle;">
+                                    <select class="direction-input" data-code="<?= $item['code'] ?>">
                                         <option value="above" <?= ($item['direction'] === 'above') ? 'selected' : '' ?>>Kritis jika &gt; Ambang (Beban / Risiko)</option>
                                         <option value="below" <?= ($item['direction'] === 'below') ? 'selected' : '' ?>>Kritis jika &lt; Ambang (Target / Kinerja)</option>
                                     </select>
                                 </td>
-                                <td style="text-align: center; vertical-align: middle; padding: 12px 14px;">
-                                    <span id="status-badge-<?= $item['code'] ?>" class="<?= $badgeCls ?>" style="font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 75px;">
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <span id="status-badge-<?= $item['code'] ?>" class="<?= $badgeCls ?> ews-status-pill">
                                         <?= $item['status'] ?>
                                     </span>
                                 </td>
@@ -387,7 +393,7 @@
                                         if ($isSubInv) {
                                             $cleanSubName = 'Kuartal ' . substr($dispKey, 1) . ' (' . $dispKey . ')';
                                         } elseif ($item['code'] === 'HRG-005') {
-                                            $cleanSubName = '- ' . preg_replace('/^Harga:\s*/i', '', $sub['name']);
+                                            $cleanSubName = preg_replace('/^Harga:\s*/i', '', $sub['name']);
                                         } else {
                                             $cleanSubName = preg_replace('/^(PDRB\s+(ADHB|ADHK)|Pertumbuhan(\s+PDRB(\s+ADHK)?)?|Distribusi(\s+PDRB(\s+ADHB)?)?|Kontribusi|PDRB\s+Pengeluaran\s+(ADHB|ADHK)|Pengeluaran\s+(ADHB|ADHK)):\s*/i', '', $sub['name']);
                                         }
@@ -395,68 +401,66 @@
                                     ?>
                                     <?php if (!empty($hrgMeta['group_header'])): ?>
                                         <?php $gH = $hrgMeta['group_header']; ?>
-                                        <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#e2e8f0; border-top:2px solid #cbd5e1; border-bottom:1px solid #cbd5e1;">
-                                            <td colspan="5" style="padding:7px 14px 7px 24px; font-weight:800; font-size:12.5px; color:#0f172a; text-transform:uppercase;">
+                                        <tr class="threshold-admin-row matrix-row matrix-sub-row hrg-group-header-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none;">
+                                            <td colspan="5">
                                                 <span style="display:inline-flex; align-items:center; gap:8px;">
-                                                    <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:2px 8px; border-radius:5px;"><?= $gH['no'] ?></span>
+                                                    <span class="hrg-group-num-pill"><?= $gH['no'] ?></span>
                                                     <span><?= htmlspecialchars($gH['name']) ?></span>
                                                 </span>
                                             </td>
                                         </tr>
                                     <?php endif; ?>
                                     <?php if (!empty($hrgMeta['sub_header'])): ?>
-                                        <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none; background:#f1f5f9; border-bottom:1px solid #e2e8f0;">
-                                            <td colspan="5" style="padding:5px 14px 5px 42px; font-weight:700; font-style:italic; font-size:12px; color:#334155;">
+                                        <tr class="threshold-admin-row matrix-row matrix-sub-row hrg-subheader-row sub-row-HRG-005" data-parent="HRG-005" data-prefix="HRG" style="display:none;">
+                                            <td colspan="5">
                                                 <?= htmlspecialchars($hrgMeta['sub_header']) ?>
                                             </td>
                                         </tr>
                                     <?php endif; ?>
-                                    <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none; background:#f8fafc;">
-                                        <td style="vertical-align: middle; padding: 9px 14px 9px 24px;">
-                                            <div style="display:flex; align-items:center; gap:6px;">
-                                                <span style="color:#94a3b8; font-weight:700; font-size:11px;">└──</span>
+                                    <tr class="threshold-admin-row matrix-row matrix-sub-row sub-row-<?= $item['code'] ?>" data-code="<?= $sub['code'] ?>" data-parent="<?= $item['code'] ?>" data-prefix="<?= strtoupper(explode('-', $item['code'])[0]) ?>" style="display:none;">
+                                        <td class="ews-admin-sub-cell" style="vertical-align: middle;">
+                                            <div class="ews-sub-chips">
+                                                <span class="risk-sub-branch">└──</span>
                                                 <?php if (!empty($hrgMeta['direct_no'])): ?>
-                                                    <span style="font-weight:800; font-size:11.5px; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:1px 7px; border-radius:4px;"><?= $hrgMeta['direct_no'] ?></span>
+                                                    <span class="hrg-group-num-pill"><?= $hrgMeta['direct_no'] ?></span>
                                                 <?php endif; ?>
-                                                <code style="font-size: 12.5px; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($sub['code']) ?></code>
-                                                <span style="font-size: 12px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 5px; border-radius:4px;"><?= htmlspecialchars($dispKey) ?></span>
-                                                <span style="color:#1e293b; font-size:12px; font-weight:600;"><?= htmlspecialchars($cleanSubName) ?></span>
+                                                <code class="risk-sub-code"><?= htmlspecialchars($sub['code']) ?></code>
+                                                <span class="risk-sub-key"><?= htmlspecialchars($dispKey) ?></span>
                                             </div>
+                                            <div class="ews-sub-name"><?= htmlspecialchars($cleanSubName) ?></div>
                                         </td>
-                                        <td style="vertical-align: middle; padding: 9px 14px;">
+                                        <td style="vertical-align: middle; text-align: right;">
                                             <?php
                                                 $subIsRupiah = is_indicator_rupiah($sub['unit'] ?? '', $sub['code'] ?? '');
                                                 $subPrefixRp = $subIsRupiah ? 'Rp ' : '';
                                                 $subFormattedVal = format_indicator_value($sub['value'], $sub['unit'] ?? '', $sub['code'] ?? '', false);
                                                 $subFormattedTh = format_indicator_value($sub['threshold'], $sub['unit'] ?? '', $sub['code'] ?? '', false);
                                             ?>
-                                            <div style="display: inline-flex; align-items: center; gap: 6px;">
-                                                <strong style="font-size: 12px; color: var(--navy); letter-spacing: -0.2px;">
+                                            <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                                                <strong style="font-size: 12.5px; color: var(--navy); letter-spacing: -0.2px; white-space: nowrap;">
                                                     <?= $subPrefixRp ?><?= $subFormattedVal ?>
                                                 </strong>
-                                                <span style="color: var(--muted); font-size: 12.5px; font-weight: 600;">
-                                                    <?= htmlspecialchars($sub['unit']) ?>
-                                                </span>
+                                                <span class="ews-unit-pill"><?= htmlspecialchars($sub['unit']) ?></span>
                                             </div>
                                             <input type="hidden" class="value-input" data-code="<?= $sub['code'] ?>" value="<?= $sub['value'] ?>">
                                         </td>
-                                        <td style="vertical-align: middle; padding: 9px 14px;">
-                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                        <td style="vertical-align: middle;">
+                                            <div class="ews-threshold-field is-sub">
                                                 <?php if ($subIsRupiah): ?>
-                                                    <span style="font-size: 12.5px; font-weight:700; color:#475569;">Rp</span>
+                                                    <span class="ews-rp-prefix">Rp</span>
                                                 <?php endif; ?>
-                                                <input type="text" inputmode="decimal" class="threshold-input <?= $subIsRupiah ? 'is-rupiah-mask' : '' ?>" data-code="<?= $sub['code'] ?>" value="<?= $subFormattedTh ?>" style="width: 120px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font-weight: 700; color: var(--navy); font-size: 11.5px; background: #ffffff; text-align: right;">
-                                                <small style="color: var(--muted); font-size: 12.5px; font-weight: 600;"><?= htmlspecialchars($sub['unit']) ?></small>
+                                                <input type="text" inputmode="decimal" class="threshold-input <?= $subIsRupiah ? 'is-rupiah-mask' : '' ?>" data-code="<?= $sub['code'] ?>" value="<?= $subFormattedTh ?>">
+                                                <span class="ews-unit-pill"><?= htmlspecialchars($sub['unit']) ?></span>
                                             </div>
                                         </td>
-                                        <td style="vertical-align: middle; padding: 9px 14px;">
-                                            <select class="direction-input" data-code="<?= $sub['code'] ?>" style="width: 100%; max-width: 250px; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; font-size: 12.5px; color: var(--navy); background: #ffffff;">
+                                        <td style="vertical-align: middle;">
+                                            <select class="direction-input is-sub" data-code="<?= $sub['code'] ?>">
                                                 <option value="above" <?= ($sub['direction'] === 'above') ? 'selected' : '' ?>>Kritis jika &gt; Ambang (Beban / Risiko)</option>
                                                 <option value="below" <?= ($sub['direction'] === 'below') ? 'selected' : '' ?>>Kritis jika &lt; Ambang (Target / Kinerja)</option>
                                             </select>
                                         </td>
-                                        <td style="text-align: center; vertical-align: middle; padding: 9px 14px;">
-                                            <span id="status-badge-<?= $sub['code'] ?>" class="<?= $subBadgeCls ?>" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; min-width: 70px;">
+                                        <td style="text-align: center; vertical-align: middle;">
+                                            <span id="status-badge-<?= $sub['code'] ?>" class="<?= $subBadgeCls ?> ews-status-pill is-sub">
                                                 <?= $sub['status'] ?>
                                             </span>
                                         </td>
