@@ -88,7 +88,11 @@ class Database extends MY_Controller {
 
     // Perbarui Seluruh Deret Tahun untuk 1 Indikator Sekaligus (Multi-year Series Update)
     public function update_series() {
+        $oldCode = $this->input->post('old_code', true);
         $code = $this->input->post('code', true);
+        if (empty($code)) {
+            $code = $oldCode;
+        }
         $seriesValues = $this->input->post('series_values');
         $seriesYears = $this->input->post('series_years');
         $kodeWilayah = $this->input->post('kode_wilayah', true);
@@ -116,19 +120,28 @@ class Database extends MY_Controller {
             return;
         }
 
-        $savedCount = $this->M_economy->update_indicator_series($code, $seriesData, $kodeWilayah);
+        $meta = array(
+            'old_code'   => $oldCode,
+            'indicator'  => $this->input->post('indicator', true),
+            'cluster'    => $this->input->post('cluster', true),
+            'unit'       => $this->input->post('unit', true),
+            'source'     => $this->input->post('source', true),
+            'definition' => $this->input->post('definition', true)
+        );
+
+        $savedCount = $this->M_economy->update_indicator_series($code, $seriesData, $kodeWilayah, $meta);
 
         if ($this->input->is_ajax_request()) {
             $this->output
                 ->set_content_type('application/json')
                 ->set_output(json_encode(array(
                     'status' => 'success',
-                    'message' => 'Berhasil memperbarui ' . $savedCount . ' rekaman data tahunan untuk ' . $code . '.'
+                    'message' => 'Berhasil memperbarui data indikator ' . $code . '.'
                 )));
             return;
         }
 
-        $this->session->set_flashdata('success', 'Berhasil memperbarui data deret tahun untuk indikator ' . $code . '.');
+        $this->session->set_flashdata('success', 'Berhasil memperbarui data indikator ' . $code . '.');
         redirect('database');
     }
 
@@ -146,12 +159,14 @@ class Database extends MY_Controller {
     public function save_sectoral_matrix() {
         $years = $this->input->post('years');
         $matrixValues = $this->input->post('matrix');
+        $monthlyValues = $this->input->post('monthly_matrix');
+        $dailyValues = $this->input->post('daily_matrix');
         $names = $this->input->post('names');
         $catLabels = $this->input->post('cat_labels');
         $kodeWilayah = $this->input->post('kode_wilayah', true);
         $parentCode = $this->input->post('parent_code', true) ?: 'EKO-003';
 
-        if (empty($years) || !is_array($years) || empty($matrixValues) || !is_array($matrixValues)) {
+        if ((empty($years) || !is_array($years)) && empty($monthlyValues) && empty($dailyValues)) {
             $this->output
                 ->set_status_header(400)
                 ->set_content_type('application/json')
@@ -159,7 +174,7 @@ class Database extends MY_Controller {
             return;
         }
 
-        $res = $this->M_economy->save_sectoral_matrix_data($matrixValues, $years, $kodeWilayah, $parentCode, $names, $catLabels);
+        $res = $this->M_economy->save_sectoral_matrix_data($matrixValues, $years, $kodeWilayah, $parentCode, $names, $catLabels, $monthlyValues, $dailyValues);
         if ($res) {
             $this->output
                 ->set_content_type('application/json')
