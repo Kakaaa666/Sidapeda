@@ -102,6 +102,10 @@ function upsertRecord($pdo, $checkStmt, $updateStmt, $insertStmt, &$stats, $code
 // =========================================================================
 // PART A: IMPORT KES WORKBOOK
 // =========================================================================
+$kesOnly = in_array('--kes-only', $argv ?? []);
+$invOnly = in_array('--inv-only', $argv ?? []);
+
+if (!$invOnly) {
 $kesFile = 'c:/Users/MUHAMMAD EKA/Downloads/KES - Data Dashboard ekonomi.xlsx';
 echo "\n=======================================================\n";
 echo "PROCESSING: $kesFile\n";
@@ -146,9 +150,16 @@ try {
         for ($rIdx = 2; $rIdx < count($rows); $rIdx++) {
             $row = $rows[$rIdx];
             $rawCode = trim($row[0] ?? '');
-            if (empty($rawCode)) continue;
-            $regCode = substr($rawCode, 0, 2) . '.' . substr($rawCode, 2, 2);
-            $regName = $regionMap[$regCode] ?? trim($row[1] ?? '');
+            $rawName = trim($row[1] ?? '');
+            if (!empty($rawCode)) {
+                $regCode = substr($rawCode, 0, 2) . '.' . substr($rawCode, 2, 2);
+                $regName = $regionMap[$regCode] ?? $rawName;
+            } elseif (stripos($rawName, 'jawa timur') !== false || stripos($rawName, 'jatim') !== false) {
+                $regCode = '35.00';
+                $regName = 'Provinsi Jawa Timur';
+            } else {
+                continue;
+            }
             if (empty($regName)) continue;
 
             foreach ($yearColMap as $col => $year) {
@@ -191,9 +202,16 @@ try {
         for ($rIdx = 3; $rIdx < count($kes012Rows); $rIdx++) {
             $row = $kes012Rows[$rIdx];
             $rawCode = trim($row[0] ?? '');
-            if (empty($rawCode)) continue;
-            $regCode = substr($rawCode, 0, 2) . '.' . substr($rawCode, 2, 2);
-            $regName = $regionMap[$regCode] ?? trim($row[1] ?? '');
+            $rawName = trim($row[1] ?? '');
+            if (!empty($rawCode)) {
+                $regCode = substr($rawCode, 0, 2) . '.' . substr($rawCode, 2, 2);
+                $regName = $regionMap[$regCode] ?? $rawName;
+            } elseif (stripos($rawName, 'jawa timur') !== false || stripos($rawName, 'jatim') !== false) {
+                $regCode = '35.00';
+                $regName = 'Provinsi Jawa Timur';
+            } else {
+                continue;
+            }
             if (empty($regName)) continue;
 
             foreach ($totalColMap as $col => $year) {
@@ -212,7 +230,9 @@ try {
     echo "ERROR in KES import: " . $e->getMessage() . "\n";
     exit(1);
 }
+} // end if (!$invOnly)
 
+if (!$kesOnly) {
 // =========================================================================
 // PART B: IMPORT INV WORKBOOK
 // =========================================================================
@@ -295,6 +315,7 @@ try {
     echo "ERROR in INV import: " . $e->getMessage() . "\n";
     exit(1);
 }
+} // end if (!$kesOnly)
 
 // =========================================================================
 // PART C: SYNC LATEST VALUES TO EARLY WARNING (BANYUWANGI 35.10 & OTHERS)

@@ -1,12 +1,115 @@
 <?php
-require __DIR__ . '/inspect_xlsx.php';
+class SimpleXLSXParser {
+    private $zip;
+    private $sharedStrings = [];
+    private $sheetFiles = [];
+
+    public function __construct($filename) {
+        $this->zip = new ZipArchive();
+        if ($this->zip->open($filename) !== true) {
+            throw new Exception("Cannot open XLSX file: $filename");
+        }
+        $this->loadSharedStrings();
+        $this->loadSheets();
+    }
+
+    private function loadSharedStrings() {
+        $xmlContent = $this->zip->getFromName('xl/sharedStrings.xml');
+        if ($xmlContent !== false) {
+            $xml = simplexml_load_string($xmlContent);
+            foreach ($xml->si as $si) {
+                if (isset($si->t)) {
+                    $this->sharedStrings[] = (string)$si->t;
+                } elseif (isset($si->r)) {
+                    $t = '';
+                    foreach ($si->r as $r) {
+                        $t .= (string)$r->t;
+                    }
+                    $this->sharedStrings[] = $t;
+                } else {
+                    $this->sharedStrings[] = '';
+                }
+            }
+        }
+    }
+
+    private function loadSheets() {
+        $wbContent = $this->zip->getFromName('xl/workbook.xml');
+        if ($wbContent === false) return;
+        $wb = simplexml_load_string($wbContent);
+
+        $relsContent = $this->zip->getFromName('xl/_rels/workbook.xml.rels');
+        $relMap = [];
+        if ($relsContent !== false) {
+            $rels = simplexml_load_string($relsContent);
+            foreach ($rels->Relationship as $rel) {
+                $target = (string)$rel['Target'];
+                $relMap[(string)$rel['Id']] = (strpos($target, 'xl/') === 0) ? $target : 'xl/' . ltrim($target, '/');
+            }
+        }
+
+        $i = 1;
+        foreach ($wb->sheets->sheet as $s) {
+            $name = (string)$s['name'];
+            $rId = (string)$s->attributes('http://schemas.openxmlformats.org/officeDocument/2006/relationships')['id'];
+            $this->sheetFiles[$name] = $relMap[$rId] ?? "xl/worksheets/sheet{$i}.xml";
+            $i++;
+        }
+    }
+
+    public function getSheetData($sheetName) {
+        if (!isset($this->sheetFiles[$sheetName])) return [];
+        $xmlContent = $this->zip->getFromName($this->sheetFiles[$sheetName]);
+        if ($xmlContent === false) return [];
+        $xml = simplexml_load_string($xmlContent);
+        $rows = [];
+        foreach ($xml->sheetData->row as $r) {
+            $cells = [];
+            foreach ($r->c as $c) {
+                preg_match('/^([A-Z]+)/', (string)$c['r'], $m);
+                $colIdx = 0;
+                $letters = $m[1] ?? 'A';
+                for ($j = 0; $j < strlen($letters); $j++) {
+                    $colIdx = $colIdx * 26 + (ord($letters[$j]) - 64);
+                }
+                $type = (string)$c['t'];
+                $val = isset($c->v) ? (string)$c->v : '';
+                if ($type === 's') {
+                    $val = $this->sharedStrings[(int)$val] ?? '';
+                } elseif ($type === 'inlineStr' && isset($c->is->t)) {
+                    $val = (string)$c->is->t;
+                }
+                $cells[$colIdx - 1] = $val;
+            }
+            if (!empty($cells)) {
+                $maxCol = max(array_keys($cells));
+                $dense = [];
+                for ($k = 0; $k <= $maxCol; $k++) {
+                    $dense[] = $cells[$k] ?? '';
+                }
+                $rows[] = $dense;
+            } else {
+                $rows[] = [];
+            }
+        }
+        return $rows;
+    }
+
+    public function close() {
+        if ($this->zip) {
+            @$this->zip->close();
+        }
+    }
+}
+
 define('BASEPATH', 'dummy');
-require __DIR__ . '/application/config/database.php';
+define('ENVIRONMENT', 'development');
+require __DIR__ . '/../config/database.php';
 $dbCfg = $db['default'];
 $pdo = new PDO("mysql:host={$dbCfg['hostname']};dbname={$dbCfg['database']};charset=utf8mb4", $dbCfg['username'], $dbCfg['password']);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$xlsxPath = 'C:/Users/MUHAMMAD EKA/.gemini/antigravity/brain/05deb551-0394-4a04-8e55-bd1dd91454af/.user_uploaded/media_1794908089409_0852a346.xlsx';
+$xlsxPath = $argv[1] ?? 'c:/Users/MUHAMMAD EKA/Downloads/Data Dashboard ekonomi.xlsx';
 $parser = new SimpleXLSXParser($xlsxPath);
 
 $regionMapByCode = [
@@ -52,12 +155,20 @@ $regionMapByCode = [
 
 function findRegionByName($raw, $regionMap) {
     $clean = strtolower(trim($raw));
-    $clean = preg_replace('/^(kabupaten|kab\.|kota)\s+/i', '', $clean);
-    $clean = trim($clean);
-    
+    $clean = preg_replace('/\s+/', ' ', $clean);
+    if (stripos($clean, 'jatim') !== false || stripos($clean, 'jawa timur') !== false) {
+        return ['kode' => '35.00', 'nama' => 'Provinsi Jawa Timur'];
+    }
+    $isKota = (bool)preg_match('/^kota\s+/i', $clean);
+    $isKab = (bool)preg_match('/^(kabupaten|kab\.?)\s+/i', $clean);
+    $nameOnly = trim(preg_replace('/^(kabupaten|kab\.?|kota)\s+/i', '', $clean));
+
     foreach ($regionMap as $code => $info) {
-        $regClean = strtolower(preg_replace('/^(kabupaten|kota)\s+/i', '', $info['nama']));
-        if ($clean === $regClean) {
+        $regIsKota = (stripos($info['nama'], 'Kota ') === 0);
+        $regNameOnly = strtolower(trim(preg_replace('/^(kabupaten|kota)\s+/i', '', $info['nama'])));
+        if ($nameOnly === $regNameOnly) {
+            if ($isKota && !$regIsKota) continue;
+            if ($isKab && $regIsKota) continue;
             return $info;
         }
     }
@@ -65,14 +176,14 @@ function findRegionByName($raw, $regionMap) {
 }
 
 // Prepared Statements untuk Database Ekonomi
-$stmtCheck = $pdo->prepare("SELECT id FROM database_ekonomi WHERE kode_wilayah = ? AND kode_indikator = ? AND tahun = ? LIMIT 1");
-$stmtUpdate = $pdo->prepare("UPDATE database_ekonomi SET nilai = ?, satuan = ?, nama_indikator = ?, wilayah = ?, klaster = ?, sumber_data = ?, definisi_operasional = ?, status_validasi = 'Tervalidasi', is_deleted = 0 WHERE id = ?");
-$stmtInsert = $pdo->prepare("INSERT INTO database_ekonomi (kode_wilayah, kode_indikator, nama_indikator, klaster, wilayah, periode, tahun, nilai, satuan, sumber_data, definisi_operasional, status_validasi, is_deleted, dibuat_pada) VALUES (?, ?, ?, ?, ?, 'Tahunan', ?, ?, ?, ?, ?, 'Tervalidasi', 0, NOW())");
+$stmtCheck = $pdo->prepare("SELECT id FROM database_ekonomi WHERE kode_wilayah = ? AND kode_indikator = ? AND tahun = ? AND periode = 'Tahunan' LIMIT 1");
+$stmtUpdate = $pdo->prepare("UPDATE database_ekonomi SET nilai = ?, satuan = ?, nama_indikator = ?, wilayah = ?, klaster = ?, sumber_data = ?, definisi_operasional = ?, status_validasi = 'Tervalidasi', diverifikasi_oleh = 'Administrator', is_deleted = 0 WHERE id = ?");
+$stmtInsert = $pdo->prepare("INSERT INTO database_ekonomi (kode_wilayah, kode_indikator, nama_indikator, klaster, wilayah, periode, tahun, nilai, satuan, sumber_data, definisi_operasional, status_validasi, diverifikasi_oleh, is_deleted, dibuat_pada) VALUES (?, ?, ?, ?, ?, 'Tahunan', ?, ?, ?, ?, ?, 'Tervalidasi', 'Administrator', 0, NOW())");
 
 // Prepared Statements untuk Katalog Indikator
-$stmtCatCheck = $pdo->prepare("SELECT id FROM katalog_indikator WHERE kode_indikator = ? LIMIT 1");
+$stmtCatCheck = $pdo->prepare("SELECT id FROM katalog_indikator WHERE kode_indikator = ? AND kode_wilayah = '35.10' LIMIT 1");
 $stmtCatUpdate = $pdo->prepare("UPDATE katalog_indikator SET nama_indikator = ?, klaster = ?, satuan = ?, sumber_data = ?, definisi_operasional = ?, is_deleted = 0 WHERE id = ?");
-$stmtCatInsert = $pdo->prepare("INSERT INTO katalog_indikator (kode_indikator, nama_indikator, klaster, satuan, frekuensi, sumber_data, definisi_operasional, is_deleted) VALUES (?, ?, ?, ?, 'Tahunan', ?, ?, 0)");
+$stmtCatInsert = $pdo->prepare("INSERT INTO katalog_indikator (kode_wilayah, kode_indikator, nama_indikator, klaster, satuan, frekuensi, sumber_data, definisi_operasional, is_deleted) VALUES ('35.10', ?, ?, ?, ?, 'Tahunan', ?, ?, 0)");
 
 function ensureCatalog($pdo, $stmtCatCheck, $stmtCatUpdate, $stmtCatInsert, $code, $name, $cluster, $unit, $source, $def) {
     $stmtCatCheck->execute([$code]);

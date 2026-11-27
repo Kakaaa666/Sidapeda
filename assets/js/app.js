@@ -3318,8 +3318,11 @@
 
     // 2. COMPARISON PAGE
     function initComparisonPage() {
+        const indicatorSelect = document.getElementById('comp-indicator');
+        const indicatorNameEl = document.getElementById('comp-indicator-name');
         const periodSelect = document.getElementById('comp-period');
         const periodLabel = document.getElementById('comp-period-label');
+        const builderPeriodLabel = document.getElementById('comp-builder-period-label');
         const kpiContainer = document.getElementById('comp-kpi-container');
         const featureTabs = document.getElementById('comp-feature-tabs');
         const tabContent = document.getElementById('comp-tab-content');
@@ -3332,30 +3335,33 @@
         function bindRegionalActionButtons() { }
 
         // Setup CRUD & Soft Delete for Perbandingan Daerah
-        setupModuleCrud({
-            controller: 'perbandingan_daerah',
-            addModalId: 'add-regional-modal',
-            editModalId: 'edit-regional-modal',
-            openAddBtnIds: ['btn-open-add-regional-modal'],
-            closeAddBtnIds: ['modal-btn-close-add-regional', 'modal-btn-cancel-add-regional'],
-            closeEditBtnIds: ['modal-btn-close-edit-regional', 'modal-btn-cancel-edit-regional'],
-            formAddId: 'form-add-regional',
-            formEditId: 'form-edit-regional',
-            addErrorId: 'add-regional-error',
-            editErrorId: 'edit-regional-error',
-            editBtnClass: 'btn-edit-regional',
-            deleteBtnClass: 'btn-delete-regional',
-            restoreBtnClass: 'btn-restore-regional',
-            hardDeleteBtnClass: 'btn-hard-delete-regional',
-            onEditPreFill: (d) => {
-                document.getElementById('edit-regional-id').value = d.id;
-                document.getElementById('edit-regional-name').value = d.name || d.nama_wilayah || '';
-                document.getElementById('edit-regional-value').value = d.value !== undefined ? d.value : d.nilai_pertumbuhan;
-                document.getElementById('edit-regional-change').value = d.change !== undefined ? d.change : d.perubahan;
-                const seriesArr = Array.isArray(d.series) ? d.series : [];
-                document.getElementById('edit-regional-series').value = seriesArr.join(', ');
-            }
-        });
+        if (!document.body.dataset.compCrudBound) {
+            document.body.dataset.compCrudBound = 'true';
+            setupModuleCrud({
+                controller: 'perbandingan_daerah',
+                addModalId: 'add-regional-modal',
+                editModalId: 'edit-regional-modal',
+                openAddBtnIds: ['btn-open-add-regional-modal'],
+                closeAddBtnIds: ['modal-btn-close-add-regional', 'modal-btn-cancel-add-regional'],
+                closeEditBtnIds: ['modal-btn-close-edit-regional', 'modal-btn-cancel-edit-regional'],
+                formAddId: 'form-add-regional',
+                formEditId: 'form-edit-regional',
+                addErrorId: 'add-regional-error',
+                editErrorId: 'edit-regional-error',
+                editBtnClass: 'btn-edit-regional',
+                deleteBtnClass: 'btn-delete-regional',
+                restoreBtnClass: 'btn-restore-regional',
+                hardDeleteBtnClass: 'btn-hard-delete-regional',
+                onEditPreFill: (d) => {
+                    document.getElementById('edit-regional-id').value = d.id;
+                    document.getElementById('edit-regional-name').value = d.name || d.nama_wilayah || '';
+                    document.getElementById('edit-regional-value').value = d.value !== undefined ? d.value : d.nilai_pertumbuhan;
+                    document.getElementById('edit-regional-change').value = d.change !== undefined ? d.change : d.perubahan;
+                    const seriesArr = Array.isArray(d.series) ? d.series : [];
+                    document.getElementById('edit-regional-series').value = seriesArr.join(', ');
+                }
+            });
+        }
 
         // Inisialisasi data lokal segera bila AppState belum terisi
         if ((!AppState.regional || AppState.regional.length === 0) && window.__REGIONAL_DATA__ && Array.isArray(window.__REGIONAL_DATA__)) {
@@ -3368,28 +3374,105 @@
             AppState.sectors = window.__SECTORS_DATA__;
         }
 
-        let activeTab = 'Regional Ranking';
+        const datasets = window.__REGIONAL_DATASETS__ || {};
+        const activeBtnTab = featureTabs ? featureTabs.querySelector('button.active') : null;
+        let activeTab = activeBtnTab ? activeBtnTab.getAttribute('data-tab') : 'Regional Ranking';
         let selectedRegions = Array.from(document.querySelectorAll('.region-cb:checked')).map(cb => cb.value);
+        let lastRendered = { rows: [], ds: null, periodRange: '2016–2025' };
 
         const norm = s => (s || '').toLowerCase().replace(/^kabupaten\s+|^kab\.\s+|^kota\s+/i, '').trim();
         const activeRegionName = (window.__ACTIVE_REGION_NAME__ || 'Kabupaten Banyuwangi').trim();
         const isFocalRegion = (name) => norm(name) === norm(activeRegionName);
 
+        function getActiveDataset() {
+            const code = indicatorSelect ? indicatorSelect.value : 'EKO-005';
+            if (datasets && datasets[code]) {
+                return datasets[code];
+            }
+            if (datasets && datasets['EKO-005']) {
+                return datasets['EKO-005'];
+            }
+            return {
+                code: 'EKO-005',
+                name: 'Pertumbuhan Ekonomi (PDRB ADHK)',
+                unit: '%',
+                changeUnit: ' pp',
+                decimals: 2,
+                years: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+                benchmarkName: 'Provinsi Jawa Timur',
+                benchmarkSeries: (AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth : [],
+                regions: AppState.regional || []
+            };
+        }
+
+        function formatMetricVal(val, ds) {
+            const dec = (ds && ds.decimals !== undefined) ? ds.decimals : 2;
+            const unit = (ds && ds.unit !== undefined) ? ds.unit : '%';
+            return formatNum(val, dec) + unit;
+        }
+
+        function formatDeltaVal(val, ds) {
+            const dec = (ds && ds.decimals !== undefined) ? ds.decimals : 2;
+            const chgUnit = (ds && ds.changeUnit !== undefined) ? ds.changeUnit : ' pp';
+            return (val >= 0 ? '+' : '') + formatNum(val, dec) + chgUnit;
+        }
+
+        function syncPeriodOptions(ds) {
+            if (!periodSelect || !ds || !Array.isArray(ds.years) || ds.years.length === 0) return;
+            const fullYrs = ds.years;
+            const yMin = fullYrs[0];
+            const yMax = fullYrs[fullYrs.length - 1];
+            const optAll = periodSelect.querySelector('option[value="all"]');
+            const opt5 = periodSelect.querySelector('option[value="5"]');
+            if (optAll) {
+                optAll.textContent = `${yMin}–${yMax} (${fullYrs.length} Tahun)`;
+            }
+            if (opt5) {
+                if (fullYrs.length > 5) {
+                    const y5Start = fullYrs[fullYrs.length - 5];
+                    opt5.style.display = '';
+                    opt5.disabled = false;
+                    opt5.textContent = `${y5Start}–${yMax} (5 Tahun Terakhir)`;
+                } else {
+                    opt5.style.display = 'none';
+                    opt5.disabled = true;
+                    if (periodSelect.value === '5') {
+                        periodSelect.value = 'all';
+                    }
+                }
+            }
+        }
+
         function renderComparison() {
-            const period = periodSelect ? periodSelect.value : '10';
-            const sliceStart = period === '5' ? 5 : 0;
-            const years = AppState.years ? AppState.years.slice(sliceStart) : [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024].slice(sliceStart);
+            const ds = getActiveDataset();
+            syncPeriodOptions(ds);
+
+            const fullYears = (Array.isArray(ds.years) && ds.years.length) ? ds.years : [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+            const period = periodSelect ? periodSelect.value : 'all';
+            const sliceStart = (period === '5' && fullYears.length > 5) ? (fullYears.length - 5) : 0;
+            const years = fullYears.slice(sliceStart);
+            const periodRange = years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : String(years[0] || '2025');
+            const fullRange = fullYears.length > 1 ? `${fullYears[0]}–${fullYears[fullYears.length - 1]}` : String(fullYears[0] || '2025');
+
             const periodBadge = document.getElementById('comp-tab-period-badge');
-            if (periodLabel) periodLabel.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
-            if (periodBadge) periodBadge.textContent = period === '5' ? '2020 - 2024' : '2015 - 2024';
+            if (periodLabel) periodLabel.textContent = periodRange;
+            if (periodBadge) periodBadge.textContent = periodRange;
+            if (builderPeriodLabel) builderPeriodLabel.textContent = `Periode Data: ${fullRange}`;
+            if (indicatorNameEl) indicatorNameEl.textContent = ds.name;
+
+            const regionSource = Array.isArray(ds.regions) && ds.regions.length ? ds.regions : (AppState.regional || []);
 
             // Calculate regional rows - HANYA untuk wilayah yang dicentang pengguna
-            const rows = (AppState.regional || []).map(item => {
-                const vals = (item.series || []).slice(sliceStart);
-                const avg = mean(vals);
-                const chg = vals.length > 1 ? vals[vals.length - 1] - vals[vals.length - 2] : 0;
-                return { ...item, avg, chg };
+            const rows = regionSource.map(item => {
+                const rawSeries = Array.isArray(item.series) ? item.series.slice(sliceStart) : [];
+                const validVals = rawSeries.filter(v => v !== null && v !== undefined && Number.isFinite(Number(v))).map(Number);
+                const avg = validVals.length ? mean(validVals) : Number(item.value || 0);
+                const latestVal = validVals.length ? validVals[validVals.length - 1] : Number(item.value || 0);
+                const chg = validVals.length > 1 ? (validVals[validVals.length - 1] - validVals[validVals.length - 2]) : Number(item.change || 0);
+                return { ...item, series: rawSeries, validVals, avg, latestVal, chg };
             }).filter(item => selectedRegions.some(sel => sel === item.name || norm(sel) === norm(item.name))).sort((a, b) => b.avg - a.avg);
+
+            lastRendered = { rows, ds, periodRange };
 
             // JIKA TIDAK ADA WILAYAH YANG DIPILIH, JANGAN TAMPILKAN DATA (EMPTY STATE)
             if (rows.length === 0) {
@@ -3401,18 +3484,18 @@
                             <small>Belum ada wilayah dipilih</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Rata-rata Pertumbuhan</span><span class="badge neutral">â€”</span></div>
-                            <strong>â€”</strong>
+                            <div><span>Rata-rata ${ds.name}</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Pertumbuhan Tertinggi</span><span class="badge neutral">â€”</span></div>
-                            <strong>â€”</strong>
+                            <div><span>Capaian Tertinggi</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Disparitas Laju</span><span class="badge neutral">â€”</span></div>
-                            <strong>â€”</strong>
+                            <div><span>Rentang Disparitas</span><span class="badge neutral">—</span></div>
+                            <strong>—</strong>
                             <small>Pilih wilayah pembanding</small>
                         </div>`;
                 }
@@ -3450,17 +3533,17 @@
                         </div>
                         <div class="comparison-kpi">
                             <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Rata-rata ${cleanFocalName}</span><span class="badge info">Periode</span></div>
-                            <strong>${formatPct(activeRow.avg)}</strong>
-                            <small>periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
+                            <strong>${formatMetricVal(activeRow.avg, ds)}</strong>
+                            <small>periode ${periodRange}</small>
                         </div>
                         <div class="comparison-kpi">
                             <div><span>Rerata Wilayah Terpilih</span><span class="badge neutral">Benchmark</span></div>
-                            <strong>${formatPct(peerAvg)}</strong>
+                            <strong>${formatMetricVal(peerAvg, ds)}</strong>
                             <small>${rows.length} kabupaten/kota</small>
                         </div>
                         <div class="comparison-kpi">
                             <div><span>Gap terhadap Rerata</span><span class="badge ${gap >= 0 ? 'success' : 'warning'}">Selisih</span></div>
-                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${gap >= 0 ? '+' : ''}${formatNum(gap)} pp</strong>
+                            <strong class="${gap >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(gap, ds)}</strong>
                             <small>${gap >= 0 ? 'Lebih tinggi' : 'Lebih rendah'} dari rerata</small>
                         </div>`;
                 } else {
@@ -3474,18 +3557,18 @@
                             <small>kabupaten/kota dalam ranking</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(topRegion.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Pertumbuhan Tertinggi</span><span class="badge success">#1 ${topRegion.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '')}</span></div>
-                            <strong>${formatPct(topRegion.avg)}</strong>
+                            <div><span style="display:inline-flex; align-items:center; gap:5px;"><img src="${getLogoPemdaUrl(topRegion.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;"> Capaian Tertinggi</span><span class="badge success">#1 ${topRegion.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '')}</span></div>
+                            <strong>${formatMetricVal(topRegion.avg, ds)}</strong>
                             <small>${topRegion.name}</small>
                         </div>
                         <div class="comparison-kpi">
                             <div><span>Rerata Wilayah Terpilih</span><span class="badge neutral">Benchmark</span></div>
-                            <strong>${formatPct(peerAvg)}</strong>
+                            <strong>${formatMetricVal(peerAvg, ds)}</strong>
                             <small>rerata ${rows.length} kabupaten/kota</small>
                         </div>
                         <div class="comparison-kpi">
-                            <div><span>Disparitas Laju</span><span class="badge warning">Rentang</span></div>
-                            <strong class="positive">${formatNum(disparity)} pp</strong>
+                            <div><span>Rentang Disparitas</span><span class="badge warning">Rentang</span></div>
+                            <strong class="positive">${formatNum(disparity, ds.decimals ?? 2)}${ds.changeUnit || ' pp'}</strong>
                             <small>selisih tertinggi vs terendah</small>
                         </div>`;
                 }
@@ -3496,14 +3579,14 @@
 
             if (activeTab === 'Regional Ranking') {
                 tabEyebrow.textContent = 'REGIONAL RANKING';
-                tabTitle.textContent = 'Peringkat Rata-rata Pertumbuhan Ekonomi';
-                tabDesc.textContent = 'Peringkat dihitung dari rata-rata tahunan selama periode terpilih.';
+                tabTitle.textContent = `Peringkat Rata-rata ${ds.name}`;
+                tabDesc.textContent = `Peringkat dihitung dari rata-rata tahunan (${periodRange}) selama periode terpilih.`;
 
                 const rankingBarData = rows.map((r, idx) => ({
                     label: r.name,
                     value: r.avg,
                     logo: getLogoPemdaUrl(r.name),
-                    subLabel: `Perubahan: ${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp | Gap ke rerata: ${r.avg >= peerAvg ? '+' : ''}${formatNum(r.avg - peerAvg)} pp`,
+                    subLabel: `Perubahan: ${formatDeltaVal(r.chg, ds)} | Gap ke rerata: ${formatDeltaVal(r.avg - peerAvg, ds)}`,
                     badge: (hasActive && isFocalRegion(r.name)) ? 'Fokus Analisis' : `Peringkat #${idx + 1}`,
                     badgeClass: (hasActive && isFocalRegion(r.name)) ? 'primary' : (r.avg >= peerAvg ? 'success' : 'neutral'),
                     isHighlight: (hasActive && isFocalRegion(r.name))
@@ -3513,17 +3596,17 @@
                     <div style="margin-bottom:20px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <span class="eyebrow">VISUALISASI PERINGKAT KOMPARASI</span>
-                            <span class="badge info">Periode ${period === '5' ? '2020 - 2024' : '2015 - 2024'} (${rows.length} Wilayah)</span>
+                            <span class="badge info">Periode ${periodRange} (${rows.length} Wilayah)</span>
                         </div>
                         <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                            ${createHorizontalBarChartSVG(rankingBarData, { unit: '%', decimals: 2, showLogo: true })}
+                            ${createHorizontalBarChartSVG(rankingBarData, { unit: ds.unit, decimals: ds.decimals ?? 2, showLogo: true })}
                         </div>
                     </div>
 
                     <div class="comparison-table-head" style="grid-template-columns: 50px 1.4fr .8fr .8fr .8fr;">
                         <span>Peringkat</span>
                         <span>Wilayah</span>
-                        <span>Rata-rata Pertumbuhan</span>
+                        <span>Rata-rata (${periodRange})</span>
                         <span>Perubahan Tahunan</span>
                         <span>Gap Terhadap Rerata</span>
                     </div>
@@ -3540,33 +3623,32 @@
                                 <strong>${r.name}</strong>
                                 ${isFocal ? '<span class="badge info" style="font-size:8px; padding:1px 5px; margin-left:6px;">Daerah Anda</span>' : ''}
                             </span>
-                            <strong>${formatPct(r.avg)}</strong>
-                            <small class="${r.chg >= 0 ? 'positive' : 'negative'}">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</small>
-                            <span class="badge ${diff >= 0 ? 'success' : 'warning'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</span>
+                            <strong>${formatMetricVal(r.avg, ds)}</strong>
+                            <small class="${r.chg >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(r.chg, ds)}</small>
+                            <span class="badge ${diff >= 0 ? 'success' : 'warning'}">${formatDeltaVal(diff, ds)}</span>
                         </div>`;
                 });
-                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data PDRB ADHK Kabupaten/Kota di Jawa Timur selama periode terpilih. Kelola dataset melalui tabel Manajemen Dataset Wilayah di bawah.</div>`;
+                listHtml += `</div><div class="method-note">Peringkat didasarkan pada data resmi ${ds.name} Kabupaten/Kota di Jawa Timur selama periode ${periodRange}.</div>`;
                 tabContent.innerHTML = listHtml;
 
             } else if (activeTab === 'Benchmarking') {
                 tabEyebrow.textContent = 'BENCHMARKING';
-                tabTitle.textContent = 'Perbandingan Tren Antar-Wilayah Terpilih';
-                tabDesc.textContent = 'Menunjukkan lintasan pertumbuhan ekonomi wilayah pembanding yang dipilih.';
+                tabTitle.textContent = `Perbandingan Tren ${ds.name} Antar-Wilayah`;
+                tabDesc.textContent = `Menunjukkan lintasan ${ds.name} wilayah pembanding yang dipilih (${periodRange}).`;
 
-                const jatimSeries = (AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : [];
+                const jatimSeries = (Array.isArray(ds.benchmarkSeries) && ds.benchmarkSeries.length)
+                    ? ds.benchmarkSeries.slice(sliceStart).filter(v => v !== null && v !== undefined && Number.isFinite(Number(v))).map(Number)
+                    : [];
 
-                // Bangun deret grafik yang sesuai HANYA dengan wilayah yang dicentang pengguna
-                const benchmarkSeries = [
-                    { name: 'Jawa Timur', values: jatimSeries, logo: getLogoPemdaUrl('Jawa Timur'), className: 'series-1' }
-                ];
+                const benchmarkSeries = [];
+                if (jatimSeries.length > 0) {
+                    benchmarkSeries.push({ name: ds.benchmarkName || 'Provinsi Jawa Timur', values: jatimSeries, logo: getLogoPemdaUrl('Jawa Timur'), className: 'series-1' });
+                }
 
                 const colorClasses = ['series-0', 'series-2', 'series-3', 'series-4', 'series-5'];
                 let cIdx = 0;
                 rows.forEach(r => {
-                    let vals = r.series && r.series.length > 0 ? r.series.slice(sliceStart) : [];
-                    if (isFocalRegion(r.name) && AppState.series && AppState.series.growth) {
-                        vals = AppState.series.growth.slice(sliceStart);
-                    }
+                    const vals = r.validVals && r.validVals.length > 0 ? r.validVals : [];
                     if (vals.length > 0) {
                         benchmarkSeries.push({
                             name: r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, ''),
@@ -3577,19 +3659,21 @@
                     }
                 });
 
+                const jatimMeanStr = jatimSeries.length ? formatMetricVal(mean(jatimSeries), ds) : 'N/A';
+
                 let benchKpiHtml = `
                     <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">`;
                 if (hasActive) {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata ${cleanFocalName}</span><strong>${formatPct(activeRow.avg)}</strong><small>Periode terpilih</small></div>
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
-                        <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata ${cleanFocalName}</span><strong>${formatMetricVal(activeRow.avg, ds)}</strong><small>Periode ${periodRange}</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${jatimMeanStr}</strong><small>${jatimSeries.length ? 'Benchmark Provinsi' : 'Data kab/kota saja'}</small></div>
+                        <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatMetricVal(peerAvg, ds)}</strong><small>${rows.length} kabupaten/kota</small></div>
                         <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
                 } else {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(rows[0].name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Pertumbuhan Tertinggi</span><strong>${formatPct(rows[0].avg)}</strong><small>${rows[0].name}</small></div>
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${formatPct(mean(jatimSeries))}</strong><small>Benchmark Provinsi</small></div>
-                        <div class="comparison-kpi"><span>Rerata Wilayah Terpilih</span><strong>${formatPct(peerAvg)}</strong><small>${rows.length} kabupaten/kota</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(rows[0].name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Capaian Tertinggi</span><strong>${formatMetricVal(rows[0].avg, ds)}</strong><small>${rows[0].name}</small></div>
+                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${jatimMeanStr}</strong><small>${jatimSeries.length ? 'Benchmark Provinsi' : 'Data kab/kota saja'}</small></div>
+                        <div class="comparison-kpi"><span>Rerata Wilayah Terpilih</span><strong>${formatMetricVal(peerAvg, ds)}</strong><small>${rows.length} kabupaten/kota</small></div>
                         <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
                 }
                 benchKpiHtml += `</div>`;
@@ -3597,17 +3681,21 @@
                 tabContent.innerHTML = `
                     ${benchKpiHtml}
                     <div class="chart-wrap dynamic-chart" style="height:290px;">
-                        ${createLineChartSVG(years, benchmarkSeries, 290, '%')}
+                        ${createLineChartSVG(years, benchmarkSeries, 290, ds.unit)}
                     </div>
-                    <div class="method-note">Garis hijau toska menunjukkan Provinsi Jawa Timur (Benchmark), dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.</div>`;
+                    <div class="method-note">${jatimSeries.length ? 'Garis hijau toska menunjukkan Provinsi Jawa Timur (Benchmark), dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.' : 'Garis berwarna mewakili masing-masing kabupaten/kota yang dicentang pada periode ' + periodRange + '.'}</div>`;
 
             } else if (activeTab === 'Gap Analysis') {
                 tabEyebrow.textContent = 'GAP ANALYSIS';
-                const jatimAvg = mean((AppState.series && AppState.series.eastJavaGrowth) ? AppState.series.eastJavaGrowth.slice(sliceStart) : []);
+                const jatimSeries = (Array.isArray(ds.benchmarkSeries) && ds.benchmarkSeries.length)
+                    ? ds.benchmarkSeries.slice(sliceStart).filter(v => v !== null && v !== undefined && Number.isFinite(Number(v))).map(Number)
+                    : [];
+                const hasJatimBench = jatimSeries.length > 0;
+                const jatimAvg = hasJatimBench ? mean(jatimSeries) : peerAvg;
 
                 if (hasActive) {
-                    tabTitle.textContent = `Selisih Kinerja terhadap Benchmark Utama (${cleanFocalName})`;
-                    tabDesc.textContent = `Analisis komparatif selisih pertumbuhan ekonomi ${activeRow.name} terhadap provinsi dan wilayah pembanding yang dipilih.`;
+                    tabTitle.textContent = `Selisih Kinerja ${ds.name} terhadap Benchmark (${cleanFocalName})`;
+                    tabDesc.textContent = `Analisis komparatif selisih ${ds.name} ${activeRow.name} terhadap ${hasJatimBench ? 'provinsi dan ' : ''}wilayah pembanding yang dipilih.`;
 
                     const gapJatim = activeRow.avg - jatimAvg;
 
@@ -3617,26 +3705,30 @@
                             label: r.name,
                             value: diff,
                             logo: getLogoPemdaUrl(r.name),
-                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Basis ${cleanFocalName}: ${formatPct(activeRow.avg)}`,
-                            badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? 'Acuan (0 pp)' : `${formatNum(diff)} pp`),
+                            subLabel: `Rata-rata: ${formatMetricVal(r.avg, ds)} | Basis ${cleanFocalName}: ${formatMetricVal(activeRow.avg, ds)}`,
+                            badge: diff === 0 ? `Acuan (0${ds.changeUnit})` : formatDeltaVal(diff, ds),
                             badgeClass: diff > 0 ? 'warning' : (diff === 0 ? 'primary' : 'success'),
                             isHighlight: isFocalRegion(r.name)
                         };
                     });
 
-                    let gapTableRows = `
+                    let gapTableRows = '';
+                    if (hasJatimBench) {
+                        gapTableRows += `
                         <tr>
                             <td><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo"><strong>Provinsi Jawa Timur</strong></td>
-                            <td>${formatPct(activeRow.avg)}</td>
-                            <td>${formatPct(jatimAvg)}</td>
-                            <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong></td>
+                            <td>${formatMetricVal(activeRow.avg, ds)}</td>
+                            <td>${formatMetricVal(jatimAvg, ds)}</td>
+                            <td><strong class="${gapJatim >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(gapJatim, ds)}</strong></td>
                             <td><span class="badge ${gapJatim >= 0 ? 'success' : 'warning'}">${gapJatim >= 0 ? 'Di atas provinsi' : 'Di bawah provinsi'}</span></td>
-                        </tr>
+                        </tr>`;
+                    }
+                    gapTableRows += `
                         <tr>
                             <td><span class="badge neutral" style="font-size:9.5px; margin-right:6px; padding:2px 6px;">Kelompok</span><strong>Rerata Daerah Terpilih</strong></td>
-                            <td>${formatPct(activeRow.avg)}</td>
-                            <td>${formatPct(peerAvg)}</td>
-                            <td><strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}">${(activeRow.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(activeRow.avg - peerAvg)} pp</strong></td>
+                            <td>${formatMetricVal(activeRow.avg, ds)}</td>
+                            <td>${formatMetricVal(peerAvg, ds)}</td>
+                            <td><strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(activeRow.avg - peerAvg, ds)}</strong></td>
                             <td><span class="badge ${(activeRow.avg - peerAvg) >= 0 ? 'success' : 'warning'}">${(activeRow.avg - peerAvg) >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
                         </tr>`;
 
@@ -3645,34 +3737,34 @@
                         gapTableRows += `
                             <tr>
                                 <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><span>${r.name}</span></td>
-                                <td>${formatPct(activeRow.avg)}</td>
-                                <td>${formatPct(r.avg)}</td>
-                                <td><strong class="${diffVsFocal >= 0 ? 'positive' : 'negative'}">${diffVsFocal >= 0 ? '+' : ''}${formatNum(diffVsFocal)} pp</strong></td>
-                                <td><span class="badge ${diffVsFocal >= 0 ? 'success' : 'warning'}">${diffVsFocal >= 0 ? 'Unggul vs Daerah' : 'Tertinggal'}</span></td>
+                                <td>${formatMetricVal(activeRow.avg, ds)}</td>
+                                <td>${formatMetricVal(r.avg, ds)}</td>
+                                <td><strong class="${diffVsFocal >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(diffVsFocal, ds)}</strong></td>
+                                <td><span class="badge ${diffVsFocal >= 0 ? 'success' : 'warning'}">${diffVsFocal >= 0 ? 'Lebih Tinggi' : 'Lebih Rendah'}</span></td>
                             </tr>`;
                     });
 
                     tabContent.innerHTML = `
                         <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
                             <div class="metric-box" style="padding:12px;">
-                                <span>Gap ${cleanFocalName} terhadap Jawa Timur</span>
-                                <strong class="${gapJatim >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${gapJatim >= 0 ? '+' : ''}${formatNum(gapJatim)} pp</strong>
-                                <small>${gapJatim >= 0 ? cleanFocalName + ' tumbuh lebih cepat dari provinsi' : cleanFocalName + ' tumbuh di bawah provinsi'}</small>
+                                <span>${hasJatimBench ? `Gap ${cleanFocalName} terhadap Jawa Timur` : `Capaian Rerata ${cleanFocalName}`}</span>
+                                <strong class="${hasJatimBench ? (gapJatim >= 0 ? 'positive' : 'negative') : ''}" style="font-size:18px;">${hasJatimBench ? formatDeltaVal(gapJatim, ds) : formatMetricVal(activeRow.avg, ds)}</strong>
+                                <small>${hasJatimBench ? (gapJatim >= 0 ? cleanFocalName + ' di atas rata-rata provinsi' : cleanFocalName + ' di bawah rata-rata provinsi') : 'Periode ' + periodRange}</small>
                             </div>
                             <div class="metric-box" style="padding:12px;">
                                 <span>Gap ${cleanFocalName} terhadap Rerata ${rows.length} Daerah</span>
-                                <strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${(activeRow.avg - peerAvg) >= 0 ? '+' : ''}${formatNum(activeRow.avg - peerAvg)} pp</strong>
+                                <strong class="${(activeRow.avg - peerAvg) >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${formatDeltaVal(activeRow.avg - peerAvg, ds)}</strong>
                                 <small>${(activeRow.avg - peerAvg) >= 0 ? cleanFocalName + ' di atas rata-rata pembanding' : cleanFocalName + ' di bawah rata-rata pembanding'}</small>
                             </div>
                         </div>
 
                         <div style="margin: 18px 0;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <span class="eyebrow">GRAFIK DIVERGENSI GAP PERTUMBUHAN EKONOMI (PP)</span>
-                                <small style="color:var(--muted); font-size:9px;">Relatif terhadap ${cleanFocalName} (${formatPct(activeRow.avg)})</small>
+                                <span class="eyebrow">GRAFIK DIVERGENSI GAP (${(ds.changeUnit || 'pp').trim().toUpperCase()})</span>
+                                <small style="color:var(--muted); font-size:9px;">Relatif terhadap ${cleanFocalName} (${formatMetricVal(activeRow.avg, ds)})</small>
                             </div>
                             <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2, showLogo: true })}
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ds.changeUnit || ' pp', decimals: ds.decimals ?? 2, showLogo: true })}
                             </div>
                         </div>
 
@@ -3683,8 +3775,8 @@
                             </table>
                         </div>`;
                 } else {
-                    tabTitle.textContent = 'Selisih Kinerja terhadap Rata-rata Wilayah Terpilih';
-                    tabDesc.textContent = 'Analisis komparatif selisih pertumbuhan ekonomi masing-masing wilayah terhadap rata-rata kelompok terpilih.';
+                    tabTitle.textContent = `Selisih Kinerja ${ds.name} terhadap Rata-rata Wilayah Terpilih`;
+                    tabDesc.textContent = `Analisis komparatif selisih ${ds.name} masing-masing wilayah terhadap rata-rata kelompok terpilih.`;
 
                     const gapBarData = rows.map(r => {
                         const diff = r.avg - peerAvg;
@@ -3692,8 +3784,8 @@
                             label: r.name,
                             value: diff,
                             logo: getLogoPemdaUrl(r.name),
-                            subLabel: `Rata-rata: ${formatPct(r.avg)} | Rerata Kelompok: ${formatPct(peerAvg)}`,
-                            badge: diff > 0 ? `+${formatNum(diff)} pp` : (diff === 0 ? '0 pp' : `${formatNum(diff)} pp`),
+                            subLabel: `Rata-rata: ${formatMetricVal(r.avg, ds)} | Rerata Kelompok: ${formatMetricVal(peerAvg, ds)}`,
+                            badge: formatDeltaVal(diff, ds),
                             badgeClass: diff > 0 ? 'success' : (diff === 0 ? 'neutral' : 'warning'),
                             isHighlight: false
                         };
@@ -3705,9 +3797,9 @@
                         gapTableRows += `
                             <tr>
                                 <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><strong>${r.name}</strong></td>
-                                <td>${formatPct(r.avg)}</td>
-                                <td>${formatPct(peerAvg)}</td>
-                                <td><strong class="${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatNum(diff)} pp</strong></td>
+                                <td>${formatMetricVal(r.avg, ds)}</td>
+                                <td>${formatMetricVal(peerAvg, ds)}</td>
+                                <td><strong class="${diff >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(diff, ds)}</strong></td>
                                 <td><span class="badge ${diff >= 0 ? 'success' : 'warning'}">${diff >= 0 ? 'Di atas rerata' : 'Di bawah rerata'}</span></td>
                             </tr>`;
                     });
@@ -3715,24 +3807,24 @@
                     tabContent.innerHTML = `
                         <div class="gap-overview" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
                             <div class="metric-box" style="padding:12px;">
-                                <span>Rata-rata Pertumbuhan Terpilih</span>
-                                <strong style="font-size:18px; color:var(--navy);">${formatPct(peerAvg)}</strong>
+                                <span>Rata-rata Wilayah Terpilih</span>
+                                <strong style="font-size:18px; color:var(--navy);">${formatMetricVal(peerAvg, ds)}</strong>
                                 <small>Benchmark rata-rata ${rows.length} kabupaten/kota</small>
                             </div>
                             <div class="metric-box" style="padding:12px;">
-                                <span>Rata-rata Jawa Timur</span>
-                                <strong style="font-size:18px; color:var(--blue);">${formatPct(jatimAvg)}</strong>
-                                <small>Benchmark pertumbuhan provinsi</small>
+                                <span>${hasJatimBench ? 'Rata-rata Jawa Timur' : 'Rentang Tertinggi–Terendah'}</span>
+                                <strong style="font-size:18px; color:var(--blue);">${hasJatimBench ? formatMetricVal(jatimAvg, ds) : formatMetricVal(rows[0].avg - rows[rows.length - 1].avg, ds)}</strong>
+                                <small>${hasJatimBench ? 'Benchmark provinsi Jawa Timur' : 'Disparitas antar wilayah terpilih'}</small>
                             </div>
                         </div>
 
                         <div style="margin: 18px 0;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <span class="eyebrow">GRAFIK DIVERGENSI TERHADAP RERATA KELOMPOK (PP)</span>
-                                <small style="color:var(--muted); font-size:9px;">Rata-rata kelompok: ${formatPct(peerAvg)}</small>
+                                <span class="eyebrow">GRAFIK DIVERGENSI TERHADAP RERATA KELOMPOK</span>
+                                <small style="color:var(--muted); font-size:9px;">Rata-rata kelompok: ${formatMetricVal(peerAvg, ds)}</small>
                             </div>
                             <div class="chart-wrap dynamic-chart" style="height:auto; min-height:160px;">
-                                ${createHorizontalBarChartSVG(gapBarData, { unit: ' pp', decimals: 2, showLogo: true })}
+                                ${createHorizontalBarChartSVG(gapBarData, { unit: ds.changeUnit || ' pp', decimals: ds.decimals ?? 2, showLogo: true })}
                             </div>
                         </div>
 
@@ -3746,16 +3838,15 @@
 
             } else if (activeTab === 'Regional Profiling') {
                 tabEyebrow.textContent = 'REGIONAL PROFILING';
-                tabTitle.textContent = 'Profil Pertumbuhan & Stabilitas Wilayah';
-                tabDesc.textContent = 'Karakteristik kinerja pertumbuhan ekonomi antar-kabupaten/kota selama periode terpilih.';
+                tabTitle.textContent = `Profil ${ds.name} & Stabilitas Wilayah`;
+                tabDesc.textContent = `Karakteristik kinerja ${ds.name} antar-kabupaten/kota selama periode ${periodRange}.`;
 
                 let profCards = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:22px;">`;
                 rows.forEach((r, idx) => {
-                    const vals = r.series.slice(sliceStart);
+                    const vals = r.validVals && r.validVals.length ? r.validVals : [r.avg];
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
                     const isHighlight = hasActive && isFocalRegion(r.name);
-                    const avatarLetters = r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, '').slice(0, 2).toUpperCase();
                     profCards += `
                         <div style="background:${isHighlight ? '#f0f9ff' : '#ffffff'}; border:1px solid ${isHighlight ? '#93c5fd' : 'var(--line)'}; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(15,23,42,0.04);">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -3773,19 +3864,19 @@
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                                 <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
                                     <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Rata-rata:</span>
-                                    <strong style="font-size:15px; color:var(--navy); display:block;">${formatPct(r.avg)}</strong>
+                                    <strong style="font-size:14px; color:var(--navy); display:block;">${formatMetricVal(r.avg, ds)}</strong>
                                 </div>
                                 <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
                                     <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Perubahan:</span>
-                                    <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="font-size:15px; display:block;">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</strong>
+                                    <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="font-size:14px; display:block;">${formatDeltaVal(r.chg, ds)}</strong>
                                 </div>
                                 <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
                                     <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Tertinggi (Peak):</span>
-                                    <strong style="font-size:15px; color:var(--green); display:block;">${formatPct(maxV)}</strong>
+                                    <strong style="font-size:14px; color:var(--green); display:block;">${formatMetricVal(maxV, ds)}</strong>
                                 </div>
                                 <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; padding:10px 12px;">
                                     <span style="color:var(--muted); font-size:10px; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">Terendah (Trough):</span>
-                                    <strong style="font-size:15px; color:var(--red); display:block;">${formatPct(minV)}</strong>
+                                    <strong style="font-size:14px; color:var(--red); display:block;">${formatMetricVal(minV, ds)}</strong>
                                 </div>
                             </div>
                         </div>`;
@@ -3795,10 +3886,10 @@
                 let profTable = `
                     <div class="result-table-wrap" style="margin-top:16px;">
                         <table class="result-table">
-                            <thead><tr><th>Peringkat</th><th>Kabupaten / Kota</th><th>Rata-rata Pertumbuhan</th><th>Pertumbuhan Terkini</th><th>Tertinggi (Peak)</th><th>Terendah (Trough)</th><th>Gap vs Rerata</th></tr></thead>
+                            <thead><tr><th>Peringkat</th><th>Kabupaten / Kota</th><th>Rata-rata (${periodRange})</th><th>Nilai Terkini (${years[years.length - 1] || ''})</th><th>Tertinggi (Peak)</th><th>Terendah (Trough)</th><th>Gap vs Rerata</th></tr></thead>
                             <tbody>`;
                 rows.forEach((r, idx) => {
-                    const vals = r.series.slice(sliceStart);
+                    const vals = r.validVals && r.validVals.length ? r.validVals : [r.avg];
                     const maxV = Math.max(...vals);
                     const minV = Math.min(...vals);
                     const gapVsPeer = r.avg - peerAvg;
@@ -3807,11 +3898,11 @@
                         <tr style="${isHighlight ? 'background:#eff6ff; font-weight:600;' : ''}">
                             <td><strong>#${idx + 1}</strong></td>
                             <td><img src="${getLogoPemdaUrl(r.name)}" alt="" class="region-table-logo"><strong>${r.name}</strong> ${isHighlight ? `<span class="badge primary" style="font-size:7px; margin-left:4px;">${cleanFocalName}</span>` : ''}</td>
-                            <td><strong>${formatPct(r.avg)}</strong></td>
-                            <td>${formatPct(vals[vals.length - 1])}</td>
-                            <td style="color:var(--green); font-weight:600;">${formatPct(maxV)}</td>
-                            <td style="color:var(--red); font-weight:600;">${formatPct(minV)}</td>
-                            <td><span class="badge ${gapVsPeer > 0 ? 'success' : (gapVsPeer === 0 ? 'neutral' : 'warning')}">${gapVsPeer > 0 ? '+' : ''}${formatNum(gapVsPeer)} pp</span></td>
+                            <td><strong>${formatMetricVal(r.avg, ds)}</strong></td>
+                            <td>${formatMetricVal(vals[vals.length - 1], ds)}</td>
+                            <td style="color:var(--green); font-weight:600;">${formatMetricVal(maxV, ds)}</td>
+                            <td style="color:var(--red); font-weight:600;">${formatMetricVal(minV, ds)}</td>
+                            <td><span class="badge ${gapVsPeer > 0 ? 'success' : (gapVsPeer === 0 ? 'neutral' : 'warning')}">${formatDeltaVal(gapVsPeer, ds)}</span></td>
                         </tr>`;
                 });
                 profTable += `</tbody></table></div>`;
@@ -3820,8 +3911,8 @@
 
             } else if (activeTab === 'Tipologi Klassen') {
                 tabEyebrow.textContent = 'TIPOLOGI KLASSEN';
-                tabTitle.textContent = 'Tipologi Klassen Pertumbuhan Wilayah';
-                tabDesc.textContent = 'Klasifikasi posisi kuadran wilayah berdasarkan rata-rata laju pertumbuhan dan tren akselerasi tahunan.';
+                tabTitle.textContent = `Tipologi Klassen ${ds.name}`;
+                tabDesc.textContent = 'Klasifikasi posisi kuadran wilayah berdasarkan rata-rata capaian dan tren perubahan tahunan.';
 
                 const peerAvgChg = mean(rows.map(r => r.chg));
                 const klassenRows = rows.map(r => {
@@ -3848,7 +3939,7 @@
                 let klassenTable = `
                     <div style="margin-top:16px;" class="result-table-wrap">
                         <table class="result-table">
-                            <thead><tr><th>Wilayah</th><th>Kuadran</th><th>Klasifikasi</th><th>Rata-rata Pertumbuhan</th><th>Gap Pertumbuhan</th><th>Akselerasi Tahunan</th><th>Gap Akselerasi</th></tr></thead>
+                            <thead><tr><th>Wilayah</th><th>Kuadran</th><th>Klasifikasi</th><th>Rata-rata</th><th>Gap Capaian</th><th>Perubahan Tahunan</th><th>Gap Akselerasi</th></tr></thead>
                             <tbody>`;
                 klassenRows.forEach(item => {
                     const isFocal = hasActive && isFocalRegion(item.name);
@@ -3858,23 +3949,23 @@
                             <td><img src="${getLogoPemdaUrl(item.name)}" alt="" class="region-table-logo"><strong>${item.name}</strong> ${isFocal ? `<span class="badge primary" style="font-size:7px;">${cleanFocalName}</span>` : ''}</td>
                             <td><span class="badge ${qBadgeClass}">Kuadran ${item.quadrant}</span></td>
                             <td><strong>${item.classification}</strong></td>
-                            <td>${formatPct(item.avg)}</td>
-                            <td class="${item.growthGap >= 0 ? 'positive' : 'negative'}">${item.growthGap >= 0 ? '+' : ''}${formatNum(item.growthGap)} pp</td>
-                            <td>${item.chg >= 0 ? '+' : ''}${formatNum(item.chg)} pp</td>
-                            <td class="${item.shareGap >= 0 ? 'positive' : 'negative'}">${item.shareGap >= 0 ? '+' : ''}${formatNum(item.shareGap)} pp</td>
+                            <td>${formatMetricVal(item.avg, ds)}</td>
+                            <td class="${item.growthGap >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(item.growthGap, ds)}</td>
+                            <td>${formatDeltaVal(item.chg, ds)}</td>
+                            <td class="${item.shareGap >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(item.shareGap, ds)}</td>
                         </tr>`;
                 });
                 klassenTable += `</tbody></table></div>`;
 
                 tabContent.innerHTML = createKlassenSVG(klassenRows, {
-                    xLabel: `Gap laju pertumbuhan wilayah terhadap rata-rata (${formatPct(peerAvg)}) (pp)`,
-                    yLabel: `Gap akselerasi tahunan terhadap rata-rata (${formatNum(peerAvgChg)} pp)`,
-                    note: 'Sumbu horizontal: Gap pertumbuhan terhadap rata-rata wilayah. Sumbu vertikal: Gap akselerasi tahunan. Kuadran I: Maju & Cepat, Kuadran II: Maju tapi Melambat, Kuadran III: Potensial, Kuadran IV: Relatif Tertinggal.'
+                    xLabel: `Gap ${ds.name} wilayah terhadap rata-rata (${formatMetricVal(peerAvg, ds)})`,
+                    yLabel: `Gap perubahan tahunan terhadap rata-rata (${formatDeltaVal(peerAvgChg, ds)})`,
+                    note: 'Sumbu horizontal: Gap capaian terhadap rata-rata wilayah. Sumbu vertikal: Gap perubahan tahunan. Kuadran I: Maju & Cepat, Kuadran II: Maju tapi Melambat, Kuadran III: Potensial, Kuadran IV: Relatif Tertinggal.'
                 }) + klassenTable;
 
             } else if (activeTab === 'Peer Comparison') {
                 tabEyebrow.textContent = 'PEER COMPARISON';
-                tabTitle.textContent = 'Kartu Profil Head-to-Head Wilayah Pembanding';
+                tabTitle.textContent = `Kartu Profil Head-to-Head ${ds.name}`;
                 tabDesc.textContent = 'Perbandingan langsung indikator kinerja antar-daerah yang dipilih.';
 
                 const baseRegion = hasActive ? activeRow : rows[0];
@@ -3889,7 +3980,7 @@
                             </div>
                             <div>
                                 <strong style="font-size:13px; color:var(--navy); display:block;">Basis Acuan: ${baseName}</strong>
-                                <small style="color:var(--muted); font-size:10px;">Rata-rata: <b style="color:var(--blue);">${formatPct(baseRegion.avg)}</b> | Perubahan: <b class="${baseRegion.chg >= 0 ? 'positive' : 'negative'}">${baseRegion.chg >= 0 ? '+' : ''}${formatNum(baseRegion.chg)} pp</b> (${period === '5' ? '2020 - 2024' : '2015 - 2024'})</small>
+                                <small style="color:var(--muted); font-size:10px;">Rata-rata: <b style="color:var(--blue);">${formatMetricVal(baseRegion.avg, ds)}</b> | Perubahan: <b class="${baseRegion.chg >= 0 ? 'positive' : 'negative'}">${formatDeltaVal(baseRegion.chg, ds)}</b> (${periodRange})</small>
                             </div>
                         </div>
                         <span class="badge primary" style="font-size:10px; padding:4px 10px;">Wilayah Acuan</span>
@@ -3920,12 +4011,12 @@
                                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
                                         <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; padding:10px 12px;">
                                             <span style="display:block; font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; margin-bottom:3px;">Rata-rata</span>
-                                            <strong style="display:block; font-size:16px; font-weight:700; color:var(--navy);">${formatPct(r.avg)}</strong>
-                                            <small style="font-size:11px; color:var(--muted);">${period === '5' ? '2020 - 2024' : '2015 - 2024'}</small>
+                                            <strong style="display:block; font-size:15px; font-weight:700; color:var(--navy);">${formatMetricVal(r.avg, ds)}</strong>
+                                            <small style="font-size:11px; color:var(--muted);">${periodRange}</small>
                                         </div>
                                         <div style="background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; padding:10px 12px;">
                                             <span style="display:block; font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; margin-bottom:3px;">Perubahan</span>
-                                            <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="display:block; font-size:16px; font-weight:700;">${r.chg >= 0 ? '+' : ''}${formatNum(r.chg)} pp</strong>
+                                            <strong class="${r.chg >= 0 ? 'positive' : 'negative'}" style="display:block; font-size:15px; font-weight:700;">${formatDeltaVal(r.chg, ds)}</strong>
                                             <small style="font-size:11px; color:var(--muted);">${r.chg >= 0 ? 'Menguat' : 'Melemah'}</small>
                                         </div>
                                     </div>
@@ -3935,12 +4026,12 @@
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                         <span style="font-size:11px; font-weight:600; color:${lead >= 0 ? '#166534' : '#991b1b'};">Posisi ${baseName}:</span>
                                         <span class="badge ${lead >= 0 ? 'success' : 'warning'}" style="font-size:10px; font-weight:700; padding:2px 8px;">
-                                            ${lead >= 0 ? baseName + ' Unggul' : baseName + ' Tertinggal'}
+                                            ${lead >= 0 ? baseName + ' Lebih Tinggi' : baseName + ' Lebih Rendah'}
                                         </span>
                                     </div>
                                     <div style="display:flex; justify-content:space-between; align-items:baseline;">
                                         <strong style="font-size:14px; color:${lead >= 0 ? '#15803d' : '#b91c1c'}; font-weight:700;">
-                                            ${lead >= 0 ? '+' : ''}${formatNum(lead)} pp
+                                            ${formatDeltaVal(lead, ds)}
                                         </strong>
                                         <small style="font-size:11px; color:${lead >= 0 ? '#166534' : '#991b1b'};">
                                             ${lead >= 0 ? 'di atas rerata wilayah ini' : 'di bawah rerata wilayah ini'}
@@ -3955,7 +4046,8 @@
             }
         }
 
-        if (featureTabs) {
+        if (featureTabs && !featureTabs.dataset.bound) {
+            featureTabs.dataset.bound = 'true';
             featureTabs.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', function () {
                     featureTabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -3966,7 +4058,15 @@
             });
         }
 
-        if (periodSelect) periodSelect.addEventListener('change', renderComparison);
+        if (indicatorSelect && !indicatorSelect.dataset.bound) {
+            indicatorSelect.dataset.bound = 'true';
+            indicatorSelect.addEventListener('change', renderComparison);
+        }
+
+        if (periodSelect && !periodSelect.dataset.bound) {
+            periodSelect.dataset.bound = 'true';
+            periodSelect.addEventListener('change', renderComparison);
+        }
 
         // Multiselect Dropdown Logic
         const dropdownTrigger = document.getElementById('btn-toggle-region-dropdown');
@@ -4181,13 +4281,18 @@
 
         updateDropdownUI();
 
-        if (btnExport) {
+        if (btnExport && !btnExport.dataset.bound) {
+            btnExport.dataset.bound = 'true';
             btnExport.addEventListener('click', () => {
+                const expDs = lastRendered.ds || getActiveDataset();
+                const expRows = lastRendered.rows || [];
+                const unitLbl = (expDs && expDs.unit ? expDs.unit.trim() : '%');
+                const chgLbl = (expDs && expDs.changeUnit ? expDs.changeUnit.trim() : 'pp');
                 const csvRows = [
-                    ['Peringkat', 'Wilayah', 'Rata-rata Pertumbuhan (%)', 'Perubahan Tahunan (pp)'],
-                    ...AppState.regional.map((r, i) => [i + 1, r.name, r.value, r.change])
+                    ['Peringkat', 'Kode Wilayah', 'Wilayah', 'Indikator', 'Periode', `Rata-rata (${unitLbl})`, `Nilai Terkini (${unitLbl})`, `Perubahan Tahunan (${chgLbl})`],
+                    ...expRows.map((r, i) => [i + 1, r.kode_wilayah || '', r.name, expDs.name || '', lastRendered.periodRange || '', r.avg.toFixed(2), r.latestVal.toFixed(2), r.chg.toFixed(2)])
                 ];
-                downloadCSV('perbandingan-regional.csv', csvRows);
+                downloadCSV(`perbandingan-${(expDs.code || 'regional').toLowerCase()}.csv`, csvRows);
             });
         }
 

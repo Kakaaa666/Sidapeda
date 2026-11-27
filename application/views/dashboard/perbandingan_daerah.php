@@ -72,7 +72,7 @@
 
             <div class="divider" style="margin: 14px 0;"></div>
             <span class="eyebrow">DATASET DIGUNAKAN</span>
-            <p class="panel-help">Dataset pertumbuhan ekonomi Jawa Timur dan perbandingan Kabupaten/Kota 2015–2024.</p>
+            <p class="panel-help">Dataset indikator ekonomi Kabupaten/Kota se-Jawa Timur (2016–2025) bersumber dari BPS &amp; Data Dashboard Ekonomi.</p>
         </aside>
 
         <!-- MAIN COMPARISON CONTENT -->
@@ -84,26 +84,49 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg>
                 <div>
                     <strong>Konfigurasi Perbandingan Daerah</strong>
-                    <small>Dataset pertumbuhan ekonomi Jawa Timur & Kabupaten/Kota</small>
+                    <small>Dataset seluruh 38 Kabupaten/Kota Jawa Timur &amp; Provinsi Jawa Timur</small>
                 </div>
             </div>
-            <span>Periode Data: 2015–2024</span>
+            <span id="comp-builder-period-label">Periode Data: 2016–2025</span>
         </div>
         <div class="builder-grid">
             <label>
                 <span>Indikator regional</span>
-                <select disabled><option>Pertumbuhan ekonomi (PDRB ADHK)</option></select>
+                <select id="comp-indicator">
+                    <?php
+                    $dsGroups = array();
+                    if (!empty($regional_datasets)) {
+                        foreach ($regional_datasets as $dsCode => $ds) {
+                            $grp = $ds['group'] ?? 'Indikator Lainnya';
+                            $dsGroups[$grp][$dsCode] = $ds;
+                        }
+                    }
+                    ?>
+                    <?php if (!empty($dsGroups)): ?>
+                        <?php foreach ($dsGroups as $grpName => $items): ?>
+                            <optgroup label="<?= htmlspecialchars($grpName) ?>">
+                                <?php foreach ($items as $dsCode => $ds): ?>
+                                    <option value="<?= htmlspecialchars($dsCode) ?>" <?= ($dsCode === 'EKO-005') ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($ds['name']) ?> (<?= trim(htmlspecialchars($ds['unit'])) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="EKO-005" selected>Pertumbuhan Ekonomi (PDRB ADHK) (%)</option>
+                    <?php endif; ?>
+                </select>
             </label>
             <label>
                 <span>Rentang periode</span>
                 <select id="comp-period">
-                    <option value="10">2015–2024 (10 Tahun)</option>
-                    <option value="5">2020–2024 (5 Tahun Terakhir)</option>
+                    <option value="all" selected>2016–2025 (10 Tahun)</option>
+                    <option value="5">2021–2025 (5 Tahun Terakhir)</option>
                 </select>
             </label>
             <label>
                 <span>Benchmark tren</span>
-                <select disabled><option>Jawa Timur dan Nasional</option></select>
+                <select disabled><option>Provinsi Jawa Timur</option></select>
             </label>
             <button class="button secondary" id="btn-reset-regions">Reset Wilayah</button>
         </div>
@@ -195,7 +218,7 @@
     <div class="comparison-context">
         <div>
             <span class="pulse"></span>
-            <p>Menampilkan analisis perbandingan untuk <strong id="comp-indicator-name">Pertumbuhan Ekonomi</strong>, periode <strong id="comp-period-label">2015–2024</strong>.</p>
+            <p>Menampilkan analisis perbandingan untuk <strong id="comp-indicator-name">Pertumbuhan Ekonomi (PDRB ADHK)</strong>, periode <strong id="comp-period-label">2016–2025</strong>.</p>
         </div>
     </div>
 
@@ -242,7 +265,7 @@
                     <p id="comp-tab-desc">Peringkat berdasarkan rata-rata pertumbuhan tahunan selama periode terpilih.</p>
                 </div>
                 <div class="output-actions">
-                    <span class="badge info" id="comp-tab-period-badge">2015–2024</span>
+                    <span class="badge info" id="comp-tab-period-badge">2016–2025</span>
                 </div>
             </div>
 
@@ -270,6 +293,7 @@
 <script>
     window.__ACTIVE_REGION_NAME__ = <?= json_encode($nama_wilayah ?? 'Kabupaten Banyuwangi', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__REGIONAL_DATA__ = <?= json_encode($all_active_regional, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    window.__REGIONAL_DATASETS__ = <?= json_encode($regional_datasets ?? array(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__SERIES_DATA__ = <?= json_encode($series, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     window.__SECTORS_DATA__ = <?= json_encode($sectors, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 </script>

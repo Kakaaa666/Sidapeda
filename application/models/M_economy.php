@@ -342,7 +342,7 @@ class M_economy extends CI_Model {
                     'perubahan' => (float)$row->perubahan,
                     'series' => json_decode($row->deret_historis, true) ?: array(),
                     'deret_historis' => $row->deret_historis,
-                    'kode_wilayah' => $row->kode_wilayah ?? $kode,
+                    'kode_wilayah' => $row->kode_wilayah ?? '',
                     'is_deleted' => (int)($row->is_deleted ?? 0),
                     'deleted_at' => $row->deleted_at ?? null
                 );
@@ -360,6 +360,258 @@ class M_economy extends CI_Model {
             array('id' => 7, 'name' => 'Kab. Jember', 'value' => 4.62, 'change' => 0.08, 'series' => array(4.80, 4.90, 5.00, 5.20, 5.10, -3.20, 3.70, 4.53, 4.54, 4.62)),
             array('id' => 8, 'name' => 'Kab. Pasuruan', 'value' => 4.55, 'change' => 0.05, 'series' => array(4.90, 5.00, 5.10, 5.40, 5.30, -3.80, 3.60, 4.48, 4.50, 4.55))
         );
+    }
+
+    /**
+     * Mengambil dataset komparasi antar wilayah (38 Kab/Kota + benchmark Provinsi Jawa Timur)
+     * untuk seluruh indikator yang tersedia dari Data Dashboard ekonomi.xlsx di database_ekonomi.
+     */
+    public function get_regional_comparison_datasets() {
+        $sectorNames = array(
+            'A' => 'Pertanian, Kehutanan & Perikanan',
+            'B' => 'Pertambangan & Penggalian',
+            'C' => 'Industri Pengolahan',
+            'D' => 'Pengadaan Listrik & Gas',
+            'E' => 'Pengadaan Air & Pengelolaan Sampah',
+            'F' => 'Konstruksi',
+            'G' => 'Perdagangan Besar & Eceran',
+            'H' => 'Transportasi & Pergudangan',
+            'I' => 'Akomodasi & Makan Minum',
+            'J' => 'Informasi & Komunikasi',
+            'K' => 'Jasa Keuangan & Asuransi',
+            'L' => 'Real Estate',
+            'MN' => 'Jasa Perusahaan',
+            'O' => 'Adm. Pemerintah & Jaminan Sosial',
+            'P' => 'Jasa Pendidikan',
+            'Q' => 'Jasa Kesehatan & Kegiatan Sosial',
+            'RSTU' => 'Jasa Lainnya',
+            'TM' => 'PDRB Tanpa Migas'
+        );
+
+        $defs = array(
+            'EKO-005' => array('name' => 'Pertumbuhan Ekonomi (PDRB ADHK)', 'group' => 'Indikator Makro Utama', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-001' => array('name' => 'PDRB Total ADHB', 'group' => 'Indikator Makro Utama', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-002' => array('name' => 'PDRB Total ADHK', 'group' => 'Indikator Makro Utama', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-008' => array('name' => 'PDRB per Kapita ADHB', 'group' => 'Indikator Makro Utama', 'unit' => ' Juta Rp', 'changeUnit' => ' Juta Rp', 'decimals' => 2, 'divisor' => 1000),
+            'EKO-009' => array('name' => 'PDRB per Kapita ADHK', 'group' => 'Indikator Makro Utama', 'unit' => ' Juta Rp', 'changeUnit' => ' Juta Rp', 'decimals' => 2, 'divisor' => 1000),
+            'EKO-010' => array('name' => 'Konsumsi Rumah Tangga (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-010.K' => array('name' => 'Konsumsi Rumah Tangga (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-011' => array('name' => 'Pembentukan Modal Tetap Bruto / PMTB (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-011.K' => array('name' => 'Pembentukan Modal Tetap Bruto / PMTB (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-012' => array('name' => 'Konsumsi Pemerintah (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-012.K' => array('name' => 'Konsumsi Pemerintah (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-015.2' => array('name' => 'Konsumsi LNPRT (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-016.2' => array('name' => 'Konsumsi LNPRT (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-015.5' => array('name' => 'Perubahan Inventori (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-016.5' => array('name' => 'Perubahan Inventori (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-015.6' => array('name' => 'Net Ekspor (ADHB)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'EKO-016.6' => array('name' => 'Net Ekspor (ADHK)', 'group' => 'Komponen Pengeluaran PDRB', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1),
+            'KES-001' => array('name' => 'Persentase Penduduk Miskin (P0)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'KES-002' => array('name' => 'Jumlah Penduduk Miskin', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Ribu Jiwa', 'changeUnit' => ' Ribu Jiwa', 'decimals' => 2, 'divisor' => 1),
+            'KES-003' => array('name' => 'Garis Kemiskinan (GK)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Rp/kap/bln', 'changeUnit' => ' Rp', 'decimals' => 0, 'divisor' => 1),
+            'KES-004' => array('name' => 'Indeks Kedalaman Kemiskinan (P1)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'KES-005' => array('name' => 'Indeks Keparahan Kemiskinan (P2)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'KES-007' => array('name' => 'Indeks Pembangunan Manusia (IPM)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'KES-008' => array('name' => 'Umur Harapan Hidup (UHH)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Tahun', 'changeUnit' => ' Tahun', 'decimals' => 2, 'divisor' => 1),
+            'KES-009' => array('name' => 'Harapan Lama Sekolah (HLS)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Tahun', 'changeUnit' => ' Tahun', 'decimals' => 2, 'divisor' => 1),
+            'KES-010' => array('name' => 'Rata-rata Lama Sekolah (RLS)', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Tahun', 'changeUnit' => ' Tahun', 'decimals' => 2, 'divisor' => 1),
+            'KES-011' => array('name' => 'Pengeluaran per Kapita Disesuaikan', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Ribu Rp/thn', 'changeUnit' => ' Ribu Rp', 'decimals' => 0, 'divisor' => 1),
+            'KES-012' => array('name' => 'Rata-rata Pengeluaran per Kapita RT', 'group' => 'Kesejahteraan & Pembangunan Manusia (KES)', 'unit' => ' Rp/kap/bln', 'changeUnit' => ' Rp', 'decimals' => 0, 'divisor' => 1),
+            'INV-001' => array('name' => 'Realisasi Investasi Total (PMA & PMDN)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-002' => array('name' => 'Realisasi Investasi PMA (Asing)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-003' => array('name' => 'Realisasi Investasi PMDN (Domestik)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-001.Q1' => array('name' => 'Realisasi Investasi Total - Kuartal 1 (Q1)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-001.Q2' => array('name' => 'Realisasi Investasi Total - Kuartal 2 (Q2)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-001.Q3' => array('name' => 'Realisasi Investasi Total - Kuartal 3 (Q3)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'INV-001.Q4' => array('name' => 'Realisasi Investasi Total - Kuartal 4 (Q4)', 'group' => 'Investasi & Penanaman Modal (INV)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1000000000),
+            'NAK-001' => array('name' => 'Jumlah Penduduk Pertengahan Tahun', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Ribu Jiwa', 'changeUnit' => ' Ribu Jiwa', 'decimals' => 2, 'divisor' => 1),
+            'TK-005' => array('name' => 'Tingkat Pengangguran Terbuka (TPT)', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'TK-006' => array('name' => 'Tingkat Partisipasi Angkatan Kerja (TPAK)', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'TK-009' => array('name' => 'Rata-rata Upah/Gaji Buruh/Karyawan', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Rp/bln', 'changeUnit' => ' Rp', 'decimals' => 0, 'divisor' => 1),
+            'TK-001' => array('name' => 'Penduduk Usia Kerja (15 Tahun Ke Atas)', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Orang', 'changeUnit' => ' Orang', 'decimals' => 0, 'divisor' => 1),
+            'TK-002' => array('name' => 'Jumlah Angkatan Kerja', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Orang', 'changeUnit' => ' Orang', 'decimals' => 0, 'divisor' => 1),
+            'TK-003' => array('name' => 'Jumlah Penduduk Bekerja', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Orang', 'changeUnit' => ' Orang', 'decimals' => 0, 'divisor' => 1),
+            'TK-004' => array('name' => 'Jumlah Pengangguran', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Orang', 'changeUnit' => ' Orang', 'decimals' => 0, 'divisor' => 1),
+            'TK-010' => array('name' => 'Tingkat Setengah Pengangguran', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'TK-010.JML' => array('name' => 'Jumlah Setengah Pengangguran', 'group' => 'Kependudukan & Ketenagakerjaan (NAK & TK)', 'unit' => ' Orang', 'changeUnit' => ' Orang', 'decimals' => 0, 'divisor' => 1),
+            'PAR-005' => array('name' => 'Jumlah Kamar Hotel & Akomodasi (Total)', 'group' => 'Pariwisata & Akomodasi (PAR)', 'unit' => ' Kamar', 'changeUnit' => ' Kamar', 'decimals' => 0, 'divisor' => 1),
+            'PAR-005.BIN' => array('name' => 'Jumlah Kamar Hotel Berbintang', 'group' => 'Pariwisata & Akomodasi (PAR)', 'unit' => ' Kamar', 'changeUnit' => ' Kamar', 'decimals' => 0, 'divisor' => 1),
+            'PAR-005.NON' => array('name' => 'Jumlah Kamar Hotel Non-Bintang', 'group' => 'Pariwisata & Akomodasi (PAR)', 'unit' => ' Kamar', 'changeUnit' => ' Kamar', 'decimals' => 0, 'divisor' => 1),
+            'HRG-001' => array('name' => 'Indeks Harga Konsumen (IHK) Umum (Tahunan)', 'group' => 'Harga, IHK & Inflasi (HRG)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-001.OKT' => array('name' => 'Indeks Harga Konsumen (IHK) Umum - Oktober', 'group' => 'Harga, IHK & Inflasi (HRG)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-004' => array('name' => 'Inflasi Tahunan (YoY)', 'group' => 'Harga, IHK & Inflasi (HRG)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'HRG-004.OKT' => array('name' => 'Inflasi Tahunan (YoY) - Oktober', 'group' => 'Harga, IHK & Inflasi (HRG)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'HRG-003.OKT' => array('name' => 'Inflasi Bulanan (MtM) - Oktober', 'group' => 'Harga, IHK & Inflasi (HRG)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.01' => array('name' => 'IHK Kelompok: Makanan, Minuman & Tembakau', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.02' => array('name' => 'IHK Kelompok: Pakaian & Alas Kaki', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.03' => array('name' => 'IHK Kelompok: Perumahan, Air, Listrik & BBM', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.04' => array('name' => 'IHK Kelompok: Perlengkapan & Pemeliharaan RT', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.05' => array('name' => 'IHK Kelompok: Kesehatan', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.06' => array('name' => 'IHK Kelompok: Transportasi', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.07' => array('name' => 'IHK Kelompok: Informasi, Komunikasi & Jasa Keuangan', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.08' => array('name' => 'IHK Kelompok: Rekreasi, Olahraga & Budaya', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.09' => array('name' => 'IHK Kelompok: Pendidikan', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.10' => array('name' => 'IHK Kelompok: Penyediaan Makanan & Minuman/Restoran', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1),
+            'HRG-002.11' => array('name' => 'IHK Kelompok: Perawatan Pribadi & Jasa Lainnya', 'group' => 'IHK Kelompok Pengeluaran (HRG-002)', 'unit' => ' Poin', 'changeUnit' => ' Poin', 'decimals' => 2, 'divisor' => 1)
+        );
+
+        foreach ($sectorNames as $secKey => $secLabel) {
+            $defs["EKO-006.{$secKey}"] = array('name' => "Pertumbuhan Sektor: {$secLabel}", 'group' => 'Pertumbuhan Sektoral (PDRB ADHK)', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1);
+        }
+        foreach ($sectorNames as $secKey => $secLabel) {
+            $defs["EKO-007.{$secKey}"] = array('name' => "Kontribusi Sektor: {$secLabel}", 'group' => 'Kontribusi / Share Sektoral', 'unit' => '%', 'changeUnit' => ' pp', 'decimals' => 2, 'divisor' => 1);
+        }
+        foreach ($sectorNames as $secKey => $secLabel) {
+            $defs["EKO-003.{$secKey}"] = array('name' => "PDRB Sektoral ADHB: {$secLabel}", 'group' => 'PDRB Lapangan Usaha (ADHB)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1);
+        }
+        foreach ($sectorNames as $secKey => $secLabel) {
+            $defs["EKO-004.{$secKey}"] = array('name' => "PDRB Sektoral ADHK: {$secLabel}", 'group' => 'PDRB Lapangan Usaha (ADHK)', 'unit' => ' Miliar Rp', 'changeUnit' => ' Miliar Rp', 'decimals' => 2, 'divisor' => 1);
+        }
+
+        // Canonical list of 38 Kab/Kota from perbandingan_daerah (or kodewilayah fallback)
+        $baseRegions = $this->get_regional_growth();
+        $regionNames = array();
+        foreach ($baseRegions as $br) {
+            if (!empty($br['kode_wilayah']) && $br['kode_wilayah'] !== '35.00') {
+                $regionNames[$br['kode_wilayah']] = $br['name'];
+            }
+        }
+        if (count($regionNames) < 38) {
+            foreach ($this->get_daftar_kab_kota() as $dk) {
+                if (!isset($regionNames[$dk['kode']]) && $dk['kode'] !== '35.00') {
+                    $regionNames[$dk['kode']] = $dk['nama'];
+                }
+            }
+        }
+        ksort($regionNames);
+
+        // Single batch query for all target indicator codes
+        $codes = array_keys($defs);
+        $rows = $this->db->select('kode_indikator, kode_wilayah, wilayah, tahun, periode, nilai')
+            ->where_in('kode_indikator', $codes)
+            ->like('kode_wilayah', '35.', 'after')
+            ->where('is_deleted', 0)
+            ->where('status_validasi !=', 'Ditolak')
+            ->order_by('kode_indikator', 'ASC')
+            ->order_by('kode_wilayah', 'ASC')
+            ->order_by('tahun', 'ASC')
+            ->get('database_ekonomi')
+            ->result_array();
+
+        $byCode = array();
+        $yearsByCode = array();
+        foreach ($rows as $r) {
+            $c = $r['kode_indikator'];
+            $kw = trim($r['kode_wilayah']);
+            $yr = (int)$r['tahun'];
+            $isAnnual = (strcasecmp(trim($r['periode'] ?? ''), 'Tahunan') === 0);
+            if (!isset($byCode[$c][$kw][$yr]) || $isAnnual) {
+                $byCode[$c][$kw][$yr] = (float)$r['nilai'];
+            }
+            $yearsByCode[$c][$yr] = true;
+            if ($kw !== '35.00' && !isset($regionNames[$kw]) && !empty($r['wilayah'])) {
+                $regionNames[$kw] = $r['wilayah'];
+            }
+        }
+
+        $datasets = array();
+        foreach ($defs as $code => $meta) {
+            $divisor = $meta['divisor'] ?: 1;
+            $decimals = $meta['decimals'] ?? 2;
+
+            // Special handling for EKO-005: keep sync with perbandingan_daerah table
+            if ($code === 'EKO-005' && !empty($baseRegions)) {
+                $yrs = !empty($yearsByCode[$code]) ? array_keys($yearsByCode[$code]) : range(2016, 2025);
+                sort($yrs);
+                $benchSeries = array();
+                if (!empty($byCode[$code]['35.00'])) {
+                    foreach ($yrs as $yr) {
+                        $benchSeries[] = isset($byCode[$code]['35.00'][$yr]) ? round($byCode[$code]['35.00'][$yr] / $divisor, $decimals) : null;
+                    }
+                }
+                $regs = array();
+                foreach ($baseRegions as $br) {
+                    $regs[] = array(
+                        'kode_wilayah' => $br['kode_wilayah'] ?? '',
+                        'name' => $br['name'],
+                        'value' => round((float)$br['value'], $decimals),
+                        'change' => round((float)$br['change'], $decimals),
+                        'series' => array_map(function($v) use ($decimals) { return round((float)$v, $decimals); }, $br['series'] ?? array())
+                    );
+                }
+                $datasets[$code] = array(
+                    'code' => $code,
+                    'name' => $meta['name'],
+                    'group' => $meta['group'],
+                    'unit' => $meta['unit'],
+                    'changeUnit' => $meta['changeUnit'],
+                    'decimals' => $decimals,
+                    'years' => array_values($yrs),
+                    'benchmarkName' => !empty($benchSeries) ? 'Provinsi Jawa Timur' : null,
+                    'benchmarkSeries' => $benchSeries,
+                    'regions' => $regs
+                );
+                continue;
+            }
+
+            if (empty($byCode[$code]) || empty($yearsByCode[$code])) {
+                continue;
+            }
+
+            $yrs = array_keys($yearsByCode[$code]);
+            sort($yrs);
+
+            $benchSeries = array();
+            if (!empty($byCode[$code]['35.00'])) {
+                foreach ($yrs as $yr) {
+                    $benchSeries[] = isset($byCode[$code]['35.00'][$yr]) ? round($byCode[$code]['35.00'][$yr] / $divisor, $decimals) : null;
+                }
+            }
+
+            $regs = array();
+            foreach ($regionNames as $kw => $rName) {
+                if (empty($byCode[$code][$kw])) continue;
+                $series = array();
+                $validVals = array();
+                foreach ($yrs as $yr) {
+                    if (isset($byCode[$code][$kw][$yr])) {
+                        $v = round($byCode[$code][$kw][$yr] / $divisor, $decimals);
+                        $series[] = $v;
+                        $validVals[] = $v;
+                    } else {
+                        $series[] = null;
+                    }
+                }
+                if (empty($validVals)) continue;
+                $latest = end($validVals);
+                $prev = count($validVals) > 1 ? $validVals[count($validVals) - 2] : $latest;
+                $regs[] = array(
+                    'kode_wilayah' => $kw,
+                    'name' => $rName,
+                    'value' => $latest,
+                    'change' => round($latest - $prev, $decimals),
+                    'series' => $series
+                );
+            }
+
+            if (empty($regs)) continue;
+            usort($regs, function($a, $b) { return $b['value'] <=> $a['value']; });
+
+            $datasets[$code] = array(
+                'code' => $code,
+                'name' => $meta['name'],
+                'group' => $meta['group'],
+                'unit' => $meta['unit'],
+                'changeUnit' => $meta['changeUnit'],
+                'decimals' => $decimals,
+                'years' => array_values($yrs),
+                'benchmarkName' => !empty($benchSeries) ? 'Provinsi Jawa Timur' : null,
+                'benchmarkSeries' => $benchSeries,
+                'regions' => $regs
+            );
+        }
+
+        return $datasets;
     }
 
     public function get_regional_by_id($id) {

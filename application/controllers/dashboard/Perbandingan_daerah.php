@@ -8,6 +8,7 @@ class Perbandingan_daerah extends MY_Controller {
         $years = $this->M_economy->get_years();
         $regional = $this->M_economy->get_regional_growth($status);
         $all_active_regional = $this->M_economy->get_regional_growth(); // Selalu untuk ranking/chart
+        $regional_datasets = $this->M_economy->get_regional_comparison_datasets();
         $series = $this->M_economy->get_economic_series();
         $sectors = $this->M_economy->get_sectors();
         $trash_count = $this->M_economy->count_trash_regional();
@@ -20,6 +21,7 @@ class Perbandingan_daerah extends MY_Controller {
             'years' => $years,
             'regional' => $regional,
             'all_active_regional' => $all_active_regional,
+            'regional_datasets' => $regional_datasets,
             'series' => $series,
             'sectors' => $sectors,
             'status' => $status,
