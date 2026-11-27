@@ -34,7 +34,7 @@
 
     // Helper: Number Formatter
     function formatNum(val, digits = 2) {
-        if (!Number.isFinite(val)) return 'â€”';
+        if (!Number.isFinite(val)) return '—';
         return new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: digits,
             maximumFractionDigits: digits
@@ -736,16 +736,21 @@
         return `<div class="horizontal-bar-chart" style="width:100%; display:flex; flex-direction:column; gap:3px;">${rowsHtml}</div>`;
     }
 
-    function createLineChartSVG(years, series, height = 230, unit = '%') {
+    function createLineChartSVG(years, series, height = 240, unit = '%', opts = {}) {
         const allVals = series.flatMap(s => s.values).filter(Number.isFinite);
         if (!allVals.length || !years.length) {
-            return `<div class="table-empty">Belum ada observasi untuk grafik.</div>`;
+            return `<div class="table-empty" style="padding:24px; text-align:center; color:var(--muted); font-size:11px;">Belum ada observasi untuk grafik.</div>`;
         }
 
         const min = Math.min(0, ...allVals);
         const max = Math.max(...allVals);
         const range = max - min || 1;
-        const left = 48, right = 620, top = 20, bottom = height - 32;
+
+        const vbWidth = opts.viewBoxWidth || 800;
+        const left = opts.left || 62;
+        const right = opts.right || (vbWidth - 30);
+        const top = opts.top || 25;
+        const bottom = opts.bottom || (height - 35);
 
         const x = i => left + (years.length <= 1 ? 0 : (i / (years.length - 1)) * (right - left));
         const y = v => bottom - ((v - min) / range) * (bottom - top);
@@ -756,43 +761,95 @@
             const yPos = bottom - frac * (bottom - top);
             gridLines += `
                 <g>
-                    <line x1="${left}" x2="${right}" y1="${yPos}" y2="${yPos}" class="gridline"/>
-                    <text x="2" y="${yPos + 3}">${formatNum(v, 1)}${unit}</text>
+                    <line x1="${left}" x2="${right}" y1="${yPos}" y2="${yPos}" stroke="#e9eef5" stroke-width="1" stroke-dasharray="3 3" class="gridline"/>
+                    <text x="${left - 10}" y="${yPos + 4}" text-anchor="end" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#64748b">${formatNum(v, 1)}${unit}</text>
                 </g>`;
         });
 
+        let zeroLine = '';
+        if (min < 0 && max > 0) {
+            const zY = y(0);
+            zeroLine = `<line x1="${left}" x2="${right}" y1="${zY}" y2="${zY}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+        }
+
+        const executivePalette = [
+            '#2563eb', '#0d9488', '#d97706', '#7c3aed', '#e11d48',
+            '#059669', '#0284c7', '#c026d3', '#ea580c', '#4f46e5',
+            '#16a34a', '#db2777', '#0891b2', '#ca8a04', '#9333ea', '#475569'
+        ];
+
         let polylines = '';
         series.forEach((s, sIdx) => {
-            const pts = s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ');
-            const circles = s.values.map((v, i) =>
-                `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" class="dynamic-point ${s.className || 'series-' + sIdx}">
-                    <title>${years[i]}: ${formatNum(v, 2)}${unit}</title>
-                 </circle>`
-            ).join('');
+            const isFocal = Boolean(s.isFocal);
+            const isJatim = /jawa\s*timur/i.test(s.name);
+            const color = s.color || (isFocal ? '#2563eb' : (isJatim ? '#0d9488' : executivePalette[sIdx % executivePalette.length]));
+            const strokeW = isFocal ? '3.2' : (isJatim ? '2.8' : '2');
+            const dashStyle = isJatim ? 'stroke-dasharray="6 3"' : '';
+
+            const validPts = [];
+            const circles = s.values.map((v, i) => {
+                if (v === null || v === undefined || v === '' || !Number.isFinite(Number(v))) return '';
+                const nv = Number(v);
+                validPts.push(`${x(i)},${y(nv)}`);
+                return `<circle cx="${x(i)}" cy="${y(nv)}" r="${isFocal ? 4.5 : 3.5}" fill="#ffffff" stroke="${color}" stroke-width="${isFocal ? 2.5 : 2}" class="dynamic-point ${s.className || 'series-' + sIdx}">
+                    <title>${s.name} (${years[i]}): ${formatNum(nv, 2)}${unit}</title>
+                 </circle>`;
+            }).join('');
+            const pts = validPts.join(' ');
 
             polylines += `
-                <g>
-                    <polyline points="${pts}" class="dynamic-line ${s.className || 'series-' + sIdx}"/>
+                <g class="chart-series-group">
+                    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" ${dashStyle} class="dynamic-line ${s.className || 'series-' + sIdx}"/>
                     ${circles}
                 </g>`;
         });
 
         const xLabels = years.map((yr, i) =>
-            `<text x="${x(i)}" y="${height - 8}" text-anchor="middle">${String(yr).slice(-2)}</text>`
+            `<text x="${x(i)}" y="${height - 10}" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" fill="#475569">${yr}</text>`
         ).join('');
 
-        const legend = series.map((s, idx) => {
-            const logo = s.logo || (typeof getLogoPemdaUrl === 'function' ? getLogoPemdaUrl(s.name) : null);
-            return `<span style="display:inline-flex; align-items:center; gap:5px;"><i class="${s.className || 'series-' + idx}"></i>${logo ? `<img src="${logo}" alt="" style="width:13px; height:13px; object-fit:contain; flex-shrink:0;">` : ''}<span>${s.name}</span></span>`;
-        }).join('');
+        let legendHtml = '';
+        if (opts.showLegend !== false && series.length > 0) {
+            const legendPills = series.map((s, idx) => {
+                const isFocal = Boolean(s.isFocal);
+                const isJatim = /jawa\s*timur/i.test(s.name);
+                const color = s.color || (isFocal ? '#2563eb' : (isJatim ? '#0d9488' : executivePalette[idx % executivePalette.length]));
+                const logo = s.logo || (typeof getLogoPemdaUrl === 'function' ? getLogoPemdaUrl(s.name) : null);
+                return `
+                    <span class="benchmark-legend-pill" style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:${isFocal ? '#eff6ff' : (isJatim ? '#f0fdfa' : '#ffffff')}; border:1px solid ${isFocal ? '#93c5fd' : (isJatim ? '#99f6e4' : '#e2e8f0')}; border-radius:18px; font-size:11px; font-weight:${isFocal || isJatim ? '700' : '500'}; color:#1e293b; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                        <span style="width:14px; height:3px; border-radius:2px; background:${color}; display:inline-block; flex-shrink:0; ${isJatim ? 'border-top:1px dashed #0d9488;' : ''}"></span>
+                        ${logo ? `<img src="${logo}" alt="" class="region-table-logo" style="width:14px; height:14px; max-width:14px; max-height:14px; margin-right:0; object-fit:contain; flex-shrink:0;">` : ''}
+                        <span style="white-space:nowrap;">${s.name}</span>
+                        ${isFocal ? '<span class="badge primary" style="font-size:7.5px; padding:1px 4px; margin-left:2px;">Anda</span>' : (isJatim ? '<span class="badge info" style="font-size:7.5px; padding:1px 4px; margin-left:2px;">Acuan</span>' : '')}
+                    </span>`;
+            }).join('');
+            legendHtml = `<div class="dynamic-chart-legend" style="display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin-top:16px; padding:12px 14px; background:#f8fafc; border:1px solid #edf2f7; border-radius:10px; max-height:140px; overflow-y:auto;">${legendPills}</div>`;
+        }
+
+        const isWrapperDisabled = opts.noWrapper === true;
+        if (isWrapperDisabled) {
+            return `
+                <svg class="line-chart" viewBox="0 0 ${vbWidth} ${height}" preserveAspectRatio="xMidYMid meet" role="img" style="width:100%; height:100%; display:block; overflow:visible;">
+                    ${gridLines}
+                    ${zeroLine}
+                    ${polylines}
+                    ${xLabels}
+                </svg>
+                ${legendHtml}`;
+        }
 
         return `
-            <svg class="line-chart" viewBox="0 0 640 ${height}" preserveAspectRatio="none" role="img">
-                ${gridLines}
-                ${polylines}
-                ${xLabels}
-            </svg>
-            <div class="dynamic-chart-legend">${legend}</div>`;
+            <div class="line-chart-outer-wrap" style="width:100%; display:flex; flex-direction:column;">
+                <div style="width:100%; height:${height}px; position:relative; overflow:visible;">
+                    <svg class="line-chart" viewBox="0 0 ${vbWidth} ${height}" preserveAspectRatio="xMidYMid meet" role="img" style="width:100%; height:100%; display:block; overflow:visible;">
+                        ${gridLines}
+                        ${zeroLine}
+                        ${polylines}
+                        ${xLabels}
+                    </svg>
+                </div>
+                ${legendHtml}
+            </div>`;
     }
 
     function createScatterPlotSVG(xs, ys, xLabel, yLabel, years) {
@@ -1900,7 +1957,7 @@
             }
 
             if (chartContainer) {
-                chartContainer.innerHTML = createLineChartSVG(subYears, chosenSeries, 230, cfg.unit);
+                chartContainer.innerHTML = createLineChartSVG(subYears, chosenSeries, 230, cfg.unit, { showLegend: false });
             }
         }
 
@@ -3637,53 +3694,162 @@
                 tabDesc.textContent = `Menunjukkan lintasan ${ds.name} wilayah pembanding yang dipilih (${periodRange}).`;
 
                 const jatimSeries = (Array.isArray(ds.benchmarkSeries) && ds.benchmarkSeries.length)
-                    ? ds.benchmarkSeries.slice(sliceStart).filter(v => v !== null && v !== undefined && Number.isFinite(Number(v))).map(Number)
+                    ? ds.benchmarkSeries.slice(sliceStart).map(v => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v) : null)
                     : [];
+                const jatimValid = jatimSeries.filter(v => v !== null);
+                // Palette warna eksekutif berkontras tinggi dan harmonis
+                const paletteColors = [
+                    '#2563eb', '#0d9488', '#d97706', '#7c3aed', '#e11d48',
+                    '#059669', '#0284c7', '#c026d3', '#ea580c', '#4f46e5',
+                    '#16a34a', '#db2777', '#0891b2', '#ca8a04', '#9333ea', '#475569'
+                ];
 
                 const benchmarkSeries = [];
-                if (jatimSeries.length > 0) {
-                    benchmarkSeries.push({ name: ds.benchmarkName || 'Provinsi Jawa Timur', values: jatimSeries, logo: getLogoPemdaUrl('Jawa Timur'), className: 'series-1' });
+                if (jatimValid.length > 0) {
+                    benchmarkSeries.push({
+                        name: ds.benchmarkName || 'Provinsi Jawa Timur',
+                        values: jatimSeries,
+                        logo: getLogoPemdaUrl('Jawa Timur'),
+                        color: '#0d9488',
+                        className: 'series-1',
+                        isBenchmark: true
+                    });
                 }
 
-                const colorClasses = ['series-0', 'series-2', 'series-3', 'series-4', 'series-5'];
-                let cIdx = 0;
+                let cIdx = 2;
                 rows.forEach(r => {
-                    const vals = r.validVals && r.validVals.length > 0 ? r.validVals : [];
-                    if (vals.length > 0) {
+                    const rawVals = r.series && r.series.length > 0
+                        ? r.series.slice(sliceStart).map(v => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v) : null)
+                        : [];
+                    const hasAny = rawVals.some(v => v !== null);
+                    const isFocal = isFocalRegion(r.name);
+                    if (hasAny) {
+                        const assignedColor = isFocal ? '#2563eb' : paletteColors[(cIdx++) % paletteColors.length];
                         benchmarkSeries.push({
                             name: r.name.replace(/^Kabupaten\s+|^Kab\.\s+|^Kota\s+/i, ''),
-                            values: vals,
+                            values: rawVals,
                             logo: getLogoPemdaUrl(r.name),
-                            className: isFocalRegion(r.name) ? 'series-0' : colorClasses[(cIdx++) % colorClasses.length]
+                            color: assignedColor,
+                            className: isFocal ? 'series-0' : `series-${(cIdx) % 10}`,
+                            isFocal: isFocal
                         });
                     }
                 });
 
-                const jatimMeanStr = jatimSeries.length ? formatMetricVal(mean(jatimSeries), ds) : 'N/A';
+                // Pastikan Daerah Anda dan Jawa Timur muncul di posisi awal
+                benchmarkSeries.sort((a, b) => {
+                    if (a.isFocal) return -1;
+                    if (b.isFocal) return 1;
+                    if (a.isBenchmark) return -1;
+                    if (b.isBenchmark) return 1;
+                    return 0;
+                });
+
+                const jatimMeanStr = jatimValid.length ? formatMetricVal(mean(jatimValid), ds) : 'N/A';
 
                 let benchKpiHtml = `
-                    <div class="comparison-kpis" style="margin-bottom:15px; grid-template-columns: repeat(4, 1fr);">`;
+                    <div class="comparison-kpis" style="margin-top:0 !important; margin-bottom:18px !important; grid-template-columns: repeat(4, 1fr);">`;
                 if (hasActive) {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata ${cleanFocalName}</span><strong>${formatMetricVal(activeRow.avg, ds)}</strong><small>Periode ${periodRange}</small></div>
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${jatimMeanStr}</strong><small>${jatimSeries.length ? 'Benchmark Provinsi' : 'Data kab/kota saja'}</small></div>
-                        <div class="comparison-kpi"><span>Rerata Pembanding</span><strong>${formatMetricVal(peerAvg, ds)}</strong><small>${rows.length} kabupaten/kota</small></div>
-                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <img src="${getLogoPemdaUrl(activeRow.name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;">
+                                    <strong>Rerata ${cleanFocalName}</strong>
+                                </span>
+                                <span class="badge info" style="font-size:8px; padding:1px 5px;">Daerah Anda</span>
+                            </div>
+                            <strong style="color:var(--blue); font-size:20px;">${formatMetricVal(activeRow.avg, ds)}</strong>
+                            <small>periode ${periodRange}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;">
+                                    <strong>Rerata Jawa Timur</strong>
+                                </span>
+                                <span class="badge neutral" style="font-size:8px; padding:1px 5px;">Provinsi</span>
+                            </div>
+                            <strong style="color:var(--teal); font-size:20px;">${jatimMeanStr}</strong>
+                            <small>${jatimValid.length ? 'acuan patokan provinsi' : 'data kab/kota saja'}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Rerata Pembanding</span>
+                                <span class="badge neutral" style="font-size:8px; padding:1px 5px;">Kelompok</span>
+                            </div>
+                            <strong style="color:var(--navy); font-size:20px;">${formatMetricVal(peerAvg, ds)}</strong>
+                            <small>${rows.length} kabupaten/kota terpilih</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Wilayah Dicentang</span>
+                                <span class="badge success" style="font-size:8px; padding:1px 5px;">Aktif</span>
+                            </div>
+                            <strong style="color:var(--navy); font-size:20px;">${rows.length}</strong>
+                            <small>wilayah dalam observasi</small>
+                        </div>`;
                 } else {
                     benchKpiHtml += `
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl(rows[0].name)}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Capaian Tertinggi</span><strong>${formatMetricVal(rows[0].avg, ds)}</strong><small>${rows[0].name}</small></div>
-                        <div class="comparison-kpi"><span><img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">Rerata Jawa Timur</span><strong>${jatimMeanStr}</strong><small>${jatimSeries.length ? 'Benchmark Provinsi' : 'Data kab/kota saja'}</small></div>
-                        <div class="comparison-kpi"><span>Rerata Wilayah Terpilih</span><strong>${formatMetricVal(peerAvg, ds)}</strong><small>${rows.length} kabupaten/kota</small></div>
-                        <div class="comparison-kpi"><span>Wilayah Dicentang</span><strong>${rows.length}</strong><small>Daerah aktif</small></div>`;
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <img src="${getLogoPemdaUrl(rows[0].name)}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;">
+                                    <strong>Capaian Tertinggi</strong>
+                                </span>
+                                <span class="badge success" style="font-size:8px; padding:1px 5px;">#1</span>
+                            </div>
+                            <strong style="color:var(--green); font-size:20px;">${formatMetricVal(rows[0].avg, ds)}</strong>
+                            <small>${rows[0].name}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <img src="${getLogoPemdaUrl('Jawa Timur')}" alt="" class="region-table-logo" style="width:16px; height:16px; margin-right:0;">
+                                    <strong>Rerata Jawa Timur</strong>
+                                </span>
+                                <span class="badge neutral" style="font-size:8px; padding:1px 5px;">Provinsi</span>
+                            </div>
+                            <strong style="color:var(--teal); font-size:20px;">${jatimMeanStr}</strong>
+                            <small>${jatimValid.length ? 'acuan patokan provinsi' : 'data kab/kota saja'}</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Rerata Wilayah Terpilih</span>
+                                <span class="badge neutral" style="font-size:8px; padding:1px 5px;">Kelompok</span>
+                            </div>
+                            <strong style="color:var(--navy); font-size:20px;">${formatMetricVal(peerAvg, ds)}</strong>
+                            <small>rerata ${rows.length} kabupaten/kota</small>
+                        </div>
+                        <div class="comparison-kpi">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Wilayah Dicentang</span>
+                                <span class="badge success" style="font-size:8px; padding:1px 5px;">Aktif</span>
+                            </div>
+                            <strong style="color:var(--navy); font-size:20px;">${rows.length}</strong>
+                            <small>wilayah dalam observasi</small>
+                        </div>`;
                 }
                 benchKpiHtml += `</div>`;
 
                 tabContent.innerHTML = `
                     ${benchKpiHtml}
-                    <div class="chart-wrap dynamic-chart" style="height:290px;">
-                        ${createLineChartSVG(years, benchmarkSeries, 290, ds.unit)}
+                    <div class="benchmarking-chart-card" style="margin: 18px 0 20px 0; background: #ffffff; border: 1px solid var(--line); border-radius: 14px; padding: 22px 20px 18px; box-shadow: 0 2px 8px rgba(15,23,42,0.03);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+                            <div>
+                                <span class="eyebrow" style="font-size:10px; letter-spacing:0.06em; color:var(--muted); font-weight:700;">LINTASAN TREN KOMPARASI REGIONAL</span>
+                                <h4 style="font-size:14.5px; font-weight:700; color:var(--navy); margin:3px 0 0 0;">Dinamika ${ds.name} (${periodRange})</h4>
+                            </div>
+                            <span class="badge info" style="font-size:11px; padding:4px 10px;">${benchmarkSeries.length} Wilayah Dibandingkan</span>
+                        </div>
+
+                        ${createLineChartSVG(years, benchmarkSeries, 270, ds.unit)}
                     </div>
-                    <div class="method-note">${jatimSeries.length ? 'Garis hijau toska menunjukkan Provinsi Jawa Timur (Benchmark), dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.' : 'Garis berwarna mewakili masing-masing kabupaten/kota yang dicentang pada periode ' + periodRange + '.'}</div>`;
+                    <div class="method-note" style="margin-top:16px;">
+                        ${jatimValid.length
+                            ? 'Garis hijau toska putus-putus menunjukkan <strong>Provinsi Jawa Timur (Benchmark)</strong>, garis biru tebal menunjukkan <strong>Wilayah Akun Anda</strong>, dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.'
+                            : 'Garis biru tebal menunjukkan <strong>Wilayah Akun Anda</strong>, dan garis berwarna lainnya mewakili masing-masing kabupaten/kota yang dicentang.'}
+                    </div>`;
 
             } else if (activeTab === 'Gap Analysis') {
                 tabEyebrow.textContent = 'GAP ANALYSIS';
@@ -4860,6 +5026,7 @@
         // Elements
         const groupSelect = document.getElementById('map-group-select');
         const indicatorSelect = document.getElementById('map-indicator-select');
+        const colorPaletteSelect = document.getElementById('map-color-palette-select');
         const levelSelect = document.getElementById('map-level-select');
         const pinDisplaySelect = document.getElementById('map-pin-display-select');
         const legendContainer = document.getElementById('legend-items-container');
@@ -4889,6 +5056,11 @@
         const cbMarkers = document.getElementById('layer-cb-markers');
         const cbLabels = document.getElementById('layer-cb-labels');
         const cbHotspot = document.getElementById('layer-cb-hotspot');
+
+        let layerLabels = L.layerGroup();
+        let currentIndicatorKey = 'growth';
+        let currentBasemapKey = 'osm'; // Default: OpenStreetMap murni (100% Bebas API Key)
+        let currentColorPalette = 'auto';
 
         // Datasets
         // Datasets
@@ -4944,6 +5116,9 @@
 
         let jatimGeoJson = null;
         let layerGeoJsonBoundaries = null;
+        let jatimKecamatanGeoJson = null;
+        let layerKecamatanBoundaries = L.featureGroup();
+        const kecamatanPolygonLayers = {}; // mapping nama kecamatan -> Leaflet polygon layer
         const polygonLayers = {}; // mapping code -> Leaflet polygon layer
         let isDistrictsVisible = false;
         let activeBreakoutCityCode = null; // Menyimpan kode kota/kabupaten yang sedang dipilih untuk pecah kecamatan
@@ -4952,61 +5127,235 @@
         const mapBreadKab = document.getElementById('map-bread-kab');
         const mapBreadLevel = document.getElementById('map-bread-level');
 
-        // 4 KELAS PEMISAHAN SPASIAL GIS
-        const classColors = {
-            4: '#059669', // Kelas 4: Sangat Tinggi (Emerald)
-            3: '#2563eb', // Kelas 3: Tinggi (Royal Blue)
-            2: '#d97706', // Kelas 2: Sedang (Golden Amber)
-            1: '#dc2626'  // Kelas 1: Rendah (Coral Red)
-        };
-        const classNames = {
-            4: 'Sangat Tinggi',
-            3: 'Tinggi',
-            2: 'Sedang',
-            1: 'Rendah'
+        // CONFIGURASI INDIKATOR TEMATIK & KELOMPOK
+        const indicatorConfig = {
+            'growth': { key: 'growth', label: 'Pertumbuhan Ekonomi (PDRB ADHK)', unit: '%', decimals: 2, group: 'Aktivitas ekonomi', desc: 'Laju pertumbuhan PDRB ADHK tahun ke tahun' },
+            'pdrb': { key: 'pdrb', label: 'PDRB ADHB Total', unit: 'Miliar Rp', decimals: 1, group: 'Aktivitas ekonomi', desc: 'Total nilai tambah bruto atas dasar harga berlaku' },
+            'pdrb_adhk': { key: 'pdrb_adhk', label: 'PDRB ADHK Total', unit: 'Miliar Rp', decimals: 1, group: 'Aktivitas ekonomi', desc: 'Total nilai tambah bruto atas dasar harga konstan' },
+            'pdrb_kapita': { key: 'pdrb_kapita', label: 'PDRB per Kapita', unit: 'Juta Rp', decimals: 2, group: 'Aktivitas ekonomi', desc: 'PDRB per kapita atas dasar harga berlaku' },
+            'investasi': { key: 'investasi', label: 'Realisasi Investasi Total', unit: 'Miliar Rp', decimals: 1, group: 'Investasi', desc: 'Total realisasi investasi modal PMA dan PMDN' },
+            'kemiskinan': { key: 'kemiskinan', label: 'Tingkat Kemiskinan (P0)', unit: '%', decimals: 2, group: 'Kesejahteraan', desc: 'Persentase penduduk miskin terhadap total penduduk' },
+            'ipm': { key: 'ipm', label: 'Indeks Pembangunan Manusia (IPM)', unit: 'Poin', decimals: 2, group: 'Pendidikan', desc: 'Indeks komposit kesehatan, pendidikan, dan standar hidup' },
+            'uhh': { key: 'uhh', label: 'Umur Harapan Hidup (UHH)', unit: 'Tahun', decimals: 1, group: 'Kesejahteraan', desc: 'Perkiraan usia hidup rata-rata penduduk sejak lahir' },
+            'hls': { key: 'hls', label: 'Harapan Lama Sekolah (HLS)', unit: 'Tahun', decimals: 1, group: 'Pendidikan', desc: 'Lama sekolah yang diharapkan dapat dicapai anak usia 7 tahun' },
+            'rls': { key: 'rls', label: 'Rata-rata Lama Sekolah (RLS)', unit: 'Tahun', decimals: 1, group: 'Pendidikan', desc: 'Jumlah tahun pendidikan formal yang telah diselesaikan' },
+            'luas': { key: 'luas', label: 'Luas Wilayah Administratif', unit: 'km²', decimals: 0, group: 'Wilayah', desc: 'Luas wilayah resmi berdasarkan data spasial BIG/Kemendagri' }
         };
 
-        function get4Classes() {
-            const vals = jatimRegions.map(r => r.growth).filter(v => typeof v === 'number');
-            const minV = Math.min(...vals) || 1.7;
-            const maxV = Math.max(...vals) || 6.4;
-            const range = (maxV - minV) || 1;
-            const step = range / 4;
+        const mapGroups = {
+            'Aktivitas ekonomi': ['growth', 'pdrb', 'pdrb_adhk', 'pdrb_kapita'],
+            'Kesejahteraan': ['kemiskinan', 'uhh'],
+            'Investasi': ['investasi'],
+            'Pendidikan': ['ipm', 'hls', 'rls'],
+            'Wilayah': ['luas']
+        };
+
+        // SKEMA WARNA & TEMA PETA (Termasuk Sesuai Gambar 1 & Gambar 2)
+        const colorPalettes = {
+            // Gambar 1: MAPID Tematik Merah (5 Tingkatan dari Light Coral ke Deep Crimson Maroon)
+            'mapid-red': {
+                id: 'mapid-red',
+                name: 'Gradasi Merah Tematik (MAPID - Gambar 1)',
+                classes: 5,
+                colors: {
+                    1: '#fee2e2', // Sangat Rendah
+                    2: '#fca5a5', // Rendah
+                    3: '#f87171', // Sedang
+                    4: '#dc2626', // Tinggi
+                    5: '#7f1d1d'  // Sangat Tinggi
+                },
+                names: { 1: 'Sangat Rendah', 2: 'Rendah', 3: 'Sedang', 4: 'Tinggi', 5: 'Sangat Tinggi' },
+                strokeColor: '#ffffff',
+                strokeWeight: 1.8,
+                fillOpacity: 0.85,
+                labelTheme: 'theme-mapid-red'
+            },
+            // Gambar 2: Peta Kontras Kuning (5 Tingkatan Kuning-Amber Cadastral dengan Garis Hitam Tegas)
+            'yellow-contrast': {
+                id: 'yellow-contrast',
+                name: 'Kuning Kontras Administratif (Gambar 2)',
+                classes: 5,
+                colors: {
+                    1: '#fef9c3', // Sangat Rendah
+                    2: '#fef08a', // Rendah
+                    3: '#fde047', // Sedang
+                    4: '#eab308', // Tinggi
+                    5: '#a16207'  // Sangat Tinggi
+                },
+                names: { 1: 'Sangat Rendah', 2: 'Rendah', 3: 'Sedang', 4: 'Tinggi', 5: 'Sangat Tinggi' },
+                strokeColor: '#000000',
+                strokeWeight: 2.2,
+                fillOpacity: 0.90,
+                labelTheme: 'theme-yellow-contrast'
+            },
+            // Standar GIS 4-Kelas Bappeda
+            'bappeda': {
+                id: 'bappeda',
+                name: 'Standar GIS 4-Kelas (Bappeda)',
+                classes: 4,
+                colors: {
+                    1: '#dc2626', // Rendah (Coral Red)
+                    2: '#d97706', // Sedang (Golden Amber)
+                    3: '#2563eb', // Tinggi (Royal Blue)
+                    4: '#059669'  // Sangat Tinggi (Emerald)
+                },
+                names: { 1: 'Rendah', 2: 'Sedang', 3: 'Tinggi', 4: 'Sangat Tinggi' },
+                strokeColor: '#334155',
+                strokeWeight: 1.6,
+                fillOpacity: 0.45,
+                labelTheme: 'theme-standard'
+            },
+            // Biru Samudra
+            'blue': {
+                id: 'blue',
+                name: 'Biru Samudra (Oceanic Blues)',
+                classes: 5,
+                colors: {
+                    1: '#eff6ff',
+                    2: '#bfdbfe',
+                    3: '#60a5fa',
+                    4: '#2563eb',
+                    5: '#1e3a8a'
+                },
+                names: { 1: 'Sangat Rendah', 2: 'Rendah', 3: 'Sedang', 4: 'Tinggi', 5: 'Sangat Tinggi' },
+                strokeColor: '#ffffff',
+                strokeWeight: 1.6,
+                fillOpacity: 0.78,
+                labelTheme: 'theme-mapid-red'
+            },
+            // Hijau Zamrud
+            'emerald': {
+                id: 'emerald',
+                name: 'Hijau Zamrud (Viridis Emerald)',
+                classes: 5,
+                colors: {
+                    1: '#ecfdf5',
+                    2: '#a7f3d0',
+                    3: '#34d399',
+                    4: '#059669',
+                    5: '#064e3b'
+                },
+                names: { 1: 'Sangat Rendah', 2: 'Rendah', 3: 'Sedang', 4: 'Tinggi', 5: 'Sangat Tinggi' },
+                strokeColor: '#ffffff',
+                strokeWeight: 1.6,
+                fillOpacity: 0.78,
+                labelTheme: 'theme-mapid-red'
+            }
+        };
+
+        function getActivePalette() {
+            if (currentColorPalette && currentColorPalette !== 'auto' && colorPalettes[currentColorPalette]) {
+                return colorPalettes[currentColorPalette];
+            }
+            if (colorPalettes[currentBasemapKey]) {
+                return colorPalettes[currentBasemapKey];
+            }
+            if (currentBasemapKey === 'carto-dark') {
+                return colorPalettes['blue'];
+            }
+            if (currentBasemapKey === 'osm' || currentBasemapKey === 'osm-hot' || currentBasemapKey === 'opentopomap') {
+                return colorPalettes['bappeda'];
+            }
+            return colorPalettes['bappeda'];
+        }
+
+        // Backward compatibility
+        const classColors = colorPalettes['bappeda'].colors;
+        const classNames = colorPalettes['bappeda'].names;
+
+        function getRegionValue(reg, indicatorKey = currentIndicatorKey) {
+            if (!reg) return 0;
+            if (reg.metrics && reg.metrics[indicatorKey] && reg.metrics[indicatorKey].val !== undefined) {
+                return parseFloat(reg.metrics[indicatorKey].val);
+            }
+            if (reg[indicatorKey] !== undefined && typeof reg[indicatorKey] === 'number') {
+                return reg[indicatorKey];
+            }
+            if (indicatorKey === 'growth') return parseFloat(reg.growth || 0);
+            if (indicatorKey === 'pdrb') return parseFloat(reg.pdrb || 0);
+            if (indicatorKey === 'kemiskinan') return parseFloat(reg.kemiskinan || 0);
+            if (indicatorKey === 'ipm') return parseFloat(reg.ipm || 0);
+            return 0;
+        }
+
+        function calculateIndicatorClasses(indicatorKey = currentIndicatorKey) {
+            const pal = getActivePalette();
+            const numCls = pal.classes;
+            const vals = jatimRegions.map(r => getRegionValue(r, indicatorKey)).filter(v => typeof v === 'number' && !isNaN(v));
+            let minV = vals.length > 0 ? Math.min(...vals) : 0;
+            let maxV = vals.length > 0 ? Math.max(...vals) : 10;
+            if (minV === maxV) { maxV = minV + 1; }
+            const step = (maxV - minV) / numCls;
+            return { minV, maxV, step, numCls };
+        }
+
+        function getRegionClassification(reg, indicatorKey = currentIndicatorKey) {
+            const val = getRegionValue(reg, indicatorKey);
+            const c = calculateIndicatorClasses(indicatorKey);
+            const pal = getActivePalette();
+
+            let cls = 1;
+            for (let i = 1; i <= c.numCls; i++) {
+                const threshold = c.minV + (c.step * i);
+                if (val <= threshold || i === c.numCls) {
+                    cls = i;
+                    break;
+                }
+            }
+
             return {
-                minV,
-                maxV,
-                range,
-                step,
-                t1: minV + step,
-                t2: minV + (2 * step),
-                t3: minV + (3 * step)
+                cls,
+                val,
+                color: pal.colors[cls] || '#dc2626',
+                name: pal.names[cls] || `Kelas ${cls}`,
+                palette: pal
             };
         }
 
         function getRegionClass(reg) {
-            if (!reg || typeof reg.growth !== 'number') return 2;
-            const c = get4Classes();
-            if (reg.growth >= c.t3) return 4;
-            if (reg.growth >= c.t2) return 3;
-            if (reg.growth >= c.t1) return 2;
-            return 1;
+            return getRegionClassification(reg, currentIndicatorKey).cls;
         }
 
-        const mapGroups = {
-            'Aktivitas ekonomi': ['Pertumbuhan ekonomi', 'PDRB per kapita', 'Kontribusi sektoral'],
-            'Kesejahteraan': ['Tingkat kemiskinan', 'Indeks Pembangunan Manusia (IPM)'],
-            'Investasi': ['Laju pertumbuhan PMDN', 'Realisasi investasi daerah'],
-            'Produksi sektoral': ['Produksi pertanian', 'Produksi industri pengolahan'],
-            'Ketenagakerjaan': ['Tingkat Pengangguran Terbuka (TPT)'],
-            'Pariwisata': ['Destinasi wisata & kunjungan'],
-            'Harga': ['Tingkat inflasi daerah', 'Stabilitas pangan']
-        };
+        function formatIndicatorValue(val, indicatorKey = currentIndicatorKey, short = false) {
+            const cfg = indicatorConfig[indicatorKey] || indicatorConfig['growth'];
+            const num = parseFloat(val) || 0;
+            if (indicatorKey === 'pdrb' || indicatorKey === 'pdrb_adhk') {
+                if (short) {
+                    return (num >= 1000) ? (num / 1000).toFixed(1) + ' T' : Math.round(num) + ' M';
+                }
+                return (num >= 1000) ? 'Rp ' + (num / 1000).toFixed(2) + ' Triliun' : 'Rp ' + formatNum(num, 1) + ' Miliar';
+            }
+            if (indicatorKey === 'investasi') {
+                if (short) {
+                    return (num >= 1000) ? (num / 1000).toFixed(1) + ' T' : Math.round(num) + ' M';
+                }
+                return (num >= 1000) ? 'Rp ' + (num / 1000).toFixed(2) + ' Triliun' : 'Rp ' + formatNum(num, 1) + ' Miliar';
+            }
+            if (indicatorKey === 'pdrb_kapita') {
+                if (short) return 'Rp ' + num.toFixed(1) + ' Jt';
+                return 'Rp ' + formatNum(num, 2) + ' Juta';
+            }
+            if (indicatorKey === 'luas') {
+                if (short) return Math.round(num) + ' km²';
+                return formatNum(num, 0) + ' km²';
+            }
+            return formatNum(num, cfg.decimals) + (cfg.unit ? ' ' + cfg.unit : '');
+        }
 
         function updateIndicators() {
             const grp = groupSelect ? groupSelect.value : 'Aktivitas ekonomi';
-            const list = mapGroups[grp] || ['Pertumbuhan ekonomi'];
+            const keys = mapGroups[grp] || ['growth', 'pdrb', 'pdrb_kapita'];
             if (indicatorSelect) {
-                indicatorSelect.innerHTML = list.map(item => `<option value="${item}">${item}</option>`).join('');
+                indicatorSelect.innerHTML = keys.map(k => {
+                    const cfg = indicatorConfig[k] || { label: k, unit: '' };
+                    return `<option value="${k}">${cfg.label} (${cfg.unit})</option>`;
+                }).join('');
+                if (keys.includes(currentIndicatorKey)) {
+                    indicatorSelect.value = currentIndicatorKey;
+                } else if (keys.length > 0) {
+                    currentIndicatorKey = keys[0];
+                    indicatorSelect.value = currentIndicatorKey;
+                }
             }
         }
         updateIndicators();
@@ -5033,34 +5382,53 @@
                     minZoom: 7,
                     maxZoom: 18,
                     zoomControl: false,
+                    attributionControl: false, // Bebas watermark: menonaktifkan bar attribution Leaflet
                     maxBounds: maxPanBounds,
                     maxBoundsViscosity: 0.8
                 });
 
-                // Variasi Peta Dasar (Basemaps): OpenStreetMap, Google Maps Satelit (Hybrid & Murni), dan CartoDB Light
+                // Seluruh Peta Dasar 100% Bebas Watermark & Bebas API Key (OpenStreetMap & Esri ArcGIS)
                 const basemaps = {
                     'osm': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 19,
-                        attribution: '&copy; OpenStreetMap'
+                        attribution: ''
                     }),
-                    'google-hybrid': L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                        maxZoom: 20,
-                        subdomains: ['0', '1', '2', '3'],
-                        attribution: '&copy; Google Maps Satelit'
+                    'osm-hot': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        subdomains: 'abc',
+                        attribution: ''
                     }),
-                    'google-sat': L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-                        maxZoom: 20,
-                        subdomains: ['0', '1', '2', '3'],
-                        attribution: '&copy; Google Maps Satelit'
+                    'opentopomap': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 17,
+                        attribution: ''
                     }),
-                    'carto-light': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 20,
-                        subdomains: 'abcd',
-                        attribution: '&copy; CartoDB'
-                    })
+                    'mapid-red': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 16,
+                        attribution: ''
+                    }),
+                    'yellow-contrast': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 16,
+                        attribution: ''
+                    }),
+                    'carto-light': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 16,
+                        attribution: ''
+                    }),
+                    'carto-dark': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 16,
+                        attribution: ''
+                    }),
+                    'esri-sat': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 19,
+                        attribution: ''
+                    }),
+                    'esri-gray': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 16,
+                        attribution: ''
+                    }),
+                    'canvas-clean': L.layerGroup()
                 };
-                let currentBasemapKey = 'osm';
-                let currentBasemapLayer = basemaps['osm'];
+                let currentBasemapLayer = basemaps[currentBasemapKey] || basemaps['osm'];
                 currentBasemapLayer.addTo(map);
 
                 function switchBasemap(key) {
@@ -5076,12 +5444,21 @@
                     if (layerGeoJsonBoundaries && map.hasLayer(layerGeoJsonBoundaries)) {
                         layerGeoJsonBoundaries.bringToFront();
                     }
+                    if (layerKecamatanBoundaries && map.hasLayer(layerKecamatanBoundaries)) {
+                        layerKecamatanBoundaries.bringToFront();
+                    }
+                    if (layerLabels && map.hasLayer(layerLabels)) {
+                        layerLabels.bringToFront();
+                    }
                     const bmSelect = document.getElementById('map-basemap-select');
                     if (bmSelect && bmSelect.value !== key) bmSelect.value = key;
 
                     document.querySelectorAll('.basemap-pill-btn').forEach(b => {
                         b.classList.toggle('active', b.getAttribute('data-basemap') === key);
                     });
+
+                    // Update styles, colors, legend, and labels for the new map style!
+                    updateMapStylesAndColors();
                 }
 
                 const basemapSelect = document.getElementById('map-basemap-select');
@@ -5192,6 +5569,9 @@
             if (cbMarkers && cbMarkers.checked && !map.hasLayer(layerDistricts)) {
                 map.addLayer(layerDistricts);
             }
+            if (cbBoundaries && cbBoundaries.checked && !map.hasLayer(layerKecamatanBoundaries)) {
+                map.addLayer(layerKecamatanBoundaries);
+            }
 
             map.flyTo([lat, lng], 12, { duration: 0.70 });
 
@@ -5215,6 +5595,29 @@
                 layerDistricts.clearLayers();
                 if (map.hasLayer(layerDistricts)) map.removeLayer(layerDistricts);
             }
+            if (layerKecamatanBoundaries) {
+                layerKecamatanBoundaries.clearLayers();
+                if (map.hasLayer(layerKecamatanBoundaries)) map.removeLayer(layerKecamatanBoundaries);
+            }
+            Object.keys(kecamatanPolygonLayers).forEach(k => delete kecamatanPolygonLayers[k]);
+
+            // Pulihkan style seluruh 38 poligon kabupaten/kota ke kondisi normal provinsi
+            Object.keys(polygonLayers).forEach(k => {
+                const ply = polygonLayers[k];
+                if (!ply) return;
+                const r = jatimRegions.find(item => item.kode === k);
+                const rCls = getRegionClass(r);
+                const rColor = classColors[rCls] || '#2563eb';
+                const isCur = (k === '35.10');
+                const isSel = (k === selectedRegionCode);
+                ply.setStyle({
+                    fillColor: rColor,
+                    fillOpacity: isSel ? 0.62 : (isCur ? 0.44 : 0.30),
+                    weight: isSel ? 3.5 : (isCur ? 2.5 : 1.4),
+                    color: isSel ? '#0f172a' : (isCur ? '#0d9488' : '#334155'),
+                    opacity: 0.95
+                });
+            });
 
             // 2. Pulihkan seluruh 38 penanda kota/kabupaten ke kondisi normal (tanpa dimmed)
             Object.keys(markerLayers).forEach(c => {
@@ -5274,16 +5677,19 @@
                 style: function (feature) {
                     const code = feature.properties.code;
                     const reg = jatimRegions.find(r => r.kode === code);
-                    const cls = getRegionClass(reg);
-                    const color = classColors[cls] || '#2563eb';
+                    const info = getRegionClassification(reg, currentIndicatorKey);
+                    const pal = getActivePalette();
                     const isSelected = (code === selectedRegionCode);
                     const isCurrent = (code === '35.10');
+                    const baseOpacity = pal.fillOpacity !== undefined ? pal.fillOpacity : 0.65;
+                    const baseStroke = pal.strokeColor || '#334155';
+                    const baseWeight = pal.strokeWeight || 1.6;
 
                     return {
-                        fillColor: color,
-                        fillOpacity: isSelected ? 0.62 : (isCurrent ? 0.44 : 0.30),
-                        weight: isSelected ? 3.5 : (isCurrent ? 2.5 : 1.4),
-                        color: isSelected ? '#0f172a' : (isCurrent ? '#0d9488' : '#334155'),
+                        fillColor: info.color,
+                        fillOpacity: isSelected ? Math.min(1.0, baseOpacity + 0.15) : (isCurrent ? baseOpacity : Math.max(0.25, baseOpacity - 0.10)),
+                        weight: isSelected ? (baseWeight + 1.2) : (isCurrent ? (baseWeight + 0.5) : baseWeight),
+                        color: isSelected ? '#0f172a' : (isCurrent ? '#0d9488' : baseStroke),
                         opacity: 0.95
                     };
                 },
@@ -5291,24 +5697,27 @@
                     const code = feature.properties.code;
                     const reg = jatimRegions.find(r => r.kode === code);
                     const nama = reg ? reg.nama : feature.properties.name;
-                    const cls = getRegionClass(reg);
-                    const clsName = classNames[cls];
+                    const info = getRegionClassification(reg, currentIndicatorKey);
+                    const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
+                    const formattedVal = formatIndicatorValue(info.val, currentIndicatorKey);
 
                     polygonLayers[code] = layer;
 
                     layer.bindTooltip(`
                         <div class="gis-polygon-tooltip">
                             <strong>${nama}</strong>
-                            <div class="tip-sub">Kode: <code>${code}</code> • Kelas ${cls} (${clsName})</div>
-                            <div class="tip-val">${reg ? formatNum(reg.growth, 2) + '% Pertumbuhan' : ''}</div>
+                            <div class="tip-sub">Kode: <code>${code}</code> • ${info.name}</div>
+                            <div class="tip-val" style="color:${info.color}; font-weight:700;">${cfg.label}: ${formattedVal}</div>
                         </div>
                     `, { sticky: true, className: 'enterprise-boundary-tooltip' });
 
                     layer.on('mouseover', function () {
+                        if (activeBreakoutCityCode !== null) return;
                         if (code !== selectedRegionCode) {
+                            const pal = getActivePalette();
                             layer.setStyle({
-                                fillOpacity: 0.58,
-                                weight: 2.2,
+                                fillOpacity: Math.min(1.0, (pal.fillOpacity || 0.65) + 0.18),
+                                weight: (pal.strokeWeight || 1.6) + 1.0,
                                 color: '#0f172a'
                             });
                             if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
@@ -5318,23 +5727,25 @@
                     });
 
                     layer.on('mouseout', function () {
+                        if (activeBreakoutCityCode !== null) return;
                         if (code !== selectedRegionCode) {
                             const isCurrent = (code === '35.10');
-                            const color = classColors[cls] || '#2563eb';
+                            const pal = getActivePalette();
+                            const currInfo = getRegionClassification(reg, currentIndicatorKey);
+                            const baseOpacity = pal.fillOpacity !== undefined ? pal.fillOpacity : 0.65;
+                            const baseStroke = pal.strokeColor || '#334155';
+                            const baseWeight = pal.strokeWeight || 1.6;
                             layer.setStyle({
-                                fillColor: color,
-                                fillOpacity: isCurrent ? 0.44 : 0.30,
-                                weight: isCurrent ? 2.5 : 1.4,
-                                color: isCurrent ? '#0d9488' : '#334155'
+                                fillColor: currInfo.color,
+                                fillOpacity: isCurrent ? baseOpacity : Math.max(0.25, baseOpacity - 0.10),
+                                weight: isCurrent ? (baseWeight + 0.5) : baseWeight,
+                                color: isCurrent ? '#0d9488' : baseStroke
                             });
                         }
                     });
 
                     layer.on('click', function () {
-                        selectRegion(code, true);
-                        if (layer.getBounds) {
-                            map.fitBounds(layer.getBounds(), { padding: [35, 35], maxZoom: 11 });
-                        }
+                        selectAndBreakoutCity(code);
                     });
                 }
             });
@@ -5342,6 +5753,7 @@
             if (cbBoundaries && cbBoundaries.checked) {
                 layerGeoJsonBoundaries.addTo(map);
             }
+            renderPolygonLabels();
         }
 
         // Kotak-kotak bounding box dihilangkan total agar hanya batas riil GIS yang tersisa
@@ -5380,32 +5792,41 @@
                 const isDimmed = (activeBreakoutCityCode !== null && region.kode !== activeBreakoutCityCode);
                 const isHidden = (activeBreakoutCityCode !== null && region.kode === activeBreakoutCityCode);
 
-                // Nilai agregat kota/kabupaten (Kota Malang: 251)
-                let val = summary && summary.total_nilai !== undefined ? summary.total_nilai : Math.round(region.growth * 10);
+                const info = getRegionClassification(region, currentIndicatorKey);
+                const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
+                const formattedVal = formatIndicatorValue(info.val, currentIndicatorKey);
+
+                let displayNum = formatIndicatorValue(info.val, currentIndicatorKey, true);
                 if (pinDisplayMode === 'rank') {
-                    const sorted = [...jatimRegions].sort((a, b) => b.growth - a.growth);
-                    val = '#' + (sorted.findIndex(r => r.kode === region.kode) + 1);
+                    const sorted = [...jatimRegions].sort((a, b) => getRegionValue(b, currentIndicatorKey) - getRegionValue(a, currentIndicatorKey));
+                    displayNum = '#' + (sorted.findIndex(r => r.kode === region.kode) + 1);
+                } else if (pinDisplayMode === 'class') {
+                    displayNum = 'K' + info.cls;
                 } else if (pinDisplayMode === 'code') {
-                    val = region.kode.replace('35.', '');
+                    displayNum = region.kode.replace('35.', '');
                 }
 
-                const tier = getValueTier(val);
+                const tierClass = 'tier-' + (info.cls >= 4 ? 'red' : (info.cls === 3 ? 'orange' : (info.cls === 2 ? 'yellow' : 'green')));
                 const shortName = region.nama.replace('Kabupaten ', 'Kab. ').replace('Kota ', 'Kota ');
 
+                // Balon GIS tanpa angka - Ikon pin lokasi bersih & elegan
                 const haloIcon = L.divIcon({
                     className: 'custom-gis-halo',
                     html: `
-                        <div class="gis-halo-pin size-lg ${tier.tierClass} ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}" data-code="${region.kode}" title="${region.nama}: ${val} (Klik untuk pecah kecamatan)">
+                        <div class="gis-halo-pin size-lg ${tierClass} ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}" data-code="${region.kode}" title="${region.nama} (Klik untuk buka detail angka)">
                             <div class="halo-ring"></div>
-                            <div class="halo-core">
-                                <span class="halo-num">${val}</span>
+                            <div class="halo-core" style="background:${info.color};">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3" fill="#ffffff"></circle>
+                                </svg>
                             </div>
                             <div class="gis-halo-nametag">${shortName}</div>
                         </div>
                     `,
-                    iconSize: [52, 52],
-                    iconAnchor: [26, 26],
-                    popupAnchor: [0, -26]
+                    iconSize: [44, 44],
+                    iconAnchor: [22, 22],
+                    popupAnchor: [0, -22]
                 });
 
                 const marker = L.marker([lat, lng], {
@@ -5417,22 +5838,22 @@
                 const popupHtml = `
                     <div class="osm-enterprise-popup">
                         <div class="popup-head">
-                            <span class="popup-badge" style="background:${tier.color}; color:#fff;">KELAS ${tier.cls} • ${tier.name.toUpperCase()}</span>
+                            <span class="popup-badge" style="background:${info.color}; color:#fff;">KELAS ${info.cls} • ${info.name.toUpperCase()}</span>
                             <span class="popup-type">KODE: ${region.kode}</span>
                         </div>
                         <h4 class="popup-title">${region.nama}</h4>
                         <div class="popup-stat-grid">
                             <div class="popup-stat">
-                                <span class="stat-lbl">Total Indikator Spasial</span>
-                                <strong class="stat-val" style="color:${tier.color}; font-size:16px;">${val}</strong>
+                                <span class="stat-lbl">${cfg.label}</span>
+                                <strong class="stat-val" style="color:${info.color}; font-size:16px;">${formattedVal}</strong>
                             </div>
                             <div class="popup-stat">
                                 <span class="stat-lbl">Pertumbuhan Ekonomi</span>
                                 <strong class="stat-val">${formatNum(region.growth, 2)}%</strong>
                             </div>
                             <div class="popup-stat">
-                                <span class="stat-lbl">Jumlah Kecamatan</span>
-                                <strong class="stat-val">${summary ? summary.jumlah_kecamatan : '-'} Wilayah</strong>
+                                <span class="stat-lbl">PDRB Total ADHB</span>
+                                <strong class="stat-val">${region.pdrb ? 'Rp ' + (region.pdrb >= 1000 ? (region.pdrb/1000).toFixed(1) + ' T' : Math.round(region.pdrb) + ' M') : '-'}</strong>
                             </div>
                             <div class="popup-stat">
                                 <span class="stat-lbl">Luas Wilayah Resmi</span>
@@ -5444,17 +5865,18 @@
                             </div>
                         </div>
                         <div class="popup-actions">
-                            <button class="popup-btn primary" onclick="window.__selectAndBreakoutCity('${region.kode}')">Pecah Kecamatan</button>
-                            <button class="popup-btn secondary" onclick="window.__selectRegionFromMap('${region.kode}')">Lihat Profil</button>
+                            <button class="popup-btn primary" onclick="window.__showRegionDetailModal('${region.kode}')">Detail Angka (Modal)</button>
+                            <button class="popup-btn secondary" onclick="window.__selectAndBreakoutCity('${region.kode}')">Pecah Kecamatan</button>
                         </div>
                     </div>
                 `;
 
                 marker.bindPopup(popupHtml);
 
-                // Klik kota langsung memicu sorotan dan animasi pecah ke kecamatan
+                // Klik balon GIS langsung membuka modal detail angka dan menyeleksi wilayah
                 marker.on('click', () => {
-                    selectAndBreakoutCity(region.kode);
+                    selectRegion(region.kode, false);
+                    showRegionDetailModal(region.kode);
                 });
 
                 markerLayers[region.kode] = marker;
@@ -5462,10 +5884,15 @@
             });
         }
 
-        // 4. Render Sub-District Markers: Hanya terpecah saat kota dipilih, animasi memancar keluar dari titik pusat kota
+        // 4. Render Sub-District Markers & Real Boundary Polygons: Terpecah saat kota dipilih
         function renderDistrictsForCity(cityCode, animate = true) {
             if (!layerDistricts || !map) return;
             layerDistricts.clearLayers();
+
+            if (layerKecamatanBoundaries) {
+                layerKecamatanBoundaries.clearLayers();
+                Object.keys(kecamatanPolygonLayers).forEach(k => delete kecamatanPolygonLayers[k]);
+            }
 
             const searchQ = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
@@ -5475,7 +5902,116 @@
             const cityLng = (summary && summary.lng) ? summary.lng : (reg ? reg.lng : 112.6315);
             const cityName = reg ? reg.nama : (summary ? summary.nama : 'Kota/Kabupaten');
 
-            // Ambil daftar kecamatan KHUSUS untuk kota yang dipilih
+            // 1. Render Batas Wilayah Riil Kecamatan (GeoJSON MultiPolygon / Polygon)
+            if (jatimKecamatanGeoJson && jatimKecamatanGeoJson.features) {
+                const cityFeatures = jatimKecamatanGeoJson.features.filter(f => f.properties && f.properties.kode_kab === cityCode);
+                cityFeatures.forEach(feat => {
+                    const p = feat.properties;
+                    const name = p.nama;
+                    if (searchQ && !name.toLowerCase().includes(searchQ)) return;
+
+                    const kode6 = p.kode_6digit || p.id;
+                    const kodeKemendagri = p.kode_kemendagri || p.kode_kab;
+                    const val = parseInt(p.nilai !== undefined ? p.nilai : 5, 10);
+                    const tier = getValueTier(val);
+                    const isSelected = (name === selectedDistrictName);
+                    const minLat = p.min_lat !== undefined ? p.min_lat : (p.bounds ? p.bounds[0][0] : 0);
+                    const maxLat = p.max_lat !== undefined ? p.max_lat : (p.bounds ? p.bounds[1][0] : 0);
+                    const minLng = p.min_lng !== undefined ? p.min_lng : (p.bounds ? p.bounds[0][1] : 0);
+                    const maxLng = p.max_lng !== undefined ? p.max_lng : (p.bounds ? p.bounds[1][1] : 0);
+                    const cLat = parseFloat(p.lat || 0);
+                    const cLng = parseFloat(p.lng || 0);
+
+                    const polyLayer = L.geoJSON(feat, {
+                        smoothFactor: 0.8,
+                        style: function() {
+                            return {
+                                fillColor: tier.color || '#2563eb',
+                                fillOpacity: isSelected ? 0.48 : 0.22,
+                                weight: isSelected ? 2.8 : 1.6,
+                                color: isSelected ? '#0f172a' : (tier.color || '#0284c7'),
+                                dashArray: isSelected ? null : '3, 4',
+                                opacity: 0.95,
+                                className: 'smooth-kecamatan-boundary'
+                            };
+                        },
+                        onEachFeature: function(f, lyr) {
+                            kecamatanPolygonLayers[name] = lyr;
+
+                            lyr.bindTooltip(`
+                                <div class="gis-polygon-tooltip gis-kecamatan-tooltip">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:5px;">
+                                        <strong style="font-size:12.5px; color:#ffffff;">Kecamatan ${name}</strong>
+                                        <span class="badge info" style="font-size:9.5px; padding:2px 6px; font-family:monospace; font-weight:700; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">${kode6}</span>
+                                    </div>
+                                    <div class="tip-sub" style="font-size:10.5px; color:#94a3b8; margin-bottom:6px;">
+                                        Kode Kemendagri: <code style="font-weight:600; color:#38bdf8;">${kodeKemendagri}</code> • ${cityName}
+                                    </div>
+                                    <div class="kec-coords-box">
+                                        <div class="coord-lbl">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+                                            Batas Koordinat Geografis Riil
+                                        </div>
+                                        <div class="coord-val">Lintang: <b>${minLat.toFixed(4)}°</b> s.d. <b>${maxLat.toFixed(4)}° S</b></div>
+                                        <div class="coord-val">Bujur: <b>${minLng.toFixed(4)}°</b> s.d. <b>${maxLng.toFixed(4)}° E</b></div>
+                                        <div style="color:#64748b; font-size:9.5px; margin-top:3px; border-top:1px dashed rgba(255,255,255,0.15); padding-top:2px;">Titik Pusat: ${cLat.toFixed(4)}° S, ${cLng.toFixed(4)}° E</div>
+                                    </div>
+                                    <div class="tip-val" style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-size:10.5px; color:#94a3b8; font-weight:500;">Indikator Spasial:</span>
+                                        <b style="color:${tier.color}; font-size:12px;">${val} (${tier.name})</b>
+                                    </div>
+                                </div>
+                            `, { sticky: true, className: 'enterprise-boundary-tooltip' });
+
+                            lyr.on('mouseover', function() {
+                                if (name !== selectedDistrictName) {
+                                    lyr.setStyle({
+                                        fillOpacity: 0.52,
+                                        weight: 2.8,
+                                        color: '#0f172a',
+                                        dashArray: null
+                                    });
+                                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                        lyr.bringToFront();
+                                    }
+                                }
+                            });
+
+                            lyr.on('mouseout', function() {
+                                if (name !== selectedDistrictName) {
+                                    lyr.setStyle({
+                                        fillColor: tier.color || '#2563eb',
+                                        fillOpacity: 0.22,
+                                        weight: 1.6,
+                                        color: tier.color || '#0284c7',
+                                        dashArray: '3, 4'
+                                    });
+                                }
+                            });
+
+                            lyr.on('click', function(e) {
+                                L.DomEvent.stopPropagation(e);
+                                const kObj = (jatimAllKecamatan || []).find(k => k.nama === name) || p;
+                                selectDistrict(name, kObj);
+                                if (lyr.getBounds) {
+                                    map.fitBounds(lyr.getBounds(), { padding: [40, 40], maxZoom: 13 });
+                                }
+                            });
+                        }
+                    });
+
+                    polyLayer.addTo(layerKecamatanBoundaries);
+                });
+
+                if (cbBoundaries && cbBoundaries.checked && !map.hasLayer(layerKecamatanBoundaries)) {
+                    map.addLayer(layerKecamatanBoundaries);
+                }
+                if (layerKecamatanBoundaries && map.hasLayer(layerKecamatanBoundaries)) {
+                    layerKecamatanBoundaries.bringToFront();
+                }
+            }
+
+            // 2. Ambil daftar kecamatan KHUSUS untuk kota yang dipilih untuk penanda halo
             let list = [];
             if (jatimAllKecamatan && jatimAllKecamatan.length > 0) {
                 list = jatimAllKecamatan.filter(k => k.kode_kab === cityCode);
@@ -5483,7 +6019,9 @@
             // Fallback untuk Banyuwangi jika belum termuat
             if (list.length === 0 && cityCode === '35.10' && districtList && districtList.length > 0) {
                 list = districtList.map(d => ({
-                    id: d.id || '35.10',
+                    id: d.id || '351001',
+                    kode_6digit: '351001',
+                    kode_kemendagri: '35.10.01',
                     nama: d.name || d.nama_kecamatan || '',
                     kode_kab: '35.10',
                     nama_kab: 'Kabupaten Banyuwangi',
@@ -5513,6 +6051,12 @@
                 const val = parseInt(k.nilai !== undefined ? k.nilai : 5, 10);
                 const name = k.nama;
                 const isSelected = (name === selectedDistrictName);
+                const kode6 = k.kode_6digit || k.id;
+                const kodeKemendagri = k.kode_kemendagri || k.kode_kab;
+                const minLat = k.min_lat !== undefined ? parseFloat(k.min_lat) : (k.bounds ? parseFloat(k.bounds[0][0]) : lat - 0.04);
+                const maxLat = k.max_lat !== undefined ? parseFloat(k.max_lat) : (k.bounds ? parseFloat(k.bounds[1][0]) : lat + 0.04);
+                const minLng = k.min_lng !== undefined ? parseFloat(k.min_lng) : (k.bounds ? parseFloat(k.bounds[0][1]) : lng - 0.04);
+                const maxLng = k.max_lng !== undefined ? parseFloat(k.max_lng) : (k.bounds ? parseFloat(k.bounds[1][1]) : lng + 0.04);
 
                 const tier = getValueTier(val);
                 const isLarge = val >= 100;
@@ -5541,10 +6085,12 @@
                 const kecIcon = L.divIcon({
                     className: `custom-gis-halo ${breakoutClass}`,
                     html: `
-                        <div class="gis-halo-pin ${sizeClass} ${tier.tierClass} ${isSelected ? 'selected' : ''}" data-name="${name}" style="${breakoutStyle}" title="Kecamatan ${name} (${cityName}): Nilai ${val}">
+                        <div class="gis-halo-pin ${sizeClass} ${tier.tierClass} ${isSelected ? 'selected' : ''}" data-name="${name}" style="${breakoutStyle}" title="Kecamatan ${name} (${cityName}) • Kode: ${kode6} (Klik untuk buka detail angka)">
                             <div class="halo-ring"></div>
                             <div class="halo-core">
-                                <span class="halo-num">${val}</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4" fill="#ffffff"></circle>
+                                </svg>
                             </div>
                             <div class="gis-halo-nametag">${name}</div>
                         </div>
@@ -5563,10 +6109,18 @@
                     <div class="osm-enterprise-popup">
                         <div class="popup-head">
                             <span class="popup-badge" style="background:${tier.color}; color:#fff;">KELAS ${tier.cls} • ${tier.name.toUpperCase()}</span>
-                            <span class="popup-type">${cityName.toUpperCase()} (${cityCode})</span>
+                            <span class="popup-type">${cityName.toUpperCase()}</span>
                         </div>
                         <h4 class="popup-title">Kecamatan ${name}</h4>
                         <div class="popup-stat-grid">
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Kode Wilayah (6-Digit)</span>
+                                <strong class="stat-val" style="color:#2563eb; font-family:monospace; font-size:14px; font-weight:700;">${kode6}</strong>
+                            </div>
+                            <div class="popup-stat">
+                                <span class="stat-lbl">Kode Kemendagri</span>
+                                <strong class="stat-val" style="font-family:monospace;">${kodeKemendagri}</strong>
+                            </div>
                             <div class="popup-stat">
                                 <span class="stat-lbl">Nilai Indikator Spasial</span>
                                 <strong class="stat-val" style="color:${tier.color}; font-size:16px;">${val}</strong>
@@ -5575,22 +6129,21 @@
                                 <span class="stat-lbl">Tingkat Klasifikasi</span>
                                 <strong class="stat-val">${tier.name}</strong>
                             </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Kabupaten / Kota</span>
-                                <strong class="stat-val">${cityName}</strong>
-                            </div>
-                            <div class="popup-stat">
-                                <span class="stat-lbl">Status Wilayah</span>
-                                <strong class="stat-val">Kecamatan Aktif</strong>
+                            <div class="popup-stat" style="grid-column: 1 / 3;">
+                                <span class="stat-lbl">Batas Wilayah Geografis Riil (BBox)</span>
+                                <span class="stat-coord" style="font-family:monospace; font-size:10.5px; line-height:1.5;">
+                                    Lintang: <b>${minLat.toFixed(4)}°</b> s.d. <b>${maxLat.toFixed(4)}° S</b><br>
+                                    Bujur: <b>${minLng.toFixed(4)}°</b> s.d. <b>${maxLng.toFixed(4)}° E</b>
+                                </span>
                             </div>
                             <div class="popup-stat" style="grid-column: 1 / 3;">
-                                <span class="stat-lbl">Titik Koordinat Geografis</span>
+                                <span class="stat-lbl">Titik Pusat Centroid</span>
                                 <span class="stat-coord" style="font-family:monospace;">${lat.toFixed(5)}° S, ${lng.toFixed(5)}° E</span>
                             </div>
                         </div>
                         <div class="popup-actions">
-                            <button class="popup-btn primary" onclick="window.__selectDistrictFromMap('${name}')">Lihat Profil</button>
-                            <button class="popup-btn secondary" onclick="window.__zoomDistrictFromMap('${name}')">Pusatkan Titik</button>
+                            <button class="popup-btn primary" onclick="window.__showDistrictDetailModal('${name}')">Detail Angka (Modal)</button>
+                            <button class="popup-btn secondary" onclick="window.__zoomDistrictFromMap('${name}')">Pusatkan Batas</button>
                         </div>
                     </div>
                 `;
@@ -5598,6 +6151,7 @@
                 marker.bindPopup(kecPopup);
                 marker.on('click', () => {
                     selectDistrict(name, k);
+                    showDistrictDetailModal(name, k);
                 });
 
                 marker.addTo(layerDistricts);
@@ -5619,43 +6173,337 @@
             }
         }
 
-        // 5. Render Legend (4 Kelas Terkalibrasi Kuartil/Interval)
+        // 5. Render Legend (Dinamis Sesuai Indikator & Skema Warna)
         function renderLegend() {
             if (!legendContainer) return;
 
-            const c = get4Classes();
-            const decimals = 2;
-            const unit = '%';
+            const c = calculateIndicatorClasses(currentIndicatorKey);
+            const pal = getActivePalette();
+            const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
 
-            const barOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
-            const classOrder = legendReversed ? [4, 3, 2, 1] : [1, 2, 3, 4];
+            const order = [];
+            for (let i = 1; i <= c.numCls; i++) {
+                order.push(i);
+            }
+            if (legendReversed) order.reverse();
 
+            const legendTitle = document.getElementById('legend-title');
+            if (legendTitle) {
+                legendTitle.textContent = cfg.label;
+            }
+
+            const barOrder = legendReversed ? [...order].reverse() : order;
             const barHtml = `
-                <div class="legend-color-bar" title="Rentang 4 kelas pertumbuhan: ${formatNum(c.minV, decimals)}${unit} s.d. ${formatNum(c.maxV, decimals)}${unit}">
-                    ${barOrder.map(cl => `<span class="l${cl}" style="background:${classColors[cl]} !important;"></span>`).join('')}
+                <div class="legend-color-bar" title="Rentang klasifikasi: ${formatIndicatorValue(c.minV, currentIndicatorKey, true)} s.d. ${formatIndicatorValue(c.maxV, currentIndicatorKey, true)}">
+                    ${barOrder.map(cl => `<span class="l${cl}" style="background:${pal.colors[cl]} !important;"></span>`).join('')}
                 </div>
                 <div class="legend-bar-labels">
-                    <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatNum(legendReversed ? c.maxV : c.minV, decimals)}${unit})</small>
-                    <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatNum(legendReversed ? c.minV : c.maxV, decimals)}${unit})</small>
+                    <small>${legendReversed ? 'Tinggi' : 'Rendah'} (${formatIndicatorValue(legendReversed ? c.maxV : c.minV, currentIndicatorKey, true)})</small>
+                    <small>${legendReversed ? 'Rendah' : 'Tinggi'} (${formatIndicatorValue(legendReversed ? c.minV : c.maxV, currentIndicatorKey, true)})</small>
                 </div>
             `;
 
-            const itemsHtml = classOrder.map(cls => {
+            // Hitung distribusi daerah per kelas
+            const counts = {};
+            jatimRegions.forEach(r => {
+                const info = getRegionClassification(r, currentIndicatorKey);
+                counts[info.cls] = (counts[info.cls] || 0) + 1;
+            });
+
+            const itemsHtml = order.map(cls => {
                 const low = c.minV + (c.step * (cls - 1));
                 const high = c.minV + (c.step * cls);
-                const color = classColors[cls];
-                const name = classNames[cls];
+                const color = pal.colors[cls] || '#2563eb';
+                const name = pal.names[cls] || `Kelas ${cls}`;
+                const count = counts[cls] || 0;
                 return `
-                    <div class="legend-row" data-class="${cls}" title="Wilayah Kelas ${cls} (${name})">
+                    <div class="legend-row" data-class="${cls}" title="Wilayah ${name} (${count} Daerah)">
                         <div class="legend-row-main">
                             <span class="legend-chip l${cls}" style="background:${color} !important;"></span>
-                            <b class="legend-class-lbl">Kelas ${cls} <small style="font-weight:500; color:#64748b;">(${name})</small></b>
+                            <b class="legend-class-lbl">${name} <small style="font-weight:600; color:#64748b; font-size:10px;">(${count} daerah)</small></b>
                         </div>
-                        <span class="legend-val-range">${formatNum(low, decimals)} – ${formatNum(high, decimals)}${unit}</span>
+                        <span class="legend-val-range">${formatIndicatorValue(low, currentIndicatorKey, true)} – ${formatIndicatorValue(high, currentIndicatorKey, true)}</span>
                     </div>`;
             }).join('');
 
             legendContainer.innerHTML = barHtml + itemsHtml;
+        }
+
+        // Render Centroid Region Text Labels (Sesuai Gambar 1 MAPID & Gambar 2 Kuning Kontras - Tanpa Angka)
+        function renderPolygonLabels() {
+            if (!layerLabels) return;
+            layerLabels.clearLayers();
+            if (!cbLabels || !cbLabels.checked) return;
+
+            const pal = getActivePalette();
+            const themeClass = pal.labelTheme || 'theme-standard';
+
+            jatimRegions.forEach(reg => {
+                const shortName = reg.nama.replace('Kabupaten ', '').replace('Kota ', 'Kota ');
+
+                const icon = L.divIcon({
+                    className: 'map-polygon-label-wrap',
+                    html: `
+                        <div class="map-polygon-label ${themeClass}">
+                            <span class="lbl-name">${shortName}</span>
+                        </div>
+                    `,
+                    iconSize: [84, 22],
+                    iconAnchor: [42, 11]
+                });
+
+                const m = L.marker([reg.lat, reg.lng], {
+                    icon: icon,
+                    interactive: false,
+                    zIndexOffset: 450
+                });
+                m.addTo(layerLabels);
+            });
+
+            if (map && !map.hasLayer(layerLabels)) {
+                layerLabels.addTo(map);
+            }
+        }
+
+        // 5b. Modal Detail Angka Wilayah (SweetAlert2 - Bersih, Lengkap & Presisi)
+        function showRegionDetailModal(code) {
+            const reg = jatimRegions.find(r => r.kode === code);
+            if (!reg) return;
+
+            const info = getRegionClassification(reg, currentIndicatorKey);
+            const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
+            const formattedVal = formatIndicatorValue(info.val, currentIndicatorKey);
+
+            // Hitung ranking Jawa Timur
+            const sorted = [...jatimRegions].sort((a, b) => getRegionValue(b, currentIndicatorKey) - getRegionValue(a, currentIndicatorKey));
+            const rank = sorted.findIndex(r => r.kode === code) + 1;
+
+            // Logo Pemda
+            const cleanName = reg.nama.toLowerCase().replace('kabupaten ', '').replace('kota ', '').trim().replace(/\s+/g, '_');
+            const logoUrl = `assets/img/pemda/${cleanName}.png`;
+
+            // Data Indikator Lengkap
+            const metricsList = [
+                { label: 'Pertumbuhan Ekonomi (PDRB ADHK)', val: (reg.growth !== undefined ? formatNum(reg.growth, 2) + '%' : '-') },
+                { label: 'PDRB Total ADHB', val: (reg.pdrb ? 'Rp ' + (reg.pdrb >= 1000 ? (reg.pdrb/1000).toFixed(2) + ' T' : Math.round(reg.pdrb) + ' M') : '-') },
+                { label: 'PDRB ADHK Total', val: (reg.pdrb_adhk ? 'Rp ' + (reg.pdrb_adhk >= 1000 ? (reg.pdrb_adhk/1000).toFixed(2) + ' T' : Math.round(reg.pdrb_adhk) + ' M') : '-') },
+                { label: 'PDRB per Kapita', val: (reg.pdrb_kapita ? 'Rp ' + formatNum(reg.pdrb_kapita, 2) + ' Juta/th' : '-') },
+                { label: 'Realisasi Investasi Total', val: (reg.investasi ? 'Rp ' + formatNum(reg.investasi, 2) + ' M' : '-') },
+                { label: 'Tingkat Kemiskinan', val: (reg.kemiskinan !== undefined ? formatNum(reg.kemiskinan, 2) + '%' : '-') },
+                { label: 'Indeks Pembangunan Manusia (IPM)', val: (reg.ipm !== undefined ? formatNum(reg.ipm, 2) + ' Poin' : '-') },
+                { label: 'Umur Harapan Hidup (UHH)', val: (reg.uhh !== undefined ? formatNum(reg.uhh, 2) + ' Tahun' : '-') },
+                { label: 'Harapan Lama Sekolah (HLS)', val: (reg.hls !== undefined ? formatNum(reg.hls, 2) + ' Tahun' : '-') },
+                { label: 'Rata-rata Lama Sekolah (RLS)', val: (reg.rls !== undefined ? formatNum(reg.rls, 2) + ' Tahun' : '-') },
+                { label: 'Luas Wilayah Resmi', val: (reg.luas ? formatNum(reg.luas, 0) + ' km²' : '-') }
+            ];
+
+            const rowsHtml = metricsList.map((m, i) => `
+                <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:7px 12px; font-size:12px; color:#475569; font-weight:500;">${m.label}</td>
+                    <td style="padding:7px 12px; font-size:12.5px; color:#0f172a; font-weight:700; text-align:right; font-family:'Plus Jakarta Sans', monospace;">${m.val}</td>
+                </tr>
+            `).join('');
+
+            const modalHtml = `
+                <div class="gis-detail-modal-content" style="text-align:left; font-family:'Plus Jakarta Sans', sans-serif;">
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
+                        <div style="width:48px; height:48px; flex-shrink:0; background:#f1f5f9; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1px solid #cbd5e1; overflow:hidden;">
+                            <img src="${logoUrl}" onerror="this.onerror=null; this.src='assets/img/pemda/jawa_timur.png';" style="max-width:38px; max-height:38px; object-fit:contain;" alt="Logo ${reg.nama}">
+                        </div>
+                        <div style="flex:1;">
+                            <h3 style="margin:0 0 2px 0; font-size:17px; font-weight:800; color:#0f172a;">${reg.nama}</h3>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11.5px; color:#64748b;">
+                                <span>Kode: <code style="font-weight:700; color:#0284c7;">${reg.kode}</code></span>
+                                <span>•</span>
+                                <span>Ibu Kota: <b>${reg.ibu_kota || '-'}</b></span>
+                                <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:${info.color}; color:#ffffff;">
+                                    Kelas ${info.cls} • ${info.name}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Highlight Active Metric -->
+                    <div style="background:linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#3b82f6; letter-spacing:0.5px;">Indikator Terpilih</span>
+                            <div style="font-size:13.5px; font-weight:700; color:#1e293b;">${cfg.label}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:22px; font-weight:800; color:${info.color}; line-height:1.1;">${formattedVal}</div>
+                            <div style="font-size:11px; color:#64748b; font-weight:600;">Peringkat #${rank} se-Jawa Timur</div>
+                        </div>
+                    </div>
+
+                    <!-- Full Indicators Table -->
+                    <div style="max-height:210px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:12px;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+
+                    <!-- Geographic Coordinates -->
+                    <div style="background:#f1f5f9; border-radius:8px; padding:8px 12px; font-size:11px; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Centroid: <b>${reg.lat.toFixed(4)}° S, ${reg.lng.toFixed(4)}° E</b></span>
+                        <span style="font-size:10.5px; color:#64748b;">Sumber: Bappeda / BIG</span>
+                    </div>
+                </div>
+            `;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    html: modalHtml,
+                    width: 540,
+                    showCancelButton: true,
+                    confirmButtonText: 'Pecah Kecamatan',
+                    confirmButtonColor: '#1e3a8a',
+                    cancelButtonText: 'Tutup',
+                    cancelButtonColor: '#64748b',
+                    customClass: {
+                        popup: 'gis-enterprise-modal-popup'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        selectAndBreakoutCity(code);
+                    }
+                });
+            }
+        }
+
+        // 5c. Modal Detail Angka Kecamatan
+        function showDistrictDetailModal(name, kObj) {
+            let item = kObj;
+            if (!item && jatimAllKecamatan) {
+                item = jatimAllKecamatan.find(k => k.nama === name);
+            }
+            if (!item && districtList) {
+                item = districtList.find(d => (d.name || d.nama_kecamatan) === name);
+            }
+            if (!item) return;
+
+            const kode6 = item.kode_6digit || item.id || '-';
+            const kodeKemendagri = item.kode_kemendagri || item.kode_kab || '-';
+            const cityName = item.nama_kab || 'Kabupaten / Kota';
+            const val = item.nilai !== undefined ? item.nilai : (item.share !== undefined ? item.share : 5);
+            const tier = getValueTier(parseInt(val, 10));
+            const lat = parseFloat(item.lat || 0);
+            const lng = parseFloat(item.lng || 0);
+            const minLat = item.min_lat !== undefined ? parseFloat(item.min_lat) : (lat - 0.04);
+            const maxLat = item.max_lat !== undefined ? parseFloat(item.max_lat) : (lat + 0.04);
+            const minLng = item.min_lng !== undefined ? parseFloat(item.min_lng) : (lng - 0.04);
+            const maxLng = item.max_lng !== undefined ? parseFloat(item.max_lng) : (lng + 0.04);
+
+            const modalHtml = `
+                <div class="gis-detail-modal-content" style="text-align:left; font-family:'Plus Jakarta Sans', sans-serif;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">
+                        <div style="width:44px; height:44px; background:#eff6ff; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#2563eb; font-weight:800; font-size:18px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        </div>
+                        <div>
+                            <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">Kecamatan ${name}</h3>
+                            <div style="font-size:12px; color:#64748b;">${cityName} • Kode 6-Digit: <code style="font-weight:700; color:#2563eb;">${kode6}</code></div>
+                        </div>
+                    </div>
+
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b;">Indikator Spasial</div>
+                            <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:${tier.color}; color:#fff; margin-top:3px;">
+                                Kelas ${tier.cls} • ${tier.name}
+                            </span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:800; color:${tier.color};">${val}</div>
+                            <div style="font-size:10.5px; color:#64748b;">Nilai Agregat</div>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:12px;">
+                        <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 0; color:#64748b;">Kode Kemendagri</td><td style="text-align:right; font-weight:700; font-family:monospace;">${kodeKemendagri}</td></tr>
+                        <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 0; color:#64748b;">Batas Latitude (Lintang)</td><td style="text-align:right; font-weight:600; font-family:monospace;">${minLat.toFixed(4)}° s.d. ${maxLat.toFixed(4)}° S</td></tr>
+                        <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 0; color:#64748b;">Batas Longitude (Bujur)</td><td style="text-align:right; font-weight:600; font-family:monospace;">${minLng.toFixed(4)}° s.d. ${maxLng.toFixed(4)}° E</td></tr>
+                        <tr><td style="padding:6px 0; color:#64748b;">Titik Koordinat Centroid</td><td style="text-align:right; font-weight:600; font-family:monospace;">${lat.toFixed(4)}° S, ${lng.toFixed(4)}° E</td></tr>
+                    </table>
+                </div>
+            `;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    html: modalHtml,
+                    width: 460,
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#1e3a8a',
+                    customClass: {
+                        popup: 'gis-enterprise-modal-popup'
+                    }
+                });
+            }
+        }
+
+        // Re-calculate & Re-color Dynamic Maps
+        function updateMapStylesAndColors() {
+            if (!map) return;
+            const pal = getActivePalette();
+            const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
+
+            Object.keys(polygonLayers).forEach(k => {
+                const ply = polygonLayers[k];
+                if (!ply) return;
+                const r = jatimRegions.find(item => item.kode === k);
+                const info = getRegionClassification(r, currentIndicatorKey);
+                const isCur = (k === '35.10');
+                const isSel = (k === selectedRegionCode);
+                const baseOpacity = pal.fillOpacity !== undefined ? pal.fillOpacity : 0.65;
+                const baseStroke = pal.strokeColor || '#334155';
+                const baseWeight = pal.strokeWeight || 1.6;
+
+                if (activeBreakoutCityCode !== null) {
+                    if (k === activeBreakoutCityCode) {
+                        ply.setStyle({
+                            fillColor: '#ffffff',
+                            fillOpacity: 0,
+                            weight: 2.8,
+                            color: '#0f172a',
+                            opacity: 0.95
+                        });
+                    } else {
+                        ply.setStyle({
+                            fillColor: info.color,
+                            fillOpacity: 0.08,
+                            weight: 1.0,
+                            color: '#cbd5e1',
+                            opacity: 0.6
+                        });
+                    }
+                } else {
+                    ply.setStyle({
+                        fillColor: info.color,
+                        fillOpacity: isSel ? Math.min(1.0, baseOpacity + 0.15) : (isCur ? baseOpacity : Math.max(0.25, baseOpacity - 0.10)),
+                        weight: isSel ? (baseWeight + 1.2) : (isCur ? (baseWeight + 0.5) : baseWeight),
+                        color: isSel ? '#0f172a' : (isCur ? '#0d9488' : baseStroke),
+                        opacity: 0.95
+                    });
+                }
+
+                const formattedVal = formatIndicatorValue(info.val, currentIndicatorKey);
+                const regNama = r ? r.nama : k;
+                ply.bindTooltip(`
+                    <div class="gis-polygon-tooltip">
+                        <strong>${regNama}</strong>
+                        <div class="tip-sub">Kode: <code>${k}</code> • ${info.name}</div>
+                        <div class="tip-val" style="color:${info.color}; font-weight:700;">${cfg.label}: ${formattedVal}</div>
+                    </div>
+                `, { sticky: true, className: 'enterprise-boundary-tooltip' });
+            });
+
+            renderLegend();
+            renderPolygonLabels();
+            renderMarkers();
+            renderMapComparisonChart();
+
+            if (activeBreakoutCityCode && isDistrictsVisible) {
+                renderDistrictsForCity(activeBreakoutCityCode, false);
+            }
         }
 
         // 6. Select Region (Kabupaten / Kota)
@@ -5664,18 +6512,19 @@
             const reg = jatimRegions.find(r => r.kode === code);
             if (!reg) return;
 
-            const cls = getRegionClass(reg);
-            const color = classColors[cls];
-            const clsName = classNames[cls];
+            const info = getRegionClassification(reg, currentIndicatorKey);
+            const color = info.color;
+            const clsName = info.name;
+            const cls = info.cls;
 
             // Update Breadcrumb & Header
             const breadKab = document.getElementById('map-bread-kab');
             const breadLevel = document.getElementById('map-bread-level');
             if (breadKab) breadKab.textContent = reg.nama;
-            if (breadLevel) breadLevel.textContent = `Kode: ${reg.kode} • Kelas ${cls} (${clsName})`;
+            if (breadLevel) breadLevel.textContent = `Kode: ${reg.kode} • ${info.name}`;
 
             if (locDetailName) locDetailName.textContent = reg.nama;
-            if (locDetailLevel) locDetailLevel.innerHTML = `PROFIL WILAYAH • <span style="color:#fef08a; font-weight:700;">KELAS ${cls} (${clsName.toUpperCase()})</span>`;
+            if (locDetailLevel) locDetailLevel.innerHTML = `PROFIL WILAYAH • <span style="color:#fef08a; font-weight:700;">${info.name.toUpperCase()}</span>`;
             if (locDetailCode) locDetailCode.textContent = `Kode Kemendagri: ${reg.kode} • Sumber Resmi BIG / Kemendagri`;
 
             // Compute ranking in East Java
@@ -5744,11 +6593,23 @@
 
                     ${seriesSvg}
 
-                    <div style="display:flex; gap:8px; margin-top:12px;">
-                        <button class="button secondary" id="btn-export-reg-profile" style="flex:1;">Unduh Profil CSV</button>
-                        <button class="button" id="btn-zoom-to-sel" style="background:#142d4e; color:#fff;">Pusatkan Peta</button>
+                    <button class="button" id="btn-show-modal-detail" style="background:#0284c7; color:#fff; width:100%; margin-top:10px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Buka Detail Angka (Modal)
+                    </button>
+
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button class="button secondary" id="btn-export-reg-profile" style="flex:1;">Unduh CSV</button>
+                        <button class="button" id="btn-zoom-to-sel" style="background:#142d4e; color:#fff;">Pusatkan</button>
                     </div>
                 `;
+
+                const btnModalDetail = document.getElementById('btn-show-modal-detail');
+                if (btnModalDetail) {
+                    btnModalDetail.addEventListener('click', () => {
+                        showRegionDetailModal(code);
+                    });
+                }
 
                 const btnExp = document.getElementById('btn-export-reg-profile');
                 if (btnExp) {
@@ -5773,23 +6634,49 @@
             }
 
             // Update Poligon Riil GeoJSON
+            const pal = getActivePalette();
             Object.keys(polygonLayers).forEach(k => {
                 const ply = polygonLayers[k];
                 if (!ply) return;
                 const r = jatimRegions.find(item => item.kode === k);
-                const rCls = getRegionClass(r);
-                const rColor = classColors[rCls] || '#2563eb';
+                const rInfo = getRegionClassification(r, currentIndicatorKey);
                 const isCur = (k === '35.10');
                 const isSel = (k === code);
+                const baseOpacity = pal.fillOpacity !== undefined ? pal.fillOpacity : 0.65;
+                const baseStroke = pal.strokeColor || '#334155';
+                const baseWeight = pal.strokeWeight || 1.6;
 
-                ply.setStyle({
-                    fillColor: rColor,
-                    fillOpacity: isSel ? 0.62 : (isCur ? 0.44 : 0.30),
-                    weight: isSel ? 3.5 : (isCur ? 2.5 : 1.4),
-                    color: isSel ? '#0f172a' : (isCur ? '#0d9488' : '#334155')
-                });
+                if (activeBreakoutCityCode !== null) {
+                    if (k === activeBreakoutCityCode) {
+                        // Poligon kota terpilih dibuat transparan interiornya agar batas kecamatan riil tidak tertumpuk warna ganda
+                        ply.setStyle({
+                            fillColor: '#ffffff',
+                            fillOpacity: 0,
+                            weight: 2.8,
+                            color: '#0f172a',
+                            opacity: 0.95
+                        });
+                    } else {
+                        // 37 kabupaten/kota lain diredupkan secara lembut
+                        ply.setStyle({
+                            fillColor: rInfo.color,
+                            fillOpacity: 0.08,
+                            weight: 1.0,
+                            color: '#cbd5e1',
+                            opacity: 0.6
+                        });
+                    }
+                } else {
+                    ply.setStyle({
+                        fillColor: rInfo.color,
+                        fillOpacity: isSel ? Math.min(1.0, baseOpacity + 0.15) : (isCur ? baseOpacity : Math.max(0.25, baseOpacity - 0.10)),
+                        weight: isSel ? (baseWeight + 1.2) : (isCur ? (baseWeight + 0.5) : baseWeight),
+                        color: isSel ? '#0f172a' : (isCur ? '#0d9488' : baseStroke),
+                        opacity: 0.95
+                    });
+                }
 
-                if (isSel && !L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                if (isSel && !activeBreakoutCityCode && !L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                     ply.bringToFront();
                 }
             });
@@ -5812,7 +6699,7 @@
             renderMapComparisonChart();
         }
 
-        // 7. Select District (Kecamatan di Banyuwangi)
+        // 7. Select District (Kecamatan)
         function selectDistrict(name, kecObj = null) {
             selectedDistrictName = name;
             let dist = kecObj;
@@ -5829,7 +6716,14 @@
             const val = dist.nilai !== undefined ? dist.nilai : (dist.share || dist.porsi_pdrb || 5);
             const namaKab = dist.nama_kab || 'Kabupaten Banyuwangi';
             const kodeKab = dist.kode_kab || '35.10';
+            const kode6 = dist.kode_6digit || (dist.id && String(dist.id).length === 6 ? dist.id : (dist.kode_kemendagri ? dist.kode_kemendagri.replace(/\./g, '') : (dist.id || '351001')));
+            const kodeKemendagri = dist.kode_kemendagri || (dist.kode_kab ? dist.kode_kab + '.xx' : '35.10.xx');
             const tier = getValueTier(val);
+
+            const minLat = dist.min_lat !== undefined ? parseFloat(dist.min_lat) : (dist.bounds ? parseFloat(dist.bounds[0][0]) : (lat - 0.04));
+            const maxLat = dist.max_lat !== undefined ? parseFloat(dist.max_lat) : (dist.bounds ? parseFloat(dist.bounds[1][0]) : (lat + 0.04));
+            const minLng = dist.min_lng !== undefined ? parseFloat(dist.min_lng) : (dist.bounds ? parseFloat(dist.bounds[0][1]) : (lng - 0.04));
+            const maxLng = dist.max_lng !== undefined ? parseFloat(dist.max_lng) : (dist.bounds ? parseFloat(dist.bounds[1][1]) : (lng + 0.04));
 
             // Update state aktif pada pin halo kecamatan
             document.querySelectorAll('.gis-halo-pin').forEach(el => {
@@ -5840,9 +6734,29 @@
                 }
             });
 
+            // Update highlight pada layer batas riil kecamatan polygon
+            Object.keys(kecamatanPolygonLayers).forEach(kName => {
+                const lyr = kecamatanPolygonLayers[kName];
+                if (!lyr) return;
+                const isSel = (kName === name);
+                const dItem = (jatimAllKecamatan || []).find(k => k.nama === kName);
+                const v = dItem ? dItem.nilai : 5;
+                const t = getValueTier(v);
+                lyr.setStyle({
+                    fillColor: t.color || '#2563eb',
+                    fillOpacity: isSel ? 0.55 : 0.20,
+                    weight: isSel ? 3.2 : 1.5,
+                    color: isSel ? '#0f172a' : (t.color || '#0284c7'),
+                    dashArray: isSel ? null : '3, 4'
+                });
+                if (isSel && !L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                    lyr.bringToFront();
+                }
+            });
+
             if (locDetailName) locDetailName.textContent = `Kecamatan ${name}`;
-            if (locDetailLevel) locDetailLevel.textContent = 'PROFIL WILAYAH • KECAMATAN';
-            if (locDetailCode) locDetailCode.textContent = `${namaKab} (Kode: ${kodeKab})`;
+            if (locDetailLevel) locDetailLevel.innerHTML = `PROFIL WILAYAH • <span style="color:#fef08a; font-weight:700;">KECAMATAN (${kode6})</span>`;
+            if (locDetailCode) locDetailCode.textContent = `${namaKab} • Kode Kemendagri: ${kodeKemendagri}`;
 
             if (locBodyContainer) {
                 locBodyContainer.innerHTML = `
@@ -5856,16 +6770,18 @@
 
                     <div class="data-list" style="margin-top:14px;">
                         <span><small>Wilayah Induk</small><strong>${namaKab}</strong></span>
-                        <span><small>Kode Wilayah</small><strong style="font-family:monospace;">${dist.id || kodeKab}</strong></span>
+                        <span><small>Kode Wilayah (6 Digit)</small><strong style="font-family:monospace; color:#2563eb; font-size:13px; font-weight:700;">${kode6}</strong></span>
+                        <span><small>Kode Kemendagri</small><strong style="font-family:monospace; font-weight:600;">${kodeKemendagri}</strong></span>
                         <span><small>Tingkat Aktivitas</small><strong>${tier.name}</strong></span>
-                        <span><small>Status Data</small><strong>Terintegrasi BPS / Kemendagri</strong></span>
-                        <span><small>Garis Lintang</small><strong style="font-family:monospace;">${lat ? lat.toFixed(5) + '° S' : '-'}</strong></span>
-                        <span><small>Garis Bujur</small><strong style="font-family:monospace;">${lng ? lng.toFixed(5) + '° E' : '-'}</strong></span>
+                        <span><small>Batas BBox Latitude</small><strong style="font-size:10.5px; font-family:monospace; color:#0f172a;">${minLat.toFixed(4)}° s.d. ${maxLat.toFixed(4)}° S</strong></span>
+                        <span><small>Batas BBox Longitude</small><strong style="font-size:10.5px; font-family:monospace; color:#0f172a;">${minLng.toFixed(4)}° s.d. ${maxLng.toFixed(4)}° E</strong></span>
+                        <span><small>Titik Centroid (Lintang)</small><strong style="font-family:monospace;">${lat ? lat.toFixed(5) + '° S' : '-'}</strong></span>
+                        <span><small>Titik Centroid (Bujur)</small><strong style="font-family:monospace;">${lng ? lng.toFixed(5) + '° E' : '-'}</strong></span>
                     </div>
 
                     <div style="display:flex; gap:8px; margin-top:14px;">
                         <button class="button secondary" id="btn-export-dist-csv" style="flex:1;">Unduh CSV</button>
-                        <button class="button" id="btn-zoom-dist" style="background:#0d9488; color:#fff;">Pusatkan Kecamatan</button>
+                        <button class="button" id="btn-zoom-dist" style="background:#0d9488; color:#fff;">Pusatkan Batas</button>
                     </div>
                 `;
 
@@ -5873,22 +6789,34 @@
                 if (btnExp) {
                     btnExp.addEventListener('click', () => {
                         downloadCSV(`kecamatan-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`, [
-                            ['Kecamatan', 'Kab/Kota', 'Nilai Spasial', 'Lintang', 'Bujur'],
-                            [name, namaKab, val, lat, lng]
+                            ['Kecamatan', 'Kode Wilayah 6 Digit', 'Kode Kemendagri', 'Kab/Kota', 'Nilai Spasial', 'Min Lintang', 'Max Lintang', 'Min Bujur', 'Max Bujur', 'Centroid Lintang', 'Centroid Bujur'],
+                            [name, kode6, kodeKemendagri, namaKab, val, minLat, maxLat, minLng, maxLng, lat, lng]
                         ]);
                     });
                 }
 
                 const btnZoom = document.getElementById('btn-zoom-dist');
-                if (btnZoom && lat && lng && map) {
+                if (btnZoom && map) {
                     btnZoom.addEventListener('click', () => {
-                        map.setView([lat, lng], 13);
+                        if (kecamatanPolygonLayers[name] && kecamatanPolygonLayers[name].getBounds) {
+                            map.fitBounds(kecamatanPolygonLayers[name].getBounds(), { padding: [40, 40], maxZoom: 13 });
+                        } else if (dist.bounds) {
+                            map.fitBounds(dist.bounds, { padding: [40, 40], maxZoom: 13 });
+                        } else if (lat && lng) {
+                            map.setView([lat, lng], 13);
+                        }
                     });
                 }
             }
         }
 
-        // Global functions for marker popup clicks
+        // Global functions for marker popup clicks & Modals
+        window.__showRegionDetailModal = function(code) {
+            showRegionDetailModal(code);
+        };
+        window.__showDistrictDetailModal = function(name, kObj) {
+            showDistrictDetailModal(name, kObj);
+        };
         window.__selectRegionFromMap = function(code) {
             selectRegion(code);
         };
@@ -5913,12 +6841,20 @@
             selectDistrict(name);
         };
         window.__zoomDistrictFromMap = function(name) {
-            const k = (jatimAllKecamatan && jatimAllKecamatan.find(x => x.nama === name)) ||
-                      (districtList && districtList.find(d => (d.name || d.nama_kecamatan) === name));
-            if (k && map) {
-                const lat = parseFloat(k.lat || k.garis_lintang);
-                const lng = parseFloat(k.lng || k.garis_bujur);
-                if (lat && lng) map.setView([lat, lng], 13);
+            if (kecamatanPolygonLayers[name] && kecamatanPolygonLayers[name].getBounds) {
+                map.fitBounds(kecamatanPolygonLayers[name].getBounds(), { padding: [40, 40], maxZoom: 13 });
+            } else {
+                const k = (jatimAllKecamatan && jatimAllKecamatan.find(x => x.nama === name)) ||
+                          (districtList && districtList.find(d => (d.name || d.nama_kecamatan) === name));
+                if (k && map) {
+                    if (k.bounds) {
+                        map.fitBounds(k.bounds, { padding: [40, 40], maxZoom: 13 });
+                    } else {
+                        const lat = parseFloat(k.lat || k.garis_lintang);
+                        const lng = parseFloat(k.lng || k.garis_bujur);
+                        if (lat && lng) map.setView([lat, lng], 13);
+                    }
+                }
             }
         };
 
@@ -5935,11 +6871,21 @@
         }
         if (cbBoundaries) {
             cbBoundaries.addEventListener('change', () => {
-                if (!map || !layerGeoJsonBoundaries) return;
+                if (!map) return;
                 if (cbBoundaries.checked) {
-                    map.addLayer(layerGeoJsonBoundaries);
+                    if (layerGeoJsonBoundaries && !map.hasLayer(layerGeoJsonBoundaries)) {
+                        map.addLayer(layerGeoJsonBoundaries);
+                    }
+                    if (isDistrictsVisible && layerKecamatanBoundaries && !map.hasLayer(layerKecamatanBoundaries)) {
+                        map.addLayer(layerKecamatanBoundaries);
+                    }
                 } else {
-                    map.removeLayer(layerGeoJsonBoundaries);
+                    if (layerGeoJsonBoundaries && map.hasLayer(layerGeoJsonBoundaries)) {
+                        map.removeLayer(layerGeoJsonBoundaries);
+                    }
+                    if (layerKecamatanBoundaries && map.hasLayer(layerKecamatanBoundaries)) {
+                        map.removeLayer(layerKecamatanBoundaries);
+                    }
                 }
             });
         }
@@ -6141,7 +7087,8 @@
 
         function renderMapComparisonChart() {
             if (!mapChartContainer) return;
-            const metric = metricSelect ? metricSelect.value : 'growth';
+            const cfg = indicatorConfig[currentIndicatorKey] || indicatorConfig['growth'];
+            const metric = currentIndicatorKey;
 
             const isKecamatanOnly = (mapLevel === 'Kecamatan');
 
@@ -6182,30 +7129,29 @@
                 `;
 
             } else {
-                if (mapChartTitle) mapChartTitle.textContent = 'Grafik Komparasi 38 Kabupaten / Kota se-Jawa Timur';
-                if (mapChartDesc) mapChartDesc.textContent = 'Peringkat capaian seluruh wilayah berdasarkan indikator ekonomi spasial (4 Kelas Klasifikasi).';
+                if (mapChartTitle) mapChartTitle.textContent = `Grafik Komparasi 38 Daerah: ${cfg.label}`;
+                if (mapChartDesc) mapChartDesc.textContent = `Peringkat capaian seluruh 38 Kabupaten / Kota se-Jawa Timur berdasarkan ${cfg.desc}.`;
 
                 const sortedRegs = [...jatimRegions].sort((a, b) => {
-                    const valA = parseFloat(a[metric] || 0);
-                    const valB = parseFloat(b[metric] || 0);
+                    const valA = getRegionValue(a, metric);
+                    const valB = getRegionValue(b, metric);
                     return valB - valA;
                 });
 
-                const maxVal = Math.max(...sortedRegs.map(r => parseFloat(r[metric] || 0))) || 10;
+                const maxVal = Math.max(...sortedRegs.map(r => getRegionValue(r, metric))) || 10;
 
                 mapChartContainer.innerHTML = `
                     <div class="bars-scroll" style="display:flex; align-items:flex-end; gap:4px; height:190px; padding:10px 5px; overflow-x:auto;">
                         ${sortedRegs.map(r => {
-                            const val = parseFloat(r[metric] || 0);
-                            const cls = getRegionClass(r);
-                            const col = classColors[cls] || '#2563eb';
+                            const val = getRegionValue(r, metric);
+                            const info = getRegionClassification(r, metric);
                             const isSel = (r.kode === selectedRegionCode);
                             const isCur = (r.kode === '35.10');
-                            const barColor = isSel ? '#0f172a' : (isCur ? '#0d9488' : col);
-                            const suffix = (metric === 'growth') ? '%' : ((metric === 'change') ? ' pp' : ((metric === 'pdrb') ? ' M' : ' km²'));
+                            const barColor = isSel ? '#0f172a' : (isCur ? '#0d9488' : info.color);
+                            const formattedVal = formatIndicatorValue(val, metric, true);
                             return `
-                                <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:28px; height:100%; justify-content:flex-end; cursor:pointer; opacity:${isSel ? 1 : 0.85};" onclick="window.__zoomRegionFromMap('${r.kode}')" title="${r.nama} (Kelas ${cls}): ${formatNum(val, 2)}${suffix}">
-                                    <span style="font-size:8.5px; color:#64748b; margin-bottom:3px;">${val.toFixed(1)}</span>
+                                <div class="bar-col" style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:28px; height:100%; justify-content:flex-end; cursor:pointer; opacity:${isSel ? 1 : 0.88};" onclick="window.__zoomRegionFromMap('${r.kode}')" title="${r.nama} (${info.name}): ${formattedVal}">
+                                    <span style="font-size:8.5px; color:#64748b; margin-bottom:3px;">${formattedVal}</span>
                                     <div style="width:14px; height:${Math.max(5, (val / maxVal) * 125)}px; background:${barColor}; border-radius:3px 3px 0 0; ${isSel ? 'border:1.5px solid #fef08a;' : ''}"></div>
                                     <span style="font-size:9px; font-weight:${isSel || isCur ? 700 : 500}; color:${isSel ? '#0f172a' : '#475569'}; margin-top:4px; max-width:28px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.kode.replace('35.', '')}</span>
                                 </div>
@@ -6218,6 +7164,31 @@
 
         if (metricSelect) {
             metricSelect.addEventListener('change', renderMapComparisonChart);
+        }
+
+        // Event listeners untuk kontrol dinamis peta
+        if (groupSelect) {
+            groupSelect.addEventListener('change', () => {
+                updateIndicators();
+                updateMapStylesAndColors();
+            });
+        }
+        if (indicatorSelect) {
+            indicatorSelect.addEventListener('change', () => {
+                currentIndicatorKey = indicatorSelect.value;
+                updateMapStylesAndColors();
+            });
+        }
+        if (colorPaletteSelect) {
+            colorPaletteSelect.addEventListener('change', () => {
+                currentColorPalette = colorPaletteSelect.value;
+                updateMapStylesAndColors();
+            });
+        }
+        if (cbLabels) {
+            cbLabels.addEventListener('change', () => {
+                renderPolygonLabels();
+            });
         }
 
         // Initial Executions
@@ -6241,6 +7212,23 @@
             })
             .catch(err => {
                 console.error('Gagal memuat batas wilayah riil GeoJSON:', err);
+            });
+
+        // Load Real Administrative Boundaries Kecamatan GeoJSON (Batas Wilayah Riil Per Kecamatan)
+        const kecGeojsonUrl = window.__JATIM_KECAMATAN_GEOJSON_URL__ || 'assets/data/jatim_kecamatan.geojson';
+        fetch(kecGeojsonUrl)
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                jatimKecamatanGeoJson = data;
+                if (activeBreakoutCityCode && isDistrictsVisible) {
+                    renderDistrictsForCity(activeBreakoutCityCode, false);
+                }
+            })
+            .catch(err => {
+                console.warn('Gagal memuat batas wilayah riil kecamatan GeoJSON:', err);
             });
 
 

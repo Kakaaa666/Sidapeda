@@ -4,6 +4,7 @@
         window.__DISTRICTS__ = <?= json_encode($districts ?? array(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         window.__JATIM_GEOJSON_URL__ = '<?= base_url("assets/data/jatim_kab_kota.geojson") ?>';
         window.__JATIM_KECAMATAN_URL__ = '<?= base_url("assets/data/jatim_kecamatan.json") ?>';
+        window.__JATIM_KECAMATAN_GEOJSON_URL__ = '<?= base_url("assets/data/jatim_kecamatan.geojson") ?>';
         window.__JATIM_REGENCIES_SUMMARY_URL__ = '<?= base_url("assets/data/jatim_regencies_summary.json") ?>';
     </script>
 
@@ -91,13 +92,11 @@
             <label>
                 <span>Kelompok informasi</span>
                 <select id="map-group-select">
-                    <option value="Aktivitas ekonomi">Aktivitas ekonomi</option>
-                    <option value="Kesejahteraan">Kesejahteraan</option>
-                    <option value="Investasi">Investasi</option>
-                    <option value="Produksi sektoral">Produksi sektoral</option>
-                    <option value="Ketenagakerjaan">Ketenagakerjaan</option>
-                    <option value="Pariwisata">Pariwisata</option>
-                    <option value="Harga">Harga</option>
+                    <option value="Aktivitas ekonomi" selected>Aktivitas ekonomi & PDRB</option>
+                    <option value="Kesejahteraan">Kesejahteraan & Kemiskinan</option>
+                    <option value="Investasi">Investasi & Penanaman Modal</option>
+                    <option value="Pendidikan">Pendidikan & IPM</option>
+                    <option value="Wilayah">Wilayah & Demografi</option>
                 </select>
             </label>
 
@@ -105,6 +104,18 @@
                 <span>Indikator tematik</span>
                 <select id="map-indicator-select">
                     <!-- Populated by JS -->
+                </select>
+            </label>
+
+            <label>
+                <span>Skema pewarnaan peta</span>
+                <select id="map-color-palette-select">
+                    <option value="auto" selected>Otomatis (Sesuai Peta Dasar)</option>
+                    <option value="mapid-red">Gradasi Merah Tematik (MAPID - Gambar 1)</option>
+                    <option value="yellow-contrast">Kuning Kontras Administratif (Gambar 2)</option>
+                    <option value="bappeda">Standar GIS 4-Kelas (Emerald-Blue-Amber-Red)</option>
+                    <option value="blue">Biru Samudra (Oceanic Blues Gradient)</option>
+                    <option value="emerald">Hijau Zamrud (Viridis Emerald)</option>
                 </select>
             </label>
 
@@ -120,20 +131,26 @@
             <label>
                 <span>Format angka balon GIS</span>
                 <select id="map-pin-display-select">
-                    <option value="value" selected>Nilai Indikator (Contoh: 5.7%)</option>
+                    <option value="value" selected>Nilai Indikator (Contoh: 5.7% / Rp 120 T)</option>
                     <option value="rank">Peringkat Daerah (#1 s/d #38)</option>
-                    <option value="class">Kelas Kuartil (1 s/d 4)</option>
+                    <option value="class">Kelas Tingkatan (Kelas 1 s/d 5)</option>
                     <option value="code">Nomor Wilayah (Contoh: 10, 01, 78)</option>
                 </select>
             </label>
 
             <label>
-                <span>Tipe peta dasar (Basemap)</span>
+                <span>Tipe Peta Dasar (100% Bebas Watermark & API Key)</span>
                 <select id="map-basemap-select">
-                    <option value="osm" selected>OpenStreetMap (Peta Jalan)</option>
-                    <option value="google-hybrid">Google Maps Satelit (Hybrid)</option>
-                    <option value="google-sat">Google Maps Satelit (Murni)</option>
-                    <option value="carto-light">CartoDB Light (Minimalis Terang)</option>
+                    <option value="osm" selected>OpenStreetMap Standar (100% Bebas Watermark)</option>
+                    <option value="mapid-red">MAPID Tematik Merah (Choropleth - Bebas Watermark)</option>
+                    <option value="yellow-contrast">Peta Kontras Kuning (Atlas Bahari - Bebas Watermark)</option>
+                    <option value="canvas-clean">Kanvas Poligon Murni (Tanpa Peta Dasar / Zero Watermark)</option>
+                    <option value="osm-hot">OpenStreetMap Humaniter (Kontras Tinggi)</option>
+                    <option value="opentopomap">OpenTopoMap (Topografi OpenStreetMap)</option>
+                    <option value="esri-sat">Citra Satelit HD Resmi (Esri ArcGIS - Bebas Watermark)</option>
+                    <option value="carto-light">Minimalis Terang (Light Gray Canvas - Bebas Watermark)</option>
+                    <option value="carto-dark">Mode Gelap (Dark Gray Canvas - Bebas Watermark)</option>
+                    <option value="esri-gray">Esri Gray Canvas (Netral Monokrom)</option>
                 </select>
             </label>
 
@@ -144,7 +161,7 @@
                 </div>
                 <label class="check-row">
                     <input type="checkbox" class="map-layer-cb" id="layer-cb-osm" value="osm" checked>
-                    <span>Peta Dasar (Tile Layer)</span>
+                    <span>Peta Dasar OpenStreetMap (100% Bebas API Key)</span>
                 </label>
                 <label class="check-row">
                     <input type="checkbox" class="map-layer-cb" id="layer-cb-boundaries" value="boundaries" checked>
@@ -152,11 +169,11 @@
                 </label>
                 <label class="check-row">
                     <input type="checkbox" class="map-layer-cb" id="layer-cb-markers" value="markers" checked>
-                    <span>Titik Balon GIS (Icon Balon Berangka)</span>
+                    <span>Titik Balon GIS (Pin Bersih Tanpa Angka)</span>
                 </label>
                 <label class="check-row">
                     <input type="checkbox" class="map-layer-cb" id="layer-cb-labels" value="labels" checked>
-                    <span>Label & Angka Wilayah</span>
+                    <span>Label Wilayah (Nama Kabupaten/Kota)</span>
                 </label>
                 <label class="check-row">
                     <input type="checkbox" class="map-layer-cb" id="layer-cb-hotspot" value="hotspot">
@@ -188,18 +205,30 @@
                 <input id="map-search-input" placeholder="Cari kode (35.10) atau nama kota...">
             </div>
 
-            <div class="basemap-switcher-pills" id="basemap-pills" title="Pilihan Peta Dasar (Basemap)">
-                <button type="button" class="basemap-pill-btn active" data-basemap="osm" title="Peta Jalan Standar (OpenStreetMap)">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    <span>Peta Jalan</span>
+            <div class="basemap-switcher-pills" id="basemap-pills" title="Pilihan Peta Dasar (100% Bebas Watermark)">
+                <button type="button" class="basemap-pill-btn active" data-basemap="osm" title="OpenStreetMap Standar (100% Bebas Watermark)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+                    <span>OpenStreetMap</span>
                 </button>
-                <button type="button" class="basemap-pill-btn" data-basemap="google-hybrid" title="Citra Satelit Google Maps (Hybrid)">
+                <button type="button" class="basemap-pill-btn" data-basemap="mapid-red" title="MAPID Tematik Merah (Choropleth - Bebas Watermark)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                    <span>Google Satelit</span>
+                    <span>MAPID Merah</span>
                 </button>
-                <button type="button" class="basemap-pill-btn" data-basemap="carto-light" title="Peta Minimalis Terang (CartoDB Light)">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                    <span>Terang</span>
+                <button type="button" class="basemap-pill-btn" data-basemap="yellow-contrast" title="Peta Kontras Kuning (Atlas Bahari - Bebas Watermark)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <span>Kuning Kontras</span>
+                </button>
+                <button type="button" class="basemap-pill-btn" data-basemap="canvas-clean" title="Kanvas Poligon Murni (Tanpa Peta Dasar / Zero Watermark)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span>Kanvas Murni</span>
+                </button>
+                <button type="button" class="basemap-pill-btn" data-basemap="esri-sat" title="Citra Satelit HD Resmi (Esri ArcGIS - 100% Bebas Watermark)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    <span>Satelit HD</span>
+                </button>
+                <button type="button" class="basemap-pill-btn" data-basemap="opentopomap" title="OpenTopoMap (Topografi OpenStreetMap - Bebas Watermark)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span>Topografi</span>
                 </button>
             </div>
 
