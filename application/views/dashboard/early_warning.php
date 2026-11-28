@@ -19,114 +19,13 @@ $indicatorPrefixOrder = array(
 );
 
 $grouped = array();
-$subGrouped = array();
-
 foreach ($ews as $item) {
     $code = $item['code'] ?? $item['kode_indikator'] ?? '';
     if (empty($code)) continue;
-
-    $isSub = (strpos($code, '.') !== false || $code === 'FIS-004');
-    $parentCode = $isSub ? ($code === 'FIS-004' ? 'FIS-003' : explode('.', $code)[0]) : $code;
-    $subKey = $isSub ? ($code === 'FIS-004' ? 'MOD' : explode('.', $code)[1]) : null;
-
-    if ($isSub && in_array($parentCode, $sectoralParents)) {
-        $item['sub_key'] = $subKey;
-        $item['parent_code'] = $parentCode;
-        $subGrouped[$parentCode][$code] = $item;
-    } elseif (!$isSub) {
-        $item['sub_indicators'] = array();
-        $grouped[$code] = $item;
-    }
+    $item['sub_indicators'] = array();
+    $grouped[$code] = $item;
 }
-
-// Sambungkan sub-indikator HANYA ke parent yang ada di $sectoralParents
-foreach ($subGrouped as $pCode => $subs) {
-    if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
-        continue;
-    }
-    $isInv = (strpos($pCode, 'INV-') === 0);
-    uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $monthOrder, $isInv, $pCode) {
-        $kA = $a['sub_key'] ?? '';
-        $kB = $b['sub_key'] ?? '';
-        if ($isInv) {
-            $posA = $quarterOrder[$kA] ?? 99;
-            $posB = $quarterOrder[$kB] ?? 99;
-        } elseif (in_array($pCode, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
-            $posA = $monthOrder[$kA] ?? 99;
-            $posB = $monthOrder[$kB] ?? 99;
-        } elseif (in_array($pCode, ['HRG-002', 'HRG-005', 'HRG-006'])) {
-            $posA = is_numeric($kA) ? (int)$kA : 99;
-            $posB = is_numeric($kB) ? (int)$kB : 99;
-        } else {
-            $posA = $sectorOrder[$kA] ?? 99;
-            $posB = $sectorOrder[$kB] ?? 99;
-        }
-        if ($posA === $posB) return strcmp($kA, $kB);
-        return $posA - $posB;
-    });
-    $grouped[$pCode]['sub_indicators'] = $subs;
-}
-
-// Urutkan master indikator mulai dari EKO, NAK, TK, dst
-uasort($grouped, function($itemA, $itemB) use ($indicatorPrefixOrder) {
-    $codeA = $itemA['code'] ?? '';
-    $codeB = $itemB['code'] ?? '';
-
-    $mainA = explode('.', $codeA)[0];
-    $mainB = explode('.', $codeB)[0];
-
-    $partsA = explode('-', $mainA);
-    $prefA = strtoupper($partsA[0]);
-    $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
-
-    $partsB = explode('-', $mainB);
-    $prefB = strtoupper($partsB[0]);
-    $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
-
-    $rankA = $indicatorPrefixOrder[$prefA] ?? 99;
-    $rankB = $indicatorPrefixOrder[$prefB] ?? 99;
-
-    if ($rankA !== $rankB) return $rankA - $rankB;
-    if ($numA !== $numB) return $numA - $numB;
-    return strcmp($codeA, $codeB);
-});
-
-// Hitung jumlah indikator per kategori prefix dari $grouped
-$catPrefixCounts = array();
-foreach ($grouped as $gCode => $gItem) {
-    $p = strtoupper(explode('-', $gCode)[0]);
-    $catPrefixCounts[$p] = ($catPrefixCounts[$p] ?? 0) + 1;
-}
-
-$categoryMeta = array(
-    'EKO' => 'PDRB & Ekonomi',
-    'NAK' => 'Kependudukan',
-    'TK'  => 'Ketenagakerjaan',
-    'INV' => 'Investasi & Usaha',
-    'HRG' => 'Harga & Inflasi',
-    'KES' => 'Kesejahteraan Sosial',
-    'PAR' => 'Pariwisata & Ekraf',
-    'PRO' => 'Produksi Sektoral',
-    'FIS' => 'Fiskal & Keuangan',
-    'GEO' => 'Geografi & Wilayah',
-    'EWS' => 'Early Warning System',
-    'ANA' => 'Analisis Makro'
-);
-
-$activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
-// Wajib memilih salah 1 kategori (tanpa opsi "Semua"): default ke kategori pertama yang tersedia (misal EKO)
-if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPrefixCounts))) {
-    foreach ($categoryMeta as $pref => $label) {
-        if (isset($catPrefixCounts[$pref]) && $catPrefixCounts[$pref] > 0) {
-            $activeCat = $pref;
-            break;
-        }
-    }
-    if (empty($activeCat)) {
-        $catKeys = array_keys($catPrefixCounts);
-        $activeCat = !empty($catKeys) ? $catKeys[0] : 'EKO';
-    }
-}
+$activeCat = '';
 ?>
 <div class="page">
     <?php if ($this->session->flashdata('success')): ?>
@@ -192,32 +91,6 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
         </div>
     </div>
 
-    <!-- SLIDE FILTER KATEGORI (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA) -->
-    <div class="category-slide-container" id="category-slide-container" style="margin-bottom: 20px;">
-        <div class="category-slide-label">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-            <span>Kategori:</span>
-        </div>
-        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-prev" title="Geser Kiri (Sebelumnya)" aria-label="Geser Kiri">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="category-slide-track" id="category-slide-track">
-            <?php foreach ($categoryMeta as $pref => $label): ?>
-                <?php if (isset($catPrefixCounts[$pref]) || empty($grouped)): ?>
-                    <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
-                    <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
-                        <span class="cat-code-badge"><?= $pref ?></span>
-                        <span><?= $label ?></span>
-                        <span class="cat-count-pill"><?= $cnt ?></span>
-                    </button>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </div>
-        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-next" title="Geser Kanan (Selanjutnya)" aria-label="Geser Kanan">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-    </div>
-
     <!-- STATS OVERVIEW -->
     <div class="risk-overview" id="ews-stats-container">
         <?php
@@ -273,17 +146,18 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
 
             <div class="risk-table" id="ews-table-rows">
                 <div class="risk-table-header">
-                    <span>Indikator Pemantauan</span>
-                    <span style="text-align:right;">Nilai Riil</span>
-                    <span style="text-align:right;">Batas Ambang</span>
-                    <span style="text-align:right;">Status Risiko</span>
+                    <span>Indikator</span>
+                    <span style="text-align:right;">Nilai</span>
+                    <span style="text-align:right;">Threshold</span>
+                    <span style="text-align:right;">Status</span>
                 </div>
                 <?php foreach ($grouped as $code => $item):
-                    $hasSub = (!empty($item['sub_indicators']) && in_array($code, $sectoralParents));
+                    $hasSub = false;
                     $st = $item['status'] ?? $item['status_risiko'] ?? 'Normal';
                     $badgeCls = ($st === 'Kritis') ? 'danger' : (($st === 'Waspada') ? 'warning' : 'success');
                     $rowStateCls = ($st === 'Kritis') ? 'alerted' : (($st === 'Waspada') ? 'warning-row' : 'normal-row');
                     $name = $item['name'] ?? $item['nama_indikator'] ?? '';
+                    $src = $item['source'] ?? $item['sumber_data'] ?? $code;
                     $val = (float)($item['value'] ?? $item['nilai_terkini'] ?? $item['currentValue'] ?? 0);
                     $th = (float)($item['threshold'] ?? $item['ambang_batas'] ?? 0);
                     $unit = $item['unit'] ?? $item['satuan'] ?? '%';
@@ -292,79 +166,37 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
                     $cl = $item['klaster'] ?? 'Umum';
                     $pPrefix = strtoupper(explode('-', $code)[0]);
                 ?>
-                    <div class="risk-row btn-alert-row <?= $rowStateCls ?> <?= $hasSub ? 'has-subcategories' : '' ?>" 
+                    <div class="risk-row btn-alert-row <?= $rowStateCls ?>" 
                          data-code="<?= htmlspecialchars($code) ?>" 
                          data-prefix="<?= $pPrefix ?>" 
                          data-status="<?= htmlspecialchars($st) ?>" 
                          data-category="<?= htmlspecialchars($cl) ?>" 
-                         <?= $hasSub ? 'data-has-sub="true"' : '' ?>
                          role="button" tabindex="0" 
-                         title="<?= $hasSub ? 'Klik baris ini untuk membuka/menutup rincian sub-indikator atau sesuaikan threshold' : 'Klik untuk analisis & penyesuaian threshold' ?>"
-                         style="display: <?= ($pPrefix === $activeCat) ? 'grid' : 'none' ?>;">
+                         title="Klik untuk analisis &amp; penyesuaian threshold"
+                         style="display: grid;">
                         <div class="risk-indicator">
-                            <div class="risk-badge-row">
-                                <span class="badge info risk-cluster-pill">
-                                    <?= htmlspecialchars($cl) ?>
-                                </span>
-                                <?php if ($hasSub): ?>
-                                    <?php 
-                                        $isInv = (strpos($code, 'INV-') === 0);
-                                        $isTk07 = ($code === 'TK-007');
-                                        $isTk08 = ($code === 'TK-008');
-                                        $isTk10 = ($code === 'TK-010');
-                                        if ($isInv) {
-                                            $openLabel = 'Rincian 4 Kuartal';
-                                        } elseif ($isTk07) {
-                                            $openLabel = 'Rincian Sektor & Status';
-                                        } elseif ($isTk08) {
-                                            $openLabel = 'Rincian Formal & Informal';
-                                        } elseif ($isTk10) {
-                                            $openLabel = 'Rincian Setengah Pengangguran';
-                                        } elseif (in_array($code, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
-                                            $openLabel = 'Rincian 12 Bulan';
-                                        } elseif (in_array($code, ['PRO-001', 'PRO-002', 'PRO-004'])) {
-                                            $openLabel = 'Rincian 25 Kecamatan';
-                                        } elseif ($code === 'FIS-001') {
-                                            $openLabel = 'Rincian 4 Komponen PAD';
-                                        } elseif ($code === 'FIS-002') {
-                                            $openLabel = 'Rincian Transfer Daerah';
-                                        } elseif ($code === 'FIS-003') {
-                                            $openLabel = 'Rincian Komponen';
-                                        } elseif (in_array($code, ['HRG-002', 'HRG-006'])) {
-                                            $openLabel = 'Rincian 11 Kelompok';
-                                        } elseif ($code === 'HRG-005') {
-                                            $openLabel = 'Rincian 20 Kelompok Pangan (48 Komoditas)';
-                                        } else {
-                                            $openLabel = 'Rincian 17 Sektor';
-                                        }
-                                    ?>
-                                    <button type="button" class="btn-toggle-subcategories" data-parent="<?= htmlspecialchars($code) ?>" data-label-open="<?= $openLabel ?>" onclick="toggleIndicatorSubRows('<?= htmlspecialchars($code) ?>', event);" title="Klik untuk membuka/menutup <?= $openLabel ?>">
-                                        <svg class="sub-arrow-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                                        <span class="sub-toggle-label"><?= $openLabel ?></span>
-                                    </button>
-                                <?php endif; ?>
-                            </div>
                             <strong class="risk-title"><?= htmlspecialchars($name) ?></strong>
                             <small class="risk-meta">
-                                <code><?= htmlspecialchars($code) ?></code>
+                                <span><?= htmlspecialchars($src) ?></span>
+                                <span class="risk-meta-rule">&bull; <?= ($dir === 'above') ? 'Risiko jika melebihi ambang' : 'Risiko jika di bawah ambang' ?></span>
                                 <?php if (!empty($rowYr)): ?>
-                                    <span class="risk-meta-year">&bull; Thn <?= $rowYr ?></span>
+                                    <span class="risk-meta-year">&bull; Data <?= $rowYr ?></span>
                                 <?php endif; ?>
-                                <span class="risk-meta-rule">&bull; <?= ($dir === 'above') ? 'Kritis jika &gt; Ambang' : 'Kritis jika &lt; Ambang' ?></span>
                             </small>
                         </div>
                         <?php
                             $isRupiah = is_indicator_rupiah($unit ?? '', $item['code'] ?? '');
-                            $prefixRp = $isRupiah ? 'Rp ' : '';
+                            $unitHasRp = (bool)preg_match('/^rp/i', trim((string)$unit));
+                            $prefixRp = ($isRupiah && !$unitHasRp) ? 'Rp ' : '';
                             $formattedVal = format_indicator_value($val, $unit ?? '', $item['code'] ?? '', false);
                             $formattedTh = format_indicator_value($th, $unit ?? '', $item['code'] ?? '', false);
                         ?>
                         <div class="risk-value">
-                            <span class="risk-mobile-label">Nilai Riil</span>
+                            <span class="risk-mobile-label">Nilai</span>
                             <strong><?= $prefixRp ?><?= $formattedVal ?> <span class="risk-unit-text"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-threshold">
-                            <span class="risk-mobile-label">Batas Ambang</span>
+                            <span class="risk-mobile-label">Threshold</span>
                             <strong><?= $prefixRp ?><?= $formattedTh ?> <span class="risk-unit-text"><?= htmlspecialchars($unit) ?></span></strong>
                         </div>
                         <div class="risk-status">
@@ -463,9 +295,9 @@ if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPre
 
             <div class="source" style="margin-top:14px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px dashed var(--line); line-height:1.6;">
                 <strong>Kriteria Penentuan Status Risiko:</strong><br>
-                • <strong>Indikator Beban/Risiko</strong> (Inflasi, Kemiskinan Ekstrem, Pengangguran): Nilai &lt; Ambang = <span class="badge success" style="font-size: 12px; padding:2px 6px;">Normal</span>, Nilai &gt; Ambang = <span class="badge danger" style="font-size: 12px; padding:2px 6px;">Kritis</span>.<br>
-                • <strong>Indikator Kinerja/Target</strong> (Belanja Modal, Pertumbuhan Kredit): Nilai &gt; Ambang = <span class="badge success" style="font-size: 12px; padding:2px 6px;">Normal</span>, Nilai &lt; Ambang = <span class="badge danger" style="font-size: 12px; padding:2px 6px;">Kritis</span>.<br>
-                • Nilai sama persis dengan ambang batas = <span class="badge warning" style="font-size: 12px; padding:2px 6px;">Waspada</span>.
+                • <strong>Normal</strong>: Nilai berada di sisi aman (tidak melampaui threshold).<br>
+                • <strong>Waspada</strong>: Nilai menyentuh atau melampaui threshold dengan deviasi &lt; 10%.<br>
+                • <strong>Kritis</strong>: Nilai melampaui threshold dengan deviasi &ge; 10% (memerlukan intervensi).
             </div>
         </article>
 

@@ -3280,6 +3280,224 @@ class M_economy extends CI_Model {
         }
     }
 
+    /**
+     * Evaluasi status risiko EWS 3 tingkat (Normal, Waspada, Kritis):
+     * - Tidak melampaui batas -> Normal
+     * - Melampaui/menyentuh batas dengan deviasi < 10% -> Waspada
+     * - Melampaui batas dengan deviasi >= 10% -> Kritis
+     */
+    private function evaluate_ews_status($val, $th, $dir = 'above') {
+        $v = (float)$val;
+        $t = (float)$th;
+        $d = (strtolower((string)$dir) === 'below') ? 'below' : 'above';
+        $breached = ($d === 'below') ? ($v < $t) : ($v > $t);
+        if (!$breached) {
+            return ($v == $t) ? 'Waspada' : 'Normal';
+        }
+        $distance = ($t == 0) ? 100.0 : (abs($v - $t) / abs($t) * 100.0);
+        return ($distance >= 10.0) ? 'Kritis' : 'Waspada';
+    }
+
+    /**
+     * Daftar 5 indikator resmi Early Warning System yang ditampilkan pada EWS & Beranda.
+     */
+    private function get_curated_ews_definitions() {
+        return array(
+            'HRG-002.01' => array(
+                'code' => 'HRG-002.01',
+                'name' => 'Inflasi pangan',
+                'source' => 'Harga pangan mingguan',
+                'klaster' => 'Harga dan daya beli',
+                'unit' => '% yoy',
+                'default_threshold' => 7.0,
+                'default_direction' => 'above',
+                'mode' => 'yoy_food_cpi'
+            ),
+            'INV-001' => array(
+                'code' => 'INV-001',
+                'name' => 'Pertumbuhan investasi',
+                'source' => 'Realisasi investasi',
+                'klaster' => 'Investasi & penanaman modal',
+                'unit' => '%',
+                'default_threshold' => 10.0,
+                'default_direction' => 'below',
+                'mode' => 'yoy_growth'
+            ),
+            'TK-005' => array(
+                'code' => 'TK-005',
+                'name' => 'Tingkat Pengangguran Terbuka',
+                'source' => 'Sakernas',
+                'klaster' => 'Ketenagakerjaan',
+                'unit' => '%',
+                'default_threshold' => 5.0,
+                'default_direction' => 'above',
+                'mode' => 'direct_latest'
+            ),
+            'EKO-005' => array(
+                'code' => 'EKO-005',
+                'name' => 'Pertumbuhan ekonomi',
+                'source' => 'PDRB ADHK',
+                'klaster' => 'Output & Pertumbuhan',
+                'unit' => '%',
+                'default_threshold' => 4.5,
+                'default_direction' => 'below',
+                'mode' => 'direct_annual'
+            ),
+            'HRG-005.02' => array(
+                'code' => 'HRG-005.02',
+                'name' => 'Harga beras medium',
+                'source' => 'Panel harga pangan',
+                'klaster' => 'Harga dan daya beli',
+                'unit' => 'Rp/kg',
+                'default_threshold' => 15000.0,
+                'default_direction' => 'above',
+                'mode' => 'direct_daily_or_annual'
+            )
+        );
+    }
+
+    /**
+     * Menghitung nilai riil aktual dari database_ekonomi tervalidasi untuk salah satu dari 5 indikator EWS resmi.
+     */
+    private function compute_curated_ews_value($code, $kode_wil, $year = null) {
+        $defs = $this->get_curated_ews_definitions();
+        if (!isset($defs[$code])) {
+            return array('value' => null, 'year' => null);
+        }
+        $mode = $defs[$code]['mode'];
+        $yInt = ($year && is_numeric($year)) ? (int)$year : null;
+
+        if ($mode === 'yoy_food_cpi') {
+            $rows = $this->db->select('tahun, periode, nilai')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode_wil)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->order_by('tahun', 'ASC')
+                ->get('database_ekonomi')
+                ->result_array();
+            if (empty($rows)) return array('value' => null, 'year' => null);
+
+            $monthIdxMap = array(
+                'Bulanan (Januari)' => 1, 'Bulanan (Februari)' => 2, 'Bulanan (Maret)' => 3, 'Bulanan (April)' => 4,
+                'Bulanan (Mei)' => 5, 'Bulanan (Juni)' => 6, 'Bulanan (Juli)' => 7, 'Bulanan (Agustus)' => 8,
+                'Bulanan (September)' => 9, 'Bulanan (Oktober)' => 10, 'Bulanan (November)' => 11, 'Bulanan (Desember)' => 12
+            );
+            $byYearMonth = array();
+            $annualByYear = array();
+            foreach ($rows as $r) {
+                $yr = (int)$r['tahun'];
+                $p = trim($r['periode']);
+                if (isset($monthIdxMap[$p])) {
+                    $byYearMonth[$yr][$monthIdxMap[$p]] = (float)$r['nilai'];
+                } elseif (strcasecmp($p, 'Tahunan') === 0) {
+                    $annualByYear[$yr] = (float)$r['nilai'];
+                }
+            }
+            $allYears = array_unique(array_merge(array_keys($byYearMonth), array_keys($annualByYear)));
+            sort($allYears);
+            $targetYr = $yInt ?: (!empty($allYears) ? end($allYears) : null);
+            if ($targetYr && isset($byYearMonth[$targetYr]) && isset($byYearMonth[$targetYr - 1])) {
+                $commonMonths = array_intersect(array_keys($byYearMonth[$targetYr]), array_keys($byYearMonth[$targetYr - 1]));
+                if (!empty($commonMonths)) {
+                    $latestM = max($commonMonths);
+                    $curV = $byYearMonth[$targetYr][$latestM];
+                    $prevV = $byYearMonth[$targetYr - 1][$latestM];
+                    if ($prevV != 0) {
+                        return array('value' => round((($curV - $prevV) / $prevV) * 100, 2), 'year' => $targetYr);
+                    }
+                }
+            }
+            if ($targetYr && isset($annualByYear[$targetYr]) && isset($annualByYear[$targetYr - 1]) && $annualByYear[$targetYr - 1] != 0) {
+                return array('value' => round((($annualByYear[$targetYr] - $annualByYear[$targetYr - 1]) / $annualByYear[$targetYr - 1]) * 100, 2), 'year' => $targetYr);
+            }
+            return array('value' => null, 'year' => $targetYr);
+        }
+
+        if ($mode === 'yoy_growth') {
+            $rows = $this->db->select('tahun, nilai')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode_wil)
+                ->where('periode', 'Tahunan')
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0)
+                ->order_by('tahun', 'ASC')
+                ->get('database_ekonomi')
+                ->result_array();
+            $annual = array();
+            foreach ($rows as $r) {
+                $annual[(int)$r['tahun']] = (float)$r['nilai'];
+            }
+            $yrs = array_keys($annual);
+            sort($yrs);
+            $targetYr = $yInt ?: (!empty($yrs) ? end($yrs) : null);
+            if ($targetYr && isset($annual[$targetYr]) && isset($annual[$targetYr - 1]) && $annual[$targetYr - 1] != 0) {
+                return array('value' => round((($annual[$targetYr] - $annual[$targetYr - 1]) / $annual[$targetYr - 1]) * 100, 2), 'year' => $targetYr);
+            }
+            return array('value' => null, 'year' => $targetYr);
+        }
+
+        if ($mode === 'direct_daily_or_annual') {
+            $this->db->select('tahun, periode, nilai')
+                ->where('kode_indikator', $code)
+                ->where('kode_wilayah', $kode_wil)
+                ->where('status_validasi', 'Tervalidasi')
+                ->where('is_deleted', 0);
+            if ($yInt) {
+                $this->db->where('tahun', $yInt);
+            }
+            $rows = $this->db->order_by('tahun', 'DESC')->get('database_ekonomi')->result_array();
+            $bestYear = null;
+            $bestDailyDate = '';
+            $bestDailyVal = null;
+            $bestAnnualVal = null;
+            foreach ($rows as $r) {
+                $yr = (int)$r['tahun'];
+                if ($bestYear === null) {
+                    $bestYear = $yr;
+                }
+                if ($yr !== $bestYear) {
+                    continue;
+                }
+                $p = trim($r['periode']);
+                if (preg_match('/^Harian\s*\(([\d\-]+)\)$/i', $p, $m)) {
+                    if ($m[1] >= $bestDailyDate) {
+                        $bestDailyDate = $m[1];
+                        $bestDailyVal = (float)$r['nilai'];
+                    }
+                } elseif (strcasecmp($p, 'Tahunan') === 0 && $bestAnnualVal === null) {
+                    $bestAnnualVal = (float)$r['nilai'];
+                }
+            }
+            if ($bestDailyVal !== null) {
+                return array('value' => round($bestDailyVal, 2), 'year' => $bestYear);
+            }
+            if ($bestAnnualVal !== null) {
+                return array('value' => round($bestAnnualVal, 2), 'year' => $bestYear);
+            }
+            return array('value' => null, 'year' => $bestYear);
+        }
+
+        // direct_annual or direct_latest
+        $this->db->select('tahun, nilai')
+            ->where('kode_indikator', $code)
+            ->where('kode_wilayah', $kode_wil)
+            ->where("periode NOT LIKE 'Harian (%'")
+            ->where('status_validasi', 'Tervalidasi')
+            ->where('is_deleted', 0);
+        if ($mode === 'direct_annual') {
+            $this->db->where('periode', 'Tahunan');
+        }
+        if ($yInt) {
+            $this->db->where('tahun', $yInt);
+        }
+        $row = $this->db->order_by('tahun', 'DESC')->order_by('id', 'DESC')->limit(1)->get('database_ekonomi')->row_array();
+        if ($row) {
+            return array('value' => round((float)$row['nilai'], 2), 'year' => (int)$row['tahun']);
+        }
+        return array('value' => null, 'year' => $yInt);
+    }
+
     public function get_ews_indicators($status = null, $year = null, $kode_wilayah = null) {
         $kode_wil = $this->get_active_kode_wilayah($kode_wilayah);
         if ($status !== 'Terhapus' && $status !== 'Sampah') {
@@ -3325,66 +3543,55 @@ class M_economy extends CI_Model {
             return $results;
         }
 
-        // Ambil data aktif dari early_warning
-        $this->db->select("e.*, d.nilai as val_db, d.tahun as yr_db, d.satuan as sat_db, d.klaster as klaster_db, k.klaster as klaster_katalog");
-        $this->db->from('early_warning e');
-        $this->db->where('e.kode_wilayah', $kode_wil);
-        $escapedWil = $this->db->escape($kode_wil);
-
-        if ($year && is_numeric($year)) {
-            $yInt = (int)$year;
-            $this->db->join("database_ekonomi d", "d.kode_indikator = e.kode_indikator AND d.kode_wilayah = {$escapedWil} AND d.tahun = {$yInt} AND d.periode NOT LIKE 'Harian (%' AND d.status_validasi = 'Tervalidasi' AND d.is_deleted = 0", "left");
-        } else {
-            $this->db->join("(SELECT d1.* FROM database_ekonomi d1 
-                INNER JOIN (
-                    SELECT kode_indikator, kode_wilayah, MAX(tahun) as max_yr 
-                    FROM database_ekonomi 
-                    WHERE status_validasi = 'Tervalidasi' AND is_deleted = 0 AND periode NOT LIKE 'Harian (%' AND kode_wilayah = {$escapedWil}
-                    GROUP BY kode_indikator, kode_wilayah
-                ) d2 ON d1.kode_indikator = d2.kode_indikator AND d1.kode_wilayah = d2.kode_wilayah AND d1.tahun = d2.max_yr
-                WHERE d1.status_validasi = 'Tervalidasi' AND d1.is_deleted = 0 AND d1.periode NOT LIKE 'Harian (%' AND d1.kode_wilayah = {$escapedWil}
-            ) d", "d.kode_indikator = e.kode_indikator", "left");
+        // Ambil konfigurasi tersimpan di early_warning untuk 5 indikator resmi EWS
+        $curatedDefs = $this->get_curated_ews_definitions();
+        $targetCodes = array_keys($curatedDefs);
+        $ewsRows = $this->db->where('kode_wilayah', $kode_wil)
+            ->where_in('kode_indikator', $targetCodes)
+            ->where('is_deleted', 0)
+            ->get('early_warning')
+            ->result_array();
+        $ewsMap = array();
+        foreach ($ewsRows as $er) {
+            $ewsMap[trim($er['kode_indikator'])] = $er;
         }
-        $this->db->join("katalog_indikator k", "k.kode_indikator = e.kode_indikator AND k.is_deleted = 0", "left");
-
-        $this->db->where('e.is_deleted', 0);
-        $this->db->order_by('e.kode_indikator', 'ASC');
-        $res = $this->db->get();
 
         $results = array();
-        foreach ($res->result_array() as $row) {
-            $val = ($row['val_db'] !== null) ? (float)$row['val_db'] : (float)$row['nilai_terkini'];
-            $th = (float)$row['ambang_batas'];
-            $dir = strtolower($row['arah_risiko'] ?? 'above');
+        foreach ($curatedDefs as $code => $meta) {
+            $row = $ewsMap[$code] ?? array();
+            $computed = $this->compute_curated_ews_value($code, $kode_wil, $year);
+            $val = ($computed['value'] !== null) ? (float)$computed['value'] : (float)($row['nilai_terkini'] ?? 0);
+            $th = isset($row['ambang_batas']) ? (float)$row['ambang_batas'] : (float)$meta['default_threshold'];
+            $dir = strtolower($row['arah_risiko'] ?? $meta['default_direction']);
             if ($dir !== 'below') {
                 $dir = 'above';
             }
 
-            if ($val == $th) {
-                $statusRisiko = 'Waspada';
-            } elseif ($dir === 'below') {
-                $statusRisiko = ($val < $th) ? 'Kritis' : 'Normal';
-            } else { // 'above'
-                $statusRisiko = ($val > $th) ? 'Kritis' : 'Normal';
+            $statusRisiko = $this->evaluate_ews_status($val, $th, $dir);
+            if ($status && in_array($status, array('Normal', 'Waspada', 'Kritis')) && $statusRisiko !== $status) {
+                continue;
             }
 
             $distance = ($th == 0) ? (abs($val) * 100) : (abs($val - $th) / abs($th) * 100);
             $breached = ($dir === 'below') ? ($val <= $th) : ($val >= $th);
+            $yrVal = $computed['year'] ? (int)$computed['year'] : (($year && is_numeric($year)) ? (int)$year : null);
 
             $results[] = array(
-                'id' => (int)$row['id'],
-                'code' => $row['kode_indikator'],
-                'kode_indikator' => $row['kode_indikator'],
-                'name' => $row['nama_indikator'],
-                'nama_indikator' => $row['nama_indikator'],
+                'id' => (int)($row['id'] ?? 0),
+                'code' => $code,
+                'kode_indikator' => $code,
+                'name' => $meta['name'],
+                'nama_indikator' => $meta['name'],
+                'source' => $meta['source'],
+                'sumber_data' => $meta['source'],
                 'value' => $val,
                 'nilai_terkini' => $val,
                 'currentValue' => $val,
-                'unit' => $row['sat_db'] ?: $row['satuan'],
-                'satuan' => $row['sat_db'] ?: $row['satuan'],
-                'klaster' => !empty($row['klaster_db']) ? $row['klaster_db'] : (!empty($row['klaster_katalog']) ? $row['klaster_katalog'] : 'Umum'),
-                'year' => (int)$row['yr_db'],
-                'tahun' => (int)$row['yr_db'],
+                'unit' => $meta['unit'],
+                'satuan' => $meta['unit'],
+                'klaster' => $meta['klaster'],
+                'year' => $yrVal,
+                'tahun' => $yrVal,
                 'threshold' => $th,
                 'ambang_batas' => $th,
                 'direction' => $dir,
@@ -3393,9 +3600,9 @@ class M_economy extends CI_Model {
                 'distance' => round($distance, 2),
                 'status' => $statusRisiko,
                 'status_risiko' => $statusRisiko,
-                'kode_wilayah' => $row['kode_wilayah'] ?? $kode_wil,
-                'is_followed_up' => (int)$row['sudah_ditindaklanjuti'],
-                'sudah_ditindaklanjuti' => (int)$row['sudah_ditindaklanjuti']
+                'kode_wilayah' => $kode_wil,
+                'is_followed_up' => (int)($row['sudah_ditindaklanjuti'] ?? 0),
+                'sudah_ditindaklanjuti' => (int)($row['sudah_ditindaklanjuti'] ?? 0)
             );
         }
         return $results;
@@ -3409,16 +3616,22 @@ class M_economy extends CI_Model {
         if ($value !== null && is_numeric($value)) {
             $val = (float)$value;
         } else {
-            // Ambil nilai riil terkini yang tervalidasi dari database_ekonomi
-            $latest = $this->db->select('nilai')
-                ->where('kode_indikator', $code)
-                ->where('kode_wilayah', $kode_wil)
-                ->where('status_validasi', 'Tervalidasi')
-                ->where('is_deleted', 0)
-                ->order_by('tahun', 'DESC')
-                ->get('database_ekonomi')
-                ->row_array();
-            $val = $latest ? (float)$latest['nilai'] : ($row ? (float)$row['nilai_terkini'] : 0);
+            $curatedDefs = $this->get_curated_ews_definitions();
+            if (isset($curatedDefs[$code])) {
+                $computed = $this->compute_curated_ews_value($code, $kode_wil, null);
+                $val = ($computed['value'] !== null) ? (float)$computed['value'] : ($row ? (float)$row['nilai_terkini'] : 0);
+            } else {
+                // Ambil nilai riil terkini yang tervalidasi dari database_ekonomi
+                $latest = $this->db->select('nilai')
+                    ->where('kode_indikator', $code)
+                    ->where('kode_wilayah', $kode_wil)
+                    ->where('status_validasi', 'Tervalidasi')
+                    ->where('is_deleted', 0)
+                    ->order_by('tahun', 'DESC')
+                    ->get('database_ekonomi')
+                    ->row_array();
+                $val = $latest ? (float)$latest['nilai'] : ($row ? (float)$row['nilai_terkini'] : 0);
+            }
         }
 
         $dir = $direction ? strtolower($direction) : strtolower($row['arah_risiko'] ?? 'above');
@@ -3426,13 +3639,7 @@ class M_economy extends CI_Model {
             $dir = 'above';
         }
 
-        if ($val == $th) {
-            $st = 'Waspada';
-        } elseif ($dir === 'below') {
-            $st = ($val < $th) ? 'Kritis' : 'Normal';
-        } else {
-            $st = ($val > $th) ? 'Kritis' : 'Normal';
-        }
+        $st = $this->evaluate_ews_status($val, $th, $dir);
 
         $updateData = array(
             'ambang_batas'  => $th,
@@ -5360,13 +5567,7 @@ class M_economy extends CI_Model {
             $dir = 'above';
         }
 
-        if ($val == $th) {
-            $status_risiko = 'Waspada';
-        } elseif ($dir === 'below') {
-            $status_risiko = ($val < $th) ? 'Kritis' : 'Normal';
-        } else {
-            $status_risiko = ($val > $th) ? 'Kritis' : 'Normal';
-        }
+            $status_risiko = $this->evaluate_ews_status($val, $th, $dir);
 
         $record = array(
             'kode_indikator'        => $kode,
@@ -5410,13 +5611,7 @@ class M_economy extends CI_Model {
                 $dir = 'above';
             }
 
-            if ($val == $th) {
-                $record['status_risiko'] = 'Waspada';
-            } elseif ($dir === 'below') {
-                $record['status_risiko'] = ($val < $th) ? 'Kritis' : 'Normal';
-            } else {
-                $record['status_risiko'] = ($val > $th) ? 'Kritis' : 'Normal';
-            }
+            $record['status_risiko'] = $this->evaluate_ews_status($val, $th, $dir);
         } elseif (isset($data['status_risiko'])) {
             $record['status_risiko'] = in_array($data['status_risiko'], array('Normal', 'Waspada', 'Kritis')) ? $data['status_risiko'] : 'Normal';
         }

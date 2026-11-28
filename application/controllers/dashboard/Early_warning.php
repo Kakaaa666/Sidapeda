@@ -11,30 +11,7 @@ class Early_warning extends MY_Controller {
         $selected_cluster = $this->input->get('cluster');
 
         $ews = $this->M_economy->get_ews_indicators($status, $selected_year);
-        // Pertahankan sub-indikator resmi untuk parent sektoral, kuartal & kategori, dan singkirkan kode non-katalog
-        $sectoralParents = array(
-            'EKO-003', 'EKO-004', 'EKO-006', 'EKO-007',
-            'INV-001', 'INV-002', 'INV-003',
-            'TK-007', 'TK-008', 'TK-010',
-            'PAR-001', 'PAR-002', 'PAR-003', 'PAR-004', 'PAR-005', 'PAR-006',
-            'PRO-001', 'PRO-002', 'PRO-004',
-            'FIS-001', 'FIS-002', 'FIS-003',
-            'HRG-001', 'HRG-002', 'HRG-003', 'HRG-004', 'HRG-005', 'HRG-006'
-        );
-        $excludedCodes = array('kk1', 'EKO-015', 'EKO-016', 'EKO-010.K', 'EKO-011.K', 'EKO-012.K');
-
-        $ews = array_values(array_filter($ews, function($item) use ($sectoralParents, $excludedCodes) {
-            $c = $item['code'] ?? '';
-            $main = explode('.', $c)[0];
-            $prefix = strtoupper(explode('-', $main)[0]);
-            if (in_array($c, $excludedCodes) || in_array($main, $excludedCodes) || in_array($prefix, array('KK1'))) {
-                return false;
-            }
-            if (strpos($c, '.') !== false) {
-                return in_array($main, $sectoralParents);
-            }
-            return true;
-        }));
+        $ews = array_values($ews);
 
         $trash_count = $this->M_economy->count_trash_ews();
         $available_years = $this->M_economy->get_catalog_years();

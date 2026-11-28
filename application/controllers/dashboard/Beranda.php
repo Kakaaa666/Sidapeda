@@ -18,13 +18,8 @@ class Beranda extends MY_Controller {
         $ews = $this->M_economy->get_ews_indicators(null, $selected_year);
         $trash_count = $this->M_economy->count_trash_beranda();
 
-        // Pada pemantauan publik EWS, tampilkan 81 master indikator resmi
-        $excludedCodes = array('kk1', 'EKO-015', 'EKO-016');
-        $ews = array_values(array_filter($ews, function($item) use ($excludedCodes) {
-            $c = $item['code'] ?? '';
-            $main = explode('.', $c)[0];
-            return strpos($c, '.') === false && !in_array($c, $excludedCodes) && !in_array($main, $excludedCodes);
-        }));
+        // Pada pemantauan publik EWS, tampilkan seluruh indikator resmi EWS (5 indikator terkurasi)
+        $ews = array_values($ews);
 
         $beranda_cards = $this->M_economy->get_beranda_cards($selected_year, $status);
         $core_kpis = $this->M_economy->get_beranda_kpis_8($selected_year);

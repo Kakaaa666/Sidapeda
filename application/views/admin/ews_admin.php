@@ -75,159 +75,15 @@
     ];
     $excludedCodes = ['kk1', 'EKO-015', 'EKO-016'];
 
+    $grouped = [];
     foreach ($ews as $item) {
         $code = trim($item['code']);
-        $mainCode = explode('.', $code)[0];
-        $prefix = strtoupper(explode('-', $mainCode)[0]);
-
-        if (in_array($code, $excludedCodes) || in_array($mainCode, $excludedCodes) || in_array($prefix, ['KK1'])) {
-            continue;
-        }
-
-        $isSub = (strpos($code, '.') !== false || $code === 'FIS-004');
-        $parentCode = $isSub ? ($code === 'FIS-004' ? 'FIS-003' : explode('.', $code)[0]) : $code;
-        $subKey = $isSub ? ($code === 'FIS-004' ? 'MOD' : explode('.', $code)[1]) : null;
-
-        if ($isSub && in_array($parentCode, $sectoralParents)) {
-            $item['sub_key'] = $subKey;
-            $item['parent_code'] = $parentCode;
-            $subGrouped[$parentCode][$code] = $item;
-        } elseif (!$isSub) {
-            $item['sub_indicators'] = [];
-            $grouped[$code] = $item;
-        }
+        if (empty($code)) continue;
+        $item['sub_indicators'] = [];
+        $grouped[$code] = $item;
     }
-
-    $quarterOrder = array('Q1' => 1, 'Q2' => 2, 'Q3' => 3, 'Q4' => 4);
-
-    $monthOrder = array('JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MEI' => 5, 'JUN' => 6, 'JUL' => 7, 'AGS' => 8, 'SEP' => 9, 'OKT' => 10, 'NOV' => 11, 'DES' => 12);
-
-    // Sambungkan sub-indikator HANYA ke parent yang ada di $sectoralParents
-    foreach ($subGrouped as $pCode => $subs) {
-        if (!in_array($pCode, $sectoralParents) || !isset($grouped[$pCode])) {
-            continue;
-        }
-        $isInv = (strpos($pCode, 'INV-') === 0);
-        uasort($subs, function($a, $b) use ($sectorOrder, $quarterOrder, $monthOrder, $isInv, $pCode) {
-            $kA = $a['sub_key'] ?? '';
-            $kB = $b['sub_key'] ?? '';
-            if ($isInv) {
-                $posA = $quarterOrder[$kA] ?? 99;
-                $posB = $quarterOrder[$kB] ?? 99;
-            } elseif (in_array($pCode, ['PAR-001', 'PAR-002', 'HRG-001', 'HRG-003', 'HRG-004'])) {
-                $posA = $monthOrder[$kA] ?? 99;
-                $posB = $monthOrder[$kB] ?? 99;
-            } elseif (in_array($pCode, ['HRG-002', 'HRG-005', 'HRG-006'])) {
-                $posA = is_numeric($kA) ? (int)$kA : 99;
-                $posB = is_numeric($kB) ? (int)$kB : 99;
-            } else {
-                $posA = $sectorOrder[$kA] ?? 99;
-                $posB = $sectorOrder[$kB] ?? 99;
-            }
-            if ($posA === $posB) return strcmp($kA, $kB);
-            return $posA - $posB;
-        });
-
-        $grouped[$pCode]['sub_indicators'] = $subs;
-    }
-
-    // Urutkan master indikator mulai dari EKO, NAK, TK, dst
-    uasort($grouped, function($itemA, $itemB) use ($indicatorPrefixOrder) {
-        $codeA = $itemA['code'] ?? '';
-        $codeB = $itemB['code'] ?? '';
-
-        $mainA = explode('.', $codeA)[0];
-        $mainB = explode('.', $codeB)[0];
-
-        $partsA = explode('-', $mainA);
-        $prefA = strtoupper($partsA[0]);
-        $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
-
-        $partsB = explode('-', $mainB);
-        $prefB = strtoupper($partsB[0]);
-        $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
-
-
-        $rankA = $indicatorPrefixOrder[$prefA] ?? 99;
-        $rankB = $indicatorPrefixOrder[$prefB] ?? 99;
-
-        if ($rankA !== $rankB) return $rankA - $rankB;
-        if ($numA !== $numB) return $numA - $numB;
-        return strcmp($codeA, $codeB);
-    });
-
-    // Hitung jumlah indikator per kategori prefix dari $grouped
-    $catPrefixCounts = [];
-    foreach ($grouped as $gCode => $gItem) {
-        $p = strtoupper(explode('-', $gCode)[0]);
-        $catPrefixCounts[$p] = ($catPrefixCounts[$p] ?? 0) + 1;
-    }
-
-    $categoryMeta = [
-        'EKO' => 'PDRB & Ekonomi',
-        'NAK' => 'Kependudukan',
-        'TK'  => 'Ketenagakerjaan',
-        'INV' => 'Investasi & Usaha',
-        'HRG' => 'Harga & Inflasi',
-        'KES' => 'Kesejahteraan Sosial',
-        'PAR' => 'Pariwisata & Ekraf',
-        'PRO' => 'Produksi Sektoral',
-        'FIS' => 'Fiskal & Keuangan',
-        'GEO' => 'Geografi & Wilayah',
-        'EWS' => 'Early Warning System',
-        'ANA' => 'Analisis Makro'
-    ];
-
-    $activeCat = !empty($selected_category) ? strtoupper(trim($selected_category)) : '';
-    // Wajib memilih salah 1 kategori (tanpa opsi "Semua"): default ke kategori pertama yang tersedia (misal EKO)
-    if (empty($activeCat) || (!isset($catPrefixCounts[$activeCat]) && !empty($catPrefixCounts))) {
-        foreach ($categoryMeta as $pref => $label) {
-            if (isset($catPrefixCounts[$pref]) && $catPrefixCounts[$pref] > 0) {
-                $activeCat = $pref;
-                break;
-            }
-        }
-        if (empty($activeCat)) {
-            $catKeys = array_keys($catPrefixCounts);
-            $activeCat = !empty($catKeys) ? $catKeys[0] : 'EKO';
-        }
-    }
+    $activeCat = '';
     ?>
-
-    <!-- SLIDE FILTER KATEGORI (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA) -->
-    <div class="category-slide-container" id="category-slide-container">
-        <div class="category-slide-label">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-            <span>Kategori:</span>
-        </div>
-        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-prev" title="Geser Kiri (Sebelumnya)" aria-label="Geser Kiri">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="category-slide-track" id="category-slide-track">
-            <?php foreach ($categoryMeta as $pref => $label): ?>
-                <?php if (isset($catPrefixCounts[$pref]) || empty($ews)): ?>
-                    <?php $cnt = $catPrefixCounts[$pref] ?? 0; ?>
-                    <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
-                        <span class="cat-code-badge"><?= $pref ?></span>
-                        <span><?= $label ?></span>
-                        <span class="cat-count-pill"><?= $cnt ?></span>
-                    </button>
-                <?php endif; ?>
-            <?php endforeach; ?>
-            <?php foreach ($catPrefixCounts as $pref => $cnt): ?>
-                <?php if (!isset($categoryMeta[$pref])): ?>
-                    <button type="button" class="category-slide-tab <?= ($activeCat === $pref) ? 'active' : '' ?>" data-prefix="<?= $pref ?>" onclick="applyCategoryFilter('<?= $pref ?>', this)">
-                        <span class="cat-code-badge"><?= $pref ?></span>
-                        <span><?= $pref ?></span>
-                        <span class="cat-count-pill"><?= $cnt ?></span>
-                    </button>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </div>
-        <button type="button" class="category-slide-nav-btn" id="btn-slide-cat-next" title="Geser Kanan (Selanjutnya)" aria-label="Geser Kanan">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-    </div>
 
     <!-- KONFIGURASI AMBANG BATAS & DATA TERVALIDASI -->
     <article class="card threshold-admin">
@@ -288,12 +144,12 @@
                     <?php else: ?>
                         <?php foreach ($grouped as $code => $item): ?>
                             <?php
-                            $hasSub = (!empty($item['sub_indicators']) && in_array($item['code'], $sectoralParents));
+                            $hasSub = false;
                             $badgeCls = ($item['status'] === 'Kritis') ? 'badge danger' : (($item['status'] === 'Waspada') ? 'badge warning' : 'badge success');
                             $itemPrefix = strtoupper(explode('-', $item['code'])[0]);
-                            $isMatchCat = ($itemPrefix === $activeCat);
+                            $isMatchCat = true;
                             ?>
-                            <tr class="threshold-admin-row matrix-row <?= $hasSub ? 'has-subcategories' : '' ?>" data-code="<?= $item['code'] ?>" data-prefix="<?= $itemPrefix ?>" <?= $hasSub ? 'data-has-sub="true" title="Klik baris ini untuk membuka/menutup rincian sub-indikator" onclick="if(!event.target.closest(\'input, select, a, button:not(.btn-toggle-subcategories)\')) toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?> style="display: <?= $isMatchCat ? 'table-row' : 'none' ?>;">
+                            <tr class="threshold-admin-row matrix-row" data-code="<?= $item['code'] ?>" data-prefix="<?= $itemPrefix ?>" style="display: table-row;">
                                 <td class="<?= $hasSub ? 'clickable-indicator-cell' : '' ?>" style="vertical-align: middle; cursor: <?= $hasSub ? 'pointer' : 'default' ?>;" <?= $hasSub ? 'onclick="toggleIndicatorSubRows(\''.htmlspecialchars($item['code']).'\', event);"' : '' ?>>
                                     <div style="display:flex; align-items:flex-start; gap:8px;">
                                         <code style="font-size:11px; font-weight:700; color:var(--blue); background:#eef4fa; padding:3px 7px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:1px;"><?= htmlspecialchars($item['code']) ?></code>
@@ -347,7 +203,8 @@
                                 <td style="vertical-align: middle; text-align: right;">
                                     <?php
                                         $isRupiah = is_indicator_rupiah($item['unit'] ?? '', $item['code'] ?? '');
-                                        $prefixRp = $isRupiah ? 'Rp ' : '';
+                                        $unitHasRp = (bool)preg_match('/^rp/i', trim((string)($item['unit'] ?? '')));
+                                        $prefixRp = ($isRupiah && !$unitHasRp) ? 'Rp ' : '';
                                         $formattedVal = format_indicator_value($item['value'], $item['unit'] ?? '', $item['code'] ?? '', false);
                                         $formattedTh = format_indicator_value($item['threshold'], $item['unit'] ?? '', $item['code'] ?? '', false);
                                     ?>
@@ -361,7 +218,7 @@
                                 </td>
                                 <td style="vertical-align: middle;">
                                     <div class="ews-threshold-field">
-                                        <?php if ($isRupiah): ?>
+                                        <?php if ($isRupiah && !$unitHasRp): ?>
                                             <span class="ews-rp-prefix">Rp</span>
                                         <?php endif; ?>
                                         <input type="text" inputmode="decimal" class="threshold-input <?= $isRupiah ? 'is-rupiah-mask' : '' ?>" data-code="<?= $item['code'] ?>" value="<?= $formattedTh ?>">

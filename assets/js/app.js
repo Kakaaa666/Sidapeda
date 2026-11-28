@@ -377,9 +377,10 @@
     // Global Helper: Slide Filter Kategori Indikator (EKO, NAK, TK, INV, HRG, KES, PAR, PRO, FIS, GEO, EWS, ANA)
     window._activeCategoryFilter = '';
     window.applyCategoryFilter = function (targetPrefix, triggerEl) {
+        const hasSlideTabs = Boolean(document.querySelector('.category-slide-tab'));
         let cleanPrefix = (targetPrefix || '').trim().toUpperCase();
-        // Selalu wajib memilih salah 1 kategori (tanpa opsi "Semua")
-        if (!cleanPrefix || cleanPrefix === 'ALL' || cleanPrefix === 'SEMUA') {
+        // Selalu wajib memilih salah 1 kategori (tanpa opsi "Semua") jika tab kategori tersedia
+        if (hasSlideTabs && (!cleanPrefix || cleanPrefix === 'ALL' || cleanPrefix === 'SEMUA')) {
             const activeTab = document.querySelector('.category-slide-tab.active');
             if (activeTab && activeTab.getAttribute('data-prefix')) {
                 cleanPrefix = activeTab.getAttribute('data-prefix').trim().toUpperCase();
@@ -392,7 +393,7 @@
                 }
             }
         }
-        window._activeCategoryFilter = cleanPrefix;
+        window._activeCategoryFilter = hasSlideTabs ? cleanPrefix : '';
 
         // 1. Update UI tabs on category slide track
         const tracks = document.querySelectorAll('.category-slide-track');
@@ -421,7 +422,7 @@
             const masterRows = tbody.querySelectorAll('tr.matrix-row:not(.matrix-sub-row)');
             masterRows.forEach(row => {
                 const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
-                const isMatch = (rowPrefix === cleanPrefix);
+                const isMatch = (!hasSlideTabs || rowPrefix === cleanPrefix);
 
                 if (isMatch) {
                     row.style.setProperty('display', 'table-row', 'important');
@@ -475,9 +476,9 @@
             const countLabel = document.getElementById('cat-filtered-count-label');
             if (countLabel) {
                 if (tbody.id === 'threshold-admin-rows') {
-                    countLabel.textContent = `Total: ${visibleCount} Indikator Kategori ${cleanPrefix}`;
+                    countLabel.textContent = hasSlideTabs ? `Total: ${visibleCount} Indikator Kategori ${cleanPrefix}` : `Total: ${visibleCount} Indikator`;
                 } else {
-                    countLabel.textContent = `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}`;
+                    countLabel.textContent = hasSlideTabs ? `Menampilkan ${visibleCount} indikator kategori ${cleanPrefix}` : `Menampilkan ${visibleCount} indikator`;
                 }
             }
             if (tbody.id === 'threshold-admin-rows' && typeof window._refreshEwsAdminSummary === 'function') {
@@ -518,7 +519,7 @@
             masterRows.forEach(row => {
                 const rowPrefix = (row.getAttribute('data-prefix') || (row.getAttribute('data-code') || '').split('-')[0]).trim().toUpperCase();
                 const rowStatus = row.getAttribute('data-status') || '';
-                const matchPrefix = (rowPrefix === cleanPrefix);
+                const matchPrefix = (!hasSlideTabs || rowPrefix === cleanPrefix);
                 const matchStatus = (!window._activeEwsStatusFilter || window._activeEwsStatusFilter === 'Semua' || rowStatus === window._activeEwsStatusFilter);
                 const isMatch = matchPrefix && matchStatus;
 
@@ -7513,12 +7514,12 @@
             const t = Number(th);
             const dir = String(direction || 'above').toLowerCase();
             if (isNaN(v) || isNaN(t)) return 'Normal';
-            if (v === t) return 'Waspada';
-            if (dir === 'below') {
-                return (v < t) ? 'Kritis' : 'Normal';
-            } else {
-                return (v > t) ? 'Kritis' : 'Normal';
+            const breached = (dir === 'below') ? (v < t) : (v > t);
+            if (!breached) {
+                return (v === t) ? 'Waspada' : 'Normal';
             }
+            const dist = (t === 0) ? 100 : (Math.abs(v - t) / Math.abs(t) * 100);
+            return (dist >= 10) ? 'Kritis' : 'Waspada';
         }
 
         // Always prioritize server-rendered page dataset (__EWS_DATA__) if available
@@ -7528,13 +7529,11 @@
 
         function renderEWS(skipCategoryApply = false) {
             let normalC = 0, warnC = 0, critC = 0, followedC = 0, totalMatching = 0;
-            const currentCatFilter = window._activeCategoryFilter || '';
+            const hasCatTabs = Boolean(document.querySelector('.category-slide-tab'));
+            const currentCatFilter = hasCatTabs ? (window._activeCategoryFilter || '') : '';
 
-            // Master indicators only (exclude sub-indicators with dots)
-            const masterList = (AppState.ews || []).filter(item => {
-                const code = item.code || item.kode_indikator || '';
-                return !code.includes('.');
-            });
+            // Gunakan seluruh indikator EWS resmi yang dikirim server (termasuk sub-indikator terkurasi seperti HRG-002.01 & HRG-005.02)
+            const masterList = (AppState.ews || []).slice();
 
             masterList.forEach(item => {
                 const val = Number(item.value !== undefined ? item.value : (item.nilai_terkini || 0));
@@ -7608,11 +7607,12 @@
 
                 const formatEwsVal = (numVal, unitStr, indCode) => {
                     const isRp = isIndicatorRupiah(unitStr, indCode);
+                    const u = (unitStr || '').trim();
                     if (isRp) {
                         const rpFmt = formatRupiahNumber(numVal);
+                        if (/^rp/i.test(u)) return `${rpFmt || formatNum(numVal, 0)} ${u}`;
                         return `Rp ${rpFmt || formatNum(numVal, 0)}`;
                     }
-                    const u = (unitStr || '').trim();
                     return u ? `${formatNum(numVal, 2)} ${u}` : formatNum(numVal, 2);
                 };
 
@@ -7868,7 +7868,8 @@
                                             badge.textContent = newSt;
                                         }
                                         const isRp = isIndicatorRupiah(unit, selectedAlertCode);
-                                        const rpPrefix = isRp ? 'Rp ' : '';
+                                        const unitHasRp = /^rp/i.test(String(unit || '').trim());
+                                        const rpPrefix = (isRp && !unitHasRp) ? 'Rp ' : '';
                                         const fmtVal = isRp ? (formatRupiahNumber(finalVal) || formatNum(finalVal, 0)) : formatNum(finalVal, 2);
                                         const fmtTh = isRp ? (formatRupiahNumber(th) || formatNum(th, 0)) : formatNum(th, 2);
                                         const valEl = row.querySelector('.risk-value strong');
@@ -8753,18 +8754,6 @@
                                 btnSubmit.innerHTML = origBtnHtml;
                             }
                             if (editErrBox) {
-                                editErrBox.style.display = 'block';
-                                editErrBox.textContent = data.message || 'Gagal memperbarui data.';
-                            }
-                        }
-                    })
-                    .catch(() => {
-                        if (btnSubmit) {
-                            btnSubmit.disabled = false;
-                            btnSubmit.innerHTML = origBtnHtml;
-                        }
-                        if (editErrBox) {
-                            editErrBox.style.display = 'block';
                             editErrBox.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
                         }
                     });
@@ -11479,12 +11468,12 @@
             if (!Number.isFinite(th)) return;
 
             let st = 'Normal';
-            if (val === th) {
-                st = 'Waspada';
-            } else if (dir === 'below') {
-                st = (val < th) ? 'Kritis' : 'Normal';
+            const breached = (dir === 'below') ? (val < th) : (val > th);
+            if (!breached) {
+                st = (val === th) ? 'Waspada' : 'Normal';
             } else {
-                st = (val > th) ? 'Kritis' : 'Normal';
+                const dist = (th === 0) ? 100 : (Math.abs(val - th) / Math.abs(th) * 100);
+                st = (dist >= 10) ? 'Kritis' : 'Waspada';
             }
 
             const isSub = row.classList.contains('matrix-sub-row');
