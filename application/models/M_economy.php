@@ -983,7 +983,6 @@ class M_economy extends CI_Model {
                     'sumber_data'          => $sourceVal,
                     'definisi_operasional' => $defVal,
                     'kode_wilayah'         => $kodeWilayah,
-                    'status_validasi'      => 'Perlu review',
                     'is_deleted'           => 0
                 ));
             } else if (!empty($defVal) && empty($catExists['definisi_operasional'])) {
@@ -1341,7 +1340,11 @@ class M_economy extends CI_Model {
 
         $recByYear = array();
         foreach ($records as $r) {
-            $recByYear[(int)$r['tahun']] = $r;
+            $yr = (int)$r['tahun'];
+            $p = trim((string)($r['periode'] ?? ''));
+            if (!isset($recByYear[$yr]) || $p === 'Tahunan' || $p === 'Semesteran (Agustus)') {
+                $recByYear[$yr] = $r;
+            }
         }
 
         $allYears = array_keys($recByYear);
@@ -1488,7 +1491,6 @@ class M_economy extends CI_Model {
                 'sumber_data'          => $source,
                 'definisi_operasional' => $def,
                 'kode_wilayah'         => $kodeWil,
-                'status_validasi'      => 'Perlu review',
                 'is_deleted'           => 0
             ));
         }
@@ -1501,11 +1503,23 @@ class M_economy extends CI_Model {
             if ($rawVal === null || $rawVal === '') continue;
             $val = $this->clean_numeric_value($rawVal);
 
+            // Prioritaskan rekaman Tahunan / Semesteran agar tidak menimpa baris bulanan pertama secara acak
             $existing = $this->db->where('kode_wilayah', $kodeWil)
                 ->where('kode_indikator', $code)
                 ->where('tahun', $yr)
+                ->where_in('periode', array('Tahunan', 'Semesteran (Agustus)'))
+                ->where('is_deleted', 0)
                 ->get('database_ekonomi')
                 ->row_array();
+
+            if (!$existing) {
+                $existing = $this->db->where('kode_wilayah', $kodeWil)
+                    ->where('kode_indikator', $code)
+                    ->where('tahun', $yr)
+                    ->where('is_deleted', 0)
+                    ->get('database_ekonomi')
+                    ->row_array();
+            }
 
             if ($existing) {
                 $this->db->where('id', (int)$existing['id'])->update('database_ekonomi', array(
@@ -1545,6 +1559,9 @@ class M_economy extends CI_Model {
         }
 
         $this->db->trans_complete();
+        if (!$this->db->trans_status()) {
+            return 0;
+        }
         return $savedCount;
     }
 
@@ -2581,6 +2598,8 @@ class M_economy extends CI_Model {
         $kodeWil = $this->get_active_kode_wilayah($kode_wilayah);
         $namaWil = $this->get_nama_wilayah($kodeWil);
         $parentCode = strtoupper(trim($parentCode ?: 'EKO-003'));
+        $years = is_array($years) ? $years : array();
+        $matrixValues = is_array($matrixValues) ? $matrixValues : array();
         $defs = $this->get_sectoral_definitions($parentCode);
 
         $isInv = in_array($parentCode, array('INV-001', 'INV-002', 'INV-003'));

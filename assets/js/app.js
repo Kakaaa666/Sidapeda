@@ -299,7 +299,8 @@
         }
         _lastIndicatorToggle = { code: parentCode, time: now };
 
-        const subRows = document.querySelectorAll(`tr.matrix-sub-row[data-parent="${parentCode}"], tr.sub-row-${parentCode}, div.risk-sub-row[data-parent="${parentCode}"], div.sub-row-${parentCode}`);
+        const escSub = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(`sub-row-${parentCode}`) : `sub-row-${parentCode}`;
+        const subRows = document.querySelectorAll(`tr.matrix-sub-row[data-parent="${parentCode}"], tr.${escSub}, div.risk-sub-row[data-parent="${parentCode}"], div.${escSub}`);
         if (!subRows || subRows.length === 0) return;
 
         const parentRows = document.querySelectorAll(`tr.matrix-row[data-code="${parentCode}"], div.risk-row[data-code="${parentCode}"]:not(.risk-sub-row)`);
@@ -431,7 +432,8 @@
                     const isExpanded = row.classList.contains('is-expanded');
                     const pCode = row.getAttribute('data-code');
                     if (pCode) {
-                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.sub-row-${pCode}`).forEach(sr => {
+                        const escSub = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(`sub-row-${pCode}`) : `sub-row-${pCode}`;
+                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.${escSub}`).forEach(sr => {
                             if (isExpanded) {
                                 sr.classList.add('is-open');
                                 sr.style.setProperty('display', 'table-row', 'important');
@@ -446,7 +448,8 @@
                     // Hide sub-rows of non-matching categories
                     const pCode = row.getAttribute('data-code');
                     if (pCode) {
-                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.sub-row-${pCode}`).forEach(sr => {
+                        const escSub = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(`sub-row-${pCode}`) : `sub-row-${pCode}`;
+                        tbody.querySelectorAll(`tr.matrix-sub-row[data-parent="${pCode}"], tr.${escSub}`).forEach(sr => {
                             sr.classList.remove('is-open');
                             sr.style.setProperty('display', 'none', 'important');
                         });
@@ -524,7 +527,8 @@
                 const isMatch = matchPrefix && matchStatus;
 
                 const pCode = row.getAttribute('data-code');
-                const subRows = pCode ? ewsTable.querySelectorAll(`.risk-sub-row.sub-row-${pCode}`) : [];
+                const escSub = (pCode && typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(`sub-row-${pCode}`) : `sub-row-${pCode}`;
+                const subRows = pCode ? ewsTable.querySelectorAll(`.risk-sub-row[data-parent="${pCode}"], .risk-sub-row.${escSub}`) : [];
 
                 if (isMatch) {
                     row.style.setProperty('display', 'grid', 'important');
@@ -8754,6 +8758,18 @@
                                 btnSubmit.innerHTML = origBtnHtml;
                             }
                             if (editErrBox) {
+                                editErrBox.style.display = 'block';
+                                editErrBox.textContent = data.message || 'Gagal memperbarui data.';
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = origBtnHtml;
+                        }
+                        if (editErrBox) {
+                            editErrBox.style.display = 'block';
                             editErrBox.textContent = 'Terjadi kesalahan jaringan saat menyimpan pembaruan.';
                         }
                     });
@@ -10919,12 +10935,13 @@
         if (btnSaveSectoral) {
             btnSaveSectoral.addEventListener('click', () => {
                 const matrix = {};
-                const years = sectoralState.years;
+                const years = Array.isArray(sectoralState.years) ? sectoralState.years : [];
 
                 document.querySelectorAll('.sec-val-input').forEach(inp => {
                     const cat = inp.getAttribute('data-cat');
                     const yr = parseInt(inp.getAttribute('data-year'), 10);
                     const val = inp.value;
+                    if (!cat || isNaN(yr)) return;
                     if (!matrix[cat]) matrix[cat] = {};
                     if (val !== '' && val !== null) {
                         matrix[cat][yr] = parseRupiahNumber(val);
@@ -10933,13 +10950,6 @@
 
                 if (secMsgBox) { secMsgBox.innerHTML = '<span style="color:#0284c7;">Menyimpan seluruh data matriks ke database...</span>'; }
                 btnSaveSectoral.disabled = true;
-
-                const formData = new FormData();
-                formData.append('kode_wilayah', sectoralState.kode_wilayah);
-                formData.append('parent_code', sectoralState.parent_code || 'EKO-003');
-                years.forEach((yr, idx) => {
-                    formData.append(`years[${idx}]`, yr);
-                });
 
                 // Kumpulkan nama Lapangan Usaha dan label Kategori
                 const names = {};
@@ -10962,19 +10972,7 @@
                     if (cat && inp.value.trim() !== '') catLabels[cat] = inp.value.trim();
                 });
 
-                Object.keys(names).forEach(cat => {
-                    formData.append(`names[${cat}]`, names[cat]);
-                });
-                Object.keys(catLabels).forEach(cat => {
-                    formData.append(`cat_labels[${cat}]`, catLabels[cat]);
-                });
-
-                Object.keys(matrix).forEach(cat => {
-                    Object.keys(matrix[cat]).forEach(yr => {
-                        formData.append(`matrix[${cat}][${yr}]`, matrix[cat][yr]);
-                    });
-                });
-
+                const monthlyMatrix = {};
                 if (sectoralState.is_monthly_group) {
                     document.querySelectorAll('.sec-monthly-input').forEach(inp => {
                         const code = inp.getAttribute('data-code');
@@ -11008,7 +11006,9 @@
                                 Object.keys(mVals[code][yr]).forEach(m => {
                                     const v = mVals[code][yr][m];
                                     if (v !== '' && v !== null && v !== undefined) {
-                                        formData.append(`monthly_matrix[${code}][${yr}][${m}]`, v);
+                                        if (!monthlyMatrix[code]) monthlyMatrix[code] = {};
+                                        if (!monthlyMatrix[code][yr]) monthlyMatrix[code][yr] = {};
+                                        monthlyMatrix[code][yr][m] = v;
                                     }
                                 });
                             });
@@ -11016,6 +11016,7 @@
                     }
                 }
 
+                const dailyMatrix = {};
                 if (sectoralState.parent_code === 'HRG-005') {
                     document.querySelectorAll('.sec-daily-input').forEach(inp => {
                         const code = inp.getAttribute('data-code');
@@ -11034,12 +11035,26 @@
                             Object.keys(dVals[code]).forEach(dStr => {
                                 const v = dVals[code][dStr];
                                 if (v !== '' && v !== null && v !== undefined) {
-                                    formData.append(`daily_matrix[${code}][${dStr}]`, v);
+                                    if (!dailyMatrix[code]) dailyMatrix[code] = {};
+                                    dailyMatrix[code][dStr] = v;
                                 }
                             });
                         });
                     }
                 }
+
+                // Kirim sebagai 1 payload JSON agar tidak melebihi batas max_input_vars PHP (1000 vars)
+                const formData = new FormData();
+                formData.append('payload', JSON.stringify({
+                    kode_wilayah: sectoralState.kode_wilayah,
+                    parent_code: sectoralState.parent_code || 'EKO-003',
+                    years: years,
+                    names: names,
+                    cat_labels: catLabels,
+                    matrix: matrix,
+                    monthly_matrix: monthlyMatrix,
+                    daily_matrix: dailyMatrix
+                }));
 
                 fetch(`${cleanSite}/database/save_sectoral_matrix`, {
                     method: 'POST',

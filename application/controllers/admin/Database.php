@@ -130,6 +130,21 @@ class Database extends MY_Controller {
         );
 
         $savedCount = $this->M_economy->update_indicator_series($code, $seriesData, $kodeWilayah, $meta);
+        if (!$this->db->trans_status()) {
+            if ($this->input->is_ajax_request()) {
+                $this->output
+                    ->set_status_header(500)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(array(
+                        'status' => 'error',
+                        'message' => 'Gagal menyimpan perubahan ke database.'
+                    )));
+                return;
+            }
+            $this->session->set_flashdata('error', 'Gagal menyimpan perubahan data indikator ' . $code . '.');
+            redirect('database');
+            return;
+        }
 
         if ($this->input->is_ajax_request()) {
             $this->output
@@ -157,14 +172,34 @@ class Database extends MY_Controller {
 
     // Simpan seluruh data matriks sektoral / komponen pengeluaran sekaligus (termasuk nama & label kategori yang diubah)
     public function save_sectoral_matrix() {
-        $years = $this->input->post('years');
-        $matrixValues = $this->input->post('matrix');
-        $monthlyValues = $this->input->post('monthly_matrix');
-        $dailyValues = $this->input->post('daily_matrix');
-        $names = $this->input->post('names');
-        $catLabels = $this->input->post('cat_labels');
-        $kodeWilayah = $this->input->post('kode_wilayah', true);
-        $parentCode = $this->input->post('parent_code', true) ?: 'EKO-003';
+        $payloadRaw = $this->input->post('payload', false);
+        if (!empty($payloadRaw)) {
+            $payload = json_decode($payloadRaw, true);
+            if (!is_array($payload)) {
+                $this->output
+                    ->set_status_header(400)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(array('status' => 'error', 'message' => 'Format payload matriks tidak valid.')));
+                return;
+            }
+            $years = isset($payload['years']) && is_array($payload['years']) ? $payload['years'] : array();
+            $matrixValues = isset($payload['matrix']) && is_array($payload['matrix']) ? $payload['matrix'] : array();
+            $monthlyValues = isset($payload['monthly_matrix']) && is_array($payload['monthly_matrix']) ? $payload['monthly_matrix'] : null;
+            $dailyValues = isset($payload['daily_matrix']) && is_array($payload['daily_matrix']) ? $payload['daily_matrix'] : null;
+            $names = isset($payload['names']) && is_array($payload['names']) ? $payload['names'] : array();
+            $catLabels = isset($payload['cat_labels']) && is_array($payload['cat_labels']) ? $payload['cat_labels'] : array();
+            $kodeWilayah = isset($payload['kode_wilayah']) ? trim(strip_tags((string)$payload['kode_wilayah'])) : null;
+            $parentCode = !empty($payload['parent_code']) ? trim(strip_tags((string)$payload['parent_code'])) : 'EKO-003';
+        } else {
+            $years = $this->input->post('years');
+            $matrixValues = $this->input->post('matrix');
+            $monthlyValues = $this->input->post('monthly_matrix');
+            $dailyValues = $this->input->post('daily_matrix');
+            $names = $this->input->post('names');
+            $catLabels = $this->input->post('cat_labels');
+            $kodeWilayah = $this->input->post('kode_wilayah', true);
+            $parentCode = $this->input->post('parent_code', true) ?: 'EKO-003';
+        }
 
         if ((empty($years) || !is_array($years)) && empty($monthlyValues) && empty($dailyValues)) {
             $this->output
